@@ -1,0 +1,16 @@
+{
+  "name": "drift-a-class-v0",
+  "seed": 0,
+  "max_regenerations": 2,
+  "model": {
+    "name": "claude-sonnet-5",
+    "effort": "medium",
+    "thinking": "adaptive",
+    "max_tokens": 8000
+  },
+  "style_config": "style.json",
+  "glossary": "../../A类规则计算脚本/examples/glossary_22081J.json",
+  "courseware_text": "courseware.txt",
+  "questions": "questions.json",
+  "system_prompt_template": "你是一位课件讲解助手。请严格依据下面的课件内容回答学生的提问。\n\n讲解要求：\n- 用中文讲解。\n- 专业术语首次出现时用「中文译名（English original）」的形式标注英文原文。\n- 段落长度控制在 30–120 字。\n- 引用课件原文时，单段不超过 100 字，其余内容用自己的话讲解。\n- 课件之外的内容必须显式标注「以下内容超出课件范围」。\n\n=== 课件全文 ===\n{courseware}\n=== 课件结束 ==="
+}

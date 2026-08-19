@@ -108,6 +108,19 @@ def _clean_forms(values: Any, where: str) -> tuple[str, ...]:
     return tuple(out)
 
 
+def _canonical_en(value: str) -> str:
+    r"""英文形式的比较用规范形：空白与连字符折叠为单空格，大小写不敏感。
+
+    与 `_english_pattern_for` 的 `[\s-]+` 规则保持一致——两处若不一致，
+    自由文本能匹配到的形式在括注里核对不上，反之亦然。
+    """
+    return re.sub(r"[\s\-]+", " ", normalize(value).strip()).casefold()
+
+
+def _canonical_zh(value: str) -> str:
+    return re.sub(r"\s+", "", normalize(value).strip())
+
+
 @dataclass(frozen=True, slots=True)
 class Term:
     """一条术语。"""
@@ -141,6 +154,28 @@ class Term:
         if self.match_anchor is MatchAnchor.EN:
             return ()
         return self.zh
+
+    def is_en_form(self, candidate: str) -> bool:
+        """candidate 是否为本术语的某个英文形式。**不受 match_anchor 约束。**
+
+        用于括注内容核对：`区块（block）` 里的 `block` 处在括号中，没有歧义，
+        而 `match_anchor` 治的是自由文本里的歧义。若这里也受 anchor 约束，
+        anchor=zh 的术语将永远无法被判定为「已标注」——每次正确标注都会被
+        判成违规，是方向相反的系统性误判。
+
+        `unsafe_aliases` 在此**计入**：unsafe 的含义是「不可作自由文本锚点」，
+        不是「不是合法形式」。括注里出现它同样算标注到位。
+        """
+        target = _canonical_en(candidate)
+        return any(
+            _canonical_en(f) == target
+            for f in (self.en, *self.aliases, *self.unsafe_aliases)
+        )
+
+    def is_zh_form(self, candidate: str) -> bool:
+        """candidate 是否为本术语的某个中文形式。同样不受 match_anchor 约束。"""
+        target = _canonical_zh(candidate)
+        return any(_canonical_zh(f) == target for f in self.zh)
 
     @classmethod
     def from_dict(cls, data: Any, index: int) -> "Term":

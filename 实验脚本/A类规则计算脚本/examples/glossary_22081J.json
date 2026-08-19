@@ -3,36 +3,613 @@
   "course_title": "Introduction to Sustainable Energy",
   "source_file": "实验脚本/测试集/MIT22_081JF10_lec01b.pdf",
   "criteria": "examples/glossary_criteria.md",
-  "criteria_version": "2026-08-19",
-  "language": { "source": "en", "target": "zh" },
-  "coverage_note": "仅收正文术语。另有 16 条仅见于图注的硬术语未收录，覆盖率约 63%，见 glossary_22081J_candidates.md §A-2。术语维度的绝对值需结合此覆盖率解读。",
+  "criteria_version": "2026-08-19 (rev.2 · G2 拆分为 en/zh 双侧)",
+  "language": {
+    "source": "en",
+    "target": "zh"
+  },
+  "coverage_note": "本表为人工整理，是自动提取的金标准。source 字段区分 body_text(27) 与 figure_caption(17)，用于分开报告两个数：术语表相对课件的覆盖缺口，与讲解文本相对术语表的分母缺口——两者不可混为一谈。仅见于图注的术语正文未出现，模型讲解时大概率也不会提，本就进不了分母。自动提取相对本表的召回率为独立指标，见 glossary_criteria.md。",
   "terms": [
-    { "en": "energy carrier", "zh": ["能量载体", "能源载体"], "aliases": [], "unsafe_aliases": [], "page": 18, "origin": "prose" },
-    { "en": "energy density", "zh": ["能量密度"], "aliases": [], "unsafe_aliases": [], "page": 18, "origin": "prose" },
-    { "en": "power density", "zh": ["功率密度"], "aliases": [], "unsafe_aliases": [], "page": 21, "origin": "prose" },
-    { "en": "heat engine", "zh": ["热机"], "aliases": [], "unsafe_aliases": [], "page": 20, "origin": "prose" },
-    { "en": "hydraulic head", "zh": ["水力压头", "水头"], "aliases": [], "unsafe_aliases": ["head"], "page": 29, "origin": "prose" },
-    { "en": "nuclear fission", "zh": ["核裂变"], "aliases": [], "unsafe_aliases": ["fission"], "page": 17, "origin": "prose" },
-    { "en": "nuclear fusion", "zh": ["核聚变"], "aliases": [], "unsafe_aliases": ["fusion"], "page": 17, "origin": "prose" },
-    { "en": "light water reactor", "zh": ["轻水堆", "轻水反应堆"], "aliases": ["LWR"], "unsafe_aliases": [], "page": 17, "origin": "prose" },
-    { "en": "breeder reactor", "zh": ["增殖堆", "快中子增殖堆"], "aliases": [], "unsafe_aliases": ["breeder", "breeders"], "page": 17, "origin": "prose" },
-    { "en": "uranium enrichment", "zh": ["铀浓缩"], "aliases": [], "unsafe_aliases": ["enrichment"], "page": 26, "origin": "prose" },
-    { "en": "fuel rod", "zh": ["燃料棒"], "aliases": ["fuel rods"], "unsafe_aliases": [], "page": 26, "origin": "prose" },
-    { "en": "reactor vessel", "zh": ["反应堆压力容器", "反应堆容器"], "aliases": ["pressure vessel"], "unsafe_aliases": [], "page": 26, "origin": "prose" },
-    { "en": "fission product", "zh": ["裂变产物"], "aliases": ["fission products"], "unsafe_aliases": [], "page": 28, "origin": "prose" },
-    { "en": "carbon sequestration", "zh": ["碳封存"], "aliases": ["CO2 sequestration"], "unsafe_aliases": ["sequestration"], "page": 23, "origin": "prose" },
-    { "en": "solar irradiance", "zh": ["太阳辐照度"], "aliases": ["normal solar irradiance"], "unsafe_aliases": ["irradiance"], "page": 34, "origin": "prose" },
-    { "en": "solar constant", "zh": ["太阳常数"], "aliases": [], "unsafe_aliases": [], "page": 34, "origin": "prose" },
-    { "en": "solar thermal", "zh": ["光热发电", "太阳能热发电"], "aliases": ["concentrated solar power", "CSP"], "unsafe_aliases": [], "page": 19, "origin": "prose" },
-    { "en": "photovoltaic", "zh": ["光伏"], "aliases": ["solar voltaic", "photovoltaic cell", "solar voltaic cell", "PV"], "unsafe_aliases": [], "page": 19, "origin": "prose", "note": "课件写非标准的 solar voltaic；按判据 R2 以标准写法为主形，课件写法进 aliases" },
-    { "en": "biomass", "zh": ["生物质"], "aliases": [], "unsafe_aliases": [], "page": 19, "origin": "prose" },
-    { "en": "oil shale", "zh": ["油页岩"], "aliases": [], "unsafe_aliases": [], "page": 4, "origin": "prose" },
-    { "en": "tar sands", "zh": ["油砂"], "aliases": ["oil sands", "tar sand"], "unsafe_aliases": [], "page": 4, "origin": "prose" },
-    { "en": "waste heat", "zh": ["废热", "余热"], "aliases": [], "unsafe_aliases": [], "page": 20, "origin": "prose" },
-    { "en": "exhaust steam", "zh": ["乏汽", "排汽"], "aliases": [], "unsafe_aliases": [], "page": 20, "origin": "prose" },
-    { "en": "natural uranium", "zh": ["天然铀"], "aliases": [], "unsafe_aliases": [], "page": 26, "origin": "prose" },
-    { "en": "DT reaction", "zh": ["氘氚反应"], "aliases": ["D-T reaction", "deuterium-tritium reaction"], "unsafe_aliases": [], "page": 17, "origin": "prose" },
-    { "en": "DD reaction", "zh": ["氘氘反应"], "aliases": ["D-D reaction", "deuterium-deuterium reaction"], "unsafe_aliases": [], "page": 17, "origin": "prose" },
-    { "en": "DC electricity", "zh": ["直流电"], "aliases": ["direct current", "DC power"], "unsafe_aliases": ["DC"], "page": 34, "origin": "prose" }
-  ]
+    {
+      "en": "biomass",
+      "zh": [
+        "生物质"
+      ],
+      "aliases": [],
+      "unsafe_aliases": [],
+      "page": 19,
+      "origin": "prose",
+      "source": "body_text",
+      "match_anchor": "both"
+    },
+    {
+      "en": "breeder reactor",
+      "zh": [
+        "增殖堆",
+        "快中子增殖堆"
+      ],
+      "aliases": [],
+      "unsafe_aliases": [
+        "breeder",
+        "breeders"
+      ],
+      "page": 17,
+      "origin": "prose",
+      "source": "body_text",
+      "match_anchor": "both"
+    },
+    {
+      "en": "carbon sequestration",
+      "zh": [
+        "碳封存"
+      ],
+      "aliases": [
+        "CO2 sequestration"
+      ],
+      "unsafe_aliases": [
+        "sequestration"
+      ],
+      "page": 23,
+      "origin": "prose",
+      "source": "body_text",
+      "match_anchor": "both"
+    },
+    {
+      "en": "DC electricity",
+      "zh": [
+        "直流电"
+      ],
+      "aliases": [
+        "direct current",
+        "DC power"
+      ],
+      "unsafe_aliases": [
+        "DC"
+      ],
+      "page": 34,
+      "origin": "prose",
+      "source": "body_text",
+      "match_anchor": "both"
+    },
+    {
+      "en": "DD reaction",
+      "zh": [
+        "氘氘反应"
+      ],
+      "aliases": [
+        "D-D reaction",
+        "deuterium-deuterium reaction"
+      ],
+      "unsafe_aliases": [],
+      "page": 17,
+      "origin": "prose",
+      "source": "body_text",
+      "match_anchor": "both"
+    },
+    {
+      "en": "DT reaction",
+      "zh": [
+        "氘氚反应"
+      ],
+      "aliases": [
+        "D-T reaction",
+        "deuterium-tritium reaction"
+      ],
+      "unsafe_aliases": [],
+      "page": 17,
+      "origin": "prose",
+      "source": "body_text",
+      "match_anchor": "both"
+    },
+    {
+      "en": "energy carrier",
+      "zh": [
+        "能量载体",
+        "能源载体"
+      ],
+      "aliases": [],
+      "unsafe_aliases": [],
+      "page": 18,
+      "origin": "prose",
+      "source": "body_text",
+      "match_anchor": "both"
+    },
+    {
+      "en": "energy density",
+      "zh": [
+        "能量密度"
+      ],
+      "aliases": [],
+      "unsafe_aliases": [],
+      "page": 18,
+      "origin": "prose",
+      "source": "body_text",
+      "match_anchor": "both"
+    },
+    {
+      "en": "exhaust steam",
+      "zh": [
+        "乏汽",
+        "排汽"
+      ],
+      "aliases": [],
+      "unsafe_aliases": [],
+      "page": 20,
+      "origin": "prose",
+      "source": "body_text",
+      "match_anchor": "both"
+    },
+    {
+      "en": "fission product",
+      "zh": [
+        "裂变产物"
+      ],
+      "aliases": [
+        "fission products"
+      ],
+      "unsafe_aliases": [],
+      "page": 28,
+      "origin": "prose",
+      "source": "body_text",
+      "match_anchor": "both"
+    },
+    {
+      "en": "fuel rod",
+      "zh": [
+        "燃料棒"
+      ],
+      "aliases": [
+        "fuel rods"
+      ],
+      "unsafe_aliases": [],
+      "page": 26,
+      "origin": "prose",
+      "source": "body_text",
+      "match_anchor": "both"
+    },
+    {
+      "en": "heat engine",
+      "zh": [
+        "热机"
+      ],
+      "aliases": [],
+      "unsafe_aliases": [],
+      "page": 20,
+      "origin": "prose",
+      "source": "body_text",
+      "match_anchor": "both"
+    },
+    {
+      "en": "hydraulic head",
+      "zh": [
+        "水力压头",
+        "水头"
+      ],
+      "aliases": [],
+      "unsafe_aliases": [
+        "head"
+      ],
+      "page": 29,
+      "origin": "prose",
+      "source": "body_text",
+      "match_anchor": "both"
+    },
+    {
+      "en": "light water reactor",
+      "zh": [
+        "轻水堆",
+        "轻水反应堆"
+      ],
+      "aliases": [
+        "LWR"
+      ],
+      "unsafe_aliases": [],
+      "page": 17,
+      "origin": "prose",
+      "source": "body_text",
+      "match_anchor": "both"
+    },
+    {
+      "en": "natural uranium",
+      "zh": [
+        "天然铀"
+      ],
+      "aliases": [],
+      "unsafe_aliases": [],
+      "page": 26,
+      "origin": "prose",
+      "source": "body_text",
+      "match_anchor": "both"
+    },
+    {
+      "en": "nuclear fission",
+      "zh": [
+        "核裂变"
+      ],
+      "aliases": [],
+      "unsafe_aliases": [
+        "fission"
+      ],
+      "page": 17,
+      "origin": "prose",
+      "source": "body_text",
+      "match_anchor": "both"
+    },
+    {
+      "en": "nuclear fusion",
+      "zh": [
+        "核聚变"
+      ],
+      "aliases": [],
+      "unsafe_aliases": [
+        "fusion"
+      ],
+      "page": 17,
+      "origin": "prose",
+      "source": "body_text",
+      "match_anchor": "both"
+    },
+    {
+      "en": "oil shale",
+      "zh": [
+        "油页岩"
+      ],
+      "aliases": [],
+      "unsafe_aliases": [],
+      "page": 4,
+      "origin": "prose",
+      "source": "body_text",
+      "match_anchor": "both"
+    },
+    {
+      "en": "photovoltaic",
+      "zh": [
+        "光伏"
+      ],
+      "aliases": [
+        "solar voltaic",
+        "photovoltaic cell",
+        "solar voltaic cell",
+        "PV"
+      ],
+      "unsafe_aliases": [],
+      "page": 19,
+      "origin": "prose",
+      "note": "课件写非标准的 solar voltaic；按判据 R2 以标准写法为主形，课件写法进 aliases",
+      "source": "body_text",
+      "match_anchor": "both"
+    },
+    {
+      "en": "power density",
+      "zh": [
+        "功率密度"
+      ],
+      "aliases": [],
+      "unsafe_aliases": [],
+      "page": 21,
+      "origin": "prose",
+      "source": "body_text",
+      "match_anchor": "both"
+    },
+    {
+      "en": "reactor vessel",
+      "zh": [
+        "反应堆压力容器",
+        "反应堆容器"
+      ],
+      "aliases": [
+        "pressure vessel"
+      ],
+      "unsafe_aliases": [],
+      "page": 26,
+      "origin": "prose",
+      "source": "body_text",
+      "match_anchor": "both"
+    },
+    {
+      "en": "solar constant",
+      "zh": [
+        "太阳常数"
+      ],
+      "aliases": [],
+      "unsafe_aliases": [],
+      "page": 34,
+      "origin": "prose",
+      "source": "body_text",
+      "match_anchor": "both"
+    },
+    {
+      "en": "solar irradiance",
+      "zh": [
+        "太阳辐照度"
+      ],
+      "aliases": [
+        "normal solar irradiance"
+      ],
+      "unsafe_aliases": [
+        "irradiance"
+      ],
+      "page": 34,
+      "origin": "prose",
+      "source": "body_text",
+      "match_anchor": "both"
+    },
+    {
+      "en": "solar thermal",
+      "zh": [
+        "光热发电",
+        "太阳能热发电"
+      ],
+      "aliases": [
+        "concentrated solar power",
+        "CSP"
+      ],
+      "unsafe_aliases": [],
+      "page": 19,
+      "origin": "prose",
+      "source": "body_text",
+      "match_anchor": "both"
+    },
+    {
+      "en": "tar sands",
+      "zh": [
+        "油砂"
+      ],
+      "aliases": [
+        "oil sands",
+        "tar sand"
+      ],
+      "unsafe_aliases": [],
+      "page": 4,
+      "origin": "prose",
+      "source": "body_text",
+      "match_anchor": "both"
+    },
+    {
+      "en": "uranium enrichment",
+      "zh": [
+        "铀浓缩"
+      ],
+      "aliases": [],
+      "unsafe_aliases": [
+        "enrichment"
+      ],
+      "page": 26,
+      "origin": "prose",
+      "source": "body_text",
+      "match_anchor": "both"
+    },
+    {
+      "en": "waste heat",
+      "zh": [
+        "废热",
+        "余热"
+      ],
+      "aliases": [],
+      "unsafe_aliases": [],
+      "page": 20,
+      "origin": "prose",
+      "source": "body_text",
+      "match_anchor": "both"
+    },
+    {
+      "en": "alternator",
+      "zh": [
+        "交流发电机"
+      ],
+      "aliases": [],
+      "unsafe_aliases": [],
+      "page": 27,
+      "origin": "figure",
+      "source": "figure_caption",
+      "match_anchor": "both"
+    },
+    {
+      "en": "condenser",
+      "zh": [
+        "冷凝器"
+      ],
+      "aliases": [],
+      "unsafe_aliases": [],
+      "page": 20,
+      "origin": "figure",
+      "source": "figure_caption",
+      "match_anchor": "both"
+    },
+    {
+      "en": "containment structure",
+      "zh": [
+        "安全壳"
+      ],
+      "aliases": [
+        "containment"
+      ],
+      "unsafe_aliases": [],
+      "page": 27,
+      "origin": "figure",
+      "source": "figure_caption",
+      "match_anchor": "both"
+    },
+    {
+      "en": "control rod",
+      "zh": [
+        "控制棒"
+      ],
+      "aliases": [
+        "control rods"
+      ],
+      "unsafe_aliases": [],
+      "page": 27,
+      "origin": "figure",
+      "source": "figure_caption",
+      "match_anchor": "both"
+    },
+    {
+      "en": "coolant",
+      "zh": [
+        "冷却剂"
+      ],
+      "aliases": [
+        "water coolant"
+      ],
+      "unsafe_aliases": [],
+      "page": 27,
+      "origin": "figure",
+      "source": "figure_caption",
+      "match_anchor": "both"
+    },
+    {
+      "en": "cooling loop",
+      "zh": [
+        "冷却回路"
+      ],
+      "aliases": [],
+      "unsafe_aliases": [],
+      "page": 27,
+      "origin": "figure",
+      "source": "figure_caption",
+      "match_anchor": "both"
+    },
+    {
+      "en": "cooling tower",
+      "zh": [
+        "冷却塔"
+      ],
+      "aliases": [],
+      "unsafe_aliases": [],
+      "page": 27,
+      "origin": "figure",
+      "source": "figure_caption",
+      "match_anchor": "both"
+    },
+    {
+      "en": "furnace",
+      "zh": [
+        "炉膛",
+        "锅炉"
+      ],
+      "aliases": [],
+      "unsafe_aliases": [],
+      "page": 20,
+      "origin": "figure",
+      "source": "figure_caption",
+      "match_anchor": "both"
+    },
+    {
+      "en": "heat exchanger",
+      "zh": [
+        "换热器",
+        "热交换器"
+      ],
+      "aliases": [],
+      "unsafe_aliases": [],
+      "page": 20,
+      "origin": "figure",
+      "source": "figure_caption",
+      "match_anchor": "both"
+    },
+    {
+      "en": "makeup water",
+      "zh": [
+        "补给水"
+      ],
+      "aliases": [],
+      "unsafe_aliases": [],
+      "page": 20,
+      "origin": "figure",
+      "source": "figure_caption",
+      "match_anchor": "both"
+    },
+    {
+      "en": "pressurizer",
+      "zh": [
+        "稳压器"
+      ],
+      "aliases": [],
+      "unsafe_aliases": [],
+      "page": 27,
+      "origin": "figure",
+      "source": "figure_caption",
+      "match_anchor": "both"
+    },
+    {
+      "en": "primary loop",
+      "zh": [
+        "一回路"
+      ],
+      "aliases": [],
+      "unsafe_aliases": [],
+      "page": 27,
+      "origin": "figure",
+      "source": "figure_caption",
+      "match_anchor": "both"
+    },
+    {
+      "en": "reactor core",
+      "zh": [
+        "堆芯",
+        "反应堆堆芯"
+      ],
+      "aliases": [],
+      "unsafe_aliases": [
+        "core"
+      ],
+      "page": 27,
+      "origin": "figure",
+      "source": "figure_caption",
+      "match_anchor": "both"
+    },
+    {
+      "en": "secondary loop",
+      "zh": [
+        "二回路"
+      ],
+      "aliases": [],
+      "unsafe_aliases": [],
+      "page": 27,
+      "origin": "figure",
+      "source": "figure_caption",
+      "match_anchor": "both"
+    },
+    {
+      "en": "steam generator",
+      "zh": [
+        "蒸汽发生器"
+      ],
+      "aliases": [],
+      "unsafe_aliases": [],
+      "page": 27,
+      "origin": "figure",
+      "source": "figure_caption",
+      "match_anchor": "both"
+    },
+    {
+      "en": "steam turbine",
+      "zh": [
+        "汽轮机",
+        "蒸汽轮机"
+      ],
+      "aliases": [],
+      "unsafe_aliases": [],
+      "page": 20,
+      "origin": "figure",
+      "source": "figure_caption",
+      "match_anchor": "both"
+    },
+    {
+      "en": "turbine",
+      "zh": [
+        "涡轮机",
+        "透平"
+      ],
+      "aliases": [],
+      "unsafe_aliases": [],
+      "page": 27,
+      "origin": "figure",
+      "source": "figure_caption",
+      "match_anchor": "both",
+      "note": "译名不统一（涡轮机/透平）不是分档问题，是 zh 缺首选译名。按判据 R3，zh 第一项为首选；按 R4，首选取通用译名而非更生僻的「透平」"
+    }
+  ],
+  "schema_note": "zh 第一项为首选译名（判据 R3）；match_anchor 指明用哪一侧做匹配锚点（判据 G2-en/G2-zh）；unsafe_aliases 指该形式在指定锚点侧不可用于匹配。"
 }

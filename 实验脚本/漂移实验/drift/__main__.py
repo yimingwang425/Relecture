@@ -26,6 +26,7 @@ from .models import FAKE_PREFIX, AnthropicModel, FakeModel, Model
 from .reviewer import RuleReviewer
 from .runner import RoundRecord, run_condition
 from .sanity import SanityResult, check_inputs_identical, sample_first_round
+from .plot import plot_run
 from .verify import verify_run
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -234,11 +235,25 @@ def cmd_verify(args: argparse.Namespace) -> int:
     return 0 if ok else 1
 
 
+def cmd_plot(args: argparse.Namespace) -> int:
+    cfg_path = Path(args.config).resolve()
+    cfg = _load_json(cfg_path)
+    _, _, style, _, _ = _build(cfg, cfg_path.parent, fake=False)
+    target = {
+        "term_annotation": style.term_annotation_threshold,
+        "chinese_ratio": style.chinese_ratio.min,
+        "quote_length": float(style.max_quote_chars),
+    }
+    for p in plot_run(Path(args.run).resolve(), target):
+        print(f"  {p}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="drift", description="PRD §8.2 漂移衰减曲线实验")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
-    for name, fn in (("sanity", cmd_sanity), ("run", cmd_run), ("verify", cmd_verify)):
+    for name, fn in (("sanity", cmd_sanity), ("run", cmd_run), ("verify", cmd_verify), ("plot", cmd_plot)):
         p = sub.add_parser(name)
         p.add_argument("--config", default=str(ROOT / "config" / "experiment.json"))
         p.add_argument("--fake", action="store_true", help="用确定性假模型跑通链路，不调 API")
@@ -246,6 +261,7 @@ def main(argv: list[str] | None = None) -> int:
 
     sub.choices["sanity"].add_argument("--repeats", type=int, default=3)
     sub.choices["verify"].add_argument("--run", required=True, help="要核验的 runs/<批次> 目录")
+    sub.choices["plot"].add_argument("--run", required=True, help="要出图的 runs/<批次> 目录")
     sub.choices["run"].add_argument("--out", help="输出目录，缺省按时间戳新建")
     sub.choices["run"].add_argument("--repeats", type=int, default=None,
                                     help="每条件的独立轨迹数，缺省取配置里的 repeats")

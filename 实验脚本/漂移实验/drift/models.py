@@ -18,18 +18,47 @@ import os
 import random
 import time
 from dataclasses import dataclass, field
+from datetime import date
 from typing import Any, Protocol
 
-__all__ = ["Usage", "Completion", "Model", "FakeModel", "AnthropicModel", "cost_usd", "PRICING"]
+__all__ = [
+    "Usage", "Completion", "Model", "FakeModel", "AnthropicModel",
+    "cost_usd", "rates_for", "PRICING", "FAKE_PREFIX",
+]
 
-#: 每百万 token 的美元单价 (输入, 输出)。取自 claude-api 技能的模型表。
-#: Sonnet 5 在 2026-08-31 前有 $2/$10 的introductory价，此处按正价计，
-#: 成本估计偏保守——宁可高估也不要在 §8.4 的 <$0.05 判定上乐观。
-PRICING: dict[str, tuple[float, float]] = {
-    "claude-opus-5": (5.00, 25.00),
-    "claude-sonnet-5": (3.00, 15.00),
-    "claude-haiku-4-5": (1.00, 5.00),
+#: 假模型的名字前缀。定价时剥掉，这样 --fake 也能走通成本核算链路——
+#: 否则假跑时成本恒为 0，等到真实调用才发现成本日志从没被验证过。
+FAKE_PREFIX = "fake:"
+
+#: 每百万 token 的美元单价。含 introductory 优惠价及其到期日。
+#:
+#: **不要为了「保守」用正价。** §9.1 承诺的是报准单位经济，不是报保守值——
+#: 高估不是安全，是错。首次单轨实测：脚本按正价报 $1.0971，按 introductory
+#: 价重算为 $0.7314，与后台数字对得上。
+PRICING: dict[str, dict[str, Any]] = {
+    "claude-opus-5": {"input": 5.00, "output": 25.00},
+    "claude-sonnet-5": {
+        "input": 3.00,
+        "output": 15.00,
+        # introductory 价，到期后自动回落到上面的正价
+        "intro_input": 2.00,
+        "intro_output": 10.00,
+        "intro_until": "2026-08-31",
+    },
+    "claude-haiku-4-5": {"input": 1.00, "output": 5.00},
 }
+
+
+def rates_for(model: str, on: date | None = None) -> tuple[float, float] | None:
+    """取该日期适用的 (输入, 输出) 单价。未知模型返回 None。"""
+    entry = PRICING.get(model.removeprefix(FAKE_PREFIX))
+    if entry is None:
+        return None
+    until = entry.get("intro_until")
+    if until and (on or date.today()) <= date.fromisoformat(until):
+        return entry["intro_input"], entry["intro_output"]
+    return entry["input"], entry["output"]
+
 
 #: 缓存写入 1.25×、读取 0.1×（5 分钟 TTL）。课件全量进 system 且会话内不变，
 #: 缓存命中率直接决定单会话成本能否压到 §9.1 的 $0.05 以下。
@@ -61,14 +90,13 @@ class Usage:
         }
 
 
-#: 假模型的名字前缀。定价时剥掉，这样 --fake 也能走通成本核算链路——
-#: 否则假跑时成本恒为 0，等到真实调用才发现成本日志从没被验证过。
-FAKE_PREFIX = "fake:"
+def cost_usd(model: str, usage: Usage, on: date | None = None) -> float:
+    """按适用价目折算美元。未知模型返回 0 并不报错——成本缺失不该中断实验。
 
-
-def cost_usd(model: str, usage: Usage) -> float:
-    """按 PRICING 折算美元。未知模型返回 0 并不报错——成本缺失不该中断实验。"""
-    rates = PRICING.get(model.removeprefix(FAKE_PREFIX))
+    三类输入 token 互不重叠：`input_tokens` 是**未命中缓存的余量**，
+    与 `cache_read_input_tokens` / `cache_creation_input_tokens` 不相加重复。
+    """
+    rates = rates_for(model, on)
     if rates is None:
         return 0.0
     inp, out = rates

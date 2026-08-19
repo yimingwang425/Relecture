@@ -4,6 +4,9 @@
 
 - **两组唯一的差异是审查 agent 的有无。** 同一份课件、同一份风格配置、
   同一组提问、同一顺序、同一模型参数。
+- **重复是整条轨迹的重复，不是每轮内部重采样。** 漂移是一条对话轨迹随轮次
+  演化出来的性质；在同一条对话里对某轮采样多次再挑一条继续，轨迹仍然只有
+  一条，重复毫无统计意义。每个 replicate 是一次独立的 20 轮完整对话。
 - **无审查组照常计算指标，只记录不干预**——不算就没有对照。
 - **不含检索环节。** 课件全量进 system prompt。若引入检索，两组可能取到不同
   片段，连输入都不一样，对照就废了。结论仅适用于「课件全量在上下文中」。
@@ -42,6 +45,7 @@ class Attempt:
 @dataclass(frozen=True, slots=True)
 class RoundRecord:
     condition: str
+    replicate: int
     round_index: int
     question: str
     attempts: tuple[Attempt, ...]
@@ -68,6 +72,7 @@ class RoundRecord:
     def to_dict(self) -> dict[str, Any]:
         return {
             "condition": self.condition,
+            "replicate": self.replicate,
             "round": self.round_index,
             "question": self.question,
             "request_signature": self.request_signature,
@@ -85,6 +90,7 @@ class RoundRecord:
 def run_condition(
     *,
     condition: str,
+    replicate: int,
     questions: Iterable[str],
     model: Model,
     system: str,
@@ -137,6 +143,7 @@ def run_condition(
 
         record = RoundRecord(
             condition=condition,
+            replicate=replicate,
             round_index=i,
             question=question,
             attempts=tuple(attempts),

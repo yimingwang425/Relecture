@@ -135,6 +135,7 @@ class FakeModel:
 
     name: str = FAKE_PREFIX + "claude-sonnet-5"
     seed: int = 0
+    replicate: int = 0
     decay: float = 0.06
     params: dict[str, Any] = field(default_factory=lambda: {"effort": "medium"})
     _round: int = 0
@@ -149,9 +150,10 @@ class FakeModel:
     def complete(self, system: str, messages: list[dict[str, Any]]) -> Completion:
         started = time.perf_counter()
         self._round += 1
-        rng = random.Random(f"{self.seed}:{len(messages)}:{messages[-1]['content'][:40]}")
+        rng = random.Random(f"{self.seed}:{self.replicate}:{len(messages)}:{messages[-1]['content'][:40]}")
         # 标注率随轮次线性衰减，用于验证曲线绘制链路
-        annotate_p = max(0.05, 0.95 - self.decay * (self._round - 1))
+        jitter = rng.uniform(-0.12, 0.12)  # 让各 replicate 有离散度，验证聚合链路
+        annotate_p = min(1.0, max(0.05, 0.95 - self.decay * (self._round - 1) + jitter))
         paras = []
         for i in range(rng.randint(3, 5)):
             picked = rng.sample(self._TERMS, k=rng.randint(1, 3))
@@ -187,6 +189,9 @@ class AnthropicModel:
     max_tokens: int = 8000
     thinking: str = "adaptive"  # adaptive | disabled
     cache_system: bool = True
+    #: 在最近一轮消息末尾再放一个缓存断点。对话历史逐轮增长，20 轮下来
+    #: 它远比课件本身贵——只缓存 system 会让历史每轮按全价重算一遍。
+    cache_conversation: bool = True
     _client: Any = None
 
     @property
@@ -197,6 +202,7 @@ class AnthropicModel:
             "thinking": self.thinking,
             "max_tokens": self.max_tokens,
             "cache_system": self.cache_system,
+            "cache_conversation": self.cache_conversation,
             "temperature": None,
             "temperature_note": "Opus 5 / Sonnet 5 已移除 temperature/top_p/top_k，传入返回 400",
         }
@@ -222,11 +228,23 @@ class AnthropicModel:
             if self.cache_system
             else system
         )
+        sent = messages
+        if self.cache_conversation and messages:
+            # 断点打在最近一轮的最后一个内容块上：下一轮请求即可复用整段历史前缀
+            sent = list(messages[:-1])
+            last = messages[-1]
+            content = last["content"]
+            blocks = (
+                [{"type": "text", "text": content}] if isinstance(content, str) else list(content)
+            )
+            blocks[-1] = {**blocks[-1], "cache_control": {"type": "ephemeral"}}
+            sent.append({**last, "content": blocks})
+
         kwargs: dict[str, Any] = {
             "model": self.name,
             "max_tokens": self.max_tokens,
             "system": system_block,
-            "messages": messages,
+            "messages": sent,
             "output_config": {"effort": self.effort},
         }
         if self.thinking == "disabled":

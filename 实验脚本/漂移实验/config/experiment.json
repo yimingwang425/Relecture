@@ -1,6 +1,7 @@
 {
   "name": "drift-a-class-v0",
   "seed": 0,
+  "repeats": 3,
   "max_regenerations": 2,
   "model": {
     "name": "claude-sonnet-5",

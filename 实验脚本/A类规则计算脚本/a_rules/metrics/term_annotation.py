@@ -58,20 +58,46 @@ class Occurrence:
     compliant: bool
 
 
-def _find_annotation(text: str, match_end: int, term: Term, side: MatchSide) -> tuple[int, str] | None:
+def _find_annotation(
+    text: str, match_end: int, term: Term, side: MatchSide
+) -> tuple[int, str, int, int] | None:
     """术语出现之后是否紧跟一个合格括注。
 
-    返回 (括注结束位置, 括注内容)，不合格返回 None。
+    返回 (括注结束位置, 括注内容, 内容起点, 内容终点)，不合格返回 None。
     """
     m = _ANNOTATION_RE.match(text, match_end)
     if not m:
         return None
     content = m.group(1).strip()
-    if side is MatchSide.ZH and term.is_en_form(content):
-        return m.end(), content
-    if side is MatchSide.EN and term.is_zh_form(content):
-        return m.end(), content
+    if term.accepts_annotation(content, side):
+        return m.end(), content, m.start(1), m.end(1)
     return None
+
+
+_LATIN_RE = re.compile(r"[A-Za-z]")
+
+
+def annotated_english_spans(doc: Document, glossary: Glossary | None) -> tuple[tuple[int, int], ...]:
+    """译文后括注中的英文原文所占区间。
+
+    供「中文字符占比」排除用（口径 D15）：`translate_with_source` 策略下用户
+    **要求**模型写「热机（heat engine）」，若把括注英文计入分母，满足术语维度
+    就必然拉低语言一致性维度——两个维度直接打架。
+    """
+    if glossary is None or glossary.is_empty:
+        return ()
+    text = doc.masked
+    spans: list[tuple[int, int]] = []
+    for m in glossary.find(text):
+        if m.side is not MatchSide.ZH:
+            continue
+        found = _find_annotation(text, m.end, m.term, m.side)
+        if found is None:
+            continue
+        _end, content, cs, ce = found
+        if _LATIN_RE.search(content):
+            spans.append((cs, ce))
+    return tuple(spans)
 
 
 def _is_compliant(kind: Kind, policy: TermPolicy) -> bool:
@@ -99,7 +125,7 @@ def _collect(doc: Document, glossary: Glossary, policy: TermPolicy) -> list[Occu
             continue
         annotation = _find_annotation(text, m.end, m.term, m.side)
         if annotation is not None:
-            end, _content = annotation
+            end = annotation[0]
             kind, span_end = Kind.PAIRED, end
         else:
             kind = Kind.LONE_ZH if m.side is MatchSide.ZH else Kind.LONE_EN
@@ -175,7 +201,9 @@ def term_annotation_rate(
         return DimensionResult.uncomputable(NAME, Reason.EMPTY_GLOSSARY, target)
 
     doc = Document.parse(text)
-    base = {"glossary": glossary.stats()}
+    # 术语表版本必须随每次输出记录：§8.2 期间术语表冻结，
+    # 没有版本号就无法证明二十轮用的是同一份表
+    base = {"glossary": glossary.stats(), "glossary_version": glossary.version}
     if doc.is_blank:
         return DimensionResult.uncomputable(NAME, Reason.EMPTY_TEXT, target, base)
 
@@ -210,6 +238,11 @@ def term_annotation_rate(
         ],
     }
 
+    if len(selected) < config.term_min_occurrences:
+        # 分母太小时指标没有分辨率——实测第四轮只有 1 个首现术语，
+        # 结果只能是 0% 或 100%，却会把一个 0% 贡献进漂移曲线
+        reason = Reason.NO_TERM_OCCURRENCE if not selected else Reason.LOW_CONFIDENCE
+        return DimensionResult.uncomputable(NAME, reason, target, details)
     if not selected:
         # 术语表非空但一条都没命中。0/0 既不是 0% 也不是 100%——
         # 标为无效，并让 coverage 把「为什么没命中」摆出来

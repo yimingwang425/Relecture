@@ -29,6 +29,7 @@ class Reason:
     EMPTY_TEXT = "empty_text"  # 没有任何可计量内容（空串/纯空白/只有代码块）
     EMPTY_GLOSSARY = "empty_glossary"  # 术语表为空
     NO_TERM_OCCURRENCE = "no_term_occurrence"  # 术语表非空但文本中一条都没命中
+    LOW_CONFIDENCE = "low_confidence"  # 分母过小，指标没有分辨率
     NO_PARAGRAPH = "no_paragraph"  # 没有可计入段落统计的块
 
 

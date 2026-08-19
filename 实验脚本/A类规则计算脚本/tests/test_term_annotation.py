@@ -27,6 +27,9 @@ def gl(*terms: dict) -> Glossary:
 
 
 def cfg(**kw) -> StyleConfig:
+    """默认关掉最小分母护栏——本文件多数用例只有 1–2 个术语，
+    测的是判定逻辑而非护栏。护栏本身由 TestMinOccurrenceGuard 专测。"""
+    kw.setdefault("term_min_occurrences", 1)
     return StyleConfig.from_dict(kw)
 
 
@@ -49,19 +52,19 @@ class TestActivation:
     @pytest.mark.parametrize("glossary", [None, Glossary()])
     def test_empty_glossary_uncomputable(self, glossary):
         # PRD §8.1：术语表缺失只降低灵敏度，不造成误判
-        r = term_annotation_rate("热机（heat engine）", StyleConfig(), glossary)
+        r = term_annotation_rate("热机（heat engine）", cfg(), glossary)
         assert r.activated is True and r.raw is None
         assert r.reason == Reason.EMPTY_GLOSSARY
 
     @pytest.mark.parametrize("text", ["", "   ", "\n\n", "```\nheat engine\n```"])
     def test_blank_text_uncomputable(self, text):
-        r = term_annotation_rate(text, StyleConfig(), gl(HEAT))
+        r = term_annotation_rate(text, cfg(), gl(HEAT))
         assert r.raw is None and r.reason == Reason.EMPTY_TEXT
 
     def test_no_term_hit_is_not_zero(self):
         # 0/0 既不是 0% 也不是 100%——必须标为无效，否则一段不含术语的
         # 讲解会被当成「标注率 0」把曲线拽下去
-        r = term_annotation_rate("这段讲解完全没有提到任何术语。", StyleConfig(), gl(HEAT))
+        r = term_annotation_rate("这段讲解完全没有提到任何术语。", cfg(), gl(HEAT))
         assert r.raw is None and r.passed is None
         assert r.reason == Reason.NO_TERM_OCCURRENCE
         assert r.counts_toward_score is False
@@ -75,39 +78,39 @@ class TestActivation:
 
 class TestPairing:
     def test_zh_then_en(self):
-        r = term_annotation_rate("热机（heat engine）把热能转成机械能。", StyleConfig(), gl(HEAT))
+        r = term_annotation_rate("热机（heat engine）把热能转成机械能。", cfg(), gl(HEAT))
         assert r.raw == 1.0 and r.details["kinds"]["paired"] == 1
 
     def test_en_then_zh(self):
-        r = term_annotation_rate("heat engine（热机）是核心概念。", StyleConfig(), gl(HEAT))
+        r = term_annotation_rate("heat engine（热机）是核心概念。", cfg(), gl(HEAT))
         assert r.raw == 1.0 and r.details["kinds"]["paired"] == 1
 
     def test_annotation_not_at_string_start(self):
         # 回归：`Pattern.match(s, pos)` 已在 pos 锚定，模式里再写 `^` 会让
         # 所有 pos>0 的调用落空——每次正确标注都被判成违规，方向与真相相反
-        r = term_annotation_rate("前面有很长一段铺垫文字，然后才是热机（heat engine）。", StyleConfig(), gl(HEAT))
+        r = term_annotation_rate("前面有很长一段铺垫文字，然后才是热机（heat engine）。", cfg(), gl(HEAT))
         assert r.raw == 1.0
 
     def test_multiple_annotations_in_one_text(self):
         r = term_annotation_rate(
-            "热机（heat engine）的功率密度（power density）较低。", StyleConfig(), gl(HEAT, POWER)
+            "热机（heat engine）的功率密度（power density）较低。", cfg(), gl(HEAT, POWER)
         )
         assert r.raw == 1.0 and r.details["occurrences_first"] == 2
 
     @pytest.mark.parametrize("opening, closing", [("(", ")"), ("（", "）"), ("[", "]"), ("【", "】"), ("〔", "〕")])
     def test_bracket_variants(self, opening, closing):
-        r = term_annotation_rate(f"热机{opening}heat engine{closing}。", StyleConfig(), gl(HEAT))
+        r = term_annotation_rate(f"热机{opening}heat engine{closing}。", cfg(), gl(HEAT))
         assert r.raw == 1.0
 
     def test_space_before_bracket_allowed(self):
-        assert term_annotation_rate("热机 (heat engine) 如上。", StyleConfig(), gl(HEAT)).raw == 1.0
+        assert term_annotation_rate("热机 (heat engine) 如上。", cfg(), gl(HEAT)).raw == 1.0
 
     def test_bracket_with_unrelated_content_is_not_annotation(self):
-        r = term_annotation_rate("热机（很重要）需要理解。", StyleConfig(), gl(HEAT))
+        r = term_annotation_rate("热机（很重要）需要理解。", cfg(), gl(HEAT))
         assert r.raw == 0.0 and r.details["kinds"]["lone_zh"] == 1
 
     def test_bracket_of_a_different_term_is_not_annotation(self):
-        r = term_annotation_rate("热机（power density）写错了。", StyleConfig(), gl(HEAT, POWER))
+        r = term_annotation_rate("热机（power density）写错了。", cfg(), gl(HEAT, POWER))
         assert r.details["kinds"]["paired"] == 0
 
     def test_distant_english_is_not_paired(self):
@@ -118,28 +121,28 @@ class TestPairing:
         assert r.raw == 0.0
 
     def test_english_inside_annotation_not_counted_twice(self):
-        r = term_annotation_rate("热机（heat engine）如上。", StyleConfig(), gl(HEAT))
+        r = term_annotation_rate("热机（heat engine）如上。", cfg(), gl(HEAT))
         assert r.details["occurrences_all"] == 1
 
     def test_unclosed_bracket_is_not_annotation(self):
-        assert term_annotation_rate("热机（heat engine 后面忘了闭合", StyleConfig(), gl(HEAT)).raw == 0.0
+        assert term_annotation_rate("热机（heat engine 后面忘了闭合", cfg(), gl(HEAT)).raw == 0.0
 
     def test_case_and_spacing_variants_inside_bracket(self):
         for inner in ["Heat Engine", "HEAT  ENGINE", "heat-engine"]:
-            assert term_annotation_rate(f"热机（{inner}）。", StyleConfig(), gl(HEAT)).raw == 1.0
+            assert term_annotation_rate(f"热机（{inner}）。", cfg(), gl(HEAT)).raw == 1.0
 
     def test_alias_inside_bracket_counts(self):
         g = gl({"en": "photovoltaic", "zh": ["光伏"], "aliases": ["solar voltaic", "PV"]})
-        assert term_annotation_rate("光伏（solar voltaic）电池。", StyleConfig(), g).raw == 1.0
+        assert term_annotation_rate("光伏（solar voltaic）电池。", cfg(), g).raw == 1.0
 
     def test_unsafe_alias_inside_bracket_counts(self):
         # unsafe 的含义是「不可作自由文本锚点」，不是「不是合法形式」
         g = gl({"en": "uranium enrichment", "zh": ["铀浓缩"], "unsafe_aliases": ["enrichment"]})
-        assert term_annotation_rate("铀浓缩（enrichment）需要离心机。", StyleConfig(), g).raw == 1.0
+        assert term_annotation_rate("铀浓缩（enrichment）需要离心机。", cfg(), g).raw == 1.0
 
     def test_secondary_zh_variant_inside_bracket_counts(self):
         g = gl({"en": "turbine", "zh": ["涡轮机", "透平"]})
-        assert term_annotation_rate("turbine（透平）驱动发电机。", StyleConfig(), g).raw == 1.0
+        assert term_annotation_rate("turbine（透平）驱动发电机。", cfg(), g).raw == 1.0
 
 
 class TestAnchorIndependence:
@@ -150,16 +153,16 @@ class TestAnchorIndependence:
     def test_zh_anchored_term_can_still_be_paired(self):
         # 若括注核对也受 anchor 约束，anchor=zh 的术语将永远配不成对——
         # 每次正确标注都被判违规，是方向相反的系统性误判
-        r = term_annotation_rate("区块（block）之间以哈希链接。", StyleConfig(), gl(self.ZH_ANCHORED))
+        r = term_annotation_rate("区块（block）之间以哈希链接。", cfg(), gl(self.ZH_ANCHORED))
         assert r.raw == 1.0 and r.details["kinds"]["paired"] == 1
 
     def test_zh_anchored_term_ignores_ambiguous_english(self):
-        r = term_annotation_rate("这是最基本的 building block 而已。", StyleConfig(), gl(self.ZH_ANCHORED))
+        r = term_annotation_rate("这是最基本的 building block 而已。", cfg(), gl(self.ZH_ANCHORED))
         assert r.reason == Reason.NO_TERM_OCCURRENCE
 
     def test_en_anchored_term_can_still_be_paired(self):
         g = gl({"en": "nonce", "zh": ["随机数"], "match_anchor": "en"})
-        assert term_annotation_rate("nonce（随机数）用于工作量证明。", StyleConfig(), g).raw == 1.0
+        assert term_annotation_rate("nonce（随机数）用于工作量证明。", cfg(), g).raw == 1.0
 
 
 # ==========================================================================
@@ -236,13 +239,13 @@ class TestCoverageAndEvidence:
             {"en": "condenser", "zh": ["冷凝器"], "source": "figure_caption"},
             {"en": "pressurizer", "zh": ["稳压器"], "source": "figure_caption"},
         )
-        cov = term_annotation_rate("热机（heat engine）如上。", StyleConfig(), g).details["coverage"]
+        cov = term_annotation_rate("热机（heat engine）如上。", cfg(), g).details["coverage"]
         assert cov["body_text"] == {"total": 1, "hit": 1, "rate": 1.0}
         assert cov["figure_caption"] == {"total": 2, "hit": 0, "rate": 0.0}
         assert cov["total"]["rate"] == pytest.approx(1 / 3)
 
     def test_violations_carry_evidence(self):
-        r = term_annotation_rate("热机把热能转成机械能。", StyleConfig(), gl(HEAT))
+        r = term_annotation_rate("热机把热能转成机械能。", cfg(), gl(HEAT))
         v = r.details["violations"][0]
         assert v["term"] == "heat engine"
         assert v["preferred_zh"] == "热机"
@@ -251,17 +254,17 @@ class TestCoverageAndEvidence:
         assert "热机" in v["preview"]
 
     def test_violation_line_number(self):
-        r = term_annotation_rate("第一行。\n\n第二段提到热机。", StyleConfig(), gl(HEAT))
+        r = term_annotation_rate("第一行。\n\n第二段提到热机。", cfg(), gl(HEAT))
         assert r.details["violations"][0]["line"] == 3
 
     def test_terms_in_code_block_excluded(self):
         r = term_annotation_rate(
-            "热机（heat engine）如上。\n\n```python\n# 热机 heat engine\n```", StyleConfig(), gl(HEAT)
+            "热机（heat engine）如上。\n\n```python\n# 热机 heat engine\n```", cfg(), gl(HEAT)
         )
         assert r.details["occurrences_all"] == 1 and r.raw == 1.0
 
     def test_result_is_json_serializable(self):
-        r = term_annotation_rate("热机（heat engine）。", StyleConfig(), gl(HEAT))
+        r = term_annotation_rate("热机（heat engine）。", cfg(), gl(HEAT))
         json.dumps(r.to_dict(), ensure_ascii=False)
 
 
@@ -274,7 +277,7 @@ class TestThreshold:
         assert r.passed is expected
 
     def test_counts_toward_score_only_when_computed(self):
-        computed = term_annotation_rate("热机（heat engine）。", StyleConfig(), gl(HEAT))
+        computed = term_annotation_rate("热机（heat engine）。", cfg(), gl(HEAT))
         assert computed.counts_toward_score is True
 
 
@@ -290,18 +293,86 @@ class TestRealGlossary:
             "而它的功率密度（power density）远高于可再生能源。"
             "核裂变（nuclear fission）反应堆则用燃料棒（fuel rod）承载天然铀（natural uranium）。"
         )
-        r = term_annotation_rate(text, StyleConfig(), real)
+        r = term_annotation_rate(text, cfg(), real)
         assert r.raw == 1.0 and r.passed is True
 
     def test_unannotated_passage_scores_zero(self, real):
-        r = term_annotation_rate("热机的功率密度低于核裂变反应堆。", StyleConfig(), real)
+        r = term_annotation_rate("热机的功率密度低于核裂变反应堆。", cfg(), real)
         assert r.raw == 0.0 and r.passed is False
 
     def test_figure_caption_terms_are_reachable(self, real):
-        r = term_annotation_rate("冷凝器（condenser）把乏汽冷凝成水。", StyleConfig(), real)
+        r = term_annotation_rate("冷凝器（condenser）把乏汽冷凝成水。", cfg(), real)
         assert r.details["coverage"]["figure_caption"]["hit"] == 1
 
     def test_steam_turbine_not_shadowed_by_turbine(self, real):
-        r = term_annotation_rate("汽轮机（steam turbine）驱动发电机。", StyleConfig(), real)
+        r = term_annotation_rate("汽轮机（steam turbine）驱动发电机。", cfg(), real)
         assert r.raw == 1.0
         assert r.details["occurrences_all"] == 1
+
+
+# ==========================================================================
+# 7. 最小分母护栏
+# ==========================================================================
+
+
+class TestMinOccurrenceGuard:
+    """分母太小时指标没有分辨率，却会把一个极端值贡献进漂移曲线。"""
+
+    def test_below_threshold_is_low_confidence(self):
+        # 实测第四轮只有 1 个首现术语，结果只能是 0% 或 100%
+        r = term_annotation_rate("热机把热能转成机械能。", StyleConfig(), gl(HEAT))
+        assert r.raw is None and r.passed is None
+        assert r.reason == Reason.LOW_CONFIDENCE
+        assert r.counts_toward_score is False
+
+    def test_details_still_reported_when_low_confidence(self):
+        # 不出数值，但证据要留——否则无法判断为什么分母小
+        r = term_annotation_rate("热机（heat engine）。", StyleConfig(), gl(HEAT))
+        assert r.details["occurrences_first"] == 1
+        assert r.details["rate_first"] == 1.0
+
+    def test_zero_occurrence_keeps_its_own_reason(self):
+        r = term_annotation_rate("完全没有术语的一段话。", StyleConfig(), gl(HEAT))
+        assert r.reason == Reason.NO_TERM_OCCURRENCE
+
+    def test_at_threshold_is_computed(self):
+        g = Glossary.from_list([{"en": f"term{i}", "zh": [f"术语{i}"]} for i in range(5)])
+        text = "、".join(f"术语{i}" for i in range(5))
+        r = term_annotation_rate(text, StyleConfig(), g)
+        assert r.raw == 0.0 and r.reason is None
+
+    def test_threshold_is_configurable_and_in_fingerprint(self):
+        a = StyleConfig.from_dict({"term_min_occurrences": 5})
+        b = StyleConfig.from_dict({"term_min_occurrences": 1})
+        assert a.fingerprint() != b.fingerprint()
+
+
+class TestAcceptedAnnotations:
+    """括注侧的显式放行，与匹配侧的 match_anchor 分属两套机制。"""
+
+    STEAM = {"en": "steam turbine", "zh": ["汽轮机"], "accepted_annotations": ["turbine"]}
+
+    def test_accepted_annotation_makes_pair(self):
+        # 实测：模型写「汽轮机(turbine)」，turbine 自身是另一条独立术语
+        assert term_annotation_rate("蒸汽推动汽轮机（turbine）。", cfg(), gl(self.STEAM)).raw == 1.0
+
+    def test_accepted_annotation_never_matches_free_text(self):
+        # 只在括注内生效；自由文本里的 turbine 不属于 steam turbine
+        r = term_annotation_rate("a turbine spins fast", cfg(), gl(self.STEAM))
+        assert r.reason == Reason.NO_TERM_OCCURRENCE
+
+    def test_no_generic_head_word_rule(self):
+        # 逐条显式列举：未列举的中心词不通过，否则 descent 会通过梯度下降的检查
+        g = gl({"en": "gradient descent", "zh": ["梯度下降"]})
+        assert term_annotation_rate("梯度下降（descent）。", cfg(), g).raw == 0.0
+
+    def test_real_glossary_steam_turbine_accepts_turbine(self, real):
+        assert term_annotation_rate("汽轮机（turbine）驱动发电机。", cfg(), real).raw == 1.0
+
+
+class TestGlossaryVersionRecorded:
+    def test_version_in_details(self, real):
+        # §8.2 期间术语表冻结，没有版本号就无法证明二十轮用的是同一份表
+        r = term_annotation_rate("热机（heat engine）。", cfg(), real)
+        assert r.details["glossary_version"] == "1.1"
+        assert r.details["glossary"]["frozen"] is True

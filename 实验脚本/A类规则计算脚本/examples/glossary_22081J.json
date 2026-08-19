@@ -8,7 +8,7 @@
     "source": "en",
     "target": "zh"
   },
-  "coverage_note": "本表为人工整理，是自动提取的金标准。source 字段区分 body_text(27) 与 figure_caption(17)，用于分开报告两个数：术语表相对课件的覆盖缺口，与讲解文本相对术语表的分母缺口——两者不可混为一谈。仅见于图注的术语正文未出现，模型讲解时大概率也不会提，本就进不了分母。自动提取相对本表的召回率为独立指标，见 glossary_criteria.md。",
+  "coverage_note": "本表为人工整理，是自动提取的金标准。source 区分 body_text(27) 与 figure_caption(17)。**实测修正**：六轮真实讲解中图注术语占分母 42%，在图密集章节（火电厂流程、压水堆结构）高达 83–87%——图注术语并非「模型不会提」，收录它们是必要的。自动提取相对本表的召回率为独立指标。",
   "terms": [
     {
       "en": "biomass",
@@ -26,7 +26,8 @@
       "en": "breeder reactor",
       "zh": [
         "增殖堆",
-        "快中子增殖堆"
+        "快中子增殖堆",
+        "增殖反应堆"
       ],
       "aliases": [],
       "unsafe_aliases": [
@@ -117,7 +118,8 @@
     {
       "en": "energy density",
       "zh": [
-        "能量密度"
+        "能量密度",
+        "能源密度"
       ],
       "aliases": [],
       "unsafe_aliases": [],
@@ -224,7 +226,8 @@
     {
       "en": "nuclear fission",
       "zh": [
-        "核裂变"
+        "核裂变",
+        "裂变"
       ],
       "aliases": [],
       "unsafe_aliases": [
@@ -338,7 +341,8 @@
       "en": "solar thermal",
       "zh": [
         "光热发电",
-        "太阳能热发电"
+        "太阳能热发电",
+        "光热"
       ],
       "aliases": [
         "concentrated solar power",
@@ -368,7 +372,8 @@
     {
       "en": "uranium enrichment",
       "zh": [
-        "铀浓缩"
+        "铀浓缩",
+        "富集"
       ],
       "aliases": [],
       "unsafe_aliases": [
@@ -377,7 +382,8 @@
       "page": 26,
       "origin": "prose",
       "source": "body_text",
-      "match_anchor": "both"
+      "match_anchor": "both",
+      "note": "「富集」为实测补入的译名变体。它在通用语境下含义更宽，但本课程语境下几乎必然指铀浓缩；若扩展到其他课程需重新评估"
     },
     {
       "en": "waste heat",
@@ -486,7 +492,8 @@
       "en": "furnace",
       "zh": [
         "炉膛",
-        "锅炉"
+        "锅炉",
+        "燃烧室"
       ],
       "aliases": [],
       "unsafe_aliases": [],
@@ -594,7 +601,11 @@
       "page": 20,
       "origin": "figure",
       "source": "figure_caption",
-      "match_anchor": "both"
+      "match_anchor": "both",
+      "accepted_annotations": [
+        "turbine"
+      ],
+      "note": "accepted_annotations 只在括注内生效，永不参与自由文本匹配。模型常把 steam turbine 简写成 turbine 放进括注，而 turbine 自身是独立条目"
     },
     {
       "en": "turbine",
@@ -611,5 +622,12 @@
       "note": "译名不统一（涡轮机/透平）不是分档问题，是 zh 缺首选译名。按判据 R3，zh 第一项为首选；按 R4，首选取通用译名而非更生僻的「透平」"
     }
   ],
-  "schema_note": "zh 第一项为首选译名（判据 R3）；match_anchor 指明用哪一侧做匹配锚点（判据 G2-en/G2-zh）；unsafe_aliases 指该形式在指定锚点侧不可用于匹配。"
+  "schema_note": "zh 第一项为首选译名（判据 R3）；match_anchor 指明用哪一侧做匹配锚点（判据 G2-en/G2-zh）；unsafe_aliases 指该形式在指定锚点侧不可用于匹配。",
+  "version": "1.1",
+  "frozen": true,
+  "frozen_at": "2026-08-19",
+  "changelog": [
+    "1.0 (2026-08-19) 首版，44 条（正文 27 + 图注 17）",
+    "1.1 (2026-08-19) 依六轮真实讲解文本实测修订：补 6 条中文译名变体（能源密度/裂变/富集/增殖反应堆/光热/燃烧室），为 steam turbine 增设 accepted_annotations=[turbine]。两项修正的误判方向均为「把合规判成违规」。自本版起冻结，§8.2 正式实验期间不得修改。"
+  ]
 }

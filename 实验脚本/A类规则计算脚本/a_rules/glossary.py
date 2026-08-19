@@ -74,12 +74,13 @@ class TermSource(str, Enum):
 
 
 _ALLOWED_TERM_KEYS = {
-    "en", "zh", "aliases", "unsafe_aliases", "match_anchor",
-    "source", "page", "note", "origin",
+    "en", "zh", "aliases", "unsafe_aliases", "accepted_annotations",
+    "match_anchor", "source", "page", "note", "origin",
 }
 _ALLOWED_ROOT_KEYS = {
     "terms", "course", "course_title", "source_file", "criteria",
     "criteria_version", "language", "coverage_note", "schema_note",
+    "version", "frozen", "frozen_at", "changelog",
 }
 
 
@@ -129,6 +130,11 @@ class Term:
     zh: tuple[str, ...] = ()
     aliases: tuple[str, ...] = ()
     unsafe_aliases: tuple[str, ...] = ()
+    #: 只在括注内被接受的额外形式，**永不参与自由文本匹配**。
+    #: 匹配侧受 match_anchor 约束，括注侧用本字段，两侧分属不同机制。
+    #: 逐条显式列举，不做「接受中心词」的通用规则——通用规则会让
+    #: `descent` 通过 `梯度下降` 的检查。
+    accepted_annotations: tuple[str, ...] = ()
     match_anchor: MatchAnchor = MatchAnchor.BOTH
     source: TermSource = TermSource.BODY_TEXT
     page: int | None = None
@@ -177,6 +183,23 @@ class Term:
         target = _canonical_zh(candidate)
         return any(_canonical_zh(f) == target for f in self.zh)
 
+    def accepts_annotation(self, content: str, side: "MatchSide") -> bool:
+        """括注内容是否被本术语接受。
+
+        `side` 是被标注方所在的一侧：中文术语后跟括注 → 括注内应为英文形式，
+        反之亦然。`accepted_annotations` 在两个方向上都接受，因为它记的是
+        「这个术语可以被标注成什么」，与方向无关。
+        """
+        if side is MatchSide.ZH and self.is_en_form(content):
+            return True
+        if side is MatchSide.EN and self.is_zh_form(content):
+            return True
+        en_target, zh_target = _canonical_en(content), _canonical_zh(content)
+        return any(
+            _canonical_en(f) == en_target or _canonical_zh(f) == zh_target
+            for f in self.accepted_annotations
+        )
+
     @classmethod
     def from_dict(cls, data: Any, index: int) -> "Term":
         where = f"terms[{index}]"
@@ -220,6 +243,7 @@ class Term:
         zh = _clean_forms(data.get("zh"), f"{where}.zh")
         aliases = _clean_forms(data.get("aliases"), f"{where}.aliases")
         unsafe = _clean_forms(data.get("unsafe_aliases"), f"{where}.unsafe_aliases")
+        accepted = _clean_forms(data.get("accepted_annotations"), f"{where}.accepted_annotations")
 
         overlap = set(aliases) & set(unsafe)
         if overlap:
@@ -243,6 +267,7 @@ class Term:
             zh=zh,
             aliases=aliases,
             unsafe_aliases=unsafe,
+            accepted_annotations=accepted,
             match_anchor=match_anchor,
             source=term_source,
             page=page,
@@ -309,6 +334,10 @@ class Glossary:
     course: str | None = None
     course_title: str | None = None
     criteria_version: str | None = None
+    #: 术语表版本。所有实验输出必须记录它——§8.2 期间术语表冻结，
+    #: 没有版本号就无法证明二十轮用的是同一份表。
+    version: str | None = None
+    frozen: bool = False
 
     _en_pattern: re.Pattern[str] | None = field(default=None, init=False, repr=False, compare=False)
     _zh_pattern: re.Pattern[str] | None = field(default=None, init=False, repr=False, compare=False)
@@ -354,6 +383,8 @@ class Glossary:
         body = len(self.by_source(TermSource.BODY_TEXT))
         figure = len(self.by_source(TermSource.FIGURE_CAPTION))
         return {
+            "version": self.version,
+            "frozen": self.frozen,
             "total": len(self.terms),
             "body_text": body,
             "figure_caption": figure,
@@ -418,6 +449,8 @@ class Glossary:
             course=data.get("course"),
             course_title=data.get("course_title"),
             criteria_version=data.get("criteria_version"),
+            version=data.get("version"),
+            frozen=bool(data.get("frozen", False)),
         )
 
     @classmethod

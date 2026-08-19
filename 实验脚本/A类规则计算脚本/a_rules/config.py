@@ -195,6 +195,10 @@ class StyleConfig:
     term_policy: TermPolicy = TermPolicy.TRANSLATE_WITH_SOURCE
     term_annotation_threshold: float = 0.9
     term_count_mode: TermCountMode = TermCountMode.FIRST
+    #: 最小分母护栏。首现术语数低于此值时不出数值，标为低置信样本。
+    #: 实测第四轮只有 1 个首现术语，指标只能取 0% 或 100%，没有分辨率，
+    #: 却会把一个 0% 贡献进漂移曲线。
+    term_min_occurrences: int = 5
 
     # 维度 3 · 平均段落字数
     paragraph_length: LengthRange = field(default_factory=lambda: LengthRange(60, 180))
@@ -211,6 +215,7 @@ class StyleConfig:
             "term_policy",
             "term_annotation_threshold",
             "term_count_mode",
+            "term_min_occurrences",
             "paragraph_length",
             "max_quote_chars",
         }
@@ -223,6 +228,10 @@ class StyleConfig:
                 f"term_annotation_threshold 必须在 [0, 1] 内，"
                 f"得到 {self.term_annotation_threshold}{hint}"
             )
+        if isinstance(self.term_min_occurrences, bool) or not isinstance(self.term_min_occurrences, int):
+            raise ConfigError(f"term_min_occurrences 必须是整数，得到 {self.term_min_occurrences!r}")
+        if self.term_min_occurrences < 1:
+            raise ConfigError(f"term_min_occurrences 必须 ≥ 1，得到 {self.term_min_occurrences}")
         if isinstance(self.max_quote_chars, bool) or not isinstance(self.max_quote_chars, int):
             raise ConfigError(f"max_quote_chars 必须是整数，得到 {self.max_quote_chars!r}")
         if self.max_quote_chars < 1:
@@ -303,7 +312,7 @@ class StyleConfig:
             kwargs["term_annotation_threshold"] = _require_number(
                 data["term_annotation_threshold"], "term_annotation_threshold"
             )
-        for key in ("exclude_annotated_terms", "max_quote_chars"):
+        for key in ("exclude_annotated_terms", "max_quote_chars", "term_min_occurrences"):
             if key in data:
                 kwargs[key] = data[key]
         return cls(**kwargs)
@@ -333,6 +342,7 @@ class StyleConfig:
             "term_policy": self.term_policy.value,
             "term_annotation_threshold": self.term_annotation_threshold,
             "term_count_mode": self.term_count_mode.value,
+            "term_min_occurrences": self.term_min_occurrences,
             "paragraph_length": self.paragraph_length.to_dict(),
             "max_quote_chars": self.max_quote_chars,
         }

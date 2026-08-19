@@ -4,6 +4,3 @@ __pycache__/
 
 # 课件全文（从测试集 PDF 抽取，避免仓库里出现同一份材料的第二个副本）
 config/courseware.txt
-
-# 你自己写的 20 个提问；仓库里只留 questions.example.json 作为格式示例
-config/questions.json

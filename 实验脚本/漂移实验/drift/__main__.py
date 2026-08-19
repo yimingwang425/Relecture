@@ -94,6 +94,8 @@ def _metadata(cfg: dict[str, Any], model: Model, style: StyleConfig, glossary: G
             "作图用均值 + 全距（min–max）。n 很小时样本标准差不稳定，"
             "±1SD 会暗示一个并不存在的分布假设；标准差仅作参考量输出。"
         ),
+        "rounds": cfg.get("rounds_note", ""),
+        "expectations": cfg.get("expectations", {}),
         "retrieval": "none — 课件全量在 system prompt 中；结论仅适用于该条件",
         "b_class_dimensions": "not included — 等 judge 校准就绪后再做",
         "randomness_note": (
@@ -187,6 +189,9 @@ def cmd_run(args: argparse.Namespace) -> int:
                     reviewer=reviewer,
                     review_enabled=enabled,
                     max_regenerations=cfg.get("max_regenerations", 2),
+                    out_of_scope_rounds=frozenset(
+                        cfg.get("expectations", {}).get("out_of_scope_rounds", [])
+                    ),
                     on_round=sink,
                 )
     finally:
@@ -196,6 +201,14 @@ def cmd_run(args: argparse.Namespace) -> int:
     (out_dir / "summary.json").write_text(
         json.dumps([p.to_dict() for p in points], ensure_ascii=False, indent=2), encoding="utf-8"
     )
+
+    observed = [r for r in all_records if r.out_of_scope_disclaimer is not None]
+    if observed:
+        hit = sum(1 for r in observed if r.out_of_scope_disclaimer)
+        print(
+            f"\n观察项（不进指标）· 超出课件范围时是否显式标注（PRD §6.2）："
+            f"{hit}/{len(observed)} 次给出声明"
+        )
 
     total_cost = sum(r.cost for r in all_records)
     total_calls = sum(len(r.attempts) for r in all_records)

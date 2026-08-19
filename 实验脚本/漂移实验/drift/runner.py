@@ -19,8 +19,17 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from typing import Any, Iterable
+
+#: PRD §6.2 要求「所有超出课件范围的内容必须显式标注」。这里只做**观察**：
+#: 记录模型是否给了声明，不参与任何指标、不参与达标判定。它不是 A 类维度，
+#: 混进指标会让「风格遵循度」这个数悄悄变成别的东西。
+_OUT_OF_SCOPE_RE = re.compile(
+    r"超出课件(范围|内容)?|课件[^。\n]{0,6}(没有|未|不曾|并未)(提到|涉及|包含|讲到)"
+    r"|不在课件(范围|内容)内|以下内容超出"
+)
 
 from .models import Completion, Model, Usage
 from .reviewer import Review, RuleReviewer
@@ -53,6 +62,8 @@ class RoundRecord:
     regenerations: int
     accepted: bool
     request_signature: str
+    #: 该轮是否被配置标为「超出课件范围」。None = 未标记，不做观察。
+    out_of_scope_expected: bool | None = None
 
     @property
     def usage(self) -> Usage:
@@ -68,6 +79,17 @@ class RoundRecord:
     @property
     def final_review(self) -> Review | None:
         return self.attempts[-1].review
+
+    @property
+    def out_of_scope_disclaimer(self) -> bool | None:
+        """模型是否给出了「超出课件范围」的声明。
+
+        **观察项，不进指标。** 只在配置把该轮标为超范围时才计算；
+        它不是 A 类维度，也不参与达标判定。
+        """
+        if not self.out_of_scope_expected:
+            return None
+        return bool(_OUT_OF_SCOPE_RE.search(self.final_text))
 
     @property
     def term_occurrences_first(self) -> int | None:
@@ -92,6 +114,7 @@ class RoundRecord:
             "request_signature": self.request_signature,
             "regenerations": self.regenerations,
             "term_occurrences_first": self.term_occurrences_first,
+            "observation_out_of_scope_disclaimer": self.out_of_scope_disclaimer,
             "accepted": self.accepted,
             "attempts": [a.to_dict() for a in self.attempts],
             "round_usage": self.usage.to_dict(),
@@ -112,6 +135,7 @@ def run_condition(
     reviewer: RuleReviewer,
     review_enabled: bool,
     max_regenerations: int = 2,
+    out_of_scope_rounds: frozenset[int] = frozenset(),
     on_round: Any = None,
 ) -> list[RoundRecord]:
     """跑完一组的全部轮次。
@@ -166,6 +190,7 @@ def run_condition(
             regenerations=len(attempts) - 1,
             accepted=accepted,
             request_signature=signature,
+            out_of_scope_expected=(i in out_of_scope_rounds) or None,
         )
         records.append(record)
         if on_round is not None:

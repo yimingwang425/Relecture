@@ -16,7 +16,7 @@ AI 课件讲解助手 · 风格遵循度 **A 类维度**（规则可计算、零
 | 风格配置 | `a_rules/config.py` | ✅ 已完成 |
 | 术语表 | `a_rules/glossary.py` | ✅ 已完成 |
 | 维度结果结构 | `a_rules/result.py` | ✅ 已完成 |
-| 聚合入口 / CLI | `evaluator.py` `__main__.py` | ⬜ 待实现 |
+| 聚合入口 / CLI | `a_rules/evaluator.py` `a_rules/__main__.py` | ✅ 已完成 |
 
 ---
 
@@ -63,6 +63,9 @@ AI 课件讲解助手 · 风格遵循度 **A 类维度**（规则可计算、零
 | D27 | 匹配歧义的判定侧 | 分英文侧与中文侧分别判定，任一侧无歧义即可收录，条目记 `match_anchor` | 审查对象是**中文讲解文本**不是英文课件，匹配主要发生在中文侧。只看英文侧会把 `block` `token` `velocity` 全部排除——区块链课的核心概念一个不剩。验证见 `examples/glossary_14129_probe.md` | 2026-08-19 |
 | D28 | 一词多译名 | `zh` 第一项为首选译名，匹配时全部接受、展示只取第一项；首选取**通用**译名而非更精确的 | 译名不统一不是分档问题，是条目结构缺字段。标注成「透平（turbine）」对中文学生的帮助低于「涡轮机」——标注的价值取决于译名本身是否构成障碍 | 2026-08-19 |
 | D29 | 术语来源 | 条目记 `source`：`body_text` / `figure_caption` | **术语表相对课件的覆盖缺口**与**讲解文本相对术语表的分母缺口**是两件事。图注术语正文未出现，模型讲解时大概率也不会提，本就进不了分母。加此字段后一份数据可算两种口径，统计口径的决策推迟到有数据时 | 2026-08-19 |
+| D41 | 中文占比只设下限 | `≥ min`，不设上界（v1.0 默认 0.85） | 要检测的是「开始说英文」，不存在「中文太多」这种失败模式；上界还会与术语维度重复计量——`translate_with_source` 要求写括注，括注英文本就压低本维度，两个维度会给出方向相反的信号 | 2026-08-19 |
+| D42 | 空输出的聚合语义 | 四个维度在空文本下全部不计分，`all_activated_passed` 返回 `None` | 此前 `quote_length` 对空文本返回 0/达标，使它成为唯一计分项——一次生成失败会在漂移曲线上变成满分点 | 2026-08-19 |
+| D43 | 批量输入的排序 | 按轮次数值排序，支持中文数字 | 漂移曲线的横轴就是轮次。直接 `sorted()` 会得到「第一轮、第三轮、第二轮」——中文数字按码位排，x 轴静默错乱 | 2026-08-19 |
 | D37 | 括注侧的显式放行 | `accepted_annotations` 字段，**只在括注内生效，永不参与自由文本匹配**；逐条显式列举，不做「接受中心词」的通用规则 | 匹配侧受 `match_anchor` 约束，括注侧用本字段，两侧分属不同机制。通用的中心词规则会让 `descent` 通过 `梯度下降` 的检查 | 2026-08-19 |
 | D38 | 最小分母护栏 | 首现术语数 < `term_min_occurrences`（默认 5）时不出数值，标 `low_confidence` | 实测第四轮只有 1 个首现术语，指标只能取 0% 或 100%，没有分辨率，却会把一个 0% 贡献进漂移曲线 | 2026-08-19 |
 | D39 | 术语表版本 | 术语表带 `version` + `frozen`，每次输出记录版本号；§8.2 期间冻结 | 没有版本号就无法证明二十轮用的是同一份表，曲线的可比性只是口头承诺 | 2026-08-19 |
@@ -113,7 +116,19 @@ python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"
 .venv/bin/python -m pytest        # 全部测试
 ```
 
+```bash
+# 批量跑一个目录，输出漂移曲线的数据源
+python -m a_rules --dir 样本目录/ --after "输出：" \
+    --glossary examples/glossary_22081J.json --jsonl > rounds.jsonl
+```
+
 ```python
+from a_rules.evaluator import evaluate
+
+ev = evaluate(text, config, glossary)
+ev.all_activated_passed   # 各激活维度是否全部达标；无维度计分时为 None
+ev.to_dict()              # 带配置指纹与术语表版本，可直接写入埋点
+
 from a_rules.text import Document
 
 doc = Document.parse(explanation_text)

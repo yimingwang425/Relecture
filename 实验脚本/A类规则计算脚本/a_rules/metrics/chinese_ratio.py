@@ -4,6 +4,9 @@
 
 分母是这个维度唯一有争议的地方，两条决策：
 
+- **只设下限，不设上界**（口径 D41）。要检测的是「开始说英文」，不存在
+  「中文太多」这种失败模式；设上界还会与术语维度重复计量——`translate_with_source`
+  要求模型写括注，括注英文本就会压低本维度，两个维度会给出方向相反的信号。
 - **英文按词计，不按字母计**（口径 D01）。按字母计会让 `gradient descent`
   顶 16 个汉字的量，占比随中英混合比例剧烈抖动，与 §8.2 要观察的漂移信号混淆。
 - **排除术语括注里的英文原文**（口径 D15）。`translate_with_source` 下用户
@@ -48,7 +51,7 @@ def chinese_ratio(
 ) -> DimensionResult:
     """计算汉字在可计量正文中的占比。"""
     band = config.chinese_ratio
-    target = f"{band.describe()}（{band.low:.2f}–{band.high:.2f}）"
+    target = band.describe()
 
     if not config.activates_chinese_ratio:
         return DimensionResult.not_activated(NAME, target)
@@ -85,7 +88,6 @@ def chinese_ratio(
             "ratio_excluding_annotations": raw,
             "ratio_including_annotations": ratio(including),
             "exclude_annotated_terms": config.exclude_annotated_terms,
-            "target_low": band.low,
-            "target_high": band.high,
+            "target_min": band.min,
         },
     )

@@ -114,14 +114,18 @@ class TestAnnotationExclusion:
 
 
 class TestThreshold:
-    @pytest.mark.parametrize("han, words, expected", [(80, 20, True), (90, 10, True), (79, 21, False), (91, 9, False)])
-    def test_band_boundaries_are_closed(self, han, words, expected):
-        text = "中" * han + " " + " ".join(["word"] * words)
-        r = chinese_ratio(text, cfg(chinese_ratio={"target": 0.85, "tolerance": 0.05}))
+    @pytest.mark.parametrize("han, words, expected", [(85, 15, True), (95, 5, True), (100, 0, True), (84, 16, False)])
+    def test_lower_bound_only(self, han, words, expected):
+        text = "中" * han + (" " + " ".join(["word"] * words) if words else "")
+        r = chinese_ratio(text, cfg(chinese_ratio={"min": 0.85}))
         assert r.passed is expected
 
-    def test_target_string_shows_band(self):
-        assert "0.80–0.90" in chinese_ratio("中文", StyleConfig()).target
+    def test_pure_chinese_passes(self):
+        # 不存在「中文太多」这种失败模式（口径 D41）
+        assert chinese_ratio("全是中文没有一个英文单词", StyleConfig()).passed is True
+
+    def test_target_string_shows_lower_bound(self):
+        assert chinese_ratio("中文", StyleConfig()).target == "≥ 0.85"
 
     def test_serializable(self):
         json.dumps(chinese_ratio("中文 word", StyleConfig()).to_dict(), ensure_ascii=False)

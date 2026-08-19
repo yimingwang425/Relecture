@@ -9,10 +9,11 @@ import json
 import pytest
 
 from a_rules.config import (
+    CONFIG_VERSION,
     ConfigError,
     LengthRange,
     StyleConfig,
-    TargetBand,
+    MinRatio,
     TermCountMode,
     TermPolicy,
 )
@@ -23,8 +24,7 @@ class TestDefaults:
         c = StyleConfig()
         assert c.explain_language == "zh"
         assert c.source_language == "en"
-        assert c.chinese_ratio.target == 0.85
-        assert c.chinese_ratio.tolerance == 0.05  # PRD §8.1「按配置，±5%」
+        assert c.chinese_ratio.min == 0.85  # 单侧下限，见 D41
         assert c.term_policy is TermPolicy.TRANSLATE_WITH_SOURCE
         assert c.term_annotation_threshold == 0.9  # PRD §8.1「≥ 90%」
         assert c.term_count_mode is TermCountMode.FIRST  # 口径 D02
@@ -35,10 +35,15 @@ class TestDefaults:
         assert StyleConfig.from_dict({}) == StyleConfig()
         assert StyleConfig.from_dict(None) == StyleConfig()
 
+    def test_paragraph_defaults_recalibrated(self):
+        # 30–120 来自六轮真实讲解实测（均值 41–75），非拍脑袋
+        assert StyleConfig().paragraph_length.min == 30
+        assert StyleConfig().paragraph_length.max == 120
+
     def test_partial_config_keeps_other_defaults(self):
         c = StyleConfig.from_dict({"max_quote_chars": 50})
         assert c.max_quote_chars == 50
-        assert c.chinese_ratio.target == 0.85
+        assert c.chinese_ratio.min == 0.85
 
 
 class TestLanguageNormalization:
@@ -88,37 +93,37 @@ class TestActivation:
         assert c.activates_term_policy is True
 
 
-class TestTargetBand:
-    @pytest.mark.parametrize("value, expected", [(0.80, True), (0.90, True), (0.85, True), (0.79, False), (0.91, False)])
-    def test_contains_is_closed_interval(self, value, expected):
-        assert TargetBand(0.85, 0.05).contains(value) is expected
+class TestMinRatio:
+    """单侧下限：要检测的是「开始说英文」，不存在「中文太多」。"""
 
-    def test_low_high_clamped_to_unit_interval(self):
-        band = TargetBand(0.98, 0.05)
-        assert band.high == 1.0
-        assert TargetBand(0.02, 0.05).low == 0.0
+    @pytest.mark.parametrize("value, expected", [(0.85, True), (0.86, True), (1.0, True), (0.84, False), (0.0, False)])
+    def test_lower_bound_only(self, value, expected):
+        assert MinRatio(0.85).contains(value) is expected
+
+    def test_no_upper_bound(self):
+        # 上界会与 term_annotation 重复计量：括注英文本就压低中文占比
+        assert MinRatio(0.85).contains(1.0) is True
+
+    def test_float_boundary_compensated(self):
+        assert MinRatio(0.1 + 0.2).contains(0.3) is True
 
     def test_percent_instead_of_fraction_is_rejected_with_hint(self):
         with pytest.raises(ConfigError, match="0.85"):
-            TargetBand(85, 0.05)
+            MinRatio(85)
 
-    @pytest.mark.parametrize("target", [-0.1, 1.1, 85])
-    def test_target_out_of_range(self, target):
+    @pytest.mark.parametrize("value", [-0.1, 1.1, 85])
+    def test_out_of_range(self, value):
         with pytest.raises(ConfigError):
-            TargetBand(target, 0.05)
+            MinRatio(value)
 
-    @pytest.mark.parametrize("tol", [-0.01, 0.6])
-    def test_tolerance_out_of_range(self, tol):
-        with pytest.raises(ConfigError):
-            TargetBand(0.85, tol)
+    def test_missing_min_rejected(self):
+        with pytest.raises(ConfigError, match="缺少 min"):
+            StyleConfig.from_dict({"chinese_ratio": {}})
 
-    def test_missing_target_rejected(self):
-        with pytest.raises(ConfigError, match="缺少 target"):
-            StyleConfig.from_dict({"chinese_ratio": {"tolerance": 0.05}})
-
-    def test_unknown_subkey_rejected(self):
+    def test_old_band_schema_rejected(self):
+        # v1.0 冻结时改的口径；旧写法必须报错而非静默按默认值跑
         with pytest.raises(ConfigError, match="未知字段"):
-            StyleConfig.from_dict({"chinese_ratio": {"target": 0.85, "tolerence": 0.05}})
+            StyleConfig.from_dict({"chinese_ratio": {"target": 0.85, "tolerance": 0.05}})
 
     def test_not_an_object(self):
         with pytest.raises(ConfigError):
@@ -211,7 +216,7 @@ class TestSerialization:
             {
                 "explain_language": "zh",
                 "source_language": "en",
-                "chinese_ratio": {"target": 0.9, "tolerance": 0.03},
+                "chinese_ratio": {"min": 0.9},
                 "term_policy": "translate_only",
                 "term_count_mode": "all",
                 "term_annotation_threshold": 0.95,
@@ -255,8 +260,8 @@ class TestFingerprint:
         for override in [
             {"max_quote_chars": 99},
             {"term_policy": "translate_only"},
-            {"chinese_ratio": {"target": 0.86, "tolerance": 0.05}},
-            {"paragraph_length": {"min": 61, "max": 180}},
+            {"chinese_ratio": {"min": 0.86}},
+            {"paragraph_length": {"min": 31, "max": 120}},
             {"exclude_annotated_terms": False},
             {"term_count_mode": "all"},
         ]:
@@ -277,3 +282,18 @@ class TestImmutability:
     def test_config_is_frozen(self):
         with pytest.raises(Exception):
             StyleConfig().max_quote_chars = 1  # type: ignore[misc]
+
+
+class TestConfigVersion:
+    def test_roundtrip_tolerates_version_stamp(self):
+        # 它是输出戳记不是设置项，接受但忽略——D19 严格校验的唯一豁免
+        assert StyleConfig.from_dict(StyleConfig().to_dict()) == StyleConfig()
+
+    def test_defaults_version_in_output(self):
+        # 版本号是给人看的标签；「两轮用了同一份配置」由 fingerprint 保证
+        assert StyleConfig().to_dict()["defaults_version"] == CONFIG_VERSION
+
+    def test_version_does_not_replace_fingerprint(self):
+        a, b = StyleConfig(), StyleConfig.from_dict({"max_quote_chars": 50})
+        assert a.to_dict()["defaults_version"] == b.to_dict()["defaults_version"]
+        assert a.fingerprint() != b.fingerprint()

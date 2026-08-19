@@ -23,12 +23,20 @@ class TestActivation:
         c = cfg(explain_language=pair[0], source_language=pair[1])
         assert max_quote_length("正文。", c).activated is True
 
-    @pytest.mark.parametrize("text", ["", "   ", "正文没有引用。"])
+    @pytest.mark.parametrize("text", ["正文没有引用。", "# 标题\n\n正文两段。\n\n又一段。"])
     def test_no_quote_is_zero_not_none(self, text):
-        # 与其他维度不同：没有引用是一个**确定的测量结果**（0 字），不是无法计算
+        # 有正文但没有引用：是**确定的测量结果**（0 字），不是无法计算
         r = max_quote_length(text, StyleConfig())
         assert r.raw == 0 and r.passed is True and r.reason is None
         assert r.counts_toward_score is True
+
+    @pytest.mark.parametrize("text", ["", "   ", "\n\n", "```\ncode\n```"])
+    def test_blank_text_is_uncomputable_not_compliant(self, text):
+        # 若此处返回 0/达标，一次生成失败会让本维度成为唯一计分项，
+        # 聚合结果显示「全部达标」——空输出在漂移曲线上变成满分点
+        r = max_quote_length(text, StyleConfig())
+        assert r.raw is None and r.reason == Reason.EMPTY_TEXT
+        assert r.counts_toward_score is False
 
 
 class TestDetection:
@@ -53,7 +61,8 @@ class TestDetection:
         assert max_quote_length("他说「这段没有闭合" + "字" * 200, StyleConfig()).raw == 0
 
     def test_quote_inside_code_block_not_counted(self):
-        text = "```python\ns = \"" + "x" * 200 + "\"\n```"
+        # 需带正文，否则整篇只有代码块会走 is_blank 分支
+        text = "正文一段。\n\n```python\ns = \"" + "x" * 200 + "\"\n```"
         assert max_quote_length(text, StyleConfig()).raw == 0
 
     def test_quote_inside_inline_code_not_counted(self):

@@ -2,6 +2,9 @@
 
 对应 PRD §8.1 的「引用长度」行，达标线 ≤ 100 字。
 
+空文本与「有正文但无引用」必须分开：前者是无效样本，后者是 0 字、确实达标。
+混同会让一次生成失败在聚合层显示为「全部达标」。
+
 **这是合规约束，不是风格偏好**——它来自 PRD §12.1「溯源引用单段上限 100 字」，
 所以在任何配置下都激活，且违规片段必须留证据：光有一个数字无法追责。
 
@@ -19,7 +22,7 @@ from typing import Any
 
 from ..config import StyleConfig
 from ..glossary import Glossary
-from ..result import DimensionResult
+from ..result import DimensionResult, Reason
 from ..text import BlockKind, Document, count_chars, strip_quote_markers
 
 __all__ = ["NAME", "max_quote_length"]
@@ -43,6 +46,13 @@ def max_quote_length(
     target = f"≤ {limit} 字"
 
     doc = Document.parse(text)
+    if doc.is_blank:
+        # 「有正文但没有引用」= 0 字，确实达标（口径 D40）。
+        # 「压根没有正文」不一样：那是无效样本。若在此返回 0/达标，一次生成
+        # 失败会让本维度成为唯一计分项，聚合结果显示「全部达标」——空输出在
+        # 漂移曲线上变成满分点。
+        return DimensionResult.uncomputable(NAME, Reason.EMPTY_TEXT, target)
+
     quotes: list[dict[str, Any]] = []
 
     for block in doc.blocks_of(BlockKind.QUOTE):

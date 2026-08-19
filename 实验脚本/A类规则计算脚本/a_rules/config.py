@@ -26,13 +26,19 @@ from pathlib import Path
 from typing import Any
 
 __all__ = [
+    "CONFIG_VERSION",
     "ConfigError",
     "TermPolicy",
     "TermCountMode",
-    "TargetBand",
+    "MinRatio",
     "LengthRange",
     "StyleConfig",
 ]
+
+#: 默认值集合的版本。v1.0 起冻结，§8.2 实验期间不再调整。
+#: 注意版本号本身不保证「两轮用了同一份配置」——那由 fingerprint() 保证；
+#: 版本号只是给人看的标签，说明这批默认值经过哪一轮实测校准。
+CONFIG_VERSION = "1.0"
 
 
 class ConfigError(ValueError):
@@ -84,53 +90,45 @@ def _require_keys(data: dict[str, Any], allowed: set[str], where: str) -> None:
 
 
 @dataclass(frozen=True, slots=True)
-class TargetBand:
-    """带容差的目标值，对应 PRD §8.1「按配置，±5%」。"""
+class MinRatio:
+    """占比的下限阈值。达标即「不低于」。
 
-    target: float
-    tolerance: float
+    最初设计成 `target ± tolerance` 的对称区间，实测后改为单侧下限：
 
-    def __post_init__(self) -> None:
-        if not 0.0 <= self.target <= 1.0:
-            hint = "（比例用 0–1 的小数，不是百分数：85% 写作 0.85）" if self.target > 1 else ""
-            raise ConfigError(f"target 必须在 [0, 1] 内，得到 {self.target}{hint}")
-        if not 0.0 <= self.tolerance <= 0.5:
-            raise ConfigError(f"tolerance 必须在 [0, 0.5] 内，得到 {self.tolerance}")
+    - **要检测的是「开始说英文」**，不存在「中文太多」这种失败模式。
+    - **上界与术语维度重复计量**：`translate_with_source` 要求模型写
+      「热机（heat engine）」，括注英文本就会压低中文占比。设上界等于对同一件
+      事罚两次，且两个维度会给出方向相反的信号。
+    """
 
-    #: 浮点边界补偿。abs(0.9 - 0.85) == 0.050000000000000044 > 0.05，
-    #: 不补偿的话恰好落在容差边界上的样本会被判不达标——在 20 轮实验里
-    #: 就是一个凭空多出来的失败点，且极难从曲线上看出原因。
+    min: float
+
+    #: 浮点边界补偿。恰好落在阈值上的样本必须算达标，否则在 20 轮曲线上
+    #: 表现为一个无法解释的失败点。
     _EPS = 1e-9
 
+    def __post_init__(self) -> None:
+        if not 0.0 <= self.min <= 1.0:
+            hint = "（比例用 0–1 的小数，不是百分数：85% 写作 0.85）" if self.min > 1 else ""
+            raise ConfigError(f"min 必须在 [0, 1] 内，得到 {self.min}{hint}")
+
     def contains(self, value: float) -> bool:
-        """闭区间。边界值算达标——达标线是「不低于」，不是「严格高于」。"""
-        return abs(value - self.target) <= self.tolerance + self._EPS
-
-    @property
-    def low(self) -> float:
-        return max(0.0, self.target - self.tolerance)
-
-    @property
-    def high(self) -> float:
-        return min(1.0, self.target + self.tolerance)
+        return value >= self.min - self._EPS
 
     def describe(self) -> str:
-        return f"{self.target:.2f} ± {self.tolerance:.2f}"
+        return f"≥ {self.min:.2f}"
 
     @classmethod
-    def from_dict(cls, data: Any, where: str) -> "TargetBand":
+    def from_dict(cls, data: Any, where: str) -> "MinRatio":
         if not isinstance(data, dict):
             raise ConfigError(f"{where} 必须是对象，得到 {data!r}")
-        _require_keys(data, {"target", "tolerance"}, where)
-        if "target" not in data:
-            raise ConfigError(f"{where} 缺少 target")
-        return cls(
-            target=_require_number(data["target"], f"{where}.target"),
-            tolerance=_require_number(data.get("tolerance", 0.05), f"{where}.tolerance"),
-        )
+        _require_keys(data, {"min"}, where)
+        if "min" not in data:
+            raise ConfigError(f"{where} 缺少 min")
+        return cls(min=_require_number(data["min"], f"{where}.min"))
 
     def to_dict(self) -> dict[str, float]:
-        return {"target": self.target, "tolerance": self.tolerance}
+        return {"min": self.min}
 
 
 @dataclass(frozen=True, slots=True)
@@ -188,7 +186,7 @@ class StyleConfig:
     source_language: str = "en"
 
     # 维度 1 · 中文字符占比
-    chinese_ratio: TargetBand = field(default_factory=lambda: TargetBand(0.85, 0.05))
+    chinese_ratio: MinRatio = field(default_factory=lambda: MinRatio(0.85))
     exclude_annotated_terms: bool = True
 
     # 维度 2 · 术语英文标注率
@@ -201,7 +199,7 @@ class StyleConfig:
     term_min_occurrences: int = 5
 
     # 维度 3 · 平均段落字数
-    paragraph_length: LengthRange = field(default_factory=lambda: LengthRange(60, 180))
+    paragraph_length: LengthRange = field(default_factory=lambda: LengthRange(30, 120))
 
     # 维度 4 · 单段最长引用字数
     max_quote_chars: int = 100
@@ -285,7 +283,10 @@ class StyleConfig:
             return cls()
         if not isinstance(data, dict):
             raise ConfigError(f"配置必须是对象，得到 {type(data).__name__}")
-        _require_keys(data, set(cls._FIELDS), "配置根")
+        # defaults_version 是 to_dict() 的输出戳记，不是设置项：接受但忽略，
+        # 好让 to_dict() → from_dict() 能往返。这是 D19 严格校验的唯一豁免，
+        # 且它豁免的是元数据而非任何会改变度量结果的字段。
+        _require_keys(data, set(cls._FIELDS) | {"defaults_version"}, "配置根")
 
         kwargs: dict[str, Any] = {}
         if "explain_language" in data:
@@ -297,7 +298,7 @@ class StyleConfig:
                 data["source_language"], "source_language"
             )
         if "chinese_ratio" in data:
-            kwargs["chinese_ratio"] = TargetBand.from_dict(data["chinese_ratio"], "chinese_ratio")
+            kwargs["chinese_ratio"] = MinRatio.from_dict(data["chinese_ratio"], "chinese_ratio")
         if "paragraph_length" in data:
             kwargs["paragraph_length"] = LengthRange.from_dict(
                 data["paragraph_length"], "paragraph_length"
@@ -335,6 +336,7 @@ class StyleConfig:
     def to_dict(self) -> dict[str, Any]:
         """可直接 json.dumps，供 §13.1 每轮埋点记录当时的配置。"""
         return {
+            "defaults_version": CONFIG_VERSION,
             "explain_language": self.explain_language,
             "source_language": self.source_language,
             "chinese_ratio": self.chinese_ratio.to_dict(),

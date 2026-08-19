@@ -14,6 +14,7 @@ PRD §7.3 要求「不硬编码模型，做抽象层，配置可切换」。本�
 from __future__ import annotations
 
 import hashlib
+import os
 import random
 import time
 from dataclasses import dataclass, field
@@ -196,7 +197,9 @@ class AnthropicModel:
     #: 在最近一轮消息末尾再放一个缓存断点。对话历史逐轮增长，20 轮下来
     #: 它远比课件本身贵——只缓存 system 会让历史每轮按全价重算一遍。
     cache_conversation: bool = True
-    _client: Any = None
+    #: 客户端持有凭据，排除出 repr 与比较——避免任何 print(model) / 断言失败
+    #: 的输出里出现它。
+    _client: Any = field(default=None, repr=False, compare=False)
 
     @property
     def params(self) -> dict[str, Any]:
@@ -212,6 +215,14 @@ class AnthropicModel:
         }
 
     def _ensure_client(self) -> Any:
+        """只从环境变量 ANTHROPIC_API_KEY 读凭据。
+
+        刻意不走 SDK 的零参构造：零参构造会依次回退到 ANTHROPIC_AUTH_TOKEN、
+        `ant auth login` 的 OAuth profile、WIF 等来源——实验跑起来了，却说不清
+        这笔钱是从哪个凭据出的。显式读取 + 缺失即报错，比静默回退可控。
+
+        **凭据只在进程内存里传给 SDK，不写入任何文件、不进日志、不进 repr。**
+        """
         if self._client is None:
             try:
                 import anthropic
@@ -219,7 +230,14 @@ class AnthropicModel:
                 raise RuntimeError(
                     "需要 anthropic SDK：pip install anthropic（a_rules 本身仍是零依赖）"
                 ) from exc
-            self._client = anthropic.Anthropic()
+            api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
+            if not api_key:
+                raise RuntimeError(
+                    "未设置 ANTHROPIC_API_KEY。请用 .env 局部注入，不要全局 export"
+                    "——全局设置会让 Claude Code 从订阅计费切到 API 按量计费。"
+                    "用法见 漂移实验/README.md「运行前：凭据注入」。"
+                )
+            self._client = anthropic.Anthropic(api_key=api_key)
         return self._client
 
     def complete(self, system: str, messages: list[dict[str, Any]]) -> Completion:

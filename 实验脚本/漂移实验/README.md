@@ -110,6 +110,37 @@ Claude Opus 5 / Sonnet 5 **已移除 `temperature`、`top_p`、`top_k`，传入�
 
 ## 用法
 
+### 运行前：凭据注入
+
+**不要全局 `export ANTHROPIC_API_KEY`。** 全局设置会让在同一环境下运行的
+Claude Code 从**订阅计费切换到 API 按量计费**——实验没跑，账单先涨。
+
+凭据放在本目录的 `.env`（已 gitignore，根与本目录两层都有规则）：
+
+```
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+两种局部注入方式，任选其一：
+
+```bash
+# A · 只在当前 shell 生效，用完 unset
+set -a; source .env; set +a
+$PY -m drift run --repeats 1
+unset ANTHROPIC_API_KEY          # 用完就撤，别留在 shell 里
+
+# B · 单行内联，只对这一条命令生效（更稳妥，不污染 shell）
+env $(grep -v '^#' .env | xargs) $PY -m drift run --repeats 1
+```
+
+方式 B 更安全：变量只存在于那一个子进程，Claude Code 所在的 shell 完全不受
+影响。方式 A 图省事，但要记得 `unset`——忘了就等于全局设置。
+
+凭据只在进程内存里传给 SDK：`drift` **只**读 `ANTHROPIC_API_KEY`，不回退到
+`ANTHROPIC_AUTH_TOKEN` 或 `ant auth login` 的 profile（否则实验跑起来了却说
+不清这笔钱从哪个凭据出）。凭据不写入任何文件、不进日志、不进 `metadata.json`
+或 JSONL——输出里只有模型名与用量。
+
 ```bash
 PY=../A类规则计算脚本/.venv/bin/python   # 复用 a_rules 的 venv
 

@@ -69,6 +69,20 @@ class RoundRecord:
     def final_review(self) -> Review | None:
         return self.attempts[-1].review
 
+    @property
+    def term_occurrences_first(self) -> int | None:
+        """本轮的首现术语数——术语维度的分母。
+
+        实验配置把护栏降到 2（见 experiment.json 的 style_override_rationale），
+        所以低分母的点会照常出数值。必须逐轮记录这个数，报告时才能标出
+        哪些点可信度低。
+        """
+        rv = self.final_review
+        if rv is None:
+            return None
+        d = rv.evaluation.by_name("term_annotation")
+        return d.details.get("occurrences_first")
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "condition": self.condition,
@@ -77,6 +91,7 @@ class RoundRecord:
             "question": self.question,
             "request_signature": self.request_signature,
             "regenerations": self.regenerations,
+            "term_occurrences_first": self.term_occurrences_first,
             "accepted": self.accepted,
             "attempts": [a.to_dict() for a in self.attempts],
             "round_usage": self.usage.to_dict(),

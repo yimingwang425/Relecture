@@ -81,6 +81,11 @@ def _metadata(cfg: dict[str, Any], model: Model, style: StyleConfig, glossary: G
         "glossary_stats": glossary.stats(),
         "max_regenerations": cfg.get("max_regenerations", 2),
         "repeats": cfg.get("repeats", 3),
+        "term_min_occurrences": {
+            "experiment": style.term_min_occurrences,
+            "production_default": cfg.get("production_term_min_occurrences", 5),
+            "rationale": cfg.get("style_override_rationale", ""),
+        },
         "repeat_semantics": (
             "每个 replicate 是一次独立的完整对话轨迹，不是同一条对话内的重采样。"
             "漂移是轨迹随轮次演化出的性质，轨迹内重采样没有统计意义。"

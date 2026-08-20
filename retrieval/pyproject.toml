@@ -1,0 +1,22 @@
+[project]
+name = "retrieval"
+version = "0.1.0"
+description = "AI 课件讲解助手 · F2 第二步 2b：向量索引与检索"
+requires-python = ">=3.11"
+# parse-service 与 slicer 是同仓库的本地兄弟包，不发布到 PyPI，故不列此处。
+# 安装：pip install -e ../parse-service -e ../slicer -e .
+dependencies = ["openai>=1.30", "numpy>=1.26", "pydantic>=2.6"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["retrieval*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

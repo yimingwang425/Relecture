@@ -12,8 +12,10 @@
   （扫描件可能被切成多条带，15.316 p8 就是 2 张图）。矩形先裁剪到页面内：
   15.316 的扫描图右下溢出页面，不裁会算出 > 1.0 的覆盖率。
 - **块顺序**用 ``sort=True`` 的几何排序，schema 里明确声明它不是阅读顺序。
+- **旋转页**（``/Rotate != 0``）必须先把文本与图像变换到**显示坐标空间**再排序，
+  否则 ``sort=True`` 在未旋转空间里按 y→x 排，给出的顺序是错的。见 ``_display_textpage``。
 
-决策日期：2026-08-20
+决策日期：2026-08-20（旋转页处理补于 2026-08-21）
 """
 
 from __future__ import annotations
@@ -57,6 +59,33 @@ _INVISIBLE_RENDER_MODES = frozenset({3, 7})
 
 #: 纯白判定的容差。PDF 颜色值是浮点，1.0 常写成 0.99998。
 _WHITE_EPS = 0.01
+
+
+def _display_textpage(page: pymupdf.Page) -> pymupdf.TextPage:
+    """在**显示坐标空间**里建 TextPage，供 ``get_text`` 与 ``sort=True`` 使用。
+
+    为什么需要它：``page.get_text("dict", sort=True)`` 的排序发生在**未旋转的**
+    坐标空间里。对 ``/Rotate = 90`` 的页，文字方向是 (0, -1)，按 y→x 排序会把
+    版面竖着切开，给出完全错误的阅读顺序——实测 ``MIT11_201F07_slides2.pdf``
+    的 15 页全部如此，标题在 13/15 页被排到第 4 块之后。
+    坐标也一并错：``page.rect`` 是 718x538 而 dict 的坐标空间是 538x718，
+    拿前者去裁剪后者会把每个块的 ``y1`` 削到 538。
+
+    三个参数缺一不可：
+
+    - ``matrix=page.rotation_matrix`` —— 把坐标变换到显示空间。
+      未旋转页该矩阵为恒等，此路径**逐块等价于**原来的 ``get_text("dict", sort=True)``
+      （实测 22.081J 39 页、14.129 50 页、15.316 19 页全部一致，文本零丢失）。
+    - ``clip=INFINITE_RECT()`` —— 不裁剪。默认裁剪框在变换后会切掉右侧文本，
+      实测 11.201 p2 因此丢 75 个字符（``the RLA case:`` 被截成 ``the RL``）。
+    - ``flags=TEXTFLAGS_DICT`` —— ``get_textpage`` 的默认 ``flags=0`` 与
+      ``get_text("dict")`` 的默认不同，不对齐会得到不同的块结构。
+    """
+    return page.get_textpage(
+        clip=pymupdf.INFINITE_RECT(),
+        matrix=page.rotation_matrix,
+        flags=pymupdf.TEXTFLAGS_DICT,
+    )
 
 
 def _to_rgb(colorspace: int | None, color: list[float] | tuple[float, ...] | None):
@@ -106,9 +135,15 @@ def _text_signals(page: pymupdf.Page) -> tuple[float, float, int]:
 
 
 def _image_objects(page: pymupdf.Page, page_rect: Rect) -> list[ImageObject]:
-    """收集本页所有图片的落版矩形。同一 xref 多处落版则各发一条。"""
+    """收集本页所有图片的落版矩形。同一 xref 多处落版则各发一条。
+
+    ``get_image_rects`` 返回的是**未旋转空间**的矩形（实测：对同一页调用
+    ``set_rotation(90)`` 前后返回值不变），故与文本一样要乘 ``rotation_matrix``
+    变换到显示空间。未旋转页该矩阵为恒等，无影响。
+    """
     out: list[ImageObject] = []
     page_area = page_rect.area
+    matrix = page.rotation_matrix
     for info in page.get_images(full=True):
         xref = info[0]
         px_w, px_h = info[2], info[3]
@@ -120,6 +155,7 @@ def _image_objects(page: pymupdf.Page, page_rect: Rect) -> list[ImageObject]:
             # 损坏或不可解析的图对象：跳过而不是让整份解析失败
             continue
         for placement, r in enumerate(rects):
+            r = r * matrix
             rect = Rect.of(r.x0, r.y0, r.x1, r.y1).clipped_to(page_rect)
             if rect.is_empty:
                 continue
@@ -307,10 +343,13 @@ def parse_pdf(data: bytes, filename: str) -> ParseResult:
         pages: list[Page] = []
         for page in doc:
             rect = Rect.of(page.rect.x0, page.rect.y0, page.rect.x1, page.rect.y1)
-            raw = page.get_text("dict", sort=True)
+            textpage = _display_textpage(page)
+            raw = page.get_text("dict", textpage=textpage, sort=True)
             raw_blocks = raw.get("blocks", [])
             images = _image_objects(page, rect)
-            evidence = _page_evidence(page, rect, images, page.get_text("text"))
+            evidence = _page_evidence(
+                page, rect, images, page.get_text("text", textpage=textpage)
+            )
 
             kind, rule = classify_page(
                 PageSignals(

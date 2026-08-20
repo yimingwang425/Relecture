@@ -13,7 +13,12 @@
 第二步若复用第一步的匹配结果，`match_anchor=zh` 的术语将永远配不成对——
 每次正确标注都被判成违规，是方向相反的系统性误判。
 
-决策日期：2026-08-19
+**作用域是整段对话，不是单轮**（口径 D44）。同一术语在对话里被正确标注过
+一次之后，后续轮次不再计入分母。旧实现按单轮重置，等于要求模型每轮重复标注
+同一个术语——那正是 PRD §2 把「太啰嗦」列为痛点所要避免的行为。指标方向
+错了，不只是作用域窄了。
+
+决策日期：2026-08-19（作用域修正 2026-08-20）
 """
 
 from __future__ import annotations
@@ -144,17 +149,28 @@ def _collect(doc: Document, glossary: Glossary, policy: TermPolicy) -> list[Occu
     return occurrences
 
 
-def _fold(occurrences: list[Occurrence], mode: TermCountMode) -> list[Occurrence]:
-    """按计数口径折叠（口径 D02）。
+def _fold(
+    occurrences: list[Occurrence],
+    mode: TermCountMode,
+    annotated_terms: frozenset[str] = frozenset(),
+) -> list[Occurrence]:
+    """按计数口径折叠（口径 D02 + D44）。
 
     `first` 每个术语只看首次出现——标注只需首现一次，全量计数会惩罚正常写作。
+    `annotated_terms` 把「首次」的作用域从单轮扩到整段对话：已在更早轮次被
+    正确标注过的术语，本轮不再计入分母。
+
+    **传的是「已正确标注过」而非「已出现过」**，两者差别是一个真实的漏洞：
+    若按「已出现过」排除，一个在第 3 轮出现却始终没标注的术语，从第 5 轮起
+    就永远不再被检查——义务凭空消失。按「已正确标注过」排除，则该术语会持续
+    计入分母直到被标注一次为止，之后不再重复要求。
     """
     if mode is TermCountMode.ALL:
-        return occurrences
+        return [o for o in occurrences if o.term.en not in annotated_terms]
     seen: set[str] = set()
     kept: list[Occurrence] = []
     for occ in occurrences:
-        if occ.term.en in seen:
+        if occ.term.en in annotated_terms or occ.term.en in seen:
             continue
         seen.add(occ.term.en)
         kept.append(occ)
@@ -186,12 +202,20 @@ def _coverage(glossary: Glossary, occurrences: list[Occurrence]) -> dict[str, An
 
 
 def term_annotation_rate(
-    text: str, config: StyleConfig, glossary: Glossary | None = None
+    text: str,
+    config: StyleConfig,
+    glossary: Glossary | None = None,
+    *,
+    annotated_terms: frozenset[str] = frozenset(),
 ) -> DimensionResult:
     """计算术语英文标注率。
 
     `glossary` 为空或未提供时该维度不激活——PRD §8.1 的误差方向说明：
     术语表缺失只降低灵敏度，不造成误判。
+
+    `annotated_terms` 是本段对话中**已被正确标注过**的术语（`Term.en`）。
+    调用方负责跨轮累积；函数本身仍是纯函数，不持有状态。单轮评测传空集即可，
+    此时行为退回旧口径。
     """
     target = f"≥ {config.term_annotation_threshold:.2f}（{config.term_policy.value}，{config.term_count_mode.value} 口径）"
 
@@ -208,9 +232,14 @@ def term_annotation_rate(
         return DimensionResult.uncomputable(NAME, Reason.EMPTY_TEXT, target, base)
 
     occurrences = _collect(doc, glossary, config.term_policy)
-    first = _fold(occurrences, TermCountMode.FIRST)
-    every = _fold(occurrences, TermCountMode.ALL)
+    first = _fold(occurrences, TermCountMode.FIRST, annotated_terms)
+    every = _fold(occurrences, TermCountMode.ALL, annotated_terms)
     selected = first if config.term_count_mode is TermCountMode.FIRST else every
+
+    # 旧口径（单轮重置）并排输出，供口径对比——不覆盖、不丢弃
+    round_scoped = _fold(occurrences, config.term_count_mode)
+    # 本轮新达成标注的术语，调用方据此累积
+    newly = sorted({o.term.en for o in occurrences if o.compliant and o.term.en not in annotated_terms})
 
     details: dict[str, Any] = {
         **base,
@@ -219,6 +248,11 @@ def term_annotation_rate(
         # 两种口径并行输出（口径 D02）：差值反映模型是否反复堆砌括注
         "rate_first": _rate(first),
         "rate_all": _rate(every),
+        # 口径对比：D44 之前按单轮重置的算法
+        "rate_round_scoped_legacy": _rate(round_scoped),
+        "occurrences_round_scoped_legacy": len(round_scoped),
+        "prior_annotated_terms": len(annotated_terms),
+        "newly_annotated_terms": newly,
         "occurrences_first": len(first),
         "occurrences_all": len(every),
         "coverage": _coverage(glossary, occurrences),

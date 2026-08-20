@@ -376,3 +376,75 @@ class TestGlossaryVersionRecorded:
         r = term_annotation_rate("热机（heat engine）。", cfg(), real)
         assert r.details["glossary_version"] == "1.1"
         assert r.details["glossary"]["frozen"] is True
+
+
+# ==========================================================================
+# 8. 首现的作用域是整段对话（口径 D44）
+# ==========================================================================
+
+
+class TestConversationScope:
+    """旧口径按单轮重置，等于要求同一术语每轮重复标注——那正是 PRD §2
+    把「太啰嗦」列为痛点所要避免的行为。指标方向错了，不只是作用域窄了。"""
+
+    def test_already_annotated_term_leaves_the_denominator(self):
+        text = "热机把热能转成机械能。"
+        assert term_annotation_rate(text, cfg(), gl(HEAT)).raw == 0.0
+        r = term_annotation_rate(text, cfg(), gl(HEAT), annotated_terms=frozenset({"heat engine"}))
+        assert r.raw is None and r.reason == Reason.NO_TERM_OCCURRENCE
+
+    def test_unannotated_term_stays_in_the_denominator(self):
+        # 传的是「已正确标注过」而非「已出现过」：若按后者排除，一个始终没被
+        # 标注的术语会在几轮后永远逃出检查，义务凭空消失
+        r = term_annotation_rate("热机很重要。", cfg(), gl(HEAT), annotated_terms=frozenset())
+        assert r.raw == 0.0
+
+    def test_new_term_still_counted_when_others_are_excluded(self):
+        r = term_annotation_rate(
+            "热机与功率密度。", cfg(), gl(HEAT, POWER),
+            annotated_terms=frozenset({"heat engine"}),
+        )
+        assert r.details["occurrences_first"] == 1
+        assert r.details["violations"][0]["term"] == "power density"
+
+    def test_newly_annotated_terms_reported_for_accumulation(self):
+        r = term_annotation_rate("热机（heat engine）与功率密度。", cfg(), gl(HEAT, POWER))
+        assert r.details["newly_annotated_terms"] == ["heat engine"]
+
+    def test_already_annotated_not_repeated_in_newly(self):
+        r = term_annotation_rate(
+            "热机（heat engine）。", cfg(), gl(HEAT),
+            annotated_terms=frozenset({"heat engine"}),
+        )
+        assert r.details["newly_annotated_terms"] == []
+
+    def test_legacy_caliber_reported_side_by_side(self):
+        # 新旧口径并排输出，不覆盖——口径修正的过程本身要可追溯
+        r = term_annotation_rate(
+            "热机与功率密度（power density）。", cfg(), gl(HEAT, POWER),
+            annotated_terms=frozenset({"heat engine"}),
+        )
+        assert r.raw == 1.0                                   # 新口径：热机已标注过，不再计
+        assert r.details["rate_round_scoped_legacy"] == 0.5   # 旧口径：仍要求本轮重标
+        assert r.details["prior_annotated_terms"] == 1
+
+    def test_empty_prior_set_reproduces_legacy(self):
+        text = "热机与功率密度（power density）。"
+        r = term_annotation_rate(text, cfg(), gl(HEAT, POWER))
+        assert r.raw == r.details["rate_round_scoped_legacy"]
+
+    def test_all_mode_also_honors_scope(self):
+        r = term_annotation_rate(
+            "热机、热机、功率密度。", cfg(term_count_mode="all"), gl(HEAT, POWER),
+            annotated_terms=frozenset({"heat engine"}),
+        )
+        assert r.details["occurrences_all"] == 1
+
+    def test_evaluate_threads_the_scope(self):
+        from a_rules.evaluator import evaluate
+        ev = evaluate(
+            "热机把热能转成机械能，这是火力发电的基础环节，值得展开说明一下。",
+            cfg(), gl(HEAT), annotated_terms=frozenset({"heat engine"}),
+        )
+        assert ev.by_name("term_annotation").reason == Reason.NO_TERM_OCCURRENCE
+        assert ev.by_name("chinese_ratio").raw is not None  # 其余维度不受影响

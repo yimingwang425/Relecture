@@ -4,6 +4,9 @@
 
 - **两组唯一的差异是审查 agent 的有无。** 同一份课件、同一份风格配置、
   同一组提问、同一顺序、同一模型参数。
+- **术语标注的「首现」按整段对话计**（口径 D44）。每条轨迹维护一个已标注
+  术语集合，逐轮累积后传给审查器。旧口径每轮重置，等于要求模型每轮重复标注
+  同一术语——与 PRD §2 把「太啰嗦」列为痛点的产品目标直接冲突。
 - **重复是整条轨迹的重复，不是每轮内部重采样。** 漂移是一条对话轨迹随轮次
   演化出来的性质；在同一条对话里对某轮采样多次再挑一条继续，轨迹仍然只有
   一条，重复毫无统计意义。每个 replicate 是一次独立的 20 轮完整对话。
@@ -145,6 +148,8 @@ def run_condition(
     """
     history: list[dict[str, Any]] = []
     records: list[RoundRecord] = []
+    # 本轨迹已被正确标注过的术语，逐轮累积（口径 D44）
+    annotated: set[str] = set()
 
     for i, question in enumerate(questions, 1):
         turn = history + [{"role": "user", "content": question}]
@@ -157,7 +162,7 @@ def run_condition(
 
         for attempt_index in range(max_regenerations + 1):
             completion = model.complete(system, working)
-            review = reviewer.review(completion.text)
+            review = reviewer.review(completion.text, frozenset(annotated))
             attempts.append(Attempt(attempt_index, completion, review))
             final_text = completion.text
 
@@ -172,6 +177,12 @@ def run_condition(
                 {"role": "assistant", "content": completion.text},
                 {"role": "user", "content": review.feedback},
             ]
+
+        # 只把被采纳的那一版所达成的标注计入累积——未被采纳的中间稿不算数
+        final_review = attempts[-1].review
+        if final_review is not None:
+            d = final_review.evaluation.by_name("term_annotation").details
+            annotated.update(d.get("newly_annotated_terms", []))
 
         # 修正往返不进历史：两组的对话历史结构必须保持一致，否则第 k 轮的
         # 输入长度差异会变成审查之外的第二个变量

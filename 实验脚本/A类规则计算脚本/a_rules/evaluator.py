@@ -71,12 +71,25 @@ class Evaluation:
 
 
 def evaluate(
-    text: str, config: StyleConfig | None = None, glossary: Glossary | None = None
+    text: str,
+    config: StyleConfig | None = None,
+    glossary: Glossary | None = None,
+    *,
+    annotated_terms: frozenset[str] = frozenset(),
 ) -> Evaluation:
-    """跑完四个维度。"""
+    """跑完四个维度。
+
+    `annotated_terms` 只对术语维度有意义（口径 D44：首现的作用域是整段对话）。
+    多轮场景下由调用方跨轮累积；单轮评测传空集即可。
+    """
     cfg = config or StyleConfig()
     return Evaluation(
-        dimensions=tuple(f(text, cfg, glossary) for f in DIMENSIONS),
+        dimensions=tuple(
+            f(text, cfg, glossary, annotated_terms=annotated_terms)
+            if f is term_annotation_rate
+            else f(text, cfg, glossary)
+            for f in DIMENSIONS
+        ),
         config_fingerprint=cfg.fingerprint(),
         config_version=CONFIG_VERSION,
         glossary_version=glossary.version if glossary else None,

@@ -79,8 +79,9 @@ class RuleReviewer:
     config: StyleConfig
     glossary: Glossary | None = None
 
-    def review(self, text: str) -> Review:
-        ev = evaluate(text, self.config, self.glossary)
+    def review(self, text: str, annotated_terms: frozenset[str] = frozenset()) -> Review:
+        """`annotated_terms` 见口径 D44：首现的作用域是整段对话，由 runner 跨轮累积。"""
+        ev = evaluate(text, self.config, self.glossary, annotated_terms=annotated_terms)
         failed = tuple(d.name for d in ev.scored if not d.passed)
         if not failed:
             return Review(True, ev, (), "")

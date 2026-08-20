@@ -5,4 +5,4 @@ __pycache__/
 *.egg-info/
 .env
 cache/
-runs/
+# runs/ 入库：报告是结论的依据，不入库等于结论无处可查

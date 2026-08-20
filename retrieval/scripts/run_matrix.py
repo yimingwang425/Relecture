@@ -138,7 +138,7 @@ def main() -> int:
     out.append(variant_note(kind))
     out.append("=" * 78)
 
-    sep_holder = None
+    seps: list[tuple[str, object]] = []
     for tag, model, dims in models:
         embedder = make_embedder(kind, model, dims, questions, items)
         for variant in variants:
@@ -156,13 +156,18 @@ def main() -> int:
                         summaries, args.budget, note,
                     )
                 )
-                if sep_holder is None:
-                    sep_holder = separability(results)
+                # 可分性逐配置计算。此前只取第一个配置，图上又不标配置，
+                # 等于把 M1 的结果冒充成整份报告的结论
+                if mode == modes[0] and variant == variants[0]:
+                    seps.append((f"{tag} {embedder.name} · 文本 {variant} · 扩展 {mode}",
+                                 separability(results)))
 
-    if sep_holder is not None:
+    for label, sep in seps:
         out.append("")
         out.append("=" * 78)
-        out.append(format_separability(sep_holder))
+        out.append(format_separability(sep, label))
+    sep_holder = seps[0][1] if seps else None
+    if sep_holder is not None:
         if args.format_sample:
             from retrieval.metrics import Separability
 
@@ -172,18 +177,18 @@ def main() -> int:
                     with_gold=(0.42, 0.38, 0.35, 0.31, 0.28, 0.24),
                     no_answer=(0.40, 0.36, 0.29, 0.26, 0.22),
                 )
-                label = "若两组**重叠**"
+                demo_label = "若两组**重叠**"
             else:
                 demo = Separability(
                     with_gold=(0.52, 0.48, 0.45, 0.41, 0.38, 0.34),
                     no_answer=(0.21, 0.18, 0.15, 0.12, 0.09),
                 )
-                label = "若两组**可分**"
+                demo_label = "若两组**可分**"
             out.append("")
             out.append("-" * 78)
-            out.append(f"【另一分支的样式 · 构造示例】{label}，同一位置会输出：")
+            out.append(f"【另一分支的样式 · 构造示例】{demo_label}，同一位置会输出：")
             out.append("")
-            out.append(format_separability(demo))
+            out.append(format_separability(demo, "构造示例"))
 
     out.append("")
     out.append("=" * 78)

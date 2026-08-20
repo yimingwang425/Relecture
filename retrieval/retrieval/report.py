@@ -129,14 +129,18 @@ def _hist(values: tuple[float, ...], lo: float, hi: float, width: int = 40) -> l
     return out
 
 
-def format_separability(sep: Separability) -> str:
-    """``no_answer`` 的可分性。**无间隔是结论，不是待办。**"""
+def format_separability(sep: Separability, config: str = "") -> str:
+    """``no_answer`` 的可分性。**无间隔是结论，不是待办。**
+
+    ``config`` 必须标出——可分性是逐配置的量，不标配置的图无法解读。
+    """
     all_v = list(sep.with_gold) + list(sep.no_answer)
     if not all_v:
-        return "no_answer 可分性：无数据"
+        return f"no_answer 可分性 [{config or '?'}]：无数据"
     lo, hi = min(all_v), max(all_v)
 
-    lines = ["no_answer 可分性 · top-1 相似度分布", ""]
+    head = "no_answer 可分性 · top-1 相似度分布"
+    lines = [f"{head}   【配置：{config}】" if config else head, ""]
     lines.append(f"  有 gold 的题（n={len(sep.with_gold)}）")
     lines += _hist(sep.with_gold, lo, hi)
     lines.append("")

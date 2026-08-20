@@ -1,0 +1,28 @@
+{
+  "file": "MIT15_316SU05_leader_dev.pdf",
+  "scan_ruleset_version": "scan-1.0",
+  "page_count": 19,
+  "verdict": "unusable",
+  "usable_page_count": 0,
+  "kinds": [
+    "scanned_ocr",
+    "scanned_ocr",
+    "scanned_ocr",
+    "scanned_ocr",
+    "scanned_ocr",
+    "scanned_ocr",
+    "scanned_ocr",
+    "image_only",
+    "scanned_ocr",
+    "scanned_ocr",
+    "scanned_ocr",
+    "scanned_ocr",
+    "scanned_ocr",
+    "image_only",
+    "scanned_ocr",
+    "scanned_ocr",
+    "scanned_ocr",
+    "scanned_ocr",
+    "scanned_ocr"
+  ]
+}

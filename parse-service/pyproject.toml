@@ -1,0 +1,27 @@
+[project]
+name = "parse-service"
+version = "0.1.0"
+description = "AI 课件讲解助手 · F2 课件解析服务（PDF 路径）"
+requires-python = ">=3.11"
+dependencies = [
+    "pymupdf>=1.24",
+    "python-pptx>=1.0",   # schema 已按 PPTX 形状定义；解析路径下次交付
+    "fastapi>=0.110",
+    "pydantic>=2.6",
+    "python-multipart>=0.0.9",  # FastAPI UploadFile 硬依赖
+    "uvicorn>=0.27",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "httpx>=0.27"]  # httpx 供 fastapi.testclient 使用
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["parse_service*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

@@ -1,0 +1,253 @@
+{
+  "version": "1.0",
+  "created": "2026-08-21",
+  "annotator": "single",
+  "corpus": "实验脚本/测试集/",
+  "gold_granularity": "page",
+  "items": [
+    {
+      "id": "Q001",
+      "question": "发电厂烧了那么多煤，为什么不能把热全都变成电？",
+      "gold_pages": [{ "source_file": "MIT22_081JF10_lec01b.pdf", "page_index": 20 }],
+      "notes": "p20 给出热机效率 η=(1−Te/Ti)，并写明排汽是排入环境的废热。",
+      "tags": ["synonym"]
+    },
+    {
+      "id": "Q002",
+      "question": "铀矿挖出来不能直接拿去当核燃料吗？为什么还要先加工一道？",
+      "gold_pages": [{ "source_file": "MIT22_081JF10_lec01b.pdf", "page_index": 26 }],
+      "notes": "p26 说明天然铀中仅 0.7% 的 U-235 可裂变，需处理到 4% 才能作燃料。",
+      "tags": ["synonym"]
+    },
+    {
+      "id": "Q003",
+      "question": "同样占一片地，风电和太阳能哪个最后发出来的电更多？",
+      "gold_pages": [
+        { "source_file": "MIT22_081JF10_lec01b.pdf", "page_index": 32 },
+        { "source_file": "MIT22_081JF10_lec01b.pdf", "page_index": 35 }
+      ],
+      "notes": "两页各给一半，且用同一面积基准：p32 风电（25 平方英里、平均 130 MWe），p35 太阳能（25 平方英里、平均 100–200 MW）。",
+      "tags": ["synonym", "multipage"]
+    },
+    {
+      "id": "Q004",
+      "question": "一个家庭平时收钱付钱的流水，怎么整理成资产和负债两边对得上的表？",
+      "gold_pages": [
+        { "source_file": "MIT14_129S25_lec02.pdf", "page_index": 12 },
+        { "source_file": "MIT14_129S25_lec02.pdf", "page_index": 13 },
+        { "source_file": "MIT14_129S25_lec02.pdf", "page_index": 14 }
+      ],
+      "notes": "三页讲现金的账本解释，实质内容全在图里——可提取文本合计 152 字符，只有标题与文献引用。预期失败。",
+      "tags": ["figure_heavy"]
+    },
+    {
+      "id": "Q005",
+      "question": "太阳能白天发的电用不完，晚上又不发电，多出来的电能存到哪去？",
+      "gold_pages": [],
+      "notes": "本讲覆盖 p19 列举的各类发电技术本身，全篇未涉及储能。属「讲了主题、没讲这个子问题」。",
+      "tags": ["no_answer"]
+    },
+    {
+      "id": "Q006",
+      "question": "一个国家用掉的石油，大头是烧在车上还是烧在房子里？",
+      "gold_pages": [{ "source_file": "MIT22_081JF10_lec01b.pdf", "page_index": 10 }],
+      "notes": "p10 给出美国石油用途占比：交通 69%、供热 31%。",
+      "tags": ["synonym"]
+    },
+    {
+      "id": "Q007",
+      "question": "插座里的电，追到源头主要是烧什么烧出来的？",
+      "gold_pages": [{ "source_file": "MIT22_081JF10_lec01b.pdf", "page_index": 11 }],
+      "notes": "p11 给出 2007 年美国电力来源构成，煤占 49% 为最大项。",
+      "tags": ["synonym"]
+    },
+    {
+      "id": "Q008",
+      "question": "核电站的燃料能撑的年头，比煤矿长还是短？",
+      "gold_pages": [{ "source_file": "MIT22_081JF10_lec01b.pdf", "page_index": 17 }],
+      "notes": "p17 列出各类资源可用年限：煤 300 年，当前轻水堆 100 年，增殖堆 10000 年。答案取决于比哪种堆型，需读整张表。",
+      "tags": ["synonym"]
+    },
+    {
+      "id": "Q009",
+      "question": "煤、天然气、石油这三样，各自主要埋在哪些国家？",
+      "gold_pages": [
+        { "source_file": "MIT22_081JF10_lec01b.pdf", "page_index": 13 },
+        { "source_file": "MIT22_081JF10_lec01b.pdf", "page_index": 14 },
+        { "source_file": "MIT22_081JF10_lec01b.pdf", "page_index": 15 }
+      ],
+      "notes": "一页一种资源：p13 煤（美俄中印澳）、p14 天然气（俄罗斯）、p15 石油（沙特）。缺任一页答案都不全。",
+      "tags": ["multipage"]
+    },
+    {
+      "id": "Q010",
+      "question": "氢气常被说成未来的清洁能源，可它本身算是一种能源吗？",
+      "gold_pages": [{ "source_file": "MIT22_081JF10_lec01b.pdf", "page_index": 18 }],
+      "notes": "p18 明确氢不是天然存在的燃料、没有氢矿，必须制取，是能量载体而非能源。",
+      "tags": ["synonym"]
+    },
+    {
+      "id": "Q011",
+      "question": "烧化石燃料一定会产生二氧化碳吗？换个工艺能不能绕开？",
+      "gold_pages": [{ "source_file": "MIT22_081JF10_lec01b.pdf", "page_index": 22 }],
+      "notes": "p22 给出煤、天然气、汽油的燃烧方程，三者产物均含 CO2，说明这是燃烧化学的必然结果。",
+      "tags": ["synonym"]
+    },
+    {
+      "id": "Q012",
+      "question": "地球白天从太阳那儿吸了热，晚上不是该放回去吗？怎么会越攒越热？",
+      "gold_pages": [{ "source_file": "MIT22_081JF10_lec01b.pdf", "page_index": 24 }],
+      "notes": "p24 讲太阳辐射被吸收、再辐射速率正比于 T⁴、平衡时地表温度被抬高。",
+      "tags": ["synonym"]
+    },
+    {
+      "id": "Q013",
+      "question": "核反应堆里那么高的温度，最后是怎么一步步变成插座里的电的？",
+      "gold_pages": [
+        { "source_file": "MIT22_081JF10_lec01b.pdf", "page_index": 20 },
+        { "source_file": "MIT22_081JF10_lec01b.pdf", "page_index": 27 }
+      ],
+      "notes": "p20 给通用电厂的热—功转换框图，p27 给压水堆的一二回路与蒸汽发生器、汽轮机、发电机。两页合起来才是完整链路。",
+      "tags": ["multipage"]
+    },
+    {
+      "id": "Q014",
+      "question": "一次核反应放出来的能量，跟烧一次煤差多少倍？",
+      "gold_pages": [{ "source_file": "MIT22_081JF10_lec01b.pdf", "page_index": 28 }],
+      "notes": "p28 直接给出 1 次核反应 ≈ 1,000,000 次化石燃料反应。",
+      "tags": ["synonym"]
+    },
+    {
+      "id": "Q015",
+      "question": "水电站为什么非要把坝修那么高？",
+      "gold_pages": [{ "source_file": "MIT22_081JF10_lec01b.pdf", "page_index": 29 }],
+      "notes": "p29 给出功率关系 ρgh×Q×η，功率与水头 h 成正比；并指出 100 m 水头仅 0.27 kWh/m³。",
+      "tags": ["synonym"]
+    },
+    {
+      "id": "Q016",
+      "question": "风力发电机在没风的时候，电网靠什么顶上？",
+      "gold_pages": [],
+      "notes": "p32 讲了风电原理并给出峰值 400 MWe 与平均 130 MWe 的差别（已隐含间歇性），但全篇未涉及电网调度或备用容量。",
+      "tags": ["no_answer"]
+    },
+    {
+      "id": "Q017",
+      "question": "同样一平方米，火电厂、风机、光伏板各能出多少电？",
+      "gold_pages": [
+        { "source_file": "MIT22_081JF10_lec01b.pdf", "page_index": 21 },
+        { "source_file": "MIT22_081JF10_lec01b.pdf", "page_index": 32 },
+        { "source_file": "MIT22_081JF10_lec01b.pdf", "page_index": 35 }
+      ],
+      "notes": "三页各给一个数：p21 常规热电厂约 300 W/m²，p32 风电约 2 W/m²，p35 光伏平均 30–60 W/m²。",
+      "tags": ["synonym", "multipage"]
+    },
+    {
+      "id": "Q018",
+      "question": "核电站用过的燃料棒最后怎么处理？",
+      "gold_pages": [],
+      "notes": "p26–p28 覆盖核燃料制备、堆内结构与裂变反应，但全篇未涉及乏燃料后处理或废物处置。",
+      "tags": ["no_answer"]
+    },
+    {
+      "id": "Q019",
+      "question": "这几种发电方式建一座要花多少钱，课件里比过吗？",
+      "gold_pages": [],
+      "notes": "p5 把「是否用成本效益分析比较各方案」作为反思性提问抛出，但全篇未给任何造价数据。属典型的「提了这个角度、没给这个答案」。",
+      "tags": ["no_answer"]
+    },
+    {
+      "id": "Q020",
+      "question": "一个城市要改造，到底谁说了算？",
+      "gold_pages": [
+        { "source_file": "MIT11_201F07_slides2.pdf", "page_index": 5 },
+        { "source_file": "MIT11_201F07_slides2.pdf", "page_index": 15 }
+      ],
+      "notes": "p5 给出理性规划设想的分工（技术官僚 / 政治人物 / 公众）；p15 直接把「谁被正式或非正式地授权去规划、为谁规划」列为核心问题。",
+      "tags": ["synonym", "multipage"]
+    },
+    {
+      "id": "Q021",
+      "question": "做城市规划的人，主要是画图纸的，还是跟各方博弈的？",
+      "gold_pages": [
+        { "source_file": "MIT11_201F07_slides2.pdf", "page_index": 12 },
+        { "source_file": "MIT11_201F07_slides2.pdf", "page_index": 13 }
+      ],
+      "notes": "两个传统各占一页：p12 设计传统（源自建筑与工程），p13 赋权传统（源自政治经济学，关注谁得谁失、权力如何积聚）。",
+      "tags": ["synonym", "multipage"]
+    },
+    {
+      "id": "Q022",
+      "question": "「按流程一步步来定方案」这套做法，具体分哪几步？",
+      "gold_pages": [{ "source_file": "MIT11_201F07_slides2.pdf", "page_index": 14 }],
+      "notes": "p14 列出七步：定目标、找备选方案、预判后果、按标准评估、决策、执行、产生反馈并回到目标。",
+      "tags": ["synonym"]
+    },
+    {
+      "id": "Q023",
+      "question": "现在这套城市规划的做法，最早是为了解决什么问题才出现的？",
+      "gold_pages": [{ "source_file": "MIT11_201F07_slides2.pdf", "page_index": 7 }],
+      "notes": "p7 引 Campbell 与 Fainstein：规划是 20 世纪对 19 世纪工业城市的回应。",
+      "tags": ["synonym"]
+    },
+    {
+      "id": "Q024",
+      "question": "西方那一套规划办法，是怎么变成别的国家也在用的？",
+      "gold_pages": [
+        { "source_file": "MIT11_201F07_slides2.pdf", "page_index": 7 },
+        { "source_file": "MIT11_201F07_slides2.pdf", "page_index": 9 }
+      ],
+      "notes": "p7 提到被「转移给（还是强加于？）其余国家」；p9 给出具体渠道：殖民、战后发展意识形态、与资金绑定的模式（援助机构）。",
+      "tags": ["synonym", "multipage"]
+    },
+    {
+      "id": "Q025",
+      "question": "中国的城市规划是按什么路子做的？",
+      "gold_pages": [],
+      "notes": "p6/p9 确有「全球视野下的规划史」一节，但只讲欧美源流与殖民扩散，案例是洛杉矶 RLA 与新奥尔良，未涉及中国。",
+      "tags": ["no_answer"]
+    },
+    {
+      "id": "Q026",
+      "question": "比特币那个「挖矿」，机器到底在算什么东西？",
+      "gold_pages": [{ "source_file": "MIT14_129S25_lec02.pdf", "page_index": 5 }],
+      "notes": "p5 说明新区块由时间戳、用于 POW 验证的 nonce、前一区块哈希、交易列表构成，并给出 f(nonce, …) 的示意。课件从未使用「挖矿」一词。",
+      "tags": ["synonym"]
+    },
+    {
+      "id": "Q027",
+      "question": "收入表和资产负债表这两张表，中间是靠什么对上的？",
+      "gold_pages": [{ "source_file": "MIT14_129S25_lec02.pdf", "page_index": 45 }],
+      "notes": "p45 是一张连接损益表与资产负债表的流程图（生产 / 投资 / 融资三条箭头，净收入分流为消费与储蓄）。可提取文本仅 44 字符、图覆盖 0.82，实质全在图里。预期失败。",
+      "tags": ["figure_heavy"]
+    },
+    {
+      "id": "Q028",
+      "question": "几个不同的住户调查，估出来的现金流差得多吗？",
+      "gold_pages": [
+        { "source_file": "MIT14_129S25_lec02.pdf", "page_index": 46 },
+        { "source_file": "MIT14_129S25_lec02.pdf", "page_index": 47 }
+      ],
+      "notes": "p46 是六个美国住户调查的现金流估计表，末行误差 16%–51%；p47 是宏观口径的对应不一致。两页可提取文本共 61 字符、图覆盖 0.79 / 0.52。预期失败。",
+      "tags": ["figure_heavy", "multipage"]
+    },
+    {
+      "id": "Q029",
+      "question": "找个中间商担保、大家共用一个总账、各记各的账再对接——这几种做法各自的代价是什么？",
+      "gold_pages": [
+        { "source_file": "MIT14_129S25_lec02.pdf", "page_index": 33 },
+        { "source_file": "MIT14_129S25_lec02.pdf", "page_index": 34 },
+        { "source_file": "MIT14_129S25_lec02.pdf", "page_index": 36 }
+      ],
+      "notes": "三页分别是 Model 1 共同账本（中间商搭建信任，取 A-P 边，代价是账本间不一致需对账）、Model 2 单一账本（取 C-A 边，不允许分区）、Model 3 兼容账本（取 C-P 边，各自独立账本、靠技术或法律协调，代价是数据不一致）。三页均为 image_only，解析后不产生切片，检索直接返回空。",
+      "tags": ["unreadable_page", "multipage"]
+    },
+    {
+      "id": "Q030",
+      "question": "分布式账本这套东西，为什么一开始就选了「所有人共用一个账本」的路子？",
+      "gold_pages": [{ "source_file": "MIT14_129S25_lec02.pdf", "page_index": 35 }],
+      "notes": "p35 写明 DLT 的设计者刻意先选单一共享账本以吃满其好处、把互操作性推到之后再解决，并给出 Layer 2 与分片两条后续路径。该页为 image_only，不产生切片。",
+      "tags": ["unreadable_page"]
+    }
+  ]
+}

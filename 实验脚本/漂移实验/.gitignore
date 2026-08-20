@@ -1,0 +1,12 @@
+# 凭据。根 .gitignore 已覆盖，这里再写一遍作纵深防御——
+# 这个目录是唯一需要 API key 的地方，忽略规则就近可见更不容易被误删。
+.env
+.env.*
+!.env.example
+
+runs/
+__pycache__/
+*.py[cod]
+
+# 课件全文（从测试集 PDF 抽取，避免仓库里出现同一份材料的第二个副本）
+config/courseware.txt

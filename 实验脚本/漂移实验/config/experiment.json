@@ -1,0 +1,33 @@
+{
+  "name": "drift-a-class-v0",
+  "seed": 0,
+  "repeats": 3,
+  "max_regenerations": 2,
+  "model": {
+    "name": "claude-sonnet-5",
+    "effort": "medium",
+    "thinking": "adaptive",
+    "max_tokens": 8000
+  },
+  "style_config": "style.json",
+  "glossary": "../../A类规则计算脚本/examples/glossary_22081J.json",
+  "courseware_text": "courseware.txt",
+  "questions": "questions.json",
+  "system_prompt_template": "你是一位课件讲解助手。请严格依据下面的课件内容回答学生的提问。\n\n讲解要求：\n- 用中文讲解。\n- 专业术语首次出现时用「中文译名（English original）」的形式标注英文原文。\n- 段落长度控制在 30–120 字。\n- 引用课件原文时，单段不超过 100 字，其余内容用自己的话讲解。\n- 课件之外的内容必须显式标注「以下内容超出课件范围」。\n\n=== 课件全文 ===\n{courseware}\n=== 课件结束 ===",
+  "production_term_min_occurrences": 5,
+  "style_override_rationale": "实验用 term_min_occurrences=2，生产保持 5。若为满足护栏去挑术语密集的提问，这 20 个问题就不再是真实学习行为的样本，测出来的会是「术语密集提问下会不会漂移」而非「真实使用中会不会漂移」——适用范围被悄悄收窄。护栏是为单次生产判定设计的；实验有 3 条轨迹可合并，低分母噪音会被部分平均掉。代价是低分母轮次的点可信度较低，故每轮记录首现术语数，报告时单独标注。",
+  "rounds_note": "15 轮，取自真实复习序列。刻意不凑到 20——凑数需要编造提问，会让样本偏离真实学习行为，测出来的适用范围随之收窄。",
+  "expectations": {
+    "low_denominator_rounds": [
+      9,
+      11,
+      12,
+      13
+    ],
+    "low_denominator_note": "纯物理原理追问，术语密度低，大概率触发低分母标记。这是真实分布，不作调整。报告时四个维度必须分开看：term_annotation 在这些轮次信噪比低，chinese_ratio 与 paragraph_length 不受影响。",
+    "out_of_scope_rounds": [
+      12
+    ],
+    "out_of_scope_note": "DC/AC 超出课件范围，顺带观察模型是否遵守 PRD §6.2「超出课件范围须显式标注」。**仅记录，不进指标**——它不是 A 类维度，也不参与达标判定。"
+  }
+}

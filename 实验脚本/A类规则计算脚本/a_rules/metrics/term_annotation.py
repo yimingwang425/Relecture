@@ -1,0 +1,294 @@
+"""维度 2 · 术语英文标注率。
+
+对应 PRD §8.1 A 类表格的「术语处理」行，达标线 ≥ 90%。
+
+**判定分两步，且第二步刻意不复用第一步的匹配器：**
+
+1. 用术语表在掩码文本上找出术语出现在哪（`glossary.find`）。这一步受
+   `match_anchor` 约束——自由文本里 `block` 有歧义，必须靠中文侧锚定。
+2. 对每次出现，检查它后面是否紧跟一个括注，且括注内容确为另一侧的形式
+   （`Term.is_en_form` / `is_zh_form`）。这一步**不受 anchor 约束**，因为
+   括号内没有歧义。
+
+第二步若复用第一步的匹配结果，`match_anchor=zh` 的术语将永远配不成对——
+每次正确标注都被判成违规，是方向相反的系统性误判。
+
+**作用域是整段对话，不是单轮**（口径 D44）。同一术语在对话里被正确标注过
+一次之后，后续轮次不再计入分母。旧实现按单轮重置，等于要求模型每轮重复标注
+同一个术语——那正是 PRD §2 把「太啰嗦」列为痛点所要避免的行为。指标方向
+错了，不只是作用域窄了。
+
+决策日期：2026-08-19（作用域修正 2026-08-20）
+"""
+
+from __future__ import annotations
+
+import re
+from dataclasses import dataclass
+from enum import Enum
+from typing import Any
+
+from ..config import StyleConfig, TermCountMode, TermPolicy
+from ..glossary import Glossary, MatchSide, Term, TermSource
+from ..result import DimensionResult, Reason
+from ..text import Document
+
+__all__ = ["NAME", "term_annotation_rate"]
+
+NAME = "term_annotation"
+
+#: 括注的开闭符号。NFKC 已把全角 `（）［］` 归一为半角，
+#: 这里补的是没有兼容分解的中文括号（`【】〔〕`）。
+#: 不能写 `^`：`Pattern.match(s, pos)` 已在 pos 处锚定，而 `^` 只在真正的
+#: 串首（或换行后）匹配，两者叠加会让 pos>0 的调用全部落空——表现为每一次
+#: 正确标注都被判成违规，误判方向与真相相反。
+_ANNOTATION_RE = re.compile(r"[ \t]*[(\[【〔]([^)\]】〕\n]{1,120})[)\]】〕]")
+
+
+class Kind(str, Enum):
+    """一次术语出现的形态。"""
+
+    PAIRED = "paired"  # 译文 + 原文括注（任一顺序）
+    LONE_ZH = "lone_zh"  # 只出现中文译名
+    LONE_EN = "lone_en"  # 只出现英文原文
+
+
+@dataclass(frozen=True, slots=True)
+class Occurrence:
+    term: Term
+    kind: Kind
+    start: int
+    end: int
+    text: str
+    compliant: bool
+
+
+def _find_annotation(
+    text: str, match_end: int, term: Term, side: MatchSide
+) -> tuple[int, str, int, int] | None:
+    """术语出现之后是否紧跟一个合格括注。
+
+    返回 (括注结束位置, 括注内容, 内容起点, 内容终点)，不合格返回 None。
+    """
+    m = _ANNOTATION_RE.match(text, match_end)
+    if not m:
+        return None
+    content = m.group(1).strip()
+    if term.accepts_annotation(content, side):
+        return m.end(), content, m.start(1), m.end(1)
+    return None
+
+
+_LATIN_RE = re.compile(r"[A-Za-z]")
+
+
+def annotated_english_spans(doc: Document, glossary: Glossary | None) -> tuple[tuple[int, int], ...]:
+    """译文后括注中的英文原文所占区间。
+
+    供「中文字符占比」排除用（口径 D15）：`translate_with_source` 策略下用户
+    **要求**模型写「热机（heat engine）」，若把括注英文计入分母，满足术语维度
+    就必然拉低语言一致性维度——两个维度直接打架。
+    """
+    if glossary is None or glossary.is_empty:
+        return ()
+    text = doc.masked
+    spans: list[tuple[int, int]] = []
+    for m in glossary.find(text):
+        if m.side is not MatchSide.ZH:
+            continue
+        found = _find_annotation(text, m.end, m.term, m.side)
+        if found is None:
+            continue
+        _end, content, cs, ce = found
+        if _LATIN_RE.search(content):
+            spans.append((cs, ce))
+    return tuple(spans)
+
+
+def _is_compliant(kind: Kind, policy: TermPolicy) -> bool:
+    """三值策略各自认可哪种形态（PRD §8.1）。
+
+    注意 `paired` 只满足 `translate_with_source`：它既翻译了（违反
+    keep_original），又带了原文（违反 translate_only）。三者互斥是刻意的，
+    否则「合规」的定义会随策略重叠，指标失去区分度。
+    """
+    if policy is TermPolicy.TRANSLATE_WITH_SOURCE:
+        return kind is Kind.PAIRED
+    if policy is TermPolicy.TRANSLATE_ONLY:
+        return kind is Kind.LONE_ZH
+    return kind is Kind.LONE_EN  # KEEP_ORIGINAL
+
+
+def _collect(doc: Document, glossary: Glossary, policy: TermPolicy) -> list[Occurrence]:
+    text = doc.masked
+    occurrences: list[Occurrence] = []
+    consumed_until = -1
+
+    for m in glossary.find(text):
+        if m.start < consumed_until:
+            # 落在上一条括注内部——它是那次标注的一部分，不是独立的一次出现
+            continue
+        annotation = _find_annotation(text, m.end, m.term, m.side)
+        if annotation is not None:
+            end = annotation[0]
+            kind, span_end = Kind.PAIRED, end
+        else:
+            kind = Kind.LONE_ZH if m.side is MatchSide.ZH else Kind.LONE_EN
+            span_end = m.end
+        consumed_until = span_end
+        occurrences.append(
+            Occurrence(
+                term=m.term,
+                kind=kind,
+                start=m.start,
+                end=span_end,
+                text=doc.preview(m.start, span_end, width=40),
+                compliant=_is_compliant(kind, policy),
+            )
+        )
+    return occurrences
+
+
+def _fold(
+    occurrences: list[Occurrence],
+    mode: TermCountMode,
+    annotated_terms: frozenset[str] = frozenset(),
+) -> list[Occurrence]:
+    """按计数口径折叠（口径 D02 + D44）。
+
+    `first` 每个术语只看首次出现——标注只需首现一次，全量计数会惩罚正常写作。
+    `annotated_terms` 把「首次」的作用域从单轮扩到整段对话：已在更早轮次被
+    正确标注过的术语，本轮不再计入分母。
+
+    **传的是「已正确标注过」而非「已出现过」**，两者差别是一个真实的漏洞：
+    若按「已出现过」排除，一个在第 3 轮出现却始终没标注的术语，从第 5 轮起
+    就永远不再被检查——义务凭空消失。按「已正确标注过」排除，则该术语会持续
+    计入分母直到被标注一次为止，之后不再重复要求。
+    """
+    if mode is TermCountMode.ALL:
+        return [o for o in occurrences if o.term.en not in annotated_terms]
+    seen: set[str] = set()
+    kept: list[Occurrence] = []
+    for occ in occurrences:
+        if occ.term.en in annotated_terms or occ.term.en in seen:
+            continue
+        seen.add(occ.term.en)
+        kept.append(occ)
+    return kept
+
+
+def _rate(occurrences: list[Occurrence]) -> float | None:
+    if not occurrences:
+        return None
+    return sum(1 for o in occurrences if o.compliant) / len(occurrences)
+
+
+def _coverage(glossary: Glossary, occurrences: list[Occurrence]) -> dict[str, Any]:
+    """术语表在这段文本上的命中情况。
+
+    这是「讲解文本相对术语表的分母缺口」，与「术语表相对课件的覆盖缺口」
+    是两回事（口径 D29），故按 source 分列。命中率过低说明术语表选错了词，
+    此时标注率再高也说明不了什么。
+    """
+    hit = {o.term.en for o in occurrences}
+    out: dict[str, Any] = {}
+    for label, source in (("body_text", TermSource.BODY_TEXT), ("figure_caption", TermSource.FIGURE_CAPTION)):
+        total = len(glossary.by_source(source))
+        n = sum(1 for t in glossary.by_source(source) if t.en in hit)
+        out[label] = {"total": total, "hit": n, "rate": (n / total) if total else None}
+    total = len(glossary)
+    out["total"] = {"total": total, "hit": len(hit), "rate": (len(hit) / total) if total else None}
+    return out
+
+
+def term_annotation_rate(
+    text: str,
+    config: StyleConfig,
+    glossary: Glossary | None = None,
+    *,
+    annotated_terms: frozenset[str] = frozenset(),
+) -> DimensionResult:
+    """计算术语英文标注率。
+
+    `glossary` 为空或未提供时该维度不激活——PRD §8.1 的误差方向说明：
+    术语表缺失只降低灵敏度，不造成误判。
+
+    `annotated_terms` 是本段对话中**已被正确标注过**的术语（`Term.en`）。
+    调用方负责跨轮累积；函数本身仍是纯函数，不持有状态。单轮评测传空集即可，
+    此时行为退回旧口径。
+    """
+    target = f"≥ {config.term_annotation_threshold:.2f}（{config.term_policy.value}，{config.term_count_mode.value} 口径）"
+
+    if not config.activates_term_policy:
+        return DimensionResult.not_activated(NAME, target)
+    if glossary is None or glossary.is_empty:
+        return DimensionResult.uncomputable(NAME, Reason.EMPTY_GLOSSARY, target)
+
+    doc = Document.parse(text)
+    # 术语表版本必须随每次输出记录：§8.2 期间术语表冻结，
+    # 没有版本号就无法证明二十轮用的是同一份表
+    base = {"glossary": glossary.stats(), "glossary_version": glossary.version}
+    if doc.is_blank:
+        return DimensionResult.uncomputable(NAME, Reason.EMPTY_TEXT, target, base)
+
+    occurrences = _collect(doc, glossary, config.term_policy)
+    first = _fold(occurrences, TermCountMode.FIRST, annotated_terms)
+    every = _fold(occurrences, TermCountMode.ALL, annotated_terms)
+    selected = first if config.term_count_mode is TermCountMode.FIRST else every
+
+    # 旧口径（单轮重置）并排输出，供口径对比——不覆盖、不丢弃
+    round_scoped = _fold(occurrences, config.term_count_mode)
+    # 本轮新达成标注的术语，调用方据此累积
+    newly = sorted({o.term.en for o in occurrences if o.compliant and o.term.en not in annotated_terms})
+
+    details: dict[str, Any] = {
+        **base,
+        "policy": config.term_policy.value,
+        "count_mode": config.term_count_mode.value,
+        # 两种口径并行输出（口径 D02）：差值反映模型是否反复堆砌括注
+        "rate_first": _rate(first),
+        "rate_all": _rate(every),
+        # 口径对比：D44 之前按单轮重置的算法
+        "rate_round_scoped_legacy": _rate(round_scoped),
+        "occurrences_round_scoped_legacy": len(round_scoped),
+        "prior_annotated_terms": len(annotated_terms),
+        "newly_annotated_terms": newly,
+        "occurrences_first": len(first),
+        "occurrences_all": len(every),
+        "coverage": _coverage(glossary, occurrences),
+        "terms_without_zh": glossary.stats()["without_zh"],
+        "kinds": {k.value: sum(1 for o in selected if o.kind is k) for k in Kind},
+        "violations": [
+            {
+                "term": o.term.en,
+                "preferred_zh": o.term.preferred_zh,
+                "source": o.term.source.value,
+                "kind": o.kind.value,
+                "line": doc.line_of(o.start),
+                "preview": o.text,
+            }
+            for o in selected
+            if not o.compliant
+        ],
+    }
+
+    if len(selected) < config.term_min_occurrences:
+        # 分母太小时指标没有分辨率——实测第四轮只有 1 个首现术语，
+        # 结果只能是 0% 或 100%，却会把一个 0% 贡献进漂移曲线
+        reason = Reason.NO_TERM_OCCURRENCE if not selected else Reason.LOW_CONFIDENCE
+        return DimensionResult.uncomputable(NAME, reason, target, details)
+    if not selected:
+        # 术语表非空但一条都没命中。0/0 既不是 0% 也不是 100%——
+        # 标为无效，并让 coverage 把「为什么没命中」摆出来
+        return DimensionResult.uncomputable(NAME, Reason.NO_TERM_OCCURRENCE, target, details)
+
+    raw = _rate(selected)
+    assert raw is not None
+    return DimensionResult(
+        name=NAME,
+        activated=True,
+        raw=raw,
+        passed=raw >= config.term_annotation_threshold,
+        target=target,
+        details=details,
+    )

@@ -1,0 +1,17 @@
+{
+  "explain_language": "zh",
+  "source_language": "en",
+  "chinese_ratio": {
+    "min": 0.85
+  },
+  "term_policy": "translate_with_source",
+  "term_annotation_threshold": 0.9,
+  "term_count_mode": "first",
+  "term_min_occurrences": 2,
+  "paragraph_length": {
+    "min": 30,
+    "max": 120
+  },
+  "max_quote_chars": 100,
+  "exclude_annotated_terms": true
+}

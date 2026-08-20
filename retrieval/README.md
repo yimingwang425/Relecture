@@ -134,6 +134,7 @@ env $(grep -v '^#' .env | xargs) ./.venv/bin/python -m scripts.run_matrix
 | `metrics.py` | 三个指标 + `no_answer` 可分性 |
 | `report.py` | 分组表、可分性分布图、页脚限制 |
 | `corpus.py` | 语料装载与排除规则 |
+| `selection.py` | **选型结论**。维度这个数在代码里的唯一出处 |
 | `sql/001_slices.sql` | pgvector 表结构 + RLS（**只出 SQL，不接线上库**） |
 
 ## 六、凭据
@@ -177,7 +178,17 @@ env $(grep -v '^#' .env | xargs) ./.venv/bin/python -m scripts.run_matrix
 **这条理由必须与 7.1 分开写**：把工程约束和召回证据混在一起陈述，
 会让「M3 更好」听起来有实测支撑，而实际支撑的只是「large 更好」。
 
-### 7.3 文本变体：无一致方向，维持 T0
+### 7.3 维度与 SQL 强耦合，已加守卫
+
+`vector(n)` 的 n 必须建表时定死，改它要迁移数据。选型改动须同步改 SQL 三处：
+列定义、`match_slices` 的参数、ANN 索引（超过 2000 维时该索引建不出来，须删掉）。
+
+`selection.py` 是这个数在代码里的唯一出处，`tests/test_selection.py` 在
+Python 侧与 SQL 不一致时变红。**该守卫已反向验证过**：把选型改成 3072 维后
+4 条断言同时变红（列定义、函数参数、ANN 索引可行性、残留字面量），
+改回即恢复——按第七条通则 #4 的要求，确认它测的是目标现象而不是空转。
+
+### 7.4 文本变体：无一致方向，维持 T0
 
 M2/M3 在 T0–T3 上几乎相同（M3 只有 T0 好 1 题），M1/M4 波动且方向相反
 （M1 是 T3 最好、M4 是 T1 最好）。**去样板（T1）没有带来改善**，

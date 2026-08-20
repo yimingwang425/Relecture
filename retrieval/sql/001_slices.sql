@@ -13,10 +13,19 @@
 --   3. ON DELETE CASCADE：注销即清空、一键删除必须一次删干净，
 --      跨两个存储系统实现会有两处漏点，所以全部放在这里。
 --
--- 维度说明：vector(n) 的 n 必须在建表时定死。若选型定为 text-embedding-3-large
--- 的默认 3072 维，**无法建 hnsw/ivfflat 索引**（上限 2000 维），只能精确扫描。
--- 对 v1（单门课数十切片）无碍，但要知道这一条。此处按 1536 维（-small 默认）建，
--- 选型定了再改。
+-- ⚠️ 维度与选型强耦合：vector(n) 的 n 必须在建表时定死，改它要迁移已有数据。
+--
+-- 当前值 1024 = 选型结论 text-embedding-3-large @ 1024（retrieval/README.md §七）。
+-- 该维度是显式截断（Matryoshka），不是模型默认值——large 的默认是 3072。
+--
+-- 若日后改选型，**这三处必须同步改**，否则接线时直接报维度不匹配：
+--   ① slice_embeddings.embedding 的 vector(n)
+--   ② match_slices 的 p_query 参数
+--   ③ hnsw 索引（n > 2000 时该索引建不出来，须整段删掉并接受精确扫描）
+--
+-- 选 1024 而非 large 默认的 3072，理由是工程约束不是召回：3072 超过 pgvector
+-- 的 ANN 索引上限 2000 维。两者在本次评测上无法区分（差异只出现在单格，
+-- 按 README R17 不构成证据），故在无法区分的选项间选保留 ANN 能力的那个。
 
 create extension if not exists vector;
 
@@ -65,16 +74,17 @@ create table if not exists public.slice_embeddings (
     document_id     uuid not null,
     slice_id        text not null,
     owner           uuid not null references auth.users (id) on delete cascade,
-    model           text not null,               -- 如 'text-embedding-3-small@1536'
+    model           text not null,               -- 如 'text-embedding-3-large@1024'
     embed_ruleset   text not null,               -- EMBED_TEXT_RULESET_VERSION
-    embedding       vector(1536) not null,
+    embedding       vector(1024) not null,       -- 见文件头的维度说明
     created_at      timestamptz not null default now(),
     primary key (document_id, slice_id, model, embed_ruleset),
     foreign key (document_id, slice_id)
         references public.slices (document_id, slice_id) on delete cascade
 );
 
--- ANN 索引。仅当维度 ≤ 2000 时可建；3072 维需删掉本段并接受精确扫描。
+-- ANN 索引。当前 1024 维在上限内，可建。
+-- 注：对 v1 的规模（单门课数十切片）精确扫描本就够用，这个索引是为规模增长留的。
 create index if not exists slice_embeddings_hnsw_idx
     on public.slice_embeddings using hnsw (embedding vector_cosine_ops);
 
@@ -98,7 +108,7 @@ create policy slice_embeddings_owner on public.slice_embeddings
 -- security invoker + RLS 已经够，但这一条让「忘记开 RLS」不至于直接变成越权。
 create or replace function public.match_slices(
     p_document_id uuid,
-    p_query       vector(1536),
+    p_query       vector(1024),                  -- 须与 slice_embeddings.embedding 同维
     p_model       text,
     p_ruleset     text,
     p_limit       int default 5

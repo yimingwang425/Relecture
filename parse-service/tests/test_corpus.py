@@ -15,6 +15,7 @@ from pathlib import Path
 import pytest
 
 from parse_service.pdf import parse_pdf
+from parse_service.schema import DocumentMeta
 from parse_service.scanned import INVISIBLE_TEXT_RATIO_MIN, SCAN_RULESET_VERSION
 
 CORPUS = Path(__file__).resolve().parents[2] / "实验脚本" / "测试集"
@@ -225,9 +226,19 @@ class TestDocumentMeta:
             assert listed == actual
             assert doc.document.unusable_page_count == len(actual)
 
-    def test_doc_id_is_content_hash(self, parsed):
+    def test_content_sha256_is_content_hash(self, parsed):
         import hashlib
 
         path = CORPUS / "MIT11_201F07_slides2.pdf"
-        expected = "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest()
-        assert parsed[path.name].document.doc_id == expected
+        expected = hashlib.sha256(path.read_bytes()).hexdigest()
+        assert parsed[path.name].document.content_sha256 == expected
+
+    def test_no_document_primary_key_emitted(self, parsed):
+        """服务无状态、不认识 user_id，不得产出文档主键。
+
+        PRD §12.1：按内容哈希去重等于跨用户共享存储。主键归持久化层。
+        """
+        fields = set(DocumentMeta.model_fields)
+        assert "doc_id" not in fields
+        assert "document_id" not in fields
+        assert "content_sha256" in fields

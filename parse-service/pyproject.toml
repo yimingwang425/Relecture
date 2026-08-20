@@ -10,6 +10,8 @@ dependencies = [
     "pydantic>=2.6",
     "python-multipart>=0.0.9",  # FastAPI UploadFile 硬依赖
     "uvicorn>=0.27",
+    # slicer 是同仓库的本地兄弟包，不发布到 PyPI，故不列入此处。
+    # /parse 一次返回解析结果与切片，需先 `pip install -e ../slicer`。见 README。
 ]
 
 [project.optional-dependencies]

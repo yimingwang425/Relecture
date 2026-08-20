@@ -342,7 +342,7 @@ def parse_pdf(data: bytes, filename: str) -> ParseResult:
         kinds = [p.kind for p in pages]
         verdict, reason, usable, unusable = document_verdict(kinds)
         meta = DocumentMeta(
-            doc_id="sha256:" + hashlib.sha256(data).hexdigest(),
+            content_sha256=hashlib.sha256(data).hexdigest(),
             source_format="pdf",
             filename=filename,
             byte_size=len(data),

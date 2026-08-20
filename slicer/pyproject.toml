@@ -1,0 +1,26 @@
+[project]
+name = "slicer"
+version = "0.1.0"
+description = "AI 课件讲解助手 · F2 第二步 2a：课件切片（库，非服务）"
+requires-python = ">=3.11"
+# 本库消费 parse-service 的 schema 契约（单向依赖：消费者依赖生产者的契约）。
+# 分层：parse_service.schema ← slicer ← parse_service.response ← parse_service.app
+#
+# parse-service 是**同仓库的本地兄弟包**，不发布到 PyPI，故不列入 dependencies
+# （列了会让 pip 去 PyPI 找一个不存在的包）。安装顺序见 README：
+#   pip install -e ../parse-service -e .
+dependencies = ["pydantic>=2.6"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["slicer*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

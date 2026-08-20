@@ -83,7 +83,16 @@ class UnusablePage(_Model):
 
 
 class DocumentMeta(_Model):
-    doc_id: str = Field(description="文件内容 sha256，形如 'sha256:9f2c…'；去重与缓存键")
+    content_sha256: str = Field(
+        description="文件内容 sha256（裸十六进制）。用途仅两项：**完整性校验**，"
+        "以及**同一用户内**的重复上传提示。"
+        "\n\n**它不是文档主键，且严禁用作跨用户去重或跨用户缓存的键。**"
+        "PRD §12.1 承诺「课件仅存于用户个人空间，不跨用户共享、不建公共库、"
+        "不做跨用户检索」——按内容哈希去重等于两个用户上传同一份课件时共用一份存储，"
+        "直接违反该承诺。**这是产品承诺，不是性能取舍**，不因存储成本而放宽。"
+        "\n\n文档主键由持久化层赋予：随机 id 或 (user_id, content_sha256)。"
+        "本服务无状态、不认识 user_id，故不产出主键",
+    )
     source_format: Literal["pdf", "pptx"]
     filename: str
     byte_size: int

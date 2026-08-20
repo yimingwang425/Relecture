@@ -1,9 +1,12 @@
 # 课件解析服务（parse-service）
 
-AI 课件讲解助手 · **F2 第一步**：把课件解析为**保留版面信息**的结构化 JSON。
+AI 课件讲解助手 · **F2**：把课件解析为**保留版面信息**的结构化 JSON，并切成检索用的切片。
 对应 PRD §5.1 的 F2、§6.2 与 §10 的扫描件边界。
 
-**只做解析。** 切片、向量化、术语提取都不在本服务范围内——接口未定时写了会返工。
+**解析 + 切片一次返回。** 切片由 [`slicer`](../slicer) 库产出（F2 第二步 2a）；
+向量化（2b）与术语提取（第三步）不在本服务范围内。
+
+**服务无状态**：不写盘、不缓存、不做跨用户去重（口径表 P23 / P24）。
 
 | 路径 | 状态 |
 | --- | --- |
@@ -11,8 +14,18 @@ AI 课件讲解助手 · **F2 第一步**：把课件解析为**保留版面信�
 | PPTX（python-pptx） | ⬜ schema 形状已定义并测试，解析器为下次交付 |
 
 ```
-POST /parse   multipart/form-data, field=file   →  ParseResult（见 schema.py）
+POST /parse   multipart/form-data, field=file
+              →  { schema_version, document, pages, slices }
+                 document/pages 见 parse_service/schema.py
+                 slices         见 slicer/schema.py
 GET  /health
+```
+
+安装（`slicer` 是同仓库的本地兄弟包，不发布到 PyPI，故不在 `dependencies` 里）：
+
+```bash
+python -m venv .venv
+./.venv/bin/pip install -e ".[dev]" -e ../slicer
 ```
 
 ---
@@ -104,6 +117,8 @@ GET  /health
 | P20 | 图片二进制 | **不导出**，只给 `image_id` + `bbox` + `pixel_size` | 图注通道要的是位置关系不是像素。需要像素时按 `image_id` 回取，接口另开 | 2026-08-20 |
 | P21 | 演讲者备注 | 进 `page.notes_text`，**不进 `blocks`** | 备注没有 bbox，混进 blocks 会污染邻接计算。**备注同样受 PRD §12.1 的单段引用 100 字上限约束**，下游引用其原文时须与正文同等对待。术语提取是否使用备注由第三步决定，本服务**只存不用** | 2026-08-20 |
 | P22 | PPTX 母版图片 | `origin.from_layout` 标记，**不参与邻接计算** | 每页都有的 logo 会把每个文本块都判成「图注」。（模型已定义，解析器下次交付） | 2026-08-20 |
+| **P23** | **文档主键与内容哈希** | **本服务不产出文档主键。** 只给 `content_sha256`，用途仅两项：完整性校验、**同一用户内**的重复上传提示 | 【评审指定】PRD §12.1 承诺「课件仅存于用户个人空间，**不跨用户共享、不建公共库、不做跨用户检索**」。按内容哈希做主键或去重键，等于两个用户上传同一份课件时共用一份存储，直接违反该承诺。**这是产品承诺，不是性能取舍**，不因存储成本而放宽。**跨用户去重、跨用户缓存一律不做。** 主键归持久化层：随机 id 或 `(user_id, content_sha256)`。本服务无状态、不认识 `user_id`，故不产出主键 | 2026-08-20 |
+| **P24** | **持久化与端点形态** | 服务**无状态**：不写盘、不缓存。`POST /parse` **一次返回 `ParseResult + SliceSet`**，切片不单开端点 | 【评审指定】理由是合规：PRD §12.1 的「一键删除」与「注销即清空」若跨两个存储系统实现，会有**两处漏点**。全部持久化走 Supabase，因此不存在「先 parse 存起来、再调 slice」的中间态 | 2026-08-20 |
 
 ### 2.4 阈值来源
 
@@ -242,4 +257,5 @@ python -m venv .venv && ./.venv/bin/pip install -e ".[dev]"
 | `geometry.py` | 矩形、精确并集、邻接度量。不依赖任何解析库，两条来源路径共用 |
 | `scanned.py` | 扫描件判据。**不 import PyMuPDF**——输入是数字，可脱离文件单测与重算 |
 | `pdf.py` | PyMuPDF 路径：只负责把数字取出来，不含判据逻辑 |
-| `app.py` | FastAPI `POST /parse` |
+| `response.py` | `ParseResponse`（解析 + 切片的组合）。**刻意不放在 `schema.py`**——放进去会形成 `parse_service.schema → slicer.schema → parse_service.schema` 的循环导入 |
+| `app.py` | FastAPI `POST /parse`。编排层：parse → slice → 一次返回 |

@@ -145,7 +145,7 @@ class TestParseResult:
         )
         result = ParseResult(
             document=DocumentMeta(
-                doc_id="sha256:abc",
+                content_sha256="abc",
                 source_format="pdf",
                 filename="x.pdf",
                 byte_size=1,

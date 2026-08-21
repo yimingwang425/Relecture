@@ -1,0 +1,690 @@
+{
+  "_instructions": "对每条填 verdict：true_term（真术语，说明 v1.1 有遗漏）/ false_positive（误收）/ borderline（边缘）。填 reason。**判定完成前不要运行 phase2_recall.py。**",
+  "course": "22.081J",
+  "ruleset_version": "glossary-extract-1.0",
+  "extracted_total": 53,
+  "gold_total": 44,
+  "new_findings": [
+    {
+      "en": "basic",
+      "source": "body_text",
+      "confidence": "low",
+      "heuristics": [
+        "B3"
+      ],
+      "pages": [
+        18
+      ],
+      "surface_forms": [
+        "Basic"
+      ],
+      "verdict": "false_positive",
+      "reason": "G1 日常词；来自标题 BASIC NUCLEAR REACTION 的碎片"
+    },
+    {
+      "en": "basic nuclear reaction",
+      "source": "body_text",
+      "confidence": "medium",
+      "heuristics": [
+        "B2"
+      ],
+      "pages": [
+        28
+      ],
+      "surface_forms": [
+        "BASIC NUCLEAR REACTION"
+      ],
+      "verdict": "false_positive",
+      "reason": "幻灯片标题整句，不是术语；真术语是 nuclear reaction 之下的具体概念"
+    },
+    {
+      "en": "energy source",
+      "source": "body_text",
+      "confidence": "medium",
+      "heuristics": [
+        "B2"
+      ],
+      "pages": [
+        8
+      ],
+      "surface_forms": [
+        "ENERGY SOURCES"
+      ],
+      "verdict": "false_positive",
+      "reason": "G1 由两个日常词构成；G3 学生已知"
+    },
+    {
+      "en": "fossil fuel",
+      "source": "body_text",
+      "confidence": "high",
+      "heuristics": [
+        "B2",
+        "B3"
+      ],
+      "pages": [
+        18,
+        22,
+        23
+      ],
+      "surface_forms": [
+        "FOSSIL FUELS"
+      ],
+      "verdict": "false_positive",
+      "reason": "G3 不通过——判据文件在 G3 行**明确举它为反例**（学生已知）"
+    },
+    {
+      "en": "gasoline",
+      "source": "body_text",
+      "confidence": "low",
+      "heuristics": [
+        "B3"
+      ],
+      "pages": [
+        4
+      ],
+      "surface_forms": [
+        "gasoline"
+      ],
+      "verdict": "false_positive",
+      "reason": "G1/G3 日常词，学生已知"
+    },
+    {
+      "en": "geothermal",
+      "source": "body_text",
+      "confidence": "low",
+      "heuristics": [
+        "B3"
+      ],
+      "pages": [
+        4
+      ],
+      "surface_forms": [
+        "geothermal"
+      ],
+      "verdict": "true_term",
+      "reason": "G1 领域限定、G3 需要解释，与金标准已收的 biomass / photovoltaic 同一技术层级。**v1.1 遗漏**"
+    },
+    {
+      "en": "global warming",
+      "source": "body_text",
+      "confidence": "low",
+      "heuristics": [
+        "B3"
+      ],
+      "pages": [
+        2
+      ],
+      "surface_forms": [
+        "Global warming"
+      ],
+      "verdict": "false_positive",
+      "reason": "G3 不通过——判据文件 G3 行**明确举它为反例**"
+    },
+    {
+      "en": "greenhouse effect",
+      "source": "body_text",
+      "confidence": "high",
+      "heuristics": [
+        "B2",
+        "B3"
+      ],
+      "pages": [
+        7,
+        24
+      ],
+      "surface_forms": [
+        "GREENHOUSE EFFECT",
+        "greenhouse effect"
+      ],
+      "verdict": "false_positive",
+      "reason": "与 global warming 同一语域，G3 学生已知"
+    },
+    {
+      "en": "hydroelectric",
+      "source": "body_text",
+      "confidence": "low",
+      "heuristics": [
+        "B3"
+      ],
+      "pages": [
+        19
+      ],
+      "surface_forms": [
+        "Hydroelectric"
+      ],
+      "verdict": "borderline",
+      "reason": "技术层级介于 biomass（金标准已收）与 renewables（判据举为 G3 反例）之间，判不准"
+    },
+    {
+      "en": "hydroelectric plant",
+      "source": "body_text",
+      "confidence": "medium",
+      "heuristics": [
+        "B2"
+      ],
+      "pages": [
+        31
+      ],
+      "surface_forms": [
+        "HYDROELECTRIC PLANT"
+      ],
+      "verdict": "false_positive",
+      "reason": "在 hydroelectric 基础上加通用词，未提高术语性"
+    },
+    {
+      "en": "introduction",
+      "source": "body_text",
+      "confidence": "low",
+      "heuristics": [
+        "B3"
+      ],
+      "pages": [
+        2
+      ],
+      "surface_forms": [
+        "Introduction"
+      ],
+      "verdict": "false_positive",
+      "reason": "G1 日常词；来自章节面包屑"
+    },
+    {
+      "en": "introduction course",
+      "source": "body_text",
+      "confidence": "low",
+      "heuristics": [
+        "B3"
+      ],
+      "pages": [
+        6
+      ],
+      "surface_forms": [
+        "Introduction Course"
+      ],
+      "verdict": "false_positive",
+      "reason": "面包屑碎片，非术语"
+    },
+    {
+      "en": "lot",
+      "source": "body_text",
+      "confidence": "medium",
+      "heuristics": [
+        "B2",
+        "B3"
+      ],
+      "pages": [
+        13
+      ],
+      "surface_forms": [
+        "Lots"
+      ],
+      "verdict": "false_positive",
+      "reason": "G1 日常词（来自 Lots of coal）"
+    },
+    {
+      "en": "main course goal",
+      "source": "body_text",
+      "confidence": "medium",
+      "heuristics": [
+        "B2"
+      ],
+      "pages": [
+        6
+      ],
+      "surface_forms": [
+        "MAIN COURSE GOALS"
+      ],
+      "verdict": "false_positive",
+      "reason": "幻灯片标题，非术语"
+    },
+    {
+      "en": "major technology",
+      "source": "body_text",
+      "confidence": "medium",
+      "heuristics": [
+        "B2"
+      ],
+      "pages": [
+        19
+      ],
+      "surface_forms": [
+        "MAJOR TECHNOLOGIES"
+      ],
+      "verdict": "false_positive",
+      "reason": "幻灯片标题碎片"
+    },
+    {
+      "en": "nuclear fuel",
+      "source": "body_text",
+      "confidence": "medium",
+      "heuristics": [
+        "B2"
+      ],
+      "pages": [
+        26
+      ],
+      "surface_forms": [
+        "NUCLEAR FUEL"
+      ],
+      "verdict": "borderline",
+      "reason": "幻灯片标题；金标准收了更具体的 natural uranium / fuel rod 而未收本条，判不准"
+    },
+    {
+      "en": "overview",
+      "source": "body_text",
+      "confidence": "medium",
+      "heuristics": [
+        "B2",
+        "B3"
+      ],
+      "pages": [
+        1
+      ],
+      "surface_forms": [
+        "Overview"
+      ],
+      "verdict": "false_positive",
+      "reason": "G1 日常词"
+    },
+    {
+      "en": "proposed solution",
+      "source": "body_text",
+      "confidence": "high",
+      "heuristics": [
+        "B2",
+        "B3"
+      ],
+      "pages": [
+        3,
+        4
+      ],
+      "surface_forms": [
+        "PROPOSED SOLUTIONS"
+      ],
+      "verdict": "false_positive",
+      "reason": "幻灯片标题碎片"
+    },
+    {
+      "en": "reaction",
+      "source": "body_text",
+      "confidence": "low",
+      "heuristics": [
+        "B3"
+      ],
+      "pages": [
+        17
+      ],
+      "surface_forms": [
+        "reaction"
+      ],
+      "verdict": "false_positive",
+      "reason": "G1 日常词；真术语是 DD reaction / DT reaction（金标准已收）"
+    },
+    {
+      "en": "real heat engine",
+      "source": "body_text",
+      "confidence": "medium",
+      "heuristics": [
+        "B2"
+      ],
+      "pages": [
+        21
+      ],
+      "surface_forms": [
+        "REAL HEAT ENGINES"
+      ],
+      "verdict": "false_positive",
+      "reason": "幻灯片标题 REAL HEAT ENGINES 的产物；真术语 heat engine 金标准已收"
+    },
+    {
+      "en": "related issue",
+      "source": "body_text",
+      "confidence": "medium",
+      "heuristics": [
+        "B2"
+      ],
+      "pages": [
+        1
+      ],
+      "surface_forms": [
+        "Related Issues"
+      ],
+      "verdict": "false_positive",
+      "reason": "标题碎片"
+    },
+    {
+      "en": "renewable",
+      "source": "body_text",
+      "confidence": "low",
+      "heuristics": [
+        "B3"
+      ],
+      "pages": [
+        3
+      ],
+      "surface_forms": [
+        "renewables"
+      ],
+      "verdict": "false_positive",
+      "reason": "G3 不通过——判据文件 G3 行**明确举 renewables 为反例**"
+    },
+    {
+      "en": "reserve",
+      "source": "body_text",
+      "confidence": "low",
+      "heuristics": [
+        "B3"
+      ],
+      "pages": [
+        2
+      ],
+      "surface_forms": [
+        "reserves"
+      ],
+      "verdict": "false_positive",
+      "reason": "G1 单独出现是日常词"
+    },
+    {
+      "en": "schematic diagram",
+      "source": "body_text",
+      "confidence": "medium",
+      "heuristics": [
+        "B2"
+      ],
+      "pages": [
+        30
+      ],
+      "surface_forms": [
+        "SCHEMATIC DIAGRAM"
+      ],
+      "verdict": "false_positive",
+      "reason": "通用词组，非本课术语"
+    },
+    {
+      "en": "short ton",
+      "source": "body_text",
+      "confidence": "low",
+      "heuristics": [
+        "B3"
+      ],
+      "pages": [
+        13
+      ],
+      "surface_forms": [
+        "SHORT TONS"
+      ],
+      "verdict": "false_positive",
+      "reason": "**单位**。D18 明确单位不进术语表（G4）"
+    },
+    {
+      "en": "solar",
+      "source": "body_text",
+      "confidence": "low",
+      "heuristics": [
+        "B3"
+      ],
+      "pages": [
+        3
+      ],
+      "surface_forms": [
+        "solar"
+      ],
+      "verdict": "false_positive",
+      "reason": "G1 修饰语单用；真术语是 solar thermal / solar constant（金标准已收）"
+    },
+    {
+      "en": "solar energy",
+      "source": "body_text",
+      "confidence": "medium",
+      "heuristics": [
+        "B2"
+      ],
+      "pages": [
+        35
+      ],
+      "surface_forms": [
+        "SOLAR ENERGY"
+      ],
+      "verdict": "false_positive",
+      "reason": "G3 学生已知"
+    },
+    {
+      "en": "strategy assessment",
+      "source": "body_text",
+      "confidence": "medium",
+      "heuristics": [
+        "B2"
+      ],
+      "pages": [
+        5
+      ],
+      "surface_forms": [
+        "STRATEGY ASSESSMENT"
+      ],
+      "verdict": "false_positive",
+      "reason": "幻灯片标题"
+    },
+    {
+      "en": "sustainable energy",
+      "source": "body_text",
+      "confidence": "medium",
+      "heuristics": [
+        "B2"
+      ],
+      "pages": [
+        39
+      ],
+      "surface_forms": [
+        "Sustainable Energy"
+      ],
+      "verdict": "false_positive",
+      "reason": "课程名，G3 学生已知"
+    },
+    {
+      "en": "well known issue",
+      "source": "body_text",
+      "confidence": "medium",
+      "heuristics": [
+        "B2"
+      ],
+      "pages": [
+        2
+      ],
+      "surface_forms": [
+        "WELL KNOWN ISSUES"
+      ],
+      "verdict": "false_positive",
+      "reason": "幻灯片标题 WELL KNOWN ISSUES"
+    },
+    {
+      "en": "condenser pump",
+      "source": "figure_caption",
+      "confidence": "medium",
+      "heuristics": [
+        "F-CLUSTER"
+      ],
+      "pages": [
+        27
+      ],
+      "surface_forms": [
+        "Condenser\nPump"
+      ],
+      "verdict": "false_positive",
+      "reason": "p27 的 Condenser 与 Pump 是两个独立标签，被解析合成一块"
+    },
+    {
+      "en": "energy usage resource usage breakdown",
+      "source": "figure_caption",
+      "confidence": "medium",
+      "heuristics": [
+        "F-CLUSTER"
+      ],
+      "pages": [
+        11
+      ],
+      "surface_forms": [
+        "Energy usage \nResource usage breakdowns"
+      ],
+      "verdict": "false_positive",
+      "reason": "章节面包屑拼接产物"
+    },
+    {
+      "en": "energy usage supply",
+      "source": "figure_caption",
+      "confidence": "medium",
+      "heuristics": [
+        "F-CLUSTER"
+      ],
+      "pages": [
+        16
+      ],
+      "surface_forms": [
+        "Energy usage \nSupplies"
+      ],
+      "verdict": "false_positive",
+      "reason": "同上"
+    },
+    {
+      "en": "hydro",
+      "source": "figure_caption",
+      "confidence": "medium",
+      "heuristics": [
+        "F-CLUSTER"
+      ],
+      "pages": [
+        11
+      ],
+      "surface_forms": [
+        "Hydro"
+      ],
+      "verdict": "false_positive",
+      "reason": "饼图数据标签缩写，G1/G3 均不通过"
+    },
+    {
+      "en": "nuclear",
+      "source": "figure_caption",
+      "confidence": "high",
+      "heuristics": [
+        "B3",
+        "F-CLUSTER"
+      ],
+      "pages": [
+        3,
+        11,
+        27
+      ],
+      "surface_forms": [
+        "Nuclear",
+        "nuclear"
+      ],
+      "verdict": "false_positive",
+      "reason": "G1 修饰语单用；真术语是 nuclear fission / nuclear fusion（金标准已收）"
+    },
+    {
+      "en": "pressurized water",
+      "source": "figure_caption",
+      "confidence": "medium",
+      "heuristics": [
+        "F-CLUSTER"
+      ],
+      "pages": [
+        27
+      ],
+      "surface_forms": [
+        "Pressurized water"
+      ],
+      "verdict": "borderline",
+      "reason": "是 pressurized water reactor 的前半；金标准收了同族的 light water reactor，判不准"
+    },
+    {
+      "en": "reactor vessel control",
+      "source": "figure_caption",
+      "confidence": "medium",
+      "heuristics": [
+        "F-CLUSTER"
+      ],
+      "pages": [
+        27
+      ],
+      "surface_forms": [
+        "Reactor vessel\nControl"
+      ],
+      "verdict": "false_positive",
+      "reason": "拼接产物；reactor vessel 金标准已收，Control 属另一标签"
+    },
+    {
+      "en": "rod",
+      "source": "figure_caption",
+      "confidence": "medium",
+      "heuristics": [
+        "F-CLUSTER"
+      ],
+      "pages": [
+        27
+      ],
+      "surface_forms": [
+        "rods"
+      ],
+      "verdict": "false_positive",
+      "reason": "G1 日常词；真术语是 fuel rod / control rod"
+    },
+    {
+      "en": "technology",
+      "source": "figure_caption",
+      "confidence": "high",
+      "heuristics": [
+        "B3",
+        "F-CLUSTER"
+      ],
+      "pages": [
+        7,
+        27
+      ],
+      "surface_forms": [
+        "Technologies",
+        "technologies"
+      ],
+      "verdict": "false_positive",
+      "reason": "G1 日常词，来自面包屑"
+    },
+    {
+      "en": "technology nuclear",
+      "source": "figure_caption",
+      "confidence": "medium",
+      "heuristics": [
+        "F-CLUSTER"
+      ],
+      "pages": [
+        27
+      ],
+      "surface_forms": [
+        "Technologies\nNuclear"
+      ],
+      "verdict": "false_positive",
+      "reason": "面包屑拼接产物"
+    },
+    {
+      "en": "water coolant pump",
+      "source": "figure_caption",
+      "confidence": "low",
+      "heuristics": [
+        "F-JOIN"
+      ],
+      "pages": [
+        27
+      ],
+      "surface_forms": [
+        "Water coolant Pump"
+      ],
+      "verdict": "false_positive",
+      "reason": "拼接产物；coolant 金标准已收"
+    }
+  ],
+  "_adjudicated_at": "2026-08-21",
+  "_adjudicator": "single (同 v1.1 的整理者)",
+  "_note": "判定在计算召回率之前完成；phase2_recall.py 校验本文件存在且已填满",
+  "verdict_summary": {
+    "false_positive": 37,
+    "true_term": 1,
+    "borderline": 3
+  }
+}

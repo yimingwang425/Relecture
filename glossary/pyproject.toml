@@ -1,0 +1,24 @@
+[project]
+name = "glossary"
+version = "0.1.0"
+description = "AI 课件讲解助手 · F2 第三步：术语提取（正文通道 + 图注通道）"
+requires-python = ">=3.11"
+# parse-service 与 slicer 是同仓库的本地兄弟包，不发布 PyPI，故不列此处。
+# 安装：pip install -e ../parse-service -e ../slicer -e .
+# 刻意不引入 NLP 依赖（spaCy / NLTK）：名词短语用大写模式 + n-gram + 自带停用词表
+# 近似，是保守近似、会漏——符合 PRD §8.1「宁漏勿错」的误差方向。
+dependencies = ["pydantic>=2.6"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["glossary*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

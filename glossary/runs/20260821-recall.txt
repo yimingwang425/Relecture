@@ -1,0 +1,27 @@
+==========================================================================
+术语提取召回率 · 22.081J · ruleset glossary-extract-1.0
+判定文件 sha256 5cda2a4684264192 · 判定于 2026-08-21 · 早于本次计算
+==========================================================================
+
+通道                  金标准     可达上限    命中      相对上限      相对全表
+--------------------------------------------------------------------------
+body_text            27       23     4      17%       15%
+figure_caption       17       14     8      57%       47%
+--------------------------------------------------------------------------
+合计                   44       37    12      32%       27%
+
+body_text 未命中 23 条：
+  结构性不可达 4：['breeder reactor', 'fission product', 'nuclear fission', 'uranium enrichment']
+  可达但漏掉 20：['carbon sequestration', 'DC electricity', 'DD reaction', 'DT reaction', 'energy carrier', 'energy density', 'exhaust steam', 'fuel rod', 'heat engine', 'hydraulic head', 'light water reactor', 'natural uranium', 'nuclear fusion', 'oil shale', 'power density', 'reactor vessel', 'solar constant', 'solar irradiance', 'tar sands', 'waste heat']
+figure_caption 未命中 9 条：
+  结构性不可达 3：['heat exchanger', 'makeup water', 'steam turbine']
+  可达但漏掉 6：['condenser', 'control rod', 'cooling loop', 'cooling tower', 'furnace', 'steam generator']
+
+==========================================================================
+新发现条目（不在 v1.1 中）：41 条
+  真术语 → v1.1 有遗漏             1 条：['geothermal']
+  边缘，判不准                     3 条：['hydroelectric', 'nuclear fuel', 'pressurized water']
+  误收                        37 条
+
+提取总数 53 条 · 命中金标准 12 · 新发现 41
+精确率（把 borderline 计为误收）≈ 25%

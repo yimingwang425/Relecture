@@ -1,0 +1,15 @@
+[project]
+name = "config-scan"
+version = "0.1.0"
+description = "AI 课件讲解助手 · F3a：配置扫描对照实验"
+requires-python = ">=3.11"
+# a_rules / explain / drift / retrieval 全部走 scan/_paths.py 路径注入，
+# 与 漂移实验 同一约定：实验是一次性脚本，为它引入打包步骤不划算。
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

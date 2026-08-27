@@ -110,10 +110,15 @@ class TestCli:
         assert json.loads(lines[0])["source"] == "r1.md"
 
     def test_after_marker_strips_prompt_header(self, tmp_path, capsys):
-        # 不剥掉会把提示词计进统计——提示词里往往写着术语要求，虚高命中数
+        # 不剥掉会把提示词计进统计——提示词里往往写着术语要求，虚高命中数。
+        # 术语维度 v1 默认不激活（CONFIG_VERSION 2.0），故显式开启；
+        # 这条断言必须留在术语维度上——提示词头部虚高的正是术语命中数。
         f = tmp_path / "a.md"
         f.write_text("Prompt：请用中文并给出 heat engine\n输出：\n热机（heat engine）如上。", encoding="utf-8")
-        main(["--text", str(f), "--after", "输出：", "--json", "--glossary", str(GLOSSARY)])
+        cfg_path = tmp_path / "c.json"
+        cfg_path.write_text('{"term_annotation_enabled": true}', encoding="utf-8")
+        main(["--text", str(f), "--after", "输出：", "--json",
+              "--config", str(cfg_path), "--glossary", str(GLOSSARY)])
         rec = json.loads(capsys.readouterr().out)[0]
         assert rec["dimensions"]["term_annotation"]["details"]["occurrences_all"] == 1
 
@@ -137,3 +142,41 @@ class TestCli:
 
     def test_empty_dir_returns_error_code(self, tmp_path):
         assert main(["--dir", str(tmp_path)]) == 2
+
+
+class TestV1ThreeDimensions:
+    """PRD §3.2「风格遵循度的 v1 定义」在聚合层的落地。"""
+
+    TEXT = "热机（heat engine）把热能转成机械能，这段文字用来自检，长度足够算出段落均值。"
+
+    def test_only_three_dimensions_counted(self):
+        ev = evaluate(self.TEXT)
+        assert [d.name for d in ev.scored] == [
+            "chinese_ratio",
+            "paragraph_length",
+            "quote_length",
+        ]
+
+    def test_term_dimension_still_computed_but_not_counted(self):
+        # 仍然计算是为了让 details 能作观察项进日志；代价接近零
+        d = evaluate(self.TEXT).by_name("term_annotation")
+        assert d.activated is False and d.counts_toward_score is False
+
+    def test_term_failure_cannot_fail_the_round(self):
+        """**反向验证**：术语全部未标注的文本，在 v1 下仍应达标。
+
+        这条会红，就说明术语维度实际上还在参与达标判定——
+        而它的分母残缺 68%，PRD §8.1 已明确不得计入。
+        """
+        from a_rules.glossary import Glossary
+
+        gl = Glossary.from_list([{"en": "heat engine", "zh": ["热机"]}])
+        text = "热机把热能转成机械能，这段文字用来自检，长度足够算出段落均值，且完全没有英文括注。"
+        assert evaluate(text, glossary=gl).all_activated_passed is True
+
+    def test_metric_set_id_and_counted_dimensions_in_payload(self):
+        # 每轮埋点必须带得走这两个字段，否则跨批次合并时无从核对
+        d = evaluate(self.TEXT).to_dict()
+        assert d["config_version"] == "2.0"
+        assert d["metric_set_id"] == StyleConfig().metric_set_id()
+        assert d["counted_dimensions"] == ["chinese_ratio", "paragraph_length", "quote_length"]

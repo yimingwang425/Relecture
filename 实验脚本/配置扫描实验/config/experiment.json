@@ -1,0 +1,51 @@
+{
+  "name": "config-scan-v1",
+  "course_label": "22.081J · Introduction to Sustainable Energy (lec01b)",
+  "courseware": "MIT22_081JF10_lec01b.pdf",
+  "max_regenerations": 2,
+  "model": {
+    "name": "claude-sonnet-5",
+    "effort": "medium",
+    "thinking": "adaptive",
+    "max_tokens": 8000,
+    "note": "沿用第 0 周，便于与旧结论交叉引用。当前模型已移除 temperature/top_p/top_k，传入返回 400；可固定并记录的是 effort 与 thinking"
+  },
+  "retrieval": {
+    "budget": 5,
+    "mode": "selection.SELECTED_MODE",
+    "variant": "T0",
+    "note": "模型与维度取自 retrieval/selection.py——那是这些数在代码里的唯一出处。T0 与 mode=none 都是「实测无一致方向证据，取假设最少者」的结论（R04 / R17）"
+  },
+  "arms": [
+    {
+      "name": "scan",
+      "points": ["P0", "P1", "P2", "P3", "P4"],
+      "questions": "questions_scan.json",
+      "replicates_by_stage": {"stage1": 1, "stage2": 2, "stage3": 3},
+      "rounds": 6,
+      "note": "提问序列经过构造，触发率是压力测试上界"
+    },
+    {
+      "name": "cost",
+      "points": ["P0"],
+      "questions": "questions_cost.json",
+      "replicates_by_stage": {"stage1": 1},
+      "rounds": 15,
+      "note": "第 0 周原序列。单会话成本与真实使用率只从这条臂出"
+    }
+  ],
+  "stopping_rule": {
+    "stage1": "1 轨全点 + 成本臂 → verify_scan 通过 → 看触发率量级",
+    "stage2": "补第 2 轨 → 按主判据（单调性）判读",
+    "stage3": "仅对落进「不可分辨带」的点补第 3 轨",
+    "stage3b": "若 P3 触发率明显高于 P0 → 补 P3 成本臂（P3 × 2 组 × 1 轨 × 15 轮）。**不必再确认**",
+    "stage4": "可选：14.129 端点复现（P0/P3 各 1 轨 6 轮）。可砍，不为它推迟主线",
+    "stop_early": "阶段 2 后全部点在近零带且无单调上升 → 停，结论即「v1 三维下审查几乎不触发」"
+  },
+  "readout_registered_before_run": {
+    "main": "触发率沿 P0→P1→P2→P3 单调不减，且 ≥2 条轨迹同向（E05）",
+    "auxiliary": "判读带 ≤1/12 近零 · ≥6/12 高 · 中间不可分辨，只用来定位拐点（E05a）",
+    "p4": "不在轴上，按判读带单独判（E05b）",
+    "segmentation": "触发率近零 + 总字数基本不变 + 段数显著上升 = 达标靠分段实现（E10）"
+  }
+}

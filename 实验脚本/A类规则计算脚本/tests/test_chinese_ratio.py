@@ -1,6 +1,7 @@
 """chinese_ratio 的单元测试。"""
 
 import json
+import sys
 
 import pytest
 
@@ -103,14 +104,76 @@ class TestAnnotationExclusion:
         r = chinese_ratio(self.TEXT, cfg(exclude_annotated_terms=False), Glossary.from_list([HEAT]))
         assert r.raw < 1.0 and r.details["excluded_annotation_words"] == 0
 
-    def test_no_glossary_means_no_exclusion(self):
+    def test_no_glossary_still_excludes_by_form(self):
+        """口径 X11（2026-08-22）：无术语表时改用形态规则，不再退回「不排除」。
+
+        旧行为（`glossary is None` → 一律不排除）会让 v1 多课程场景下的中文占比
+        被系统性压低——**那不是模型的行为变化，是分母的口径变化**，
+        而它在 0.95 附近足以翻转达标判定。
+        """
         r = chinese_ratio(self.TEXT, StyleConfig(), None)
-        assert r.raw < 1.0
+        assert r.raw == 1.0
+        assert r.details["excluded_annotation_words"] == 2
 
     def test_unannotated_english_still_counted(self):
         # 只排除括注里的原文，正文中裸露的英文照常计入
         r = chinese_ratio("热机 heat engine 很重要", StyleConfig(), Glossary.from_list([HEAT]))
         assert r.raw < 1.0
+
+
+class TestFormBasedExclusion:
+    """口径 X11 · 形态规则（不依赖术语表）。"""
+
+    def test_non_glossary_term_also_excluded(self):
+        # 形态规则认的是形态，不是术语表条目——这正是它存在的理由
+        r = chinese_ratio("涡轮机（turbine）驱动发电机（generator）。", StyleConfig(), None)
+        assert r.raw == 1.0
+
+    def test_annotation_containing_han_is_not_excluded(self):
+        # 「（见 p12）」是正文补充说明，不是原文标注，本就该计入分母
+        r = chinese_ratio("热机的效率（见 p12 figure）很低。", StyleConfig(), None)
+        assert r.raw < 1.0
+
+    def test_parenthesis_not_preceded_by_han_is_untouched(self):
+        # 不加「括号前必须是汉字」这条，纯英文句子会被整段掏空
+        r = chinese_ratio("这句是中文。heat engine (thermal machine) is english.", StyleConfig(), None)
+        assert r.details["excluded_annotation_words"] == 0
+
+    def test_numeric_only_annotation_is_ignored(self):
+        # 纯数字括注不影响英文词计数，排不排一样，不必纳入
+        r = chinese_ratio("这份课件（2010）讲热机。", StyleConfig(), None)
+        assert r.details["excluded_annotation_words"] == 0
+
+    def test_known_false_positive_is_registered_not_fixed(self):
+        """口径 X12：`（Figure 3）` 这类非术语括注也会被排除。
+
+        **登记，不修。** 误差方向单向（抬高中文占比 = 判定更宽松），
+        为消它引入白名单反而要维护一张没有依据的名单。
+        本测试的作用是把这个已知误收面钉住——它变了要有人知道。
+        """
+        r = chinese_ratio("温度曲线（Figure 3）说明了这一点。", StyleConfig(), None)
+        assert r.details["excluded_annotation_words"] == 1  # Figure；3 是数字组，不计英文词
+
+    def test_form_exclusion_is_not_a_no_op(self):
+        """**反向验证**（通则七 #4）：把形态排除换成平凡实现，数字必须变。
+
+        不变就说明这条排除根本没生效，而它的失效是静默的——
+        `chinese_ratio` 照样出一个看起来正常的数。
+        """
+        # 注意：`a_rules.metrics` 的 __init__ 把同名函数导出了，
+        # `import a_rules.metrics.chinese_ratio as mod` 会拿到**函数**而不是模块。
+        # 取 sys.modules 是唯一不受这层遮蔽影响的写法。
+        mod = sys.modules["a_rules.metrics.chinese_ratio"]
+
+        text = "涡轮机（turbine）驱动发电机（generator）。"
+        real = chinese_ratio(text, StyleConfig(), None).raw
+        original = mod.parenthetical_english_spans
+        try:
+            mod.parenthetical_english_spans = lambda doc: ()
+            neutered = chinese_ratio(text, StyleConfig(), None).raw
+        finally:
+            mod.parenthetical_english_spans = original
+        assert real == 1.0 and neutered < real
 
 
 class TestThreshold:

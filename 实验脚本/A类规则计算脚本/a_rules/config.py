@@ -37,6 +37,14 @@ __all__ = [
 
 #: 口径与默认值集合的版本。
 #:
+#: v2.0（2026-08-22）：**术语处理维度默认下线**（`term_annotation_enabled=False`）。
+#: 前两版是同一维度集合内的口径演化，这次变的是**维度集合本身**——
+#: v1 的风格遵循度只含详细程度 / 引用长度 / 讲解语言一致性三项
+#: （PRD §3.2「风格遵循度的 v1 定义」：多课程下术语表分母只能来自自动提取，
+#: 实测召回 32%，分母残缺 68% 的维度计入达标判定，得到的数值无法解释）。
+#: 主版本号跳到 2 是刻意的：**跨维度集合的批次不可比**，
+#: 而指纹只能告诉你「阈值变了」，告诉不了你「指标集换了」——后者见 metric_set_id()。
+#:
 #: v1.1（2026-08-20）：术语标注率的「首现」作用域由**单轮**改为**整段对话**
 #: （口径 D44）。旧口径要求同一术语每轮重复标注，与 PRD §2 把「太啰嗦」列为
 #: 痛点的产品目标直接冲突——指标在奖励一个让用户体验变差的行为。
@@ -45,7 +53,7 @@ __all__ = [
 #: v1.0：首版，§8.2 首次实验所用。
 #: 注意版本号本身不保证「两轮用了同一份配置」——那由 fingerprint() 保证；
 #: 版本号只是给人看的标签，说明这批默认值经过哪一轮实测校准。
-CONFIG_VERSION = "1.1"
+CONFIG_VERSION = "2.0"
 
 
 class ConfigError(ValueError):
@@ -197,6 +205,11 @@ class StyleConfig:
     exclude_annotated_terms: bool = True
 
     # 维度 2 · 术语英文标注率
+    #: **v1 默认关闭**（PRD §3.2 / §8.1，2026-08-21 决策）。
+    #: 关的是「参与达标判定」，不是「删掉实现」——维度仍会被计算，
+    #: 结果以 activated=False 进日志，可作观察项。重启条件见 §8.1：
+    #: 正文通道召回率达标 **且** 在第二门课的独立金标准上复现。
+    term_annotation_enabled: bool = False
     term_policy: TermPolicy = TermPolicy.TRANSLATE_WITH_SOURCE
     term_annotation_threshold: float = 0.9
     term_count_mode: TermCountMode = TermCountMode.FIRST
@@ -217,6 +230,7 @@ class StyleConfig:
             "source_language",
             "chinese_ratio",
             "exclude_annotated_terms",
+            "term_annotation_enabled",
             "term_policy",
             "term_annotation_threshold",
             "term_count_mode",
@@ -241,6 +255,10 @@ class StyleConfig:
             raise ConfigError(f"max_quote_chars 必须是整数，得到 {self.max_quote_chars!r}")
         if self.max_quote_chars < 1:
             raise ConfigError(f"max_quote_chars 必须 ≥ 1，得到 {self.max_quote_chars}")
+        if not isinstance(self.term_annotation_enabled, bool):
+            raise ConfigError(
+                f"term_annotation_enabled 必须是布尔值，得到 {self.term_annotation_enabled!r}"
+            )
         if not isinstance(self.exclude_annotated_terms, bool):
             raise ConfigError(
                 f"exclude_annotated_terms 必须是布尔值，得到 {self.exclude_annotated_terms!r}"
@@ -266,11 +284,16 @@ class StyleConfig:
     def activates_term_policy(self) -> bool:
         """术语处理维度是否激活。
 
-        PRD §8.1：「单语场景（讲解语言 = 课件语言）下该参数为 N/A，整项不激活。」
-        术语表为空是另一个不激活的原因，但那取决于运行时传入的术语表，
+        两个条件都要满足：
+
+        1. `term_annotation_enabled`——**v1 默认为 False**。PRD §3.2 已把本维度
+           移出风格遵循度的定义：多课程下分母只能来自自动提取，实测召回 32%。
+        2. 跨语言。PRD §8.1：「单语场景（讲解语言 = 课件语言）下该参数为 N/A。」
+
+        术语表为空是第三个不激活的原因，但那取决于运行时传入的术语表，
         不是配置能决定的，故由 term_annotation 模块判定。
         """
-        return self.is_bilingual
+        return self.term_annotation_enabled and self.is_bilingual
 
     @property
     def activates_paragraph_length(self) -> bool:
@@ -320,7 +343,12 @@ class StyleConfig:
             kwargs["term_annotation_threshold"] = _require_number(
                 data["term_annotation_threshold"], "term_annotation_threshold"
             )
-        for key in ("exclude_annotated_terms", "max_quote_chars", "term_min_occurrences"):
+        for key in (
+            "exclude_annotated_terms",
+            "max_quote_chars",
+            "term_min_occurrences",
+            "term_annotation_enabled",
+        ):
             if key in data:
                 kwargs[key] = data[key]
         return cls(**kwargs)
@@ -348,6 +376,7 @@ class StyleConfig:
             "source_language": self.source_language,
             "chinese_ratio": self.chinese_ratio.to_dict(),
             "exclude_annotated_terms": self.exclude_annotated_terms,
+            "term_annotation_enabled": self.term_annotation_enabled,
             "term_policy": self.term_policy.value,
             "term_annotation_threshold": self.term_annotation_threshold,
             "term_count_mode": self.term_count_mode.value,
@@ -364,6 +393,36 @@ class StyleConfig:
         """
         canonical = json.dumps(self.to_dict(), sort_keys=True, ensure_ascii=False)
         return hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:12]
+
+    def metric_set_id(self) -> str:
+        """**指标集**标识：哪些维度参与达标判定，前 12 位十六进制。
+
+        与 `fingerprint()` 分工明确，两者管的不是一件事：
+
+        ==================  ====================================================
+        `fingerprint()`     阈值有没有被改（同一指标集内的口径差异）
+        `metric_set_id()`   **指标集是不是同一个**（维度集合 + CONFIG_VERSION）
+        ==================  ====================================================
+
+        为什么需要第二个数：配置扫描实验里**指纹按设计逐点不同**（每个配置点
+        一个阈值组合），此时「指纹一致」这条守卫会被若干个合法指纹撑破，
+        挡不住「两批用不同维度集合跑出来的数据被画进同一张图」。
+        而那正是 PRD §8.1 下线术语维度后最需要防的事——D02/D44 的历史批次
+        是四维口径，与 v1 三维不可合并。
+
+        决策日期：2026-08-22
+        """
+        payload = json.dumps(
+            {
+                "config_version": CONFIG_VERSION,
+                "counted_dimensions": sorted(
+                    name for name, on in self.describe_activation().items() if on
+                ),
+            },
+            sort_keys=True,
+            ensure_ascii=False,
+        )
+        return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:12]
 
     def describe_activation(self) -> dict[str, bool]:
         """四个维度的激活状态一览，用于报告与调试。"""

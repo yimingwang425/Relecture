@@ -64,8 +64,23 @@ class TestLanguageNormalization:
 
 
 class TestActivation:
-    def test_bilingual_zh_activates_all_four(self):
+    def test_bilingual_zh_activates_three_by_default(self):
+        """**v1 默认三维**（CONFIG_VERSION 2.0 / PRD §3.2）。
+
+        跨语言只是术语维度的必要条件，不是充分条件——还要显式开启。
+        """
         c = StyleConfig.from_dict({"explain_language": "zh", "source_language": "en"})
+        assert c.describe_activation() == {
+            "chinese_ratio": True,
+            "term_annotation": False,
+            "paragraph_length": True,
+            "quote_length": True,
+        }
+
+    def test_bilingual_zh_activates_all_four_when_term_enabled(self):
+        c = StyleConfig.from_dict(
+            {"explain_language": "zh", "source_language": "en", "term_annotation_enabled": True}
+        )
         assert c.describe_activation() == {
             "chinese_ratio": True,
             "term_annotation": True,
@@ -87,7 +102,9 @@ class TestActivation:
 
     def test_non_chinese_explain_language_deactivates_ratio(self):
         # 本模块度量的是汉字占比；讲解语言不是中文时这个数字没有意义
-        c = StyleConfig.from_dict({"explain_language": "ja", "source_language": "en"})
+        c = StyleConfig.from_dict(
+            {"explain_language": "ja", "source_language": "en", "term_annotation_enabled": True}
+        )
         assert c.is_bilingual is True
         assert c.activates_chinese_ratio is False
         assert c.activates_term_policy is True
@@ -297,3 +314,86 @@ class TestConfigVersion:
         a, b = StyleConfig(), StyleConfig.from_dict({"max_quote_chars": 50})
         assert a.to_dict()["defaults_version"] == b.to_dict()["defaults_version"]
         assert a.fingerprint() != b.fingerprint()
+
+
+class TestMetricSetId:
+    """口径 X10 · 指标集标识。
+
+    与指纹分工：**指纹管「阈值变没变」，metric_set_id 管「指标集是不是同一个」**。
+    配置扫描实验里指纹按设计逐点不同，单靠指纹的守卫会被若干个合法指纹撑破。
+    """
+
+    BILINGUAL = {"explain_language": "zh", "source_language": "en"}
+
+    def test_v1_three_dimensions(self):
+        c = StyleConfig.from_dict(self.BILINGUAL)
+        assert [n for n, on in c.describe_activation().items() if on] == [
+            "chinese_ratio",
+            "paragraph_length",
+            "quote_length",
+        ]
+
+    def test_threshold_changes_fingerprint_but_not_metric_set(self):
+        """配置扫描的核心性质：换阈值 ≠ 换指标集。
+
+        没有这条性质，扫描实验的每个配置点都会被当成不同的指标集，
+        跨点比较无从谈起。
+        """
+        a = StyleConfig.from_dict(self.BILINGUAL)
+        b = StyleConfig.from_dict({**self.BILINGUAL, "paragraph_length": {"min": 15, "max": 40}})
+        assert a.fingerprint() != b.fingerprint()
+        assert a.metric_set_id() == b.metric_set_id()
+
+    def test_enabling_term_dimension_changes_metric_set(self):
+        """**反向验证**（通则七 #4）：把术语维度开回来，守卫必须变红。
+
+        不变红就说明这个标识挡不住「四维口径的 D02/D44 历史批次
+        被画进 v1 三维的图里」——而那正是它唯一的职责。
+        """
+        three = StyleConfig.from_dict(self.BILINGUAL)
+        four = StyleConfig.from_dict({**self.BILINGUAL, "term_annotation_enabled": True})
+        assert three.metric_set_id() != four.metric_set_id()
+
+    def test_monolingual_is_a_different_metric_set(self):
+        # 单语场景下 chinese_ratio 不激活，只剩两维——它与三维批次同样不可合并
+        mono = StyleConfig.from_dict({"explain_language": "zh", "source_language": "zh"})
+        assert mono.metric_set_id() != StyleConfig.from_dict(self.BILINGUAL).metric_set_id()
+
+    def test_version_participates(self):
+        # 指标集相同但 CONFIG_VERSION 不同的两批数据仍不可合并
+        import a_rules.config as cfgmod
+
+        c = StyleConfig.from_dict(self.BILINGUAL)
+        before = c.metric_set_id()
+        original = cfgmod.CONFIG_VERSION
+        try:
+            cfgmod.CONFIG_VERSION = "9.9"
+            assert c.metric_set_id() != before
+        finally:
+            cfgmod.CONFIG_VERSION = original
+
+
+class TestTermDimensionSwitch:
+    def test_default_is_off(self):
+        # PRD §3.2：v1 的风格遵循度按维度枚举，不含术语处理
+        assert StyleConfig().term_annotation_enabled is False
+
+    def test_bilingual_alone_is_not_enough(self):
+        c = StyleConfig.from_dict({"explain_language": "zh", "source_language": "en"})
+        assert c.is_bilingual is True and c.activates_term_policy is False
+
+    def test_enabled_but_monolingual_still_off(self):
+        # 跨语言仍是必要条件（PRD §8.1：单语场景下该参数 N/A）
+        c = StyleConfig.from_dict(
+            {"explain_language": "en", "source_language": "en", "term_annotation_enabled": True}
+        )
+        assert c.activates_term_policy is False
+
+    @pytest.mark.parametrize("bad", ["yes", 1, None, []])
+    def test_non_boolean_rejected(self, bad):
+        with pytest.raises(ConfigError):
+            StyleConfig.from_dict({"term_annotation_enabled": bad})
+
+    def test_round_trips_through_to_dict(self):
+        c = StyleConfig.from_dict({"term_annotation_enabled": True})
+        assert StyleConfig.from_dict(c.to_dict()).term_annotation_enabled is True

@@ -1,4 +1,9 @@
-"""聚合入口：一次跑完四个 A 类维度。
+"""聚合入口：一次跑完全部 A 类维度。
+
+**v1 只有三个维度计分**（PRD §3.2「风格遵循度的 v1 定义」）：详细程度 /
+引用长度 / 讲解语言一致性。`term_annotation` 仍然被计算，但 `activated=False`，
+不进 `scored`、不影响 `all_activated_passed`——保留计算是为了让它的 `details`
+仍能作为观察项进日志，代价接近零（术语表为 None 时它直接返回）。
 
 **不做混合分**（PRD §8.1 设计要点）。这里只把四个结果收在一起，外加一个
 `all_activated_passed` 布尔量——「§3.2 的 ≥85% 应理解为各激活维度均需达标，
@@ -33,6 +38,10 @@ DIMENSIONS = (chinese_ratio, term_annotation_rate, avg_paragraph_length, max_quo
 class Evaluation:
     dimensions: tuple[DimensionResult, ...]
     config_fingerprint: str
+    #: 指标集标识。与指纹分工见 `StyleConfig.metric_set_id`——
+    #: 指纹管「阈值变没变」，它管「指标集是不是同一个」。
+    #: 跨批次聚合前必须比对它，否则四维口径的历史数据会被画进三维的图里。
+    metric_set_id: str
     config_version: str
     glossary_version: str | None
     glossary_frozen: bool
@@ -61,7 +70,9 @@ class Evaluation:
     def to_dict(self) -> dict[str, Any]:
         return {
             "config_fingerprint": self.config_fingerprint,
+            "metric_set_id": self.metric_set_id,
             "config_version": self.config_version,
+            "counted_dimensions": [d.name for d in self.scored],
             "glossary_version": self.glossary_version,
             "glossary_frozen": self.glossary_frozen,
             "scored_count": len(self.scored),
@@ -91,6 +102,7 @@ def evaluate(
             for f in DIMENSIONS
         ),
         config_fingerprint=cfg.fingerprint(),
+        metric_set_id=cfg.metric_set_id(),
         config_version=CONFIG_VERSION,
         glossary_version=glossary.version if glossary else None,
         glossary_frozen=bool(glossary and glossary.frozen),

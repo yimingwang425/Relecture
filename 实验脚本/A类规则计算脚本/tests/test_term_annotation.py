@@ -28,8 +28,14 @@ def gl(*terms: dict) -> Glossary:
 
 def cfg(**kw) -> StyleConfig:
     """默认关掉最小分母护栏——本文件多数用例只有 1–2 个术语，
-    测的是判定逻辑而非护栏。护栏本身由 TestMinOccurrenceGuard 专测。"""
+    测的是判定逻辑而非护栏。护栏本身由 TestMinOccurrenceGuard 专测。
+
+    **默认打开 term_annotation_enabled**：v1 生产默认已把本维度下线
+    （CONFIG_VERSION 2.0），但本文件测的是这个维度**自身的判定逻辑**，
+    不是它在 v1 里激活与否。激活语义由 test_config.py 专测。
+    """
     kw.setdefault("term_min_occurrences", 1)
+    kw.setdefault("term_annotation_enabled", True)
     return StyleConfig.from_dict(kw)
 
 
@@ -320,25 +326,25 @@ class TestMinOccurrenceGuard:
 
     def test_below_threshold_is_low_confidence(self):
         # 实测第四轮只有 1 个首现术语，结果只能是 0% 或 100%
-        r = term_annotation_rate("热机把热能转成机械能。", StyleConfig(), gl(HEAT))
+        r = term_annotation_rate("热机把热能转成机械能。", cfg(term_min_occurrences=5), gl(HEAT))
         assert r.raw is None and r.passed is None
         assert r.reason == Reason.LOW_CONFIDENCE
         assert r.counts_toward_score is False
 
     def test_details_still_reported_when_low_confidence(self):
         # 不出数值，但证据要留——否则无法判断为什么分母小
-        r = term_annotation_rate("热机（heat engine）。", StyleConfig(), gl(HEAT))
+        r = term_annotation_rate("热机（heat engine）。", cfg(term_min_occurrences=5), gl(HEAT))
         assert r.details["occurrences_first"] == 1
         assert r.details["rate_first"] == 1.0
 
     def test_zero_occurrence_keeps_its_own_reason(self):
-        r = term_annotation_rate("完全没有术语的一段话。", StyleConfig(), gl(HEAT))
+        r = term_annotation_rate("完全没有术语的一段话。", cfg(term_min_occurrences=5), gl(HEAT))
         assert r.reason == Reason.NO_TERM_OCCURRENCE
 
     def test_at_threshold_is_computed(self):
         g = Glossary.from_list([{"en": f"term{i}", "zh": [f"术语{i}"]} for i in range(5)])
         text = "、".join(f"术语{i}" for i in range(5))
-        r = term_annotation_rate(text, StyleConfig(), g)
+        r = term_annotation_rate(text, cfg(term_min_occurrences=5), g)
         assert r.raw == 0.0 and r.reason is None
 
     def test_threshold_is_configurable_and_in_fingerprint(self):

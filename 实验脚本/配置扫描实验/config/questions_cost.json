@@ -1,0 +1,111 @@
+{
+  "note": "成本臂 15 轮 = 第 0 周漂移实验的原提问序列，逐字未改。同序列才能与 $0.590（有审查）/ $0.231（无审查）直接并列——两次的差额由「四维→三维」与「全量课件→检索」共同造成，而日志里可以分开归因：检索的影响看 input token，维度的影响看重生成次数。**真实使用率与单会话成本只能从这条臂出**（口径 E06 / E07 / E07a）。",
+  "source": "实验脚本/漂移实验/config/questions.json（2026-08-20 批次）",
+  "questions": [
+    {
+      "question": "请对这份课件进行讲解。按课件本身的分节来，讲透一部分再进行下一部分。讲解前请把每一页的内容都扫描分析到，不要遗漏。先讲第一部分。",
+      "tags": [
+        "week0_original"
+      ],
+      "gold_pages": null
+    },
+    {
+      "question": "继续第二部分。",
+      "tags": [
+        "week0_original"
+      ],
+      "gold_pages": null
+    },
+    {
+      "question": "\"一次能源\"和\"二次能源\"到底怎么分？ 比如电力算不算一次能源？",
+      "tags": [
+        "week0_original"
+      ],
+      "gold_pages": null
+    },
+    {
+      "question": "Btu、Mtoe、桶(barrels)、立方英尺(ft³) 这些单位到底怎么换算？ 比如为什么石油、煤炭、天然气不能直接比\"量\"，非要换算成统一单位？",
+      "tags": [
+        "week0_original"
+      ],
+      "gold_pages": null
+    },
+    {
+      "question": "short ton（短吨）和 metric ton（公制吨）到底差多少？",
+      "tags": [
+        "week0_original"
+      ],
+      "gold_pages": null
+    },
+    {
+      "question": "消耗趋势图的横轴纵轴、堆叠面积图怎么读？",
+      "tags": [
+        "week0_original"
+      ],
+      "gold_pages": null
+    },
+    {
+      "question": "\"美国石油消费69%用于交通\"和\"电力构成中煤炭49%\"，这两组数字是否矛盾？",
+      "tags": [
+        "week0_original"
+      ],
+      "gold_pages": null
+    },
+    {
+      "question": "可以继续下一部分。",
+      "tags": [
+        "week0_original"
+      ],
+      "gold_pages": null
+    },
+    {
+      "question": "η = 1 - Te/Ti 里的温度为什么必须用开尔文(Kelvin)而不能用摄氏度(°C)？",
+      "tags": [
+        "week0_original"
+      ],
+      "gold_pages": null
+    },
+    {
+      "question": "\"热机效率\"和\"发电效率\"是不是一回事？",
+      "tags": [
+        "week0_original"
+      ],
+      "gold_pages": null
+    },
+    {
+      "question": "为什么发电厂一定要经过\"烧东西→蒸汽→汽轮机\"这么绕的一圈，不能直接把热能变成电吗？",
+      "tags": [
+        "week0_original"
+      ],
+      "gold_pages": null
+    },
+    {
+      "question": "DC电(direct current)和交流电(AC, alternating current)的区别？",
+      "tags": [
+        "week0_original"
+      ],
+      "gold_pages": null
+    },
+    {
+      "question": "温室效应那页，\"T⁴关系\"具体是什么意思，为什么是4次方不是2次方或者线性？",
+      "tags": [
+        "week0_original"
+      ],
+      "gold_pages": null
+    },
+    {
+      "question": "既然轻水反应堆利用率这么低（只用0.7%的铀），为什么现在主流核电站不直接用增殖反应堆？",
+      "tags": [
+        "week0_original"
+      ],
+      "gold_pages": null
+    },
+    {
+      "question": "既然所有这些技术(火电/核电/太阳能热/地热)最终都靠\"蒸汽推动汽轮机\"，那真正决定它们环保与否、成本高低的关键差别到底在哪？",
+      "tags": [
+        "week0_original"
+      ],
+      "gold_pages": null
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+[project]
+name = "explain"
+version = "0.1.0"
+description = "AI 课件讲解助手 · F3a：讲解对话链路（检索 → 生成 → 三维审查 → 重生成）"
+requires-python = ">=3.11"
+# 核心链路**零第三方依赖**，与 a_rules 同一约定（PRD §9.2 方案 C 要求审查可嵌入
+# 服务端按句并行执行）。两个可选依赖各自只被一个模块用到：
+#   retrieval_adapter → retrieval（numpy / openai）
+#   llm.AnthropicModel → anthropic（运行时 import）
+# a_rules 是同仓库本地模块，走 _paths.py 路径注入，不列此处。
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["explain*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

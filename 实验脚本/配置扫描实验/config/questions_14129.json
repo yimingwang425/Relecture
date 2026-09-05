@@ -1,0 +1,46 @@
+{
+  "note": "14.129 lec02（Blockchain and the Design of Financial Systems）的 6 题序列，用于 F3a 结论的跨学科端点复现与 F3b 的 image_only 通道演练。与 22.081J 的扫描臂同形：第 3 轮诱发引用、第 5/6 轮压长度。第 4 轮取自评测集 Q029/Q030 所指的 p33–36——那 4 页正是本课件全部的 image_only 页，是 skipped_pages 通道唯一能被真实数据演练的地方（F3a 限制段第 7 条：22.081J 39 页全可读，通道一次没流过数据）。",
+  "source": "题目取材于 实验脚本/检索评测集/评测集.json 中 gold 指向 14.129 的条目",
+  "questions": [
+    {
+      "question": "区块链在技术上有什么绕不过去的限制？CAP 三难说的是什么？",
+      "tags": ["synonym"],
+      "gold_pages": [{"source_file": "MIT14_129S25_lec02.pdf", "page_index": 30}],
+      "why": "常规概念题，基线轮"
+    },
+    {
+      "question": "课件里讲了金融体系现在有哪些问题？它们分别卡在什么地方？",
+      "tags": ["multipage"],
+      "gold_pages": null,
+      "why": "跨页综合，制造「检索片不含完整答案」的形态"
+    },
+    {
+      "question": "课件里关于 CAP 三难是怎么表述的？把原文的说法给我看一下。",
+      "tags": ["quote_inducing"],
+      "gold_pages": [{"source_file": "MIT14_129S25_lec02.pdf", "page_index": 30}],
+      "why": "引用诱发，给 quote_length 触发机会"
+    },
+    {
+      "question": "找个中间商担保、大家共用一个总账、各记各的账再对接——课件里比较的这几种账本方案，各自的代价是什么？",
+      "tags": ["unreadable_page", "gap_target"],
+      "gold_pages": [
+        {"source_file": "MIT14_129S25_lec02.pdf", "page_index": 33},
+        {"source_file": "MIT14_129S25_lec02.pdf", "page_index": 34},
+        {"source_file": "MIT14_129S25_lec02.pdf", "page_index": 36}
+      ],
+      "why": "**F3b 的核心轮**。gold 页全部是 image_only，不产生切片，检索在结构上不可能命中（page-recall 上限恒为 0）。正确行为是说「这部分在第 33–36 页的图里，我读不了」，而不是「课件里没有提到」——PRD §6.2 第二行 / §10.1 第二行"
+    },
+    {
+      "question": "分布式账本为什么一开始就选了「所有人共用一个账本」这条路？把设计取舍讲透。",
+      "tags": ["unreadable_page", "principle", "gap_target"],
+      "gold_pages": [{"source_file": "MIT14_129S25_lec02.pdf", "page_index": 35}],
+      "why": "同上，gold 是单页 image_only（p35）。且它是原理追问，长回答倾向，压详细程度"
+    },
+    {
+      "question": "把前面讲的这些放在一起看，区块链真正解决了金融体系的哪一类问题、又留下了哪一类？",
+      "tags": ["synthesis"],
+      "gold_pages": null,
+      "why": "综合对比，长回答倾向；依赖历史轮"
+    }
+  ]
+}

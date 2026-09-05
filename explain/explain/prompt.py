@@ -46,6 +46,7 @@ __all__ = [
     "SYSTEM_TEMPLATE",
     "build_system",
     "build_user_turn",
+    "render_gap_note",
     "estimate_system_tokens",
     "system_cache_status",
 ]
@@ -73,6 +74,14 @@ SYSTEM_TEMPLATE = """你是一位课件讲解助手，帮助学生理解他上�
 - 片段够回答，就基于片段讲，并指出内容在第几页。
 - **片段不够回答，就说清楚缺什么**，不要用通用知识补全后当作课件内容讲。
 - 确实需要用到课件之外的知识时，显式写明「以下内容超出课件范围」。
+
+## 关于「片段完整性」提示
+
+某些轮次我会在提问前附一条**片段完整性提示**，它由一次独立判断给出。
+
+**把它当作输入，不是当作模板。** 用你自己的话向学生说清边界，
+不要照抄提示里的措辞，也不要在讲解开头贴一段固定的免责声明。
+学生要的是讲解，边界说明是讲解的一部分，不是包装。
 """
 
 
@@ -118,23 +127,64 @@ def build_system(style_rules: str, context: ContextPack, course_label: str) -> s
     )
 
 
-def build_user_turn(context: ContextPack, question: str) -> str:
+def render_gap_note(gap: Any) -> str:
+    """把兜底判断渲染成一条提示。**标注形态，不做门**（F3b 判断一）。
+
+    三种情况里只有「完全没提」该阻断，而它在评测集里是 5/30。
+    为少数情况给所有轮次加分支不划算，且模板文案违反 §10
+    「兜底文案必须具体，不写『请稍后重试』这类无信息量的提示」。
+
+    所以这里只给**事实**，措辞交给讲解 agent。
+    """
+    verdict = getattr(gap, "verdict", None)
+    if verdict is None or verdict == "covered":
+        # 无效样本（判断输出不合法）也走这条：宁可不提示，不要提示一个错的
+        return ""
+
+    lines = ["【片段完整性提示】"]
+    if verdict == "insufficient":
+        lines.append("本轮取到的片段里**没有**回答这个问题所需的内容。")
+        lines.append(
+            "注意措辞：能说的是「我取到的片段里没有」，"
+            "**不能说「课件里没有」**——你看到的只是检索出来的若干片，不是全文。"
+        )
+    else:  # partial
+        lines.append("本轮片段**提到了这个主题，但没有回答学生问的那一层**。")
+        lines.append("讲清楚片段讲到了哪一步、缺的是哪一步。")
+
+    # 规则通道（G03/G03a）：非 covered 且该课件有跳过页时出现
+    hint = getattr(gap, "skipped_hint", ()) or ()
+    if hint:
+        pages = "、".join(str(p.index) for p in hint)
+        lines.append(
+            f"另外：本课件第 {pages} 页的内容全在图里，解析读不出来。"
+            "**如果学生问的正是那部分，如实说明是「我读不了图」，"
+            "而不是「课件里没有提到」**——课件提到了，只是我们读不了。"
+        )
+    return "\n".join(lines)
+
+
+def build_user_turn(context: ContextPack, question: str, gap: Any = None) -> str:
     """一轮用户消息 = 本轮检索片 + 提问。
 
     片段带页号，因为讲解要能溯源到页；带标题，因为脱离标题的 bullet
     往往不可讲解（slicer S01 的切片单位就是按这个定的）。
     """
+    note = render_gap_note(gap)
     if context.is_empty:
         # 空检索是显式失败，比「答非所问」安全（PRD §6.2）。如实告诉模型。
-        return f"【本轮没有检索到任何课件片段】\n\n学生的问题：{question}"
+        head = "【本轮没有检索到任何课件片段】"
+        return "\n\n".join(x for x in (head, note, f"学生的问题：{question}") if x)
 
     parts = ["【课件片段】"]
     for s in context.slices:
         pages = "、".join(str(p) for p in s.page_indices)
-        head = f"— {s.source_file} 第 {pages} 页"
+        h = f"— {s.source_file} 第 {pages} 页"
         if s.title:
-            head += f"｜{s.title}"
-        parts.append(f"{head}\n{s.text}")
+            h += f"｜{s.title}"
+        parts.append(f"{h}\n{s.text}")
+    if note:
+        parts.append(note)
     parts.append(f"\n学生的问题：{question}")
     return "\n\n".join(parts)
 

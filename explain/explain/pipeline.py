@@ -89,6 +89,12 @@ class RoundResult:
 
     @property
     def latency_ms(self) -> float:
+        """**含兜底判断那一跳。** 它是串行的，用户等待的就是这个总和。"""
+        return sum(a.completion.latency_ms for a in self.attempts) + self.gap.latency_ms
+
+    @property
+    def generation_latency_ms(self) -> float:
+        """只算生成，用于分离出兜底判断的延迟增量。"""
         return sum(a.completion.latency_ms for a in self.attempts)
 
     @property
@@ -150,7 +156,10 @@ def run_round(
     gap = (gap_checker or NullGapChecker()).check(question, ctx)
 
     system = build_system(style_rules, ctx, course_label)
-    turn = trajectory.history + [{"role": "user", "content": build_user_turn(ctx, question)}]
+    # 判断结果进本轮 user turn（每轮不同，不进 system——那会让缓存每轮失效）
+    turn = trajectory.history + [
+        {"role": "user", "content": build_user_turn(ctx, question, gap)}
+    ]
     request_signature = model.request_signature(system, turn)
 
     attempts: list[Attempt] = []
@@ -179,7 +188,7 @@ def run_round(
             {"role": "user", "content": review.feedback},
         ]
 
-    trajectory.commit(build_user_turn(ctx, question), final_text)
+    trajectory.commit(build_user_turn(ctx, question, gap), final_text)
 
     return RoundResult(
         round_index=round_index,

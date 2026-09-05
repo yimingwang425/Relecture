@@ -644,3 +644,53 @@ class TestResumePruning:
         assert len(rows) == 11  # 不清理的话报告看到的就是这 11 轮
         _prune_incomplete(path, set())
         assert path.read_text(encoding="utf-8").strip() == ""
+
+
+class TestRestrictedPages:
+    """口径 G06 · 受限页必须排除。**合规问题，且失败是静默的。**
+
+    原实现漏了 `RESTRICTED_PAGES`：22.081J 没有受限页所以不咬人，
+    14.129 有 8 页第三方保留权利内容，不排除的话它们照样进 prompt，
+    **没有任何报错**。
+    """
+
+    BANNED = frozenset({10, 11, 25, 26, 31, 38, 40, 42})
+
+    def test_14129_index_excludes_the_eight_pages(self):
+        from scan.live import build_retriever
+
+        r = build_retriever(course="MIT14_129S25_lec02.pdf")
+        pages = {p for it in r.index.items for p in it.page_indices}
+        assert not (pages & self.BANNED), f"受限页泄漏：{sorted(pages & self.BANNED)}"
+
+    def test_page_numbers_are_not_copied_locally(self):
+        """页号只能有一处出处。抄一份就多一个会漂的副本。
+
+        那张清单以 `测试集/SOURCES.md` 为准、**不靠正则重新推导**
+        （p31 的版权声明被解析切在两个块里，正则只搜得到 7 页）。
+        """
+        from pathlib import Path
+
+        src = Path(__file__).resolve().parents[1] / "scan" / "live.py"
+        text = src.read_text(encoding="utf-8")
+        assert "RESTRICTED_PAGES" in text
+        for page in self.BANNED:
+            assert f"{page}," not in text.replace("MIT14_129S25", ""), "疑似抄了页号字面量"
+
+    def test_14129_skipped_pages_reach_the_context(self):
+        """`image_only` 通道**第一次有真实数据流过**。
+
+        F3a 限制段第 7 条：22.081J 39 页全可读，这条通道一次没被演练过。
+        """
+        from scan.live import build_retriever
+
+        r = build_retriever(course="MIT14_129S25_lec02.pdf")
+        skipped = {p.index for p in r._skipped}
+        assert skipped == {33, 34, 35, 36}
+        assert all(p.kind == "image_only" for p in r._skipped)
+
+    def test_22081j_still_has_no_skipped_pages(self):
+        # 对照：这门课的跳过页清单是空的，G03 的限定语不该出现
+        from scan.live import build_retriever
+
+        assert build_retriever()._skipped == ()

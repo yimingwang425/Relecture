@@ -33,7 +33,13 @@ from .runner import Arm, ScanConfig, run_scan
 
 HERE = Path(__file__).resolve().parent.parent
 REPO = HERE.parent.parent
+
+#: 默认课件。14.129 由 F3b 引入（`--course` 切换）。
 COURSE = "MIT22_081JF10_lec01b.pdf"
+COURSE_LABELS = {
+    "MIT22_081JF10_lec01b.pdf": "22.081J · Introduction to Sustainable Energy (lec01b)",
+    "MIT14_129S25_lec02.pdf": "14.129 · Blockchain and the Design of Financial Systems (lec02)",
+}
 
 
 def _load_questions(name: str, limit: int | None = None) -> tuple[dict[str, Any], ...]:
@@ -42,31 +48,47 @@ def _load_questions(name: str, limit: int | None = None) -> tuple[dict[str, Any]
     return tuple(qs[:limit] if limit else qs)
 
 
-def build_retriever(budget: int = 5) -> RetrievalRetriever:
+def build_retriever(budget: int = 5, course: str = COURSE) -> RetrievalRetriever:
     """只索引本实验用的那一份课件。
 
     不索引整个测试集：跨文档检索会让「片段来自哪门课」成为一个额外变量，
-    而本实验的被测属性与它无关。语料排除规则（15.316 整份、14.129 的 8 页
-    受限内容）在这里自然不适用——那份课件根本没进来。
+    而本实验的被测属性与它无关。
+
+    ## ⚠️ 受限页必须排除（口径 G06，2026-09-05 修）
+
+    原实现漏了 `RESTRICTED_PAGES`。22.081J 没有受限页，所以之前不咬人；
+    **14.129 有 8 页第三方保留权利内容**（`测试集/SOURCES.md`），
+    不排除的话它们照样被检索到、照样进 prompt，**没有任何报错**——
+    合规问题的失败是静默的。
+
+    页号从 `retrieval.corpus.RESTRICTED_PAGES` 读，**不在这里重抄一份**：
+    抄一份就多一个会漂的副本，而那张清单以 `SOURCES.md` 为准、不靠正则重新推导。
     """
     import numpy as np
     from parse_service.pdf import parse_pdf
     from retrieval.compose import compose
+    from retrieval.corpus import EXCLUDED_FILES, RESTRICTED_PAGES
     from retrieval.embed import EmbeddingCache, OpenAIEmbedder
     from retrieval.index import IndexedSlice, VectorIndex
     from retrieval.selection import SELECTED_DIMENSIONS, SELECTED_MODEL, SELECTED_VARIANT
     from slicer import slice_document
 
-    path = REPO / "实验脚本" / "测试集" / COURSE
+    if course in EXCLUDED_FILES:
+        raise ValueError(f"{course} 整份不入索引（见 retrieval/corpus.py）")
+
+    path = REPO / "实验脚本" / "测试集" / course
     sliceset = slice_document(parse_pdf(path.read_bytes(), path.name))
-    slicesets = {COURSE: sliceset}
+    slicesets = {course: sliceset}
+    banned = RESTRICTED_PAGES.get(course, frozenset())
 
     texts = compose(sliceset, SELECTED_VARIANT)
     items, ordered_texts = [], []
     for s in sliceset.slices:
+        if any(p in banned for p in s.page_indices):
+            continue  # 第三方保留权利页，G06
         items.append(
             IndexedSlice(
-                source_file=COURSE,
+                source_file=course,
                 slice_id=s.slice_id,
                 ordinal=s.ordinal,
                 page_indices=tuple(s.page_indices),
@@ -95,6 +117,101 @@ def build_retriever(budget: int = 5) -> RetrievalRetriever:
         embedder=_CachedEmbedder(),
         slicesets=slicesets,
         budget=budget,
+    )
+
+
+def build_corpus_retriever(budget: int = 5):
+    """索引**整个语料**（三门课），供校准用——评测集 30 题横跨三门课。
+
+    与 `build_retriever` 的差别只在范围：那个只索引一门课（跑批要隔离课程变量），
+    这个走 `retrieval.corpus` 的既有路径，排除规则（15.316 整份、14.129 的 8 页）
+    在那一层已经执行。
+    """
+    import numpy as np
+    from retrieval.compose import compose_all
+    from retrieval.corpus import build_items, load_slicesets
+    from retrieval.embed import EmbeddingCache, OpenAIEmbedder
+    from retrieval.index import VectorIndex
+    from retrieval.selection import SELECTED_DIMENSIONS, SELECTED_MODEL, SELECTED_VARIANT
+
+    slicesets = load_slicesets()
+    items = build_items(slicesets)
+    texts = compose_all(slicesets, SELECTED_VARIANT)
+    embedder = OpenAIEmbedder(SELECTED_MODEL, SELECTED_DIMENSIONS)
+    cache = EmbeddingCache(REPO / "retrieval" / "cache")
+    vectors = np.stack(
+        cache.get_or_compute(embedder, [texts[(i.source_file, i.slice_id)] for i in items])
+    )
+
+    class _CachedEmbedder:
+        name, dimensions = embedder.name, embedder.dimensions
+
+        def embed(self, texts_):
+            return cache.get_or_compute(embedder, texts_)
+
+    return RetrievalRetriever(
+        index=VectorIndex(items, vectors), embedder=_CachedEmbedder(),
+        slicesets=slicesets, budget=budget,
+    )
+
+
+def build_gap_checker(enabled: bool):
+    """兜底判断器。分层调用（PRD §7.3）：低成本模型、输出极短、关 thinking。
+
+    **Haiku 4.5 不支持 `effort`**（实测 2026-09-05，传了返回 400），
+    故 `effort=None` —— `AnthropicModel` 会因此不发 `output_config`。
+    """
+    from explain.gap import ModelGapChecker, NullGapChecker
+    from explain.llm import AnthropicModel
+
+    if not enabled:
+        return NullGapChecker()
+    return ModelGapChecker(
+        AnthropicModel(
+            name="claude-haiku-4-5-20251001",
+            effort=None,
+            thinking="disabled",
+            max_tokens=300,
+            cache_system=False,   # 系统提示远低于最小可缓存长度，开了也不生效
+            cache_conversation=False,  # 单轮调用，没有历史可缓存
+        )
+    )
+
+
+def f3b_config(course: str, gap_enabled: bool, points: tuple[str, ...],
+               rounds: int | None = None) -> ScanConfig:
+    """F3b 的跑批：**端点两点（P0/P3）× 2 组 × 1 轨 × 6 轮**。
+
+    三件事一次回答（F3b 判断四）：
+    1. `image_only` 通道在真实数据上通不通（14.129 有 4 页，22.081J 一页没有）
+    2. F3a 的结论跨学科复不复现（端点复现，非完整第二条轴）
+    3. F3b 的两分类在第二门课上准不准
+
+    22.081J 那一组只跑 P0，用途不同：**对比有/无判断两组的显式标注计数**（G13）。
+    """
+    qfile = {
+        "MIT14_129S25_lec02.pdf": "questions_14129.json",
+        COURSE: "questions_scan.json",
+    }[course]
+    return ScanConfig(
+        course_label=COURSE_LABELS[course],
+        arms=(
+            Arm(
+                name="f3b_gap" if gap_enabled else "f3b_nogap",
+                point_ids=points,
+                questions=_load_questions(qfile, rounds),
+                replicates=1,
+                note=("含兜底判断" if gap_enabled else "无兜底判断（G13 的基线）")
+                + f" · {course}",
+            ),
+        ),
+        gap_checker=build_gap_checker(gap_enabled),
+        extra_metadata={
+            "stage": "f3b",
+            "course": course,
+            "gap_enabled": gap_enabled,
+            "credentials_note": "凭据由 .env 局部注入，不进日志、不进本文件",
+        },
     )
 
 

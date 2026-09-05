@@ -96,7 +96,9 @@ def round_record(
         # ---- 用量与成本 ----
         "round_usage": result.usage.to_dict(),
         "round_cost_usd": result.cost_usd,
+        # 两个延迟都记：总延迟是用户等待的，生成延迟用于分离兜底判断的增量
         "round_latency_ms": round(result.latency_ms, 1),
+        "generation_latency_ms": round(result.generation_latency_ms, 1),
         # 不流式 → 测不了首字延迟。写 null，不塞假数（PRD §9.2 本轮无数据）
         "first_token_latency_ms": None,
         # ---- 观察项（不进指标）----

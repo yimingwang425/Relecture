@@ -36,6 +36,8 @@ from explain.prompt import build_system, system_cache_status
 from explain.review import RuleReviewer
 from explain.style_prompt import render_style_rules
 
+from explain.gap import GapChecker
+
 from .points import POINTS, ConfigPoint, point_by_id
 
 __all__ = ["Arm", "ScanConfig", "run_scan"]
@@ -67,6 +69,8 @@ class ScanConfig:
     course_label: str
     arms: tuple[Arm, ...]
     max_regenerations: int = 2
+    #: 兜底判断器。F3a 用 NullGapChecker；F3b 起可注入 ModelGapChecker。
+    gap_checker: Any = None
     glossary: Any = None
     pricing_on: date | None = None
     extra_metadata: dict[str, Any] = field(default_factory=dict)
@@ -208,7 +212,7 @@ def run_scan(
                                 course_label=scan.course_label,
                                 review_enabled=(condition == "with_review"),
                                 max_regenerations=scan.max_regenerations,
-                                gap_checker=NullGapChecker(),
+                                gap_checker=scan.gap_checker or NullGapChecker(),
                                 context=fetch(q["question"]),
                             )
                             if system_probe is None:

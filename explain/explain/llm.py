@@ -59,8 +59,19 @@ PRICING: dict[str, dict[str, Any]] = {
 
 
 def rates_for(model: str, on: date | None = None) -> tuple[float, float] | None:
-    """取该日期适用的 (输入, 输出) 单价。未知模型返回 None。"""
-    entry = PRICING.get(model.removeprefix(FAKE_PREFIX))
+    """取该日期适用的 (输入, 输出) 单价。未知模型返回 None。
+
+    **带日期后缀的模型 id 走前缀匹配**（`claude-haiku-4-5-20251001` →
+    `claude-haiku-4-5`）。不为每个日期后缀单列一行：那会让同一个模型有两份单价，
+    而定价必须只有一处出处——正是本模块从漂移实验提升上来的理由。
+    """
+    name = model.removeprefix(FAKE_PREFIX)
+    entry = PRICING.get(name)
+    if entry is None:
+        # 最长前缀匹配，避免 haiku-4-5 意外匹配到更短的键
+        candidates = [k for k in PRICING if name.startswith(k)]
+        if candidates:
+            entry = PRICING[max(candidates, key=len)]
     if entry is None:
         return None
     until = entry.get("intro_until")
@@ -168,7 +179,10 @@ class AnthropicModel:
     """真实调用。`anthropic` SDK 与 API key 都在运行时才要求。"""
 
     name: str = "claude-sonnet-5"
-    effort: str = "medium"
+    #: `None` = **不发 `output_config`**。Haiku 4.5 不支持 effort 参数，
+    #: 传了返回 400（实测 2026-09-05）。分层调用（PRD §7.3）要求两档模型
+    #: 走同一个抽象层，所以差异在这里吸收，而不是再写一个类。
+    effort: str | None = "medium"
     max_tokens: int = 8000
     thinking: str = "adaptive"  # adaptive | disabled
     cache_system: bool = True
@@ -245,8 +259,9 @@ class AnthropicModel:
             "max_tokens": self.max_tokens,
             "system": system_block,
             "messages": sent,
-            "output_config": {"effort": self.effort},
         }
+        if self.effort is not None:
+            kwargs["output_config"] = {"effort": self.effort}
         if self.thinking == "disabled":
             kwargs["thinking"] = {"type": "disabled"}
         else:

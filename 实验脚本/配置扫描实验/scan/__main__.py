@@ -193,6 +193,65 @@ def cmd_run(args: argparse.Namespace) -> int:
     return 0 if ok else 1
 
 
+def cmd_calibrate(args: argparse.Namespace) -> int:
+    """**真实调用**：30 题 × 2 次兜底判断（约 $0.11）。"""
+    from .calibrate import format_calibration, run_calibration
+    from .live import build_gap_checker, build_retriever
+
+    # 评测集横跨三门课，故索引整个语料（与 retrieval 评测同一路径）
+    from .live import build_corpus_retriever
+
+    retriever = build_corpus_retriever()
+    rows = run_calibration(build_gap_checker(True), retriever, repeats=args.repeats)
+    out = Path(args.out) if args.out else HERE / "runs" / "f3b-calibration.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps([r.to_dict() for r in rows], ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+    print(format_calibration(rows))
+    print(f"\n明细写入 {out}")
+    return 0
+
+
+def cmd_f3b(args: argparse.Namespace) -> int:
+    """**真实调用**：F3b 跑批（14.129 端点复现 / 22.081J 有无判断对比）。"""
+    from datetime import datetime
+
+    from .live import build_gap_checker, build_retriever, f3b_config
+    from .runner import run_scan
+
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    out = Path(args.out) if args.out else HERE / "runs" / f"f3b-{stamp}"
+    retriever = build_retriever(budget=args.budget, course=args.course)
+    params = dict(name="claude-sonnet-5", effort="medium",
+                  thinking="adaptive", max_tokens=8000)
+    scan = f3b_config(args.course, not args.no_gap, tuple(args.points.split(",")), args.rounds)
+    scan.extra_metadata["model_params"] = params
+
+    seen = {"n": 0, "cost": 0.0, "gap": 0.0}
+
+    def progress(record: dict) -> None:
+        seen["n"] += 1
+        seen["cost"] += record["round_cost_usd"]
+        seen["gap"] += record.get("gap_cost_usd") or 0.0
+        print(
+            f"[{seen['n']:>3}] {record['arm']}/{record['config_point_id']}/"
+            f"{'审' if record['condition'] == 'with_review' else '无'} "
+            f"r{record['round']:>2} "
+            f"{record.get('gap_verdict') or '-':<12} ${seen['cost']:.4f}",
+            flush=True,
+        )
+
+    print(f"计划生成 {sum(a.planned_generations for a in scan.arms)} 次 → {out}", flush=True)
+    run_scan(scan=scan, retriever=retriever,
+             make_model=lambda p, c, r: __import__("explain.llm", fromlist=["x"]).AnthropicModel(**params),
+             out_dir=out, on_round=progress)
+    print(f"\n完成：{seen['n']} 轮 / ${seen['cost']:.4f}（其中兜底判断 ${seen['gap']:.4f}）")
+    ok, lines = verify_scan_run(out)
+    print("\n".join(lines))
+    return 0 if ok else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="scan", description="F3a 配置扫描实验")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -213,6 +272,20 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--scan-rounds", type=int, default=None, help="截断扫描臂轮数（试跑用）")
     p.add_argument("--cost-rounds", type=int, default=None, help="截断成本臂轮数（试跑用）")
     p.set_defaults(func=cmd_run)
+
+    p = sub.add_parser("calibrate", help="**真实调用**：F3b 兜底判断校准（30 题 × 2）")
+    p.add_argument("--repeats", type=int, default=2)
+    p.add_argument("--out")
+    p.set_defaults(func=cmd_calibrate)
+
+    p = sub.add_parser("f3b", help="**真实调用**：F3b 跑批")
+    p.add_argument("--course", default="MIT14_129S25_lec02.pdf")
+    p.add_argument("--points", default="P0,P3")
+    p.add_argument("--rounds", type=int, default=None)
+    p.add_argument("--budget", type=int, default=5)
+    p.add_argument("--no-gap", action="store_true", help="关掉兜底判断（G13 的基线组）")
+    p.add_argument("--out")
+    p.set_defaults(func=cmd_f3b)
 
     p = sub.add_parser("verify", help="三层指纹守卫 + 缓存检查")
     p.add_argument("--run", required=True)

@@ -42,3 +42,6 @@ next-env.d.ts
 
 # 例子文件要进仓库（根 .gitignore 同规则）。
 !.env.example
+
+# Playwright 截图产物
+.playwright-shots/

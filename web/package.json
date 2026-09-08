@@ -7,8 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "verify:guards": "node scripts/verify_build_guards.mjs",
-    "verify:browser": "node scripts/verify_browser.mjs"
+    "verify:guards": "npm run verify:identity && npm run verify:build-guards",
+    "verify:browser": "node scripts/verify_browser.mjs",
+    "verify:identity": "node scripts/verify_git_identity.mjs",
+    "verify:build-guards": "node scripts/verify_build_guards.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.6",

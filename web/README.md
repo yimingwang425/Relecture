@@ -11,10 +11,48 @@ F1 阶段 1.5 的交付物：**最薄的部署链**。登录 → 读自己的 `s
 cp .env.example .env.local && $EDITOR .env.local
 npm install && npm run dev
 
-npm run verify:guards   # 两条构建期护栏，每条跑一次真实 next build
+npm run verify:guards    # 身份 + 两条构建期护栏（后者跑三次真实 next build）
+npm run verify:identity  # 只查提交身份，秒级；推完跑这一条
 ```
 
 口径表在 [`../f1_samples/README.md`](../f1_samples/README.md) §一，全项目唯一一份。
+
+---
+
+## 〇、提交作者邮箱必须是 GitHub 上已验证的邮箱
+
+**否则 Vercel 静默拦下部署。** 拦下的表现是「什么也没发生」：代码没问题、
+构建根本没跑、没有一条错误指向这里——你会以为自己在看新版本，其实看的是上一次部署。
+通则六的形态。
+
+2026-09-08 实际踩到：GitHub 主邮箱从学校邮箱换成个人邮箱、学校邮箱被移除，
+而仓库的 `user.email` 还是老的。
+
+**归属是按账号当前的已验证邮箱实时算的，不是提交时冻结的。** 所以换邮箱之后，
+历史上用旧邮箱的提交会一起变成不可归属——新提交不受影响，
+但**回滚或重新部署那些提交会撞同一堵墙**。当时「能过」不等于现在还能过。
+
+```bash
+npm run verify:identity                    # 推完跑一次
+npm run verify:identity -- --allow-offline # 没有 gh 时显式放行
+```
+
+查的是 `gh api repos/…/commits/<sha>` 的 `author.login`——**Vercel 反查的同一个信号**，
+不是比对一个写死的邮箱。比对常量的版本在这次事故里**会是绿的**：邮箱没变，
+变的是「GitHub 还认不认它」。一个在事故发生时照样绿的检查就是没有检查。
+
+反向控制是一个已知反查不到账号的历史提交（`3c7ffba`，作者是已被移除的学校邮箱）：
+它每次都必须返回 `null`，否则说明读到的不是活信号，「HEAD 可归属」那条也就不成立。
+
+没有 `gh` 时默认**判失败**，要放行必须显式加 `--allow-offline`——
+一个跳过了却仍然退出 0 的检查，与它防的那个失败是同一类东西。
+
+想更早拦住，可以挂成 hook（本仓库没有自动装，改的是你的 git 配置）：
+
+```bash
+printf '#!/bin/sh\ncd web && npm run --silent verify:identity\n' > .git/hooks/pre-push
+chmod +x .git/hooks/pre-push
+```
 
 ---
 

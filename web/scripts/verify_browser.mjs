@@ -16,6 +16,8 @@
  */
 
 import { chromium } from "playwright";
+
+import { scanText } from "../lib/secret-scan.mjs";
 import { readFileSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -171,14 +173,14 @@ async function main() {
           [...keys].map((k) => k.slice(0, 22) + "…").join(" "),
           `发现非 publishable：${[...keys].join(" ")}`);
 
-    // 全站扫一遍，含 URL、请求头、请求体。
-    const leak = requests.find(
-      (r) =>
-        /sb_secret_/.test(r.url + JSON.stringify(r.headers) + r.body) ||
-        /"role"\s*:\s*"service_role"/.test(r.body),
-    );
+    // 全站扫一遍，含 URL、请求头、请求体。判据与产物扫描共用同一份
+    // （lib/secret-scan.mjs）：**形态匹配，不匹配 `sb_secret_` 这个字符串本身**，
+    // 否则护栏源码里的字面量比较会让它永远命中（口径 F16）。
+    const leak = requests
+      .map((r) => ({ r, hits: scanText(r.url + JSON.stringify(r.headers) + r.body) }))
+      .find((x) => x.hits.length > 0);
     check(!leak, "任何请求里都没有 secret 凭据", `扫了 ${requests.length} 条请求`,
-          `泄露于 ${leak?.url}`);
+          `${leak?.hits[0].kind} 泄露于 ${leak?.r.url}`);
   }
 
   // ---------------------------------------------------------- 5 跨用户读取

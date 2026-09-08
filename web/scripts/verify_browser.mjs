@@ -30,8 +30,21 @@ const SHOTS = join(WEB, ".playwright-shots");
 const argv = process.argv.slice(2);
 const BASE = (argv[argv.indexOf("--base") + 1] ?? "").replace(/\/$/, "");
 const EXPECT_DEBUG = argv.includes("--debug-routes");
-if (!BASE.startsWith("http")) {
-  console.error("用法：node scripts/verify_browser.mjs --base https://… [--debug-routes]");
+
+/**
+ * 期望的 commit，**必须显式传入，不取本地 HEAD**。
+ *
+ * 默认取本地 HEAD 会让检查在「本地领先于部署」时静默通过——而那正是 2026-09-08
+ * 那次的情形：分支最后一个 commit 构建失败，别名停在上一个部署，本地 HEAD 却已经
+ * 是失败的那个。一个在事故当时会绿的检查，就是没有检查（同 F15 的理由）。
+ */
+const EXPECT_COMMIT = argv[argv.indexOf("--commit") + 1] ?? "";
+
+if (!BASE.startsWith("http") || !argv.includes("--commit") || !/^[0-9a-f]{7,40}$/.test(EXPECT_COMMIT)) {
+  console.error(
+    "用法：node scripts/verify_browser.mjs --base https://… --commit <sha> [--debug-routes]\n" +
+      "\n--commit 必须显式给出：从 GitHub 上那个部署对应的 commit 取，不要用本地 HEAD。",
+  );
   process.exit(2);
 }
 
@@ -94,6 +107,48 @@ async function main() {
 
   const browser = await chromium.launch();
   const requests = [];
+
+  // ---------------------------------------------------------- 0 跑的是哪个构建
+  console.log("\x1b[1m0 · 这个域名当前服务的是哪个 commit（口径 F17）\x1b[0m");
+  {
+    const ctx = await browser.newContext();
+    const page = await ctx.newPage();
+    const resp = await page.goto(`${BASE}/login`, { waitUntil: "domcontentloaded" });
+    const served = resp?.headers()["x-build-commit"] ?? null;
+
+    // 拿不到就判失败，不跳过（同 verify_git_identity 的 --allow-offline 那条）：
+    // 一个跳过了却仍然退出 0 的检查，与它防的失败是同一类东西。
+    check(
+      served !== null,
+      "部署自报了 x-build-commit",
+      served,
+      "响应里没有这个头 —— 可能是旧构建（还没有 F17），也可能 headers() 没生效。" +
+        "拿不到就判失败：下面所有断言都不知道自己在测哪个构建",
+    );
+
+    if (served) {
+      const matches = served.startsWith(EXPECT_COMMIT) || EXPECT_COMMIT.startsWith(served);
+      check(
+        matches,
+        "服务的构建就是期望的那个 commit",
+        `${served.slice(0, 7)} == ${EXPECT_COMMIT.slice(0, 7)}`,
+        `服务的是 ${served.slice(0, 7)}，期望 ${EXPECT_COMMIT.slice(0, 7)} —— ` +
+          "别名可能停在上一个成功的部署上（新构建失败时就会这样）。" +
+          "此时下面的绿全部指向另一个对象",
+      );
+
+      // 反向控制：同一段比对逻辑喂一个必然不同的 sha，必须判为不匹配。
+      // 否则「相等」可能只是因为比对恒真。
+      const bogus = "0".repeat(40);
+      check(
+        !(served.startsWith(bogus) || bogus.startsWith(served)),
+        "【反向控制】比对一个伪造 sha 时判为不匹配",
+        "← 比对是活的，不是恒真",
+        "比对恒真，上一条什么也证明不了",
+      );
+    }
+    await ctx.close();
+  }
 
   // ---------------------------------------------------------- 1 未登录
   console.log("\x1b[1m1 · 未登录\x1b[0m");

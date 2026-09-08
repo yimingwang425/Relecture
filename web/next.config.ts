@@ -14,8 +14,29 @@ assertNoSecretsInPublicEnv(process.env);
 // 断言见 scripts/verify_build_guards.mjs：关掉时构建产物里不得出现该路由。
 const debugRoutes = process.env.NEXT_PUBLIC_ENABLE_DEBUG_ROUTES === "1";
 
+// 让部署**自报它是哪个 commit 构建出来的**（口径 F17）。
+//
+// 回归工具此前只接受一个 --base 就开跑，从不核对那个域名当前服务的是哪个构建。
+// 2026-09-08 就撞上了：分支上最后一个 commit 的 preview 构建失败，别名仍停在上一个
+// 成功的部署上，而报告写的是「preview 19 绿」——**读数是真的，读的对象不是我以为的
+// 那个**（通则七 #6）。
+//
+// 值缺失时**不设这个头**，让检查因为「拿不到」而失败。设成 "unknown" 之类的占位
+// 会让比对有东西可比，然后永远不相等或永远相等——两种都不是判据（同 F16）。
+const commitSha = process.env.VERCEL_GIT_COMMIT_SHA;
+
 const nextConfig: NextConfig = {
   pageExtensions: ["tsx", "ts", "jsx", "js", ...(debugRoutes ? ["debug.tsx"] : [])],
+
+  async headers() {
+    if (!commitSha) return [];
+    return [
+      {
+        source: "/:path*",
+        headers: [{ key: "x-build-commit", value: commitSha }],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

@@ -1,0 +1,8 @@
+{
+  "name": "f1-rls-local-verify",
+  "private": true,
+  "type": "module",
+  "description": "本地反向验证：把防护拆掉，断言必须变红（通则七 #4）。仅开发用，不进生产。",
+  "scripts": { "verify": "node verify_rls_local.mjs" },
+  "devDependencies": { "@electric-sql/pglite": "^0.5.8" }
+}

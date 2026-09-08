@@ -14,11 +14,12 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { existsSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { classifySecret, findSecretsInPublicEnv } from "../lib/public-env-guard.mjs";
+import { scanDir, scanText } from "../lib/secret-scan.mjs";
 
 const WEB = dirname(dirname(fileURLToPath(import.meta.url)));
 
@@ -155,6 +156,93 @@ console.log("\n\x1b[1m二 · 接线（真实 next build）\x1b[0m");
     "← 上一条不是因为这个页面根本编译不过",
     on.out.slice(-400),
   );
+}
+
+// ---------------------------------------------------------------- 产物扫描
+
+console.log("\n\x1b[1m三 · 构建产物里有没有真实凭据（口径 F16）\x1b[0m");
+
+{
+  // 判据的两个必要性质。**先验这两条**，否则下面「.next 里 0 命中」什么也不说明。
+  const guardSrc = readFileSync(join(WEB, "lib/public-env-guard.mjs"), "utf8");
+  check(
+    scanText(guardSrc).length === 0,
+    "护栏自身源码不命中",
+    "← 匹配字符串本身的判据会永远命中这里，从此不可用",
+    `命中 ${scanText(guardSrc).length} 处`,
+  );
+
+  const fakeKey = "sb_secret_" + "x9K2mQ7pL4vR8tN3wZ6y";
+  check(scanText(fakeKey).length === 1, "真 key 形态命中", "sb_secret_ + ≥20 个 key 字符");
+
+  const mkJwt = (role) =>
+    "eyJhbGciOiJIUzI1NiJ9." +
+    Buffer.from(JSON.stringify({ role })).toString("base64url") +
+    ".c2lnc2ln";
+  check(scanText(mkJwt("service_role")).length === 1, "service_role JWT 命中", "解载荷判的，不看字面量");
+  check(scanText(mkJwt("anon")).length === 0, "anon JWT 不命中", "← 判据不是「凡是 JWT 都算」");
+}
+
+{
+  // 干净构建的产物必须 0 命中。**filesScanned 必须 > 0**——目录写错时命中数
+  // 同样是 0，那种「0 命中」与「A 读 B 返回空」在 B 无行时也成立同形（通则七 #5）。
+  const clean = build({});
+  if (clean.failedBuild) {
+    check(false, "扫描前的干净构建", "", clean.out.slice(-400));
+  } else {
+    const { filesScanned, hits } = await scanDir(join(WEB, ".next"));
+    check(filesScanned > 0, "确实扫到了文件", `${filesScanned} 个`, "0 个 —— 下一条的「0 命中」是空的");
+    check(
+      hits.length === 0,
+      ".next 里没有真实凭据",
+      `扫了 ${filesScanned} 个文件`,
+      hits.map((h) => `${h.kind} @ ${h.file}`).join("\n      "),
+    );
+  }
+}
+
+{
+  // 反向验证：把一个真 key 形态的字符串**写进源码**并真的构建一次，扫描必须红。
+  //
+  // 为什么不用「塞进 NEXT_PUBLIC_ 变量」：那条路在 next.config.ts 的护栏处就
+  // 构建失败了（见上面「二」），根本产不出产物，扫描无从谈起。**源码里硬编码
+  // 正是环境变量护栏看不见的那条路**，也就是产物扫描存在的理由。
+  const canaryDir = join(WEB, "app/scan-canary-tmp");
+  const canaryValue = "sb_secret_" + Array.from({ length: 24 }, () =>
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"[
+      Math.floor(Math.random() * 62)
+    ]).join("");
+
+  try {
+    mkdirSync(canaryDir, { recursive: true });
+    writeFileSync(
+      join(canaryDir, "page.tsx"),
+      '"use client";\n\n// 反向验证用的临时页面，由 scripts/verify_build_guards.mjs 生成并删除。\n' +
+        "export default function Canary() {\n" +
+        `  return <p>${canaryValue}</p>;\n` +
+        "}\n",
+    );
+
+    const r = build({});
+    if (r.failedBuild) {
+      check(false, "canary 构建应当成功（它不走环境变量那条路）", "", r.out.slice(-400));
+    } else {
+      const { hits } = await scanDir(join(WEB, ".next"));
+      check(
+        hits.some((h) => h.kind === "sb_secret"),
+        "源码里硬编码的 key → 产物扫描变红",
+        `命中 ${hits.length} 处 ← 扫描有效`,
+        "没命中 —— 这条扫描是空的",
+      );
+    }
+  } finally {
+    rmSync(canaryDir, { recursive: true, force: true });
+  }
+
+  // canary 已删干净：留在源码里会让下一次「0 命中」永远红。
+  const leftovers = await scanDir(join(WEB, "app"));
+  check(leftovers.hits.length === 0, "canary 已从源码清干净", "",
+        leftovers.hits.map((h) => h.file).join(" "));
 }
 
 console.log(`\n\x1b[1m合计\x1b[0m  绿 ${passed} · 红 ${failed}\n`);

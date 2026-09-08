@@ -69,14 +69,21 @@ function recordRequests(page, sink) {
   });
 }
 
+/**
+ * 登录并**等到页面进入终态**。
+ *
+ * `networkidle` 是不够的：页面是流式渲染的，网络安静时 DOM 可能还没流完，
+ * 读到的是「header 已在、四个字段还没到」的中间态——2026-09-08 就这么假红了 6 条。
+ * 页面在三个分支上各挂了一个 `data-state`，等它出现才是真的到位。
+ */
 async function login(page, who) {
   const { email, password } = ACCOUNTS[who];
-  await page.goto(`${BASE}/login`, { waitUntil: "networkidle" });
+  await page.goto(`${BASE}/login`, { waitUntil: "domcontentloaded" });
   await page.fill('input[type="email"]', email);
   await page.fill('input[type="password"]', password);
   await page.click('button[type="submit"]');
   await page.waitForURL(`${BASE}/`, { timeout: 20000 });
-  await page.waitForLoadState("networkidle");
+  await page.waitForSelector("main[data-state]", { timeout: 20000 });
 }
 
 async function main() {
@@ -120,17 +127,27 @@ async function main() {
     const page = await ctx.newPage();
     recordRequests(page, requests);
     await login(page, "A");
-    const body = await page.locator("body").innerText();
 
-    const m = body.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/);
-    uidA = m?.[0] ?? null;
+    // 按 data-* 定位，不按中文文案。文案匹配会在改一次措辞后**静默变绿**：
+    // 匹配不到「读取失败」，于是「没出错」成立。
+    const state = await page.getAttribute("main[data-state]", "data-state");
+    check(state === "ok", "页面进入 ok 终态", state ?? "",
+          `data-state=${state} —— error 是查询失败，bad-row-count 是 F09 的触发器没建行`);
+
+    const body = await page.locator("body").innerText();
+    uidA = body.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/)?.[0] ?? null;
     check(!!uidA, "页面显示了 user_id", uidA ?? "", "没找到 uuid");
     check(body.includes(ACCOUNTS.A.email), "显示的账号是 A", ACCOUNTS.A.email);
-    for (const label of ["详细程度", "举例", "结构", "深度", "f1_arm"]) {
-      check(body.includes(label), `显示了「${label}」`);
+
+    const fields = {};
+    for (const key of ["detail_level", "use_examples", "structure", "depth", "f1_arm"]) {
+      fields[key] = await page.locator(`[data-field="${key}"]`).first().textContent().catch(() => null);
+      check(!!fields[key], `渲染了 ${key}`, fields[key] ?? "", "取不到该字段");
     }
-    check(/\bP[0-3]\b/.test(body), "详细程度是合法档位", body.match(/\bP[0-3]\b/)?.[0] ?? "");
-    check(!body.includes("应为 1 行"), "没有落到「读到 0 行」的坏状态分支");
+    check(/^P[0-3]$/.test(fields.detail_level ?? ""), "detail_level 是合法档位",
+          fields.detail_level ?? "", `取值域外：${fields.detail_level}`);
+    check(["pairwise", "text"].includes(fields.f1_arm ?? ""), "f1_arm 是合法臂",
+          fields.f1_arm ?? "", `取值域外：${fields.f1_arm}`);
     await page.screenshot({ path: join(SHOTS, "home-A.png"), fullPage: true });
     await ctx.close();
   }
@@ -179,16 +196,17 @@ async function main() {
     const ctx = await browser.newContext();
     const page = await ctx.newPage();
     await login(page, "A");
-    await page.goto(`${BASE}/debug/rls?probe=${uidB}`, { waitUntil: "networkidle" });
-    const text = await page.locator("body").innerText();
+    await page.goto(`${BASE}/debug/rls?probe=${uidB}`, { waitUntil: "domcontentloaded" });
+    await page.waitForSelector('main[data-state="ready"]', { timeout: 20000 });
     await page.screenshot({ path: join(SHOTS, "debug-rls.png"), fullPage: true });
 
-    const counts = [...text.matchAll(/^(\d+) 行$/gm)].map((m) => Number(m[1]));
-    check(counts.length === 2, "页面同时给出了两个查询的行数", counts.join(" / "),
-          `只解析出 ${counts.length} 个数：${counts.join(",")}`);
-    check(counts[0] === 1, "【反向控制】查自己 = 1 行", "",
-          `= ${counts[0]} —— 下一条的「0 行」因此什么也证明不了`);
-    check(counts[1] === 0, "查 B = 0 行", "", `= ${counts[1]} —— RLS 被绕过了`);
+    const self = await page.getAttribute('[data-result="self"]', "data-rows");
+    const probe = await page.getAttribute('[data-result="probe"]', "data-rows");
+    check(self !== null && probe !== null, "页面同时给出了两个查询的行数",
+          `自己 ${self} / probe ${probe}`, `自己 ${self} / probe ${probe}`);
+    check(self === "1", "【反向控制】查自己 = 1 行", "",
+          `= ${self} —— 下一条的「0 行」因此什么也证明不了`);
+    check(probe === "0", "查 B = 0 行", "", `= ${probe} —— RLS 被绕过了`);
     await ctx.close();
   } else {
     console.log("\n\x1b[1m5 · A 的登录态下读 B 的行\x1b[0m");

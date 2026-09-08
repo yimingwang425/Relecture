@@ -24,8 +24,22 @@ export default async function HomePage() {
     .select("*")
     .eq("user_id", auth.user.id);
 
+  // 终态标记。三个分支必须**恰好**给出一个 data-state，供回归工具等待与断言。
+  //
+  // 之前回归工具是按中文文案做字符串匹配的，两个毛病：
+  // ① 页面是流式渲染的，`networkidle` 之后 DOM 可能还没流完，读到中间态会假红；
+  // ② 改一次文案，断言会**静默变绿**——它匹配不到「读取失败」，于是「没出错」成立。
+  // 挂一个不随文案变化的标记，两个问题一起解决。
+  // 与下面 JSX 的条件是同一个表达式写了两遍（TS 的收窄只认字面条件，
+  // 用 `state` 做分支会丢掉 `rows` 非空的推断）。两处若漂了，回归工具会红：
+  // data-state 说 ok 而四个字段取不到。
+  const state = error ? "error" : rows?.length !== 1 ? "bad-row-count" : "ok";
+
   return (
-    <main className="mx-auto flex min-h-screen max-w-lg flex-col gap-6 p-6 pt-16">
+    <main
+      data-state={state}
+      className="mx-auto flex min-h-screen max-w-lg flex-col gap-6 p-6 pt-16"
+    >
       <header className="flex items-baseline justify-between">
         <h1 className="text-lg font-medium">我的风格配置</h1>
         <LogoutButton />
@@ -51,12 +65,12 @@ export default async function HomePage() {
         <>
           <dl className="rounded border border-neutral-200 bg-white text-sm">
             {FIELDS.map(([key, label]) => (
-              <Row key={key} label={label} value={String(rows[0][key])} mono />
+              <Row key={key} field={key} label={label} value={String(rows[0][key])} mono />
             ))}
           </dl>
 
           <dl className="rounded border border-neutral-200 bg-white text-sm">
-            <Row label="f1_arm（AB 分组）" value={String(rows[0].f1_arm)} mono />
+            <Row field="f1_arm" label="f1_arm（AB 分组）" value={String(rows[0].f1_arm)} mono />
             <Row
               label="onboarded_at"
               value={rows[0].onboarded_at ? String(rows[0].onboarded_at) : "null（未完成 onboarding）"}
@@ -80,11 +94,24 @@ export default async function HomePage() {
   );
 }
 
-function Row({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+function Row({
+  label,
+  value,
+  mono,
+  field,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+  /** 回归工具按它定位，不按中文标签——改文案不该让断言静默变绿。 */
+  field?: string;
+}) {
   return (
     <div className="flex justify-between gap-4 border-b border-neutral-100 px-4 py-2.5 last:border-0">
       <dt className="shrink-0 text-neutral-500">{label}</dt>
-      <dd className={`text-right ${mono ? "font-mono text-xs" : ""}`}>{value}</dd>
+      <dd data-field={field} className={`text-right ${mono ? "font-mono text-xs" : ""}`}>
+        {value}
+      </dd>
     </div>
   );
 }

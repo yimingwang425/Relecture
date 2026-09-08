@@ -36,7 +36,7 @@ export default async function DebugRlsPage({
     : null;
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-5 p-6 pt-16">
+    <main data-state="ready" className="mx-auto flex min-h-screen max-w-2xl flex-col gap-5 p-6 pt-16">
       <header>
         <h1 className="text-lg font-medium">RLS 探针</h1>
         <p className="mt-1 text-sm text-neutral-500">
@@ -46,6 +46,7 @@ export default async function DebugRlsPage({
       </header>
 
       <Result
+        kind="self"
         title="查自己 —— 反向控制"
         note="这一条必须是 1 行。它若为 0，下面那条的「0 行」就什么也证明不了（可能整表不可读、可能会话已失效）。"
         uid={auth.user.id}
@@ -55,6 +56,7 @@ export default async function DebugRlsPage({
 
       {probe ? (
         <Result
+          kind="probe"
           title="查 probe —— 跨用户读取"
           note="必须是 0 行。RLS 策略 style_config_select_own：user_id = auth.uid()。"
           uid={probe}
@@ -72,12 +74,15 @@ export default async function DebugRlsPage({
 }
 
 function Result({
+  kind,
   title,
   note,
   uid,
   rows,
   error,
 }: {
+  /** 回归工具按 data-result 取行数，不解析渲染文本。 */
+  kind: "self" | "probe";
   title: string;
   note: string;
   uid: string;
@@ -86,7 +91,11 @@ function Result({
 }) {
   const n = rows?.length ?? 0;
   return (
-    <section className="rounded border border-neutral-200 bg-white p-4">
+    <section
+      data-result={kind}
+      data-rows={error ? "error" : String(n)}
+      className="rounded border border-neutral-200 bg-white p-4"
+    >
       <h2 className="text-sm font-medium">{title}</h2>
       <p className="mt-1 font-mono text-xs break-all text-neutral-500">user_id = {uid}</p>
       <p className="mt-3 text-2xl tabular-nums">

@@ -179,8 +179,14 @@ JWT、同一次请求周期，前者是后者的反向控制——缺了它后�
 
 | 域名 | 回归工具 | 人工 |
 | --- | --- | --- |
-| 生产 `ai-courseware-assistant.vercel.app` | 待重跑（合入 `data-state` 后） | ✅ 已走完 |
-| preview `…-git-veri-36a2f2-…` | ✅ **19 绿 / 0 红** | — |
+| 生产 `ai-courseware-assistant.vercel.app` | ✅ **15 绿 / 0 红** | ✅ 已走完 |
+| preview `…-git-veri-36a2f2-…`（已删） | ✅ **19 绿 / 0 红** | — |
+
+生产少的 4 条是验收③那一组——它需要 `/debug/rls`，而生产上那条路由不存在（这正是
+另一条断言要的）。**跳过不等于通过**：脚本对它打的是 `—` 而不是 `✓`。
+
+preview 分支验收完即删：那上面 `/debug/rls` 是开的、Deployment Protection 是关的，
+不该长期挂在公网。
 
 验收③（A 的登录态读 B 的行）在 preview 上通过，反向控制先成立：
 **同一次渲染里「查自己 = 1 行」、「查 probe = 0 行」。**

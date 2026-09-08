@@ -1,0 +1,2 @@
+{"at": "2026-09-08T20:12:40+00:00", "sample_id": "detail_p0_p1.a", "attempt": 8, "model": "claude-sonnet-5", "cost_usd": 0.028609, "input_tokens": 2, "output_tokens": 1880}
+{"at": "2026-09-08T20:13:05+00:00", "sample_id": "detail_p0_p1.b", "attempt": 8, "model": "claude-sonnet-5", "cost_usd": 0.026059, "input_tokens": 2, "output_tokens": 1710}

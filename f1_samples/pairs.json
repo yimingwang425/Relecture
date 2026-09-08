@@ -1,0 +1,1112 @@
+{
+  "schema_version": "1",
+  "generated_at": "2026-09-08T20:13:05+00:00",
+  "deck": {
+    "path": "synthetic_deck.md",
+    "sha256": "3859e3f4af7549fe",
+    "note": "自写合成内容，非第三方课件（PRD §12.1）"
+  },
+  "model": {
+    "id": "claude-sonnet-5",
+    "params": {
+      "effort": "medium",
+      "thinking": "adaptive",
+      "max_tokens": 8000,
+      "cache_system": true,
+      "cache_conversation": true,
+      "temperature": null,
+      "temperature_note": "Opus 5 / Sonnet 5 已移除 temperature/top_p/top_k，传入返回 400"
+    },
+    "source": "explain.llm.AnthropicModel() 的默认值（口径 F19）"
+  },
+  "a_rules_config_version": "2.0",
+  "question": "请给我讲解这份课件里的 Bloom filter。",
+  "system_template": "你是一位课件讲解助手，帮助学生理解他上传的课程材料。\n\n下面是课件全文。只讲课件里写了的内容；课件没写的，说没写，不要补全。\n\n<courseware>\n{deck}\n</courseware>\n\n## 风格要求\n\n{a_class}\n{b_class}\n",
+  "defaults": {
+    "detail_level": "P0",
+    "use_examples": "more",
+    "structure": "conclusion_first",
+    "depth": "why"
+  },
+  "b_class_prompt_fragments": {
+    "use_examples": {
+      "more": "多举例子：每讲一个要点，配一个具体例子或类比帮助理解。",
+      "fewer": "少举例子：把要点本身讲清楚即可，不额外补例子或类比。"
+    },
+    "structure": {
+      "conclusion_first": "先给结论：开头第一段就说出最重要的那句判断，后面再解释它为什么成立。",
+      "buildup_first": "先铺垫后收结论：按「问题 → 机制 → 结论」的顺序展开，把最重要的那句判断放在最后。"
+    },
+    "depth": {
+      "what": "只讲是什么：说清楚这个概念是什么、拿来做什么用。不解释它为什么这样设计，也不做推导。",
+      "why": "讲到为什么：在说清是什么之外，解释这个机制为什么成立、为什么这样设计。",
+      "derivation": "讲到推导：在解释为什么的基础上，把关键结论一步步推出来，写出中间步骤和用到的假设。"
+    }
+  },
+  "cost_usd_total": 0.458542,
+  "cost_usd_total_note": "只含存活的 16 个样例。核对不过被丢弃的重生成同样花了钱，全部真实调用的流水在 spend_log.jsonl",
+  "usage_total": {
+    "input_tokens": 32,
+    "output_tokens": 28583,
+    "cache_creation_input_tokens": 6737,
+    "cache_read_input_tokens": 14778
+  },
+  "pairs": [
+    {
+      "pair_id": "detail_p0_p3",
+      "target_dimension": "detail_level",
+      "samples": [
+        {
+          "sample_id": "detail_p0_p3.a",
+          "variant_label": "P0",
+          "style": {
+            "detail_level": {
+              "value": "P0",
+              "enforced": true
+            },
+            "use_examples": {
+              "value": "more",
+              "enforced": false
+            },
+            "structure": {
+              "value": "conclusion_first",
+              "enforced": false
+            },
+            "depth": {
+              "value": "why",
+              "enforced": false
+            }
+          },
+          "style_config": {
+            "defaults_version": "2.0",
+            "explain_language": "zh",
+            "source_language": "en",
+            "chinese_ratio": {
+              "min": 0.85
+            },
+            "exclude_annotated_terms": true,
+            "term_annotation_enabled": false,
+            "term_policy": "translate_with_source",
+            "term_annotation_threshold": 0.9,
+            "term_count_mode": "first",
+            "term_min_occurrences": 5,
+            "paragraph_length": {
+              "min": 30,
+              "max": 120
+            },
+            "max_quote_chars": 100
+          },
+          "config_fingerprint": "a223ca42e77a",
+          "metric_set_id": "592d790a02e1",
+          "prompt": {
+            "a_class_rules": "- 段落长度：每段控制在 30–120 字。这是**平均**要求，不要靠拆行凑数——把内容讲完整，再决定分几段。\n- 讲解语言：用中文讲解。英文可以出现在专业名词和必要的原文引用里。\n- 引用课件原文时，**单段引用不超过 100 字**，其余内容用自己的话讲。这是版权约束，不可协商。",
+            "b_class_rules": "- 多举例子：每讲一个要点，配一个具体例子或类比帮助理解。\n- 先给结论：开头第一段就说出最重要的那句判断，后面再解释它为什么成立。\n- 讲到为什么：在说清是什么之外，解释这个机制为什么成立、为什么这样设计。",
+            "system_sha256": "47733343ca3bc40c",
+            "system_chars": 3248,
+            "request_signature": "700c2080aa2ae0a7"
+          },
+          "text": "# Bloom Filter 讲解\n\n**结论先行**：Bloom filter 是一种用固定大小的位数组代替\"存储所有元素\"的数据结构，用来快速回答\"这个东西我见过吗\"，代价是可能误报\"见过\"，但绝不会误报\"没见过\"。\n\n## 为什么要用它\n\n假设一个服务要每秒处理几百万次这样的查询：这个 URL/这个 key 我之前存过吗？如果用哈希集合，答案是精确的，但要把每一个见过的元素都存下来——十亿级别的数据量下，内存开销就成了大问题。课件提出的核心问题是：**我们真的需要精确答案吗？** Bloom filter 的答案是：用一点误报率换取巨大的空间节省。\n\n## 结构是什么\n\nBloom filter 由两部分组成：一个长度为 `m`、初始全为 0 的位数组，以及 `k` 个相互独立的哈希函数，每个哈希函数把一个元素映射到 `m` 个位置中的某一个。**关键一点**：这个结构里不存元素本身，只存位。\n\n- **插入**：对元素 `x` 算出 `k` 个哈希位置，把这些位置全部置 1（已经是 1 的不受影响）。\n- **查询**：对元素 `y` 算出同样的 `k` 个位置，只要有一个是 0，就能确定 `y` 从未插入过；如果全是 1，只能说\"大概率存在\"。\n\n打个比方：想象 `k` 张彩票，每插入一个元素就在对应的格子上打孔。查询时看这些格子是否都被打过孔——但打孔的格子可能是别的元素凑巧打出来的。\n\n## 为什么没有假阴性（false negative）\n\n这是 Bloom filter 最重要的性质：**说\"没有\"一定是对的，说\"有\"可能是错的**。\n\n原因在于位只会被\"点亮\"（0→1），从不会被清零。如果 `y` 真的插入过，它对应的 `k` 个位在插入那一刻就全被置 1 了，此后没有任何操作能把它们改回 0。所以只要有一个位是 0，就能百分百确定该元素没被插入过。\n\n反过来，\"全为 1\"不能保证真的插入过——完全可能是别的几个元素恰好把这 `k` 个位置都点亮了，这种情况叫**假阳性（false positive）**，也是 Bloom filter 唯一可能犯的错误类型。\n\n## 假阳性概率怎么算\n\n课件给出了推导思路：\n\n1. 插入 `n` 个元素后，某个特定位仍为 0 的概率约为 `(1 - 1/m)^(kn) ≈ e^(-kn/m)`（因为总共发生了 `kn` 次哈希）；\n2. 所以某位为 1 的概率是 `1 - e^(-kn/m)`；\n3. 一个从未插入过的元素被误判为\"存在\"，需要它的 `k` 个位置**全部**为 1，概率约为 `(1 - e^(-kn/m))^k`。\n\n课件特别提醒：第 4 步里假设 `k` 个位置的状态相互独立，但实际上它们来自同一个数组，并不严格独立，只是这个近似\"足够用来估算参数\"。\n\n**举例理解**：如果数组很大（`m` 远大于 `n`），大部分位仍是 0，误报率就很低；如果数组塞得太满（`n` 相对 `m` 很大），几乎所有位都变成 1，误报率就会飙升——查询几乎总会返回\"存在\"。\n\n## 如何选哈希函数个数 k\n\n这里有个权衡：`k` 越大，每次插入点亮的位越多，数组填满得越快；`k` 越小，每次查询能利用的证据就越少，容易误判。课件给出结论：对表达式求导后，最优值为\n\n> `k = (m/n) ln 2`\n\n在这个最优点上，数组大约有一半的位是 1。这是一个纯数学优化结果，课件没有给出完整推导过程，只给出了结论。\n\n## 实际应用\n\n课件举了两个例子：\n\n- **浏览器**：在向服务器发起完整黑名单的网络查询之前，先用本地 Bloom filter 过滤一遍 URL，大部分明显安全的网址可以直接跳过网络请求。\n- **存储引擎**：每个数据文件配一个 Bloom filter，读取时先查 filter，能\"确定不含该 key\"的文件直接跳过，省去磁盘 I/O。\n\n## 局限性：不能删除元素\n\nBloom filter 有一个明确的限制：**元素不能被删除**。原因很直接——如果要删除一个元素就把它对应的位清零，那这个位可能同时被其他元素共享，清零会破坏\"说没有一定对\"这个核心保证，导致其他元素也被误判为\"没有\"（产生假阴性）。课件提到，如果需要支持删除，得用**计数变体（counting variant）**，但课件没有展开讲这个变体的具体实现。\n\n---\n\n**小结**：Bloom filter 用空间换准确率，牺牲了\"精确存储\"和\"可删除\"两个特性，换来极小的内存占用和快速查询，是一种\"宁可错杀（多查一次），不可放过（漏判存在）\"的设计哲学。",
+          "usage": {
+            "input_tokens": 2,
+            "output_tokens": 1808,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 1342
+          },
+          "cost_usd": 0.027529,
+          "latency_ms": 24818.0,
+          "stop_reason": "end_turn",
+          "model_reported": "claude-sonnet-5",
+          "attempt": 1,
+          "generated_at": "2026-09-08T19:49:37+00:00"
+        },
+        {
+          "sample_id": "detail_p0_p3.b",
+          "variant_label": "P3",
+          "style": {
+            "detail_level": {
+              "value": "P3",
+              "enforced": true
+            },
+            "use_examples": {
+              "value": "more",
+              "enforced": false
+            },
+            "structure": {
+              "value": "conclusion_first",
+              "enforced": false
+            },
+            "depth": {
+              "value": "why",
+              "enforced": false
+            }
+          },
+          "style_config": {
+            "defaults_version": "2.0",
+            "explain_language": "zh",
+            "source_language": "en",
+            "chinese_ratio": {
+              "min": 0.85
+            },
+            "exclude_annotated_terms": true,
+            "term_annotation_enabled": false,
+            "term_policy": "translate_with_source",
+            "term_annotation_threshold": 0.9,
+            "term_count_mode": "first",
+            "term_min_occurrences": 5,
+            "paragraph_length": {
+              "min": 15,
+              "max": 40
+            },
+            "max_quote_chars": 100
+          },
+          "config_fingerprint": "4e0fbd6bec46",
+          "metric_set_id": "592d790a02e1",
+          "prompt": {
+            "a_class_rules": "- 段落长度：每段控制在 15–40 字。这是**平均**要求，不要靠拆行凑数——把内容讲完整，再决定分几段。\n- 讲解语言：用中文讲解。英文可以出现在专业名词和必要的原文引用里。\n- 引用课件原文时，**单段引用不超过 100 字**，其余内容用自己的话讲。这是版权约束，不可协商。",
+            "b_class_rules": "- 多举例子：每讲一个要点，配一个具体例子或类比帮助理解。\n- 先给结论：开头第一段就说出最重要的那句判断，后面再解释它为什么成立。\n- 讲到为什么：在说清是什么之外，解释这个机制为什么成立、为什么这样设计。",
+            "system_sha256": "d626ce0ca599f6b0",
+            "system_chars": 3247,
+            "request_signature": "c1a18a7d1fe09939"
+          },
+          "text": "# Bloom Filter 讲解\n\n**结论先说**：Bloom filter 是一种用少量内存判断\"某个东西是否出现过\"的数据结构，它的回答可能有假阳性（说见过其实没见过），但绝不会有假阴性（说没见过其实见过）。\n\n## 为什么需要它\n\n传统哈希集合要精确记住每一个见过的元素，内存开销巨大。比如存储十亿个 URL，代价高得离谱。\n\n课件提出的关键问题是：**我们真的需要精确答案吗？** 如果能容忍一点点误判，就能省下大量内存。这就是 Bloom filter 存在的动机。\n\n## 结构是什么\n\n它本质上就是一个长度为 `m` 的比特数组，初始全是 0，再配上 `k` 个相互独立的哈希函数。\n\n**注意**：它不存元素本身，只存比特位。这和哈希集合的根本区别就在这里——牺牲了\"记住具体是谁\"，换来了极低的内存占用。\n\n**插入操作**：计算 `x` 的 `k` 个哈希值，把对应的 `k` 个位置全部置 1。已经是 1 的不受影响，从不清零。\n\n**查询操作**：对 `y` 计算同样的 `k` 个位置。只要有一个位置是 0，就能断定 `y` 绝对没被插入过；如果全是 1，就只能说\"大概率插入过\"。\n\n举个例子：假设 `m=10`，`k=2`。插入 \"apple\" 时两个哈希函数分别把第 2 位和第 5 位设为 1。之后查询 \"banana\"，如果它的两个哈希位置恰好也是第 2、5 位，即使从没插入过 \"banana\"，系统也会误判为\"可能存在\"。\n\n## 为什么没有假阴性\n\n这一点的原因很直接：**比特位只能从 0 变成 1，从不会被清零**。\n\n课件原文说明了这个逻辑：\n\n> \"若 y 被插入过，其对应的 k 个位在插入时都被置 1，之后没有任何操作能把它们改回 0，所以\"未出现\"的判断永远正确。\"\n\n反过来，\"存在\"的判断可能出错——因为那 `k` 个位可能是被**其他若干个元素**凑巧共同点亮的，这就是假阳性，也是这个结构唯一可能犯的错误类型。\n\n## 假阳性概率怎么算\n\n课件给出了一步步的推导逻辑：\n\n1. 一次哈希操作，某个特定位保持为 0 的概率是 `1 - 1/m`；\n2. 插入 `n` 个元素后总共做了 `kn` 次哈希，该位仍为 0 的概率约为 `e^(-kn/m)`（大 `m` 近似）；\n3. 所以某位为 1 的概率是 `1 - e^(-kn/m)`；\n4. 一个从未插入的元素被误判为\"存在\"，需要它的 `k` 个位恰好全是 1，概率约为 `(1 - e^(-kn/m))^k`。\n\n课件特别提醒：**第4步中\"各位独立\"的假设并不严格成立**，因为 `k` 个位置来自同一个数组，彼此有关联，但这个近似已经足够用于工程上的容量设计。\n\n打个比方，这就像往一个停车场里随机停车，车位越满（`m` 相对 `n` 越小），随便一辆没停过的车\"碰巧\"发现自己该停的几个车位都被占，误以为\"这里已经停满了\"的概率就越高。\n\n## 如何选择哈希函数个数 k\n\n这里存在一个权衡，课件讲得很清楚：\n\n- `k` 太大：每次插入点亮太多位，数组很快被填满，假阳性率反而升高；\n- `k` 太小：每次查询能验证的证据太少，也不够可靠。\n\n通过对假阳性概率公式求导，可以得到最优值：\n\n`k = (m/n) ln 2`\n\n此时整个数组大约有一半的位是 1，达到了两难之间的平衡点。\n\n## 实际应用\n\n课件举了两个例子：\n\n- **浏览器**：查询 URL 前先过一遍本地 Bloom filter，避免每次都要联网查完整的黑名单，省网络开销。\n- **存储引擎**：每个数据文件配一个 Bloom filter，读取时可以快速跳过\"确定不含目标 key\"的文件，省磁盘 I/O。\n\n## 局限性\n\n**元素不能被删除**。原因很直接：如果清除某一位，可能会破坏其他共享该位的元素的\"无假阴性\"保证——原本该报\"存在\"的元素，可能因为这一位被清零而被误判为\"不存在\"，这就产生了假阴性，违反了 Bloom filter 的核心承诺。\n\n课件提到，如果确实需要支持删除操作，需要用到**计数变体**（counting variant），但课件没有展开讲这个变体的具体实现细节。",
+          "usage": {
+            "input_tokens": 2,
+            "output_tokens": 1677,
+            "cache_creation_input_tokens": 1342,
+            "cache_read_input_tokens": 0
+          },
+          "cost_usd": 0.030194,
+          "latency_ms": 23205.4,
+          "stop_reason": "end_turn",
+          "model_reported": "claude-sonnet-5",
+          "attempt": 1,
+          "generated_at": "2026-09-08T19:50:01+00:00"
+        }
+      ]
+    },
+    {
+      "pair_id": "detail_p0_p1",
+      "target_dimension": "detail_level",
+      "samples": [
+        {
+          "sample_id": "detail_p0_p1.a",
+          "variant_label": "P0",
+          "style": {
+            "detail_level": {
+              "value": "P0",
+              "enforced": true
+            },
+            "use_examples": {
+              "value": "more",
+              "enforced": false
+            },
+            "structure": {
+              "value": "conclusion_first",
+              "enforced": false
+            },
+            "depth": {
+              "value": "why",
+              "enforced": false
+            }
+          },
+          "style_config": {
+            "defaults_version": "2.0",
+            "explain_language": "zh",
+            "source_language": "en",
+            "chinese_ratio": {
+              "min": 0.85
+            },
+            "exclude_annotated_terms": true,
+            "term_annotation_enabled": false,
+            "term_policy": "translate_with_source",
+            "term_annotation_threshold": 0.9,
+            "term_count_mode": "first",
+            "term_min_occurrences": 5,
+            "paragraph_length": {
+              "min": 30,
+              "max": 120
+            },
+            "max_quote_chars": 100
+          },
+          "config_fingerprint": "a223ca42e77a",
+          "metric_set_id": "592d790a02e1",
+          "prompt": {
+            "a_class_rules": "- 段落长度：每段控制在 30–120 字。这是**平均**要求，不要靠拆行凑数——把内容讲完整，再决定分几段。\n- 讲解语言：用中文讲解。英文可以出现在专业名词和必要的原文引用里。\n- 引用课件原文时，**单段引用不超过 100 字**，其余内容用自己的话讲。这是版权约束，不可协商。",
+            "b_class_rules": "- 多举例子：每讲一个要点，配一个具体例子或类比帮助理解。\n- 先给结论：开头第一段就说出最重要的那句判断，后面再解释它为什么成立。\n- 讲到为什么：在说清是什么之外，解释这个机制为什么成立、为什么这样设计。",
+            "system_sha256": "47733343ca3bc40c",
+            "system_chars": 3248,
+            "request_signature": "700c2080aa2ae0a7"
+          },
+          "text": "## 核心结论\n\nBloom filter 是一种**用少量内存换取\"可能出错\"的成员检测结构**：它只用一个位数组和几个哈希函数，就能回答\"这个东西我见过吗\"，代价是偶尔会把没见过的东西误判成见过——但绝不会把见过的东西漏判成没见过。\n\n## 为什么需要它\n\n课件开头提出的问题很实际：如果一个服务要每秒处理几百万次\"我见过这个吗\"的查询，用哈希集合（hash set）当然能给出精确答案，但前提是要把每个见过的东西都存下来。比如存十亿个 URL，内存开销会变得非常大。课件问的关键问题是：\"我们真的需要精确答案吗？\"——Bloom filter 就是对这个问题的回答：放弃精确性，换取极小的空间占用。\n\n## 结构长什么样\n\nBloom filter 的组成很简单：一个长度为 `m` 的位数组（初始全是 0），加上 `k` 个相互独立的哈希函数，每个函数把一个物品映射到数组中的某个位置。注意：**这个结构不存物品本身，只存位（bit）**。\n\n**插入**：加入物品 `x` 时，用 `k` 个哈希函数算出 `k` 个位置，把这些位置的 bit 全部置为 1（已经是 1 的不变，永远不会清零）。\n\n**查询**：判断 `y` 是否存在时，同样算出 `k` 个位置。只要有一个位置是 0，就能确定 `y` 绝对没被插入过；如果 `k` 个位置全是 1，就报告\"可能存在\"。\n\n打个比方：想象一张多人共用的签到表，每个人签到时要在好几个格子里打勾。你去查某人是否签到过，如果发现哪怕一个该打勾的格子是空的，那这人肯定没签到；但如果格子全被打了勾，可能是别人凑巧把这些格子都占满了，你没法百分百确定就是这个人。\n\n## 为什么不会漏判（无假阴性）\n\n课件给出的原因很直接：位只能被置 1，从不会被清零。所以只要 `y` 真的插入过，它对应的 `k` 个位置在插入那一刻就已经全部变成 1，之后不可能被任何操作改回 0。因此\"不存在\"的回答永远正确。\n\n但\"存在\"的回答可能出错：这 `k` 个位置也许是被**其他若干物品联合覆盖**出来的，凑巧全变成了 1。这种\"明明没插入却被判定存在\"的情况就叫**假阳性（false positive）**，也是这个结构唯一可能犯的错误类型。\n\n## 假阳性概率是怎么算出来的\n\n课件给出了一步步的推导逻辑：\n\n1. 插入一个物品时，某个特定 bit 被这次哈希\"漏过\"（没被置1）的概率是 `1 - 1/m`；\n2. 插入 `n` 个物品共产生 `kn` 次哈希调用，这个 bit 全程都没被碰到的概率约为 `(1 - 1/m)^(kn) ≈ e^(-kn/m)`；\n3. 所以这个 bit 最终是 1 的概率为 `1 - e^(-kn/m)`；\n4. 一个从未插入过的物品，其 `k` 个位置恰好全是 1（被误判为\"存在\"）的概率约为 `(1 - e^(-kn/m))^k`。\n\n课件特别提醒：第 4 步假设 `k` 个位置的状态相互独立，但实际上它们都来自同一个数组，并不严格独立——不过作为容量估算，这个近似已经够用了。\n\n举例理解：数组越大（`m` 越大）、插入的物品越少（`n` 越小），bit 被点亮的比例就越低，假阳性率自然越小；反之数组太小、塞的东西太多，位数组很快被\"点满\"，误判率就飙升——这和签到表格子太少、太多人共用一个道理。\n\n## k 该怎么选\n\n哈希函数数量 `k` 有个权衡：`k` 越大，每次插入点亮的位越多，数组填满得越快（假阳性率上升的风险）；`k` 越小，每次查询能核对的证据就越少（区分能力下降）。课件给出通过求导得到的最优值：\n\n`k = (m/n) ln 2`\n\n在这个取值下，数组大约有一半的位是 1——这是效率和精度之间的一个平衡点。\n\n## 实际用在哪\n\n课件举了两个例子：\n\n- **浏览器**：在向网络发起真正的黑名单查询（有开销）之前，先用本地的 Bloom filter 筛一遍 URL，能过滤掉大部分明显安全的网址；\n- **存储引擎**：为每个数据文件配一个 Bloom filter，读取数据时可以直接跳过那些\"肯定不包含目标 key\"的文件，省去磁盘 I/O。\n\n## 局限性：不能删除\n\n课件明确指出：Bloom filter 不支持删除操作。原因很自然——如果要删除一个物品就得把它对应的位清零，但这些位可能同时被其他物品共用，一旦清零就会破坏\"无假阴性\"这个核心保证，导致本该报告\"存在\"的物品被误判为\"不存在\"。如果需要支持删除，课件提到需要用**计数型变体（counting variant）**，但课件没有展开讲这个变体的细节。",
+          "usage": {
+            "input_tokens": 2,
+            "output_tokens": 1880,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 1342
+          },
+          "cost_usd": 0.028609,
+          "latency_ms": 27235.2,
+          "stop_reason": "end_turn",
+          "model_reported": "claude-sonnet-5",
+          "attempt": 8,
+          "generated_at": "2026-09-08T20:12:40+00:00"
+        },
+        {
+          "sample_id": "detail_p0_p1.b",
+          "variant_label": "P1",
+          "style": {
+            "detail_level": {
+              "value": "P1",
+              "enforced": true
+            },
+            "use_examples": {
+              "value": "more",
+              "enforced": false
+            },
+            "structure": {
+              "value": "conclusion_first",
+              "enforced": false
+            },
+            "depth": {
+              "value": "why",
+              "enforced": false
+            }
+          },
+          "style_config": {
+            "defaults_version": "2.0",
+            "explain_language": "zh",
+            "source_language": "en",
+            "chinese_ratio": {
+              "min": 0.85
+            },
+            "exclude_annotated_terms": true,
+            "term_annotation_enabled": false,
+            "term_policy": "translate_with_source",
+            "term_annotation_threshold": 0.9,
+            "term_count_mode": "first",
+            "term_min_occurrences": 5,
+            "paragraph_length": {
+              "min": 40,
+              "max": 90
+            },
+            "max_quote_chars": 100
+          },
+          "config_fingerprint": "6b80794ff824",
+          "metric_set_id": "592d790a02e1",
+          "prompt": {
+            "a_class_rules": "- 段落长度：每段控制在 40–90 字。这是**平均**要求，不要靠拆行凑数——把内容讲完整，再决定分几段。\n- 讲解语言：用中文讲解。英文可以出现在专业名词和必要的原文引用里。\n- 引用课件原文时，**单段引用不超过 100 字**，其余内容用自己的话讲。这是版权约束，不可协商。",
+            "b_class_rules": "- 多举例子：每讲一个要点，配一个具体例子或类比帮助理解。\n- 先给结论：开头第一段就说出最重要的那句判断，后面再解释它为什么成立。\n- 讲到为什么：在说清是什么之外，解释这个机制为什么成立、为什么这样设计。",
+            "system_sha256": "f32de92d34459d39",
+            "system_chars": 3247,
+            "request_signature": "0c92db976321a947"
+          },
+          "text": "# Bloom Filter 讲解\n\n**结论先行**：Bloom filter 是一种用极小内存回答\"这个东西我是否见过\"的数据结构，代价是它可能会误判\"见过\"（假阳性），但绝不会误判\"没见过\"（假阴性）。它牺牲了精确性，换来了空间效率。\n\n## 为什么需要它\n\n传统的哈希集合（hash set）要存下每一个见过的元素，当元素数量达到十亿级别（比如所有URL），内存开销就成了系统设计的瓶颈。课件提出的关键问题是：**我们真的需要精确答案吗？** 很多场景下，\"大概率没见过\"就已经够用了，这就是 Bloom filter 存在的意义。\n\n## 结构长什么样\n\n它只是一个长度为 `m` 的比特数组（全部初始化为0），再配上 `k` 个相互独立的哈希函数，每个函数把一个元素映射到数组的某个位置。**注意：它不存元素本身，只存比特位**。\n\n- **插入**：算出 `x` 的 `k` 个哈希位置，把这些位置全部置 1（已经是1的不用管）。\n- **查询**：算出 `y` 的同样 `k` 个位置，只要有一个是0，就断定\"绝对没见过\"；如果全是1，就说\"大概率见过\"。\n\n**类比**：想象一张有很多格子的登记表，每个人来了就在自己对应的几个格子上打勾（可能和别人共用格子）。你查某人是否来过，只看他对应的格子是否都被打过勾——但格子可能是别人打的。\n\n## 为什么没有假阴性\n\n这是这个结构最核心的逻辑。原文说得很清楚：\n\n> \"bits are only ever turned on\"（比特只会被置为1，不会被清零）\n\n如果 `y` 真的插入过，它的 `k` 个位置在插入那一刻就全部变成1了，之后任何操作都不会把它们改回0。所以只要有一个位是0，就一定意味着没插入过——这个判断永远可靠。\n\n但反过来，\"全是1\"未必是 `y` 自己插入的结果，很可能是别的元素凑巧把这几个位置都点亮了。这就是**假阳性**，也是这个结构唯一可能犯的错误类型。\n\n**举例**：数组只有4位，两个不同的URL分别插入后点亮了位置{0,2}和{1,3}。这时你查一个从未插入过的URL，如果它恰好也映射到{0,2,1,3}中某个子集，且都已经是1，就会被误判为\"见过\"。\n\n## 假阳性概率怎么算的\n\n课件给出了一步步的推导逻辑：\n\n1. 一次哈希操作后，某个比特位仍是0的概率是 `1 - 1/m`；\n2. 插入 `n` 个元素、共 `kn` 次哈希后，该位仍为0的概率约为 `(1 - 1/m)^(kn) ≈ e^(-kn/m)`；\n3. 所以该位为1的概率是 `1 - e^(-kn/m)`；\n4. 一个从未插入过的元素被误判为\"存在\"，需要它的 `k` 个位置**都**为1，概率近似为 `(1 - e^(-kn/m))^k`。\n\n课件也坦诚指出：第4步假设 `k` 个位置的状态相互独立，但实际上它们来自同一个数组，并不严格独立，只是这个近似\"足够用来做容量规划\"（close enough for sizing）。\n\n## k（哈希函数个数）怎么选\n\n这里有个权衡：`k` 太多，每次插入点亮的位太多，数组很快被填满、假阳性率上升；`k` 太少，查询时能核对的证据不够，也不精确。课件给出通过求导得到的最优值：\n\n`k = (m/n) ln 2`\n\n在这个最优点上，数组大约有一半的位是1。这是一个平衡点——既不浪费哈希函数带来的判别力，也不让数组过快饱和。\n\n## 实际应用\n\n课件举了两个例子：\n\n- **浏览器**：在真正发起网络请求查询完整黑名单之前，先用本地的 Bloom filter 筛一遍URL，绝大多数正常网址会被\"绝对没见过\"直接放行，省下网络开销。\n- **存储引擎**：每个数据文件配一个 filter，读取时如果 filter 说\"绝对不在这个文件里\"，就可以跳过整个文件的读取，不用真的去磁盘上找。\n\n## 局限性：不能删除\n\n这是结构设计带来的硬伤。因为多个元素可能共享同一个比特位，如果你为了\"删除\"某元素而把它的某位清零，可能会连带破坏了其他仍然存在的元素的\"无假阴性\"保证——原本该元素应该被判定为\"存在\"，现在却被误判为\"不存在\"了。课件提到，如果需要支持删除，得用**计数变体**（counting variant）来解决，但这份课件没有展开讲这个变体的具体细节。",
+          "usage": {
+            "input_tokens": 2,
+            "output_tokens": 1710,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 1342
+          },
+          "cost_usd": 0.026059,
+          "latency_ms": 24471.1,
+          "stop_reason": "end_turn",
+          "model_reported": "claude-sonnet-5",
+          "attempt": 8,
+          "generated_at": "2026-09-08T20:13:05+00:00"
+        }
+      ]
+    },
+    {
+      "pair_id": "detail_p2_p3",
+      "target_dimension": "detail_level",
+      "samples": [
+        {
+          "sample_id": "detail_p2_p3.a",
+          "variant_label": "P2",
+          "style": {
+            "detail_level": {
+              "value": "P2",
+              "enforced": true
+            },
+            "use_examples": {
+              "value": "more",
+              "enforced": false
+            },
+            "structure": {
+              "value": "conclusion_first",
+              "enforced": false
+            },
+            "depth": {
+              "value": "why",
+              "enforced": false
+            }
+          },
+          "style_config": {
+            "defaults_version": "2.0",
+            "explain_language": "zh",
+            "source_language": "en",
+            "chinese_ratio": {
+              "min": 0.85
+            },
+            "exclude_annotated_terms": true,
+            "term_annotation_enabled": false,
+            "term_policy": "translate_with_source",
+            "term_annotation_threshold": 0.9,
+            "term_count_mode": "first",
+            "term_min_occurrences": 5,
+            "paragraph_length": {
+              "min": 25,
+              "max": 55
+            },
+            "max_quote_chars": 100
+          },
+          "config_fingerprint": "702c48759329",
+          "metric_set_id": "592d790a02e1",
+          "prompt": {
+            "a_class_rules": "- 段落长度：每段控制在 25–55 字。这是**平均**要求，不要靠拆行凑数——把内容讲完整，再决定分几段。\n- 讲解语言：用中文讲解。英文可以出现在专业名词和必要的原文引用里。\n- 引用课件原文时，**单段引用不超过 100 字**，其余内容用自己的话讲。这是版权约束，不可协商。",
+            "b_class_rules": "- 多举例子：每讲一个要点，配一个具体例子或类比帮助理解。\n- 先给结论：开头第一段就说出最重要的那句判断，后面再解释它为什么成立。\n- 讲到为什么：在说清是什么之外，解释这个机制为什么成立、为什么这样设计。",
+            "system_sha256": "f073558ff3eb6a66",
+            "system_chars": 3247,
+            "request_signature": "177c6ebb88b1088b"
+          },
+          "text": "# Bloom Filter 讲解\n\n**结论先行**：Bloom filter 是一种用少量内存判断\"某个东西是否出现过\"的数据结构，它可以百分百确定\"没见过\"，但说\"见过\"时可能会出错。这个不对称性是它的核心特点。\n\n## 为什么要用它\n\n假设你要做一个系统，每秒要回答几百万次\"这个东西之前出现过吗\"。用哈希集合可以精确回答，但代价是要把所有见过的东西都存下来。课件举的例子是十亿条 URL，这时候内存开销会成为设计瓶颈。Bloom filter 的思路是：放弃\"精确\"，换取\"省内存\"。\n\n## 结构长什么样\n\n它本质上就是一个长度为 `m` 的比特数组，一开始全是 0，再配上 `k` 个相互独立的哈希函数，每个哈希函数把一个元素映射到数组里的某个位置。**注意它不存元素本身，只存比特位。**\n\n**插入**：加入元素 `x` 时，用 `k` 个哈希函数算出 `k` 个位置，把这些位置都置为 1（已经是 1 的不受影响，也不会清零）。\n\n**查询**：查元素 `y` 时，同样算出 `k` 个位置。只要有一个位置是 0，就能断定 `y` 绝对没被插入过；如果 `k` 个位置全是 1，就报告\"可能存在\"。\n\n举个例子：假设 `m=10`，`k=2`，插入 \"apple\" 把第 3、7 位设为 1；插入 \"banana\" 把第 1、7 位设为 1。这时查 \"cherry\"，如果它恰好也映射到第 1、3 位，会发现两个位置都是 1，于是被误判为\"可能存在\"——但它其实从没被插入过。\n\n## 为什么不会漏报（没有假阴性）\n\n课件的关键逻辑是：**比特位只会被置 1，从来不会被清零**。所以如果 `y` 真的被插入过，它对应的 `k` 个位置在插入那一刻就全部变成了 1，之后不可能有任何操作把它们改回 0。\n\n也就是说，\"不存在\"的回答永远正确；但\"存在\"的回答可能出错——因为那 `k` 个位置也可能是被**其他元素凑巧一起点亮**的，这就是**假阳性（false positive）**，也是这个结构唯一可能出的错。\n\n## 假阳性概率是怎么算出来的\n\n课件给出了一步步的推导逻辑：\n\n1. 一次哈希操作，某个比特位保持为 0 的概率是 `1 - 1/m`；\n2. 插入 `n` 个元素总共做了 `kn` 次哈希，这个位仍为 0 的概率约为 `e^(-kn/m)`；\n3. 所以某个位为 1 的概率是 `1 - e^(-kn/m)`；\n4. 一个从未插入的元素被误判为\"存在\"，需要它的 `k` 个位置全为 1，概率约为 `(1 - e^(-kn/m))^k`。\n\n课件特别提醒：第 4 步假设 `k` 个位置的状态相互独立，但实际上它们都来自同一个数组，并不严格独立，不过这个近似\"足够用于工程上的容量设计\"。\n\n## k 该取多少\n\n`k` 太多，每次插入点亮的位太多，数组很快被填满，误判率反而上升；`k` 太少，查询时能利用的证据又不够。课件给出优化后的结果：\n\n> 差分求导得到最优点在 `k = (m/n) ln 2`，此时数组大约一半的位是 1。\n\n比如你决定给 100 万个元素分配 1000 万个比特（`m/n=10`），那么最优的 `k` 约等于 `10 × 0.693 ≈ 7` 个哈希函数。\n\n## 实际应用（课件提到的两个例子）\n\n- **浏览器**：在真正联网查询完整黑名单之前，先用本地 Bloom filter 筛一遍 URL，大部分正常网址会被\"确定不在名单里\"直接放行，省下网络开销。\n- **存储引擎**：每个数据文件配一个 Bloom filter，读取时可以先问\"这个 key 在这个文件里吗\"，如果过滤器说\"不在\"，就直接跳过整个文件，不用真的去读磁盘。\n\n## 局限性：不能删除元素\n\n课件明确指出：**Bloom filter 不支持删除**。因为如果要删除某个元素，就得把它对应的位清零，但这些位可能被其他元素共享，清零会破坏\"不会漏报\"这个保证——原本存在的其他元素可能因此被误判为\"不存在\"，这是绝对不允许的。\n\n如果确实需要支持删除，课件提到需要用**计数变体（counting variant）**，但课件到此为止，没有展开讲这个变体具体怎么实现。",
+          "usage": {
+            "input_tokens": 2,
+            "output_tokens": 1669,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 1342
+          },
+          "cost_usd": 0.025444,
+          "latency_ms": 23086.2,
+          "stop_reason": "end_turn",
+          "model_reported": "claude-sonnet-5",
+          "attempt": 3,
+          "generated_at": "2026-09-08T20:03:28+00:00"
+        },
+        {
+          "sample_id": "detail_p2_p3.b",
+          "variant_label": "P3",
+          "style": {
+            "detail_level": {
+              "value": "P3",
+              "enforced": true
+            },
+            "use_examples": {
+              "value": "more",
+              "enforced": false
+            },
+            "structure": {
+              "value": "conclusion_first",
+              "enforced": false
+            },
+            "depth": {
+              "value": "why",
+              "enforced": false
+            }
+          },
+          "style_config": {
+            "defaults_version": "2.0",
+            "explain_language": "zh",
+            "source_language": "en",
+            "chinese_ratio": {
+              "min": 0.85
+            },
+            "exclude_annotated_terms": true,
+            "term_annotation_enabled": false,
+            "term_policy": "translate_with_source",
+            "term_annotation_threshold": 0.9,
+            "term_count_mode": "first",
+            "term_min_occurrences": 5,
+            "paragraph_length": {
+              "min": 15,
+              "max": 40
+            },
+            "max_quote_chars": 100
+          },
+          "config_fingerprint": "4e0fbd6bec46",
+          "metric_set_id": "592d790a02e1",
+          "prompt": {
+            "a_class_rules": "- 段落长度：每段控制在 15–40 字。这是**平均**要求，不要靠拆行凑数——把内容讲完整，再决定分几段。\n- 讲解语言：用中文讲解。英文可以出现在专业名词和必要的原文引用里。\n- 引用课件原文时，**单段引用不超过 100 字**，其余内容用自己的话讲。这是版权约束，不可协商。",
+            "b_class_rules": "- 多举例子：每讲一个要点，配一个具体例子或类比帮助理解。\n- 先给结论：开头第一段就说出最重要的那句判断，后面再解释它为什么成立。\n- 讲到为什么：在说清是什么之外，解释这个机制为什么成立、为什么这样设计。",
+            "system_sha256": "d626ce0ca599f6b0",
+            "system_chars": 3247,
+            "request_signature": "c1a18a7d1fe09939"
+          },
+          "text": "# Bloom Filter 讲解\n\n**结论先行**：Bloom filter 是一种用空间换准确性的判存结构——它能非常省内存地告诉你\"这个东西绝对没见过\"或\"这个东西可能见过\"，但永远不会说\"绝对见过\"。\n\n## 为什么需要它\n\n想象一个每秒处理百万级请求的服务，要判断\"这个 URL 我是否见过\"。用哈希表存所有见过的东西当然准确，但如果有十亿条记录，内存开销就吃不消了。课件提出的关键问题是：**我们真的需要精确答案吗？**Bloom filter 的答案是：不需要，可以牺牲一点准确性换取巨大的空间节省。\n\n## 结构是什么\n\nBloom filter 本质上就是一个长度为 `m` 的比特数组（初始全 0），配合 `k` 个独立的哈希函数。注意：**它不存任何具体的物品，只存比特位**。\n\n- **插入**：对物品 `x` 算出 `k` 个哈希位置，把这些位置的比特都置为 1。\n- **查询**：对物品 `y` 算出同样的 `k` 个位置，只要有一个是 0，就说明 `y` 绝对没被插入过；如果全是 1，就说\"可能存在\"。\n\n**例子**：假设 `m=10`，`k=2`。插入\"apple\"后，位置 2 和 5 被置 1。查询\"banana\"，如果它的哈希位置正好是 3 和 7（都是 0），立刻能确定\"banana\"没被插入过。\n\n## 为什么不会有假阴性\n\n因为比特位只能从 0 变成 1，从不会被清零。所以只要某物品被插入过，它对应的 `k` 位必然是 1，永远不可能被后来的操作改回 0。因此\"不存在\"的回答一定是对的。\n\n但\"存在\"的回答可能是错的——因为多个不同物品插入后，凑巧把某个查询物品所需的 `k` 个位置都点亮了，这就是**假阳性（false positive）**，也是这个结构唯一可能犯的错误。\n\n**类比**：就像几个人分别在一张签到表的不同格子打勾，你查某个格子是否被打过勾时，可能是别人打的，而不是你要找的那个人打的。\n\n## 假阳性概率怎么算\n\n课件给出推导思路（原文）：\n\n> A single bit is left at zero by one hash of one item with probability `1 - 1/m`.\n\n推导过程分四步：\n\n1. 一次哈希不命中某比特位的概率是 `1 - 1/m`。\n2. 插入 `n` 个物品共产生 `kn` 次哈希，该位始终为 0 的概率约为 `e^(-kn/m)`。\n3. 所以该位为 1 的概率是 `1 - e^(-kn/m)`。\n4. 一个从未插入的物品被误判为\"存在\"，需要它的 `k` 个位置全为 1，概率约为 `(1 - e^(-kn/m))^k`。\n\n这里有个**近似假设**：把 `k` 个位置当作互相独立来算概率，但实际上它们来自同一个数组，并不严格独立。课件也提到这一点，只是说\"足够接近，可用来做容量规划\"。\n\n## 如何选哈希函数个数 k\n\n`k` 太多，每次插入点亮的位太多，数组很快被填满、假阳性率上升；`k` 太少，查询时证据不足，也容易误判。\n\n通过对假阳性率公式求导，可以找到最优点：\n\n**`k = (m/n) ln 2`**\n\n此时数组大约一半的位是 1。\n\n**例子**：如果 `m` 相对 `n` 很大（比如每个物品分配 10 个比特），最优 `k` 大约是 `10 × 0.693 ≈ 7` 个哈希函数。\n\n## 实际应用\n\n- **浏览器**：在向服务器查询完整黑名单之前，先用本地的 Bloom filter 过滤一遍 URL，绝大多数正常网址会被直接排除，省去网络开销。\n- **存储引擎**：每个数据文件配一个 Bloom filter，读取时可以跳过那些\"肯定不含该 key\"的文件，减少磁盘 I/O。\n\n## 局限性\n\nBloom filter **不支持删除**。因为如果清除某一位，可能会破坏其他共享这一位的物品的\"无假阴性\"保证——你没法确定这个位是不是只属于要删除的那个物品。\n\n**例子**：如果 \"apple\" 和 \"banana\" 恰好共享了同一个比特位，删除 \"apple\" 时把这位清零，会导致查询 \"banana\" 时被误判为\"不存在\"，这就产生了假阴性——违反了 Bloom filter 的核心保证。\n\n课件提到，如果需要支持删除，得用**计数变体（counting variant）**，但具体怎么实现，课件没有展开讲。",
+          "usage": {
+            "input_tokens": 2,
+            "output_tokens": 1670,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 1342
+          },
+          "cost_usd": 0.025459,
+          "latency_ms": 22530.5,
+          "stop_reason": "end_turn",
+          "model_reported": "claude-sonnet-5",
+          "attempt": 3,
+          "generated_at": "2026-09-08T20:03:50+00:00"
+        }
+      ]
+    },
+    {
+      "pair_id": "examples_more_fewer",
+      "target_dimension": "use_examples",
+      "samples": [
+        {
+          "sample_id": "examples_more_fewer.a",
+          "variant_label": "more",
+          "style": {
+            "detail_level": {
+              "value": "P0",
+              "enforced": true
+            },
+            "use_examples": {
+              "value": "more",
+              "enforced": false
+            },
+            "structure": {
+              "value": "conclusion_first",
+              "enforced": false
+            },
+            "depth": {
+              "value": "why",
+              "enforced": false
+            }
+          },
+          "style_config": {
+            "defaults_version": "2.0",
+            "explain_language": "zh",
+            "source_language": "en",
+            "chinese_ratio": {
+              "min": 0.85
+            },
+            "exclude_annotated_terms": true,
+            "term_annotation_enabled": false,
+            "term_policy": "translate_with_source",
+            "term_annotation_threshold": 0.9,
+            "term_count_mode": "first",
+            "term_min_occurrences": 5,
+            "paragraph_length": {
+              "min": 30,
+              "max": 120
+            },
+            "max_quote_chars": 100
+          },
+          "config_fingerprint": "a223ca42e77a",
+          "metric_set_id": "592d790a02e1",
+          "prompt": {
+            "a_class_rules": "- 段落长度：每段控制在 30–120 字。这是**平均**要求，不要靠拆行凑数——把内容讲完整，再决定分几段。\n- 讲解语言：用中文讲解。英文可以出现在专业名词和必要的原文引用里。\n- 引用课件原文时，**单段引用不超过 100 字**，其余内容用自己的话讲。这是版权约束，不可协商。",
+            "b_class_rules": "- 多举例子：每讲一个要点，配一个具体例子或类比帮助理解。\n- 先给结论：开头第一段就说出最重要的那句判断，后面再解释它为什么成立。\n- 讲到为什么：在说清是什么之外，解释这个机制为什么成立、为什么这样设计。",
+            "system_sha256": "47733343ca3bc40c",
+            "system_chars": 3248,
+            "request_signature": "700c2080aa2ae0a7"
+          },
+          "text": "# Bloom Filter 讲解\n\n**结论先行**：Bloom filter 是一种用有限内存判断\"某个东西是不是没见过\"的数据结构，它可以百分之百确定地说\"没见过\"，但说\"见过\"的时候有一定概率是错的。这种不对称性正是它的核心设计。\n\n## 问题背景\n\n课件开篇提出一个场景：一个服务需要每秒回答几百万次\"这个东西我见过吗？\"。用哈希集合可以精确回答，但要存下每一个见过的元素——比如十亿个 URL，内存开销就成了大问题。于是引出一个关键思考：我们真的需要精确答案吗？\n\n## 结构是什么\n\nBloom filter 由两部分组成：一个长度为 `m`、初始全为 0 的位数组，以及 `k` 个相互独立的哈希函数，每个哈希函数把一个元素映射到数组的某个位置上。**注意它不存元素本身，只存这些位（bit）**。\n\n- **插入**：把元素 `x` 的 `k` 个哈希值算出来，把对应的 `k` 个位置全部置 1。已经是 1 的位置不受影响，也没有任何\"清零\"操作。\n- **查询**：对元素 `y` 计算同样的 `k` 个位置。只要有一个位置是 0，就可以断定 `y` 绝对没被插入过；如果 `k` 个位置全是 1，就报告\"y 可能存在\"。\n\n举个例子：`m=10`，`k=2`。插入 `\"apple\"` 时，两个哈希函数分别算出位置 2 和 7，就把这两位置 1。查询 `\"apple\"` 时同样算出 2 和 7，发现都是 1，于是回答\"可能存在\"（这里确实存在）。\n\n## 为什么不会有假阴性（false negative）\n\n这是最重要的性质。原文说：\n\n> 如果 `y` was inserted, all `k` of its bits were set at that moment, and no later operation could have turned any of them back off.\n\n也就是说，因为位只能被置 1、从不会被清零，一旦某个元素插入过，它对应的所有位就永远保持为 1。所以查询时只要发现某一位是 0，就一定说明这个元素没被插入过——这个判断是绝对可靠的。\n\n## 为什么会有假阳性（false positive）\n\n反过来，\"全部为 1\"并不能保证这个元素真的插入过——因为这 `k` 个位置可能是被**其他若干个元素**凑巧共同点亮的。比如上例中，如果之前插入过 `\"banana\"`（占了位置 2）和 `\"cherry\"`（占了位置 7），即使从没插入过 `\"apple\"`，查询 `\"apple\"` 时也会发现位置 2、7 都是 1，从而被误判为\"可能存在\"。这就是课件说的**唯一一种错误类型**。\n\n## 假阳性概率怎么算\n\n课件给出了一步步的推导逻辑：\n\n1. 某一位被一次哈希操作漏掉（没被置1）的概率是 `1 - 1/m`；\n2. 插入 `n` 个元素共产生 `kn` 次哈希，这一位始终为 0 的概率约为 `(1 - 1/m)^(kn) ≈ e^(-kn/m)`；\n3. 所以某一位为 1 的概率是 `1 - e^(-kn/m)`；\n4. 一个从未插入过的元素被误判为\"存在\"，需要它的 `k` 个位置都恰好是 1，概率约为 `(1 - e^(-kn/m))^k`。\n\n课件也提醒：第 4 步假设 `k` 个位置互相独立，其实并不严格成立（因为它们共享同一个数组），但用来估算数组大小已经足够接近。\n\n这里可以类比：数组里 1 越多（元素插入越多、数组越小），随便一个新元素凑巧全中的概率就越高——就像一个停车场车位越满，随手指一个车位说\"这有车\"猜对的概率也越高。\n\n## k 该取多少\n\n`k` 太多，每次插入占用的位置多，数组很快被填满；`k` 太少，每次查询能验证的证据又太少。课件给出结论：对表达式求导后，最优的 `k` 是：\n\n**`k = (m/n) ln 2`**\n\n在这个取值下，数组大约有一半的位是 1。这说明存在一个平衡点：不多不少的哈希函数数量能让假阳性率最低。\n\n## 实际应用\n\n课件举了两个例子：\n\n- **浏览器**：在向网络发起真正的黑名单查询之前，先用本地 Bloom filter 筛一遍 URL，省去大部分不必要的网络请求。\n- **存储引擎**：给每个数据文件配一个 Bloom filter，读取时可以直接跳过那些\"肯定不含目标 key\"的文件。\n\n这两个例子都是利用\"绝对可靠的否定判断\"来节省昂贵操作（网络请求、磁盘读取）。\n\n## 局限性\n\nBloom filter **不能删除元素**。原因很直接：如果要删除某个元素就得把它对应的位清零，但这些位可能同时被其他元素共享，一旦清零就会破坏\"不存在假阴性\"这个核心保证——原本应该判定为\"存在\"的其他元素，可能因此被误判为\"不存在\"。课件指出，如果需要支持删除，需要用**计数变体（counting variant）**，但课件没有展开讲这个变体的具体细节。",
+          "usage": {
+            "input_tokens": 2,
+            "output_tokens": 1864,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 1342
+          },
+          "cost_usd": 0.028369,
+          "latency_ms": 24763.3,
+          "stop_reason": "end_turn",
+          "model_reported": "claude-sonnet-5",
+          "attempt": 1,
+          "generated_at": "2026-09-08T19:52:15+00:00"
+        },
+        {
+          "sample_id": "examples_more_fewer.b",
+          "variant_label": "fewer",
+          "style": {
+            "detail_level": {
+              "value": "P0",
+              "enforced": true
+            },
+            "use_examples": {
+              "value": "fewer",
+              "enforced": false
+            },
+            "structure": {
+              "value": "conclusion_first",
+              "enforced": false
+            },
+            "depth": {
+              "value": "why",
+              "enforced": false
+            }
+          },
+          "style_config": {
+            "defaults_version": "2.0",
+            "explain_language": "zh",
+            "source_language": "en",
+            "chinese_ratio": {
+              "min": 0.85
+            },
+            "exclude_annotated_terms": true,
+            "term_annotation_enabled": false,
+            "term_policy": "translate_with_source",
+            "term_annotation_threshold": 0.9,
+            "term_count_mode": "first",
+            "term_min_occurrences": 5,
+            "paragraph_length": {
+              "min": 30,
+              "max": 120
+            },
+            "max_quote_chars": 100
+          },
+          "config_fingerprint": "a223ca42e77a",
+          "metric_set_id": "592d790a02e1",
+          "prompt": {
+            "a_class_rules": "- 段落长度：每段控制在 30–120 字。这是**平均**要求，不要靠拆行凑数——把内容讲完整，再决定分几段。\n- 讲解语言：用中文讲解。英文可以出现在专业名词和必要的原文引用里。\n- 引用课件原文时，**单段引用不超过 100 字**，其余内容用自己的话讲。这是版权约束，不可协商。",
+            "b_class_rules": "- 少举例子：把要点本身讲清楚即可，不额外补例子或类比。\n- 先给结论：开头第一段就说出最重要的那句判断，后面再解释它为什么成立。\n- 讲到为什么：在说清是什么之外，解释这个机制为什么成立、为什么这样设计。",
+            "system_sha256": "08d930b3ecf2c822",
+            "system_chars": 3247,
+            "request_signature": "e3aee875decc72a3"
+          },
+          "text": "# Bloom Filter 讲解\n\n**核心结论**：Bloom filter 用极小的内存空间换取一个\"近似\"的成员判断——它可能误判\"存在\"（假阳性），但绝不会误判\"不存在\"（假阴性）。这个不对称性正是它的设计精髓。\n\n## 问题背景\n\n课件先给出一个现实场景：一个服务要频繁回答\"我之前见过这个东西吗\"。用哈希集合可以精确回答，但代价是要把见过的每一项都存下来——当数据量达到十亿级别，内存开销就成了瓶颈。于是问题变成：我们真的需要精确答案吗？\n\n## 结构本身\n\nBloom filter 只是一个长度为 `m` 的位数组（初始全为 0），配上 `k` 个相互独立的哈希函数。关键点在于：**它不存储任何具体的物品，只存储比特位**。\n\n- **插入**：对 `x` 算出 `k` 个哈希位置，把这些位置的比特都置 1（已经是 1 的不受影响，也永远不会被清零）。\n- **查询**：对 `y` 算出同样的 `k` 个位置，只要有一个是 0，就断定 `y` 绝对没被插入过；如果全是 1，就报告\"可能存在\"。\n\n## 为什么没有假阴性\n\n这是由\"比特只增不减\"这条规则直接决定的。如果 `y` 确实被插入过，那么它对应的 `k` 个位置在插入那一刻就全被置为 1，之后没有任何操作会把它们清回 0。所以只要查询时发现有一位是 0，就一定说明没插入过——这个判断永远正确。\n\n但反过来，\"全是 1\"不能保证真的插入过 `y`——这些位置可能是被其他若干个物品的插入操作共同点亮的，恰好凑齐了 `y` 需要的所有位置。这就是**假阳性**，也是 Bloom filter 唯一可能犯的错误类型。\n\n## 假阳性概率怎么算\n\n课件给出了一步步的推导逻辑：\n\n1. 对某一个比特位，一次哈希操作不命中它的概率是 `1 - 1/m`；\n2. 插入 `n` 个物品总共产生 `kn` 次哈希，这一位始终保持 0 的概率约为 `(1 - 1/m)^(kn) ≈ e^(-kn/m)`（`m` 较大时的近似）；\n3. 因此这一位为 1 的概率是 `1 - e^(-kn/m)`；\n4. 一个从未插入过的物品被误判为\"存在\"，需要它对应的 `k` 个位置恰好都是 1，概率近似为 `(1 - e^(-kn/m))^k`。\n\n这里要注意，第 4 步默认了 `k` 个位置的状态是相互独立的，但实际上它们都来自同一个数组，并不严格独立。课件也提到这个假设\"不完全成立\"，只是这个近似在实际估算容量时已经足够精确。\n\n## 哈希函数数量的权衡\n\n`k` 太大或太小都不好：哈希函数越多，每次插入点亮的比特越多，数组会更快被填满，增加假阳性；哈希函数太少，查询时判断依据又太薄弱。课件给出通过求导得到的最优值：\n\n`k = (m/n) ln 2`\n\n在这个取值下，数组中大约一半的比特为 1。\n\n## 应用场景\n\n课件提到两个例子：浏览器在向远程黑名单发起网络请求之前，先用本地 Bloom filter 筛一遍 URL；存储引擎为每个数据文件维护一个 filter，读取时可以直接跳过\"确定不含目标 key\"的文件。\n\n## 局限性\n\nBloom filter 的比特是共享的，一个比特可能同时被多个物品的哈希覆盖。因此**不能删除**已插入的物品：如果直接把某一位清零，会破坏所有共享这一位的其他物品的\"无假阴性\"保证。要支持删除，需要用到计数变体（counting variant），但课件没有展开讲这部分的具体实现。",
+          "usage": {
+            "input_tokens": 2,
+            "output_tokens": 1399,
+            "cache_creation_input_tokens": 1341,
+            "cache_read_input_tokens": 0
+          },
+          "cost_usd": 0.02602,
+          "latency_ms": 18396.0,
+          "stop_reason": "end_turn",
+          "model_reported": "claude-sonnet-5",
+          "attempt": 1,
+          "generated_at": "2026-09-08T19:52:33+00:00"
+        }
+      ]
+    },
+    {
+      "pair_id": "structure_conclusion_buildup",
+      "target_dimension": "structure",
+      "samples": [
+        {
+          "sample_id": "structure_conclusion_buildup.a",
+          "variant_label": "conclusion_first",
+          "style": {
+            "detail_level": {
+              "value": "P0",
+              "enforced": true
+            },
+            "use_examples": {
+              "value": "more",
+              "enforced": false
+            },
+            "structure": {
+              "value": "conclusion_first",
+              "enforced": false
+            },
+            "depth": {
+              "value": "why",
+              "enforced": false
+            }
+          },
+          "style_config": {
+            "defaults_version": "2.0",
+            "explain_language": "zh",
+            "source_language": "en",
+            "chinese_ratio": {
+              "min": 0.85
+            },
+            "exclude_annotated_terms": true,
+            "term_annotation_enabled": false,
+            "term_policy": "translate_with_source",
+            "term_annotation_threshold": 0.9,
+            "term_count_mode": "first",
+            "term_min_occurrences": 5,
+            "paragraph_length": {
+              "min": 30,
+              "max": 120
+            },
+            "max_quote_chars": 100
+          },
+          "config_fingerprint": "a223ca42e77a",
+          "metric_set_id": "592d790a02e1",
+          "prompt": {
+            "a_class_rules": "- 段落长度：每段控制在 30–120 字。这是**平均**要求，不要靠拆行凑数——把内容讲完整，再决定分几段。\n- 讲解语言：用中文讲解。英文可以出现在专业名词和必要的原文引用里。\n- 引用课件原文时，**单段引用不超过 100 字**，其余内容用自己的话讲。这是版权约束，不可协商。",
+            "b_class_rules": "- 多举例子：每讲一个要点，配一个具体例子或类比帮助理解。\n- 先给结论：开头第一段就说出最重要的那句判断，后面再解释它为什么成立。\n- 讲到为什么：在说清是什么之外，解释这个机制为什么成立、为什么这样设计。",
+            "system_sha256": "47733343ca3bc40c",
+            "system_chars": 3248,
+            "request_signature": "700c2080aa2ae0a7"
+          },
+          "text": "# Bloom Filter 讲解\n\n**结论先行**：Bloom filter 是一种用极小内存判断\"某个东西是否见过\"的概率型数据结构，代价是可能误报\"存在\"，但绝不会误报\"不存在\"。\n\n## 问题从哪来\n\n课件开头举了一个场景：一个服务每秒要被问几百万次\"这个东西我见过吗？\"。用哈希集合（hash set）能精确回答，但代价是要把所有见过的东西都存下来——如果是十亿条 URL，内存开销就成了大问题。于是课件提出关键问题：我们是否真的需要一个精确答案？Bloom filter 就是对\"精确\"做出让步、换取空间的方案。\n\n## 结构：只存比特，不存物件\n\nBloom filter 由两部分组成：一个长度为 `m`、初始全零的比特数组，和 `k` 个相互独立的哈希函数，每个哈希函数把一个物件映射到数组中的某个位置。**关键点**：它不存物件本身，只存比特。\n\n- **插入**：加入物件 `x` 时，计算它的 `k` 个哈希值，把对应的 `k` 个位置都置为 1（已经是 1 的不受影响，也不会有\"清零\"的操作）。\n- **查询**：判断 `y` 是否在里面，同样算出 `k` 个位置。只要有一个位置是 0，就能**确定** `y` 从未插入过；如果 `k` 个位置全是 1，就报告\"y 大概率存在\"。\n\n打个比方：想象 `k` 个人分别去检查一栋楼的 `k` 个房间的灯有没有开。只要有一盏灯没开，就能确定这个人没来过；但如果所有灯都开着，可能是别人各自开了其中几盏，凑巧全亮了，这个人其实没来过。\n\n## 为什么不会漏报（false negative）\n\n课件的解释是：比特只会被\"点亮\"（置 1），永远不会被熄灭。所以如果 `y` 确实插入过，它对应的 `k` 个比特在插入那一刻就全部被置 1，之后没有任何操作能把它们改回 0。因此只要查询发现有一个位是 0，\"不存在\"这个判断**必然正确**。\n\n但反过来，\"存在\"的判断可能出错：那 `k` 个位置可能是被**其他若干物件的插入**共同点亮的，凑巧覆盖了 `y` 需要的所有位置。这就是**假阳性（false positive）**，也是这个结构唯一可能犯的错误类型。\n\n## 假阳性概率是怎么算出来的\n\n课件给出了一步步的推导（基于哈希函数均匀独立分布的假设）：\n\n1. 插入 `n` 个物件后，某一个具体的比特，被某一次哈希操作\"漏过\"（没被选中置1）的概率是 `1 - 1/m`。\n2. 一共有 `kn` 次哈希操作（`n` 个物件 × `k` 个哈希函数），这个比特全部被漏过、仍保持 0 的概率约为 `(1 - 1/m)^(kn) ≈ e^(-kn/m)`（`m` 较大时的近似）。\n3. 所以这个比特是 1 的概率约为 `1 - e^(-kn/m)`。\n4. 一个从未插入过的物件被误判为\"存在\"，需要它对应的 `k` 个位置**恰好都是 1**，概率约为 `(1 - e^(-kn/m))^k`。\n\n课件也诚实地指出：第 4 步把 `k` 个位置当作独立事件来算，其实并不完全成立（它们都来自同一个数组，彼此有关联），但这个近似已经足够用来做容量规划。\n\n## 为什么要选特定数量的哈希函数\n\n`k` 太多，每次插入点亮的比特就越多，数组很快被填满，导致到处都是1，误判率上升；`k` 太少，一次查询能核对的证据又太少，也容易误判。课件给出通过对误判率求导得到的最优点：\n\n`k = (m/n) ln 2`\n\n此时数组大约一半的比特是 1——这是理论上误判率最低的平衡点。\n\n## 实际应用（课件举的两个例子）\n\n- **浏览器**：在向网络发起一次完整黑名单查询（代价较高）之前，先用本地的 Bloom filter 筛一遍 URL，大部分明显安全的网址能被\"确定不在黑名单\"直接排除，省掉网络开销。\n- **存储引擎**：每个数据文件配一个 Bloom filter，读取某个 key 时，可以先用 filter 判断\"这个文件里绝对没有这个 key\"，从而跳过不必要的文件读取。\n\n这两个例子共同利用的都是\"没有假阴性\"这一特性——一旦判断\"不存在\"，就可以放心跳过。\n\n## 局限：不能删除\n\n课件明确指出，Bloom filter 不支持删除操作。原因很直接：如果要删除一个物件，就需要把它对应的某个比特清零，但那个比特很可能同时被其他物件共享（多个物件的哈希值可能落在同一位置）。清零会破坏\"无假阴性\"这个核心保证——原本应该判断\"存在\"的其他物件，可能因此被错误地判断为\"不存在\"。如果需要支持删除，课件提到需要用\"计数变体\"（counting variant），但课件没有展开讲这个变体的具体细节。",
+          "usage": {
+            "input_tokens": 2,
+            "output_tokens": 1855,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 1342
+          },
+          "cost_usd": 0.028234,
+          "latency_ms": 25306.0,
+          "stop_reason": "end_turn",
+          "model_reported": "claude-sonnet-5",
+          "attempt": 1,
+          "generated_at": "2026-09-08T19:52:59+00:00"
+        },
+        {
+          "sample_id": "structure_conclusion_buildup.b",
+          "variant_label": "buildup_first",
+          "style": {
+            "detail_level": {
+              "value": "P0",
+              "enforced": true
+            },
+            "use_examples": {
+              "value": "more",
+              "enforced": false
+            },
+            "structure": {
+              "value": "buildup_first",
+              "enforced": false
+            },
+            "depth": {
+              "value": "why",
+              "enforced": false
+            }
+          },
+          "style_config": {
+            "defaults_version": "2.0",
+            "explain_language": "zh",
+            "source_language": "en",
+            "chinese_ratio": {
+              "min": 0.85
+            },
+            "exclude_annotated_terms": true,
+            "term_annotation_enabled": false,
+            "term_policy": "translate_with_source",
+            "term_annotation_threshold": 0.9,
+            "term_count_mode": "first",
+            "term_min_occurrences": 5,
+            "paragraph_length": {
+              "min": 30,
+              "max": 120
+            },
+            "max_quote_chars": 100
+          },
+          "config_fingerprint": "a223ca42e77a",
+          "metric_set_id": "592d790a02e1",
+          "prompt": {
+            "a_class_rules": "- 段落长度：每段控制在 30–120 字。这是**平均**要求，不要靠拆行凑数——把内容讲完整，再决定分几段。\n- 讲解语言：用中文讲解。英文可以出现在专业名词和必要的原文引用里。\n- 引用课件原文时，**单段引用不超过 100 字**，其余内容用自己的话讲。这是版权约束，不可协商。",
+            "b_class_rules": "- 多举例子：每讲一个要点，配一个具体例子或类比帮助理解。\n- 先铺垫后收结论：按「问题 → 机制 → 结论」的顺序展开，把最重要的那句判断放在最后。\n- 讲到为什么：在说清是什么之外，解释这个机制为什么成立、为什么这样设计。",
+            "system_sha256": "cf6f0c4fd48caa8c",
+            "system_chars": 3257,
+            "request_signature": "9027d13f4a0589fb"
+          },
+          "text": "# Bloom Filter 讲解\n\n## 问题：为什么要有 Bloom Filter\n\n先想象一个场景：一个服务每秒要处理几百万次\"这个东西我见过吗？\"的查询。比如浏览器要检查某个 URL 是不是恶意网址、数据库要检查某个 key 是否存在于某个文件里。\n\n用哈希集合（hash set）当然能精确回答，但代价是要把**每一个见过的元素**都存下来。课件举的例子是十亿条 URL 的规模——这时候内存开销会成为设计里的主要瓶颈。于是问题变成：我们真的需要一个精确答案吗？能不能用更省空间的方式换取\"大致正确\"的答案？Bloom filter 就是这种权衡的产物。\n\n## 机制：结构长什么样\n\nBloom filter 的构成很简单：一个长度为 `m` 的位数组（bit array），初始全是 0；再配上 `k` 个相互独立的哈希函数，每个哈希函数把一个元素映射到 `m` 个位置中的某一个。\n\n关键点是：**这个结构不存元素本身，只存位**。这和哈希集合本质不同——哈希集合要保留元素的信息用于精确比对，而 Bloom filter 只留下\"这里被碰过\"的痕迹。\n\n**插入操作**：加入元素 `x` 时，计算它的 `k` 个哈希值，把对应的 `k` 个位都置为 1。如果某个位本来就是 1，就保持不变——注意，位从来不会被清零。\n\n**查询操作**：判断 `y` 是否存在时，同样计算这 `k` 个位置。只要有一个位是 0，就可以断定 `y` 绝对没被插入过；如果 `k` 个位全是 1，则报告\"y 可能存在\"。\n\n举个例子：假设 m=10，k=2。插入 \"apple\" 时把第 3、7 位置 1；插入 \"banana\" 时把第 1、7 位置 1。现在查询 \"cherry\"，如果它恰好也映射到第 3、1 位，两个位都已经是 1 了——即便 \"cherry\" 从未被插入，查询也会误报\"可能存在\"。这就是 Bloom filter 特有的误差来源。\n\n## 为什么不会有假阴性（false negative）\n\n这是 Bloom filter 最重要的性质之一，值得单独说清楚为什么成立。\n\n原文的解释是：\n\n> The asymmetry follows from the fact that bits are only ever turned on... So a \"not present\" answer is always correct.\n\n逻辑其实很直白：如果 `y` 真的被插入过，那么它对应的 `k` 个位在插入那一刻就全部被置 1 了，而**之后的任何操作都不会把这些位清零**（因为设计里根本没有\"清零\"这个动作）。所以只要查询时发现有一个位是 0，就一定意味着 `y` 从未插入过——这个判断是 100% 可靠的。\n\n但反过来，\"全部是 1\"并不能保证 `y` 真的被插入过，因为这些位可能是被**其他若干个元素凑巧共同点亮**的。这种\"明明没插入却报告存在\"的情况，就是**假阳性（false positive）**，也是 Bloom filter 唯一可能出现的错误类型。\n\n**结论：Bloom filter 保证「说没有就一定没有」，但「说有」只是大概率有。**\n\n## 假阳性概率是怎么算出来的\n\n课件给出了一个推导链条，我按步骤解释：\n\n1. 考虑某一个具体的位。一次哈希操作命中它的概率是 `1/m`，所以**不**命中的概率是 `1 - 1/m`。\n2. 插入 `n` 个元素，每个元素用 `k` 个哈希函数，一共产生 `kn` 次哈希操作。这个位一直没被命中（保持为 0）的概率是 `(1 - 1/m)^(kn)`，当 `m` 较大时，这个式子近似等于 `e^(-kn/m)`。\n3. 所以这个位最终是 1 的概率约为 `1 - e^(-kn/m)`。\n4. 一个从未插入过的元素 `y`，被误判为\"存在\"，需要它的 `k` 个位**全部**是 1，这个概率约为 `(1 - e^(-kn/m))^k`。\n\n课件也诚实地指出了这个推导的一个瑕疵：第 4 步假设 `k` 个位置的状态相互独立，但实际上它们都来自同一个数组，并不严格独立。不过课件说这个近似\"足够用于容量规划（sizing）\"，也就是说：虽不精确，但够指导工程决策。\n\n## 如何选择哈希函数的数量 k\n\n这里有个直觉上的权衡，先讲直觉再给结论。\n\n- `k` 太大：每次插入要点亮更多位，数组很快就被填满、变得全是 1，查询区分能力下降。\n- `k` 太小：每次查询能核对的证据太少，误判概率也会升高。\n\n课件给出通过求导得到的最优点：`k = (m/n) ln 2`，此时数组大约有一半的位是 1。这是一个\"甜蜜点\"——既不会让数组过快饱和，也保留了足够的判别信息。\n\n## 应用场景\n\n课件提到两个实际用途：\n\n- **浏览器**：在向网络发起真正的黑名单查询之前，先用本地的 Bloom filter 过滤一遍 URL，大部分正常网址会被\"绝对不在黑名单\"快速排除，省掉不必要的网络请求。\n- **存储引擎**：每个数据文件配一个 Bloom filter，读取某个 key 时，先查过滤器；如果显示\"绝对没有\"，就可以直接跳过这个文件，不用真的去磁盘里翻找。\n\n这两个例子的共同点是：都利用了\"没有假阴性\"这个性质——用 Bloom filter 做**否定性的快速排除**，而不是用它做最终的肯定判断。\n\n## 局限性：不能删除元素\n\n最后一个要点：Bloom filter 里的元素**不能被删除**。\n\n原因也和\"位从不清零\"的设计直接相关：如果为了删除某个元素而把它对应的某一位清零，那么其他恰好也用到这一位的元素，查询时就可能被错误地判定为\"不存在\"——这就破坏了\"不会假阴性\"这个最核心的保证。\n\n课件指出，如果业务上确实需要支持删除，需要用**计数变体（counting variant）**，也就是把每一位从 0/1 换成一个计数器，但这不是本讲的展开内容，课件里只是点到为止。",
+          "usage": {
+            "input_tokens": 2,
+            "output_tokens": 2267,
+            "cache_creation_input_tokens": 1354,
+            "cache_read_input_tokens": 0
+          },
+          "cost_usd": 0.039088,
+          "latency_ms": 30550.3,
+          "stop_reason": "end_turn",
+          "model_reported": "claude-sonnet-5",
+          "attempt": 1,
+          "generated_at": "2026-09-08T19:53:29+00:00"
+        }
+      ]
+    },
+    {
+      "pair_id": "depth_what_derivation",
+      "target_dimension": "depth",
+      "samples": [
+        {
+          "sample_id": "depth_what_derivation.a",
+          "variant_label": "what",
+          "style": {
+            "detail_level": {
+              "value": "P0",
+              "enforced": true
+            },
+            "use_examples": {
+              "value": "more",
+              "enforced": false
+            },
+            "structure": {
+              "value": "conclusion_first",
+              "enforced": false
+            },
+            "depth": {
+              "value": "what",
+              "enforced": false
+            }
+          },
+          "style_config": {
+            "defaults_version": "2.0",
+            "explain_language": "zh",
+            "source_language": "en",
+            "chinese_ratio": {
+              "min": 0.85
+            },
+            "exclude_annotated_terms": true,
+            "term_annotation_enabled": false,
+            "term_policy": "translate_with_source",
+            "term_annotation_threshold": 0.9,
+            "term_count_mode": "first",
+            "term_min_occurrences": 5,
+            "paragraph_length": {
+              "min": 30,
+              "max": 120
+            },
+            "max_quote_chars": 100
+          },
+          "config_fingerprint": "a223ca42e77a",
+          "metric_set_id": "592d790a02e1",
+          "prompt": {
+            "a_class_rules": "- 段落长度：每段控制在 30–120 字。这是**平均**要求，不要靠拆行凑数——把内容讲完整，再决定分几段。\n- 讲解语言：用中文讲解。英文可以出现在专业名词和必要的原文引用里。\n- 引用课件原文时，**单段引用不超过 100 字**，其余内容用自己的话讲。这是版权约束，不可协商。",
+            "b_class_rules": "- 多举例子：每讲一个要点，配一个具体例子或类比帮助理解。\n- 先给结论：开头第一段就说出最重要的那句判断，后面再解释它为什么成立。\n- 只讲是什么：说清楚这个概念是什么、拿来做什么用。不解释它为什么这样设计，也不做推导。",
+            "system_sha256": "55593e490e21669f",
+            "system_chars": 3255,
+            "request_signature": "c4fac17e9bbdf062"
+          },
+          "text": "# Bloom Filter 讲解\n\n**核心结论**：Bloom filter 是一种用极少内存判断\"某个东西是否出现过\"的数据结构，代价是它可能会误判\"存在\"，但绝不会误判\"不存在\"。\n\n## 它是什么\n\nBloom filter 的本体很简单：一个长度为 `m` 的比特数组（初始全是 0），再配上 `k` 个相互独立的哈希函数。注意它不存任何具体的数据，只存这些 0/1 的比特位。\n\n举例：假设某浏览器要记录\"哪些恶意网址已经见过\"，用普通哈希集合要存下所有网址字符串，占用大量内存；而 Bloom filter 只需要一个比特数组，无论网址多长都一样。\n\n## 两个操作：插入与查询\n\n**插入**一个元素 `x` 时，用 `k` 个哈希函数算出 `k` 个位置，把这些位置的比特都置 1。已经是 1 的位置不受影响，且比特一旦置 1 就永不清零。\n\n**查询**元素 `y` 时，同样算出 `k` 个位置：只要有一个位置是 0，就可以断定 `y` 绝对没被插入过；如果 `k` 个位置全是 1，则报告\"`y` 可能存在\"。\n\n例如 `k=3`，查询时发现 3 个位置里有一个是 0，直接判定\"没见过\"；如果 3 个都是 1，只能说\"大概率见过\"，但不能百分百确定。\n\n## 为什么不会漏报（无假阴性）\n\n课件原文解释：比特\"只会被置为 1，从不被清零\"，所以如果 `y` 确实被插入过，它对应的 `k` 位当初必然都被置 1，之后也不可能被别人改回 0。\n\n因此\"不存在\"的回答永远正确——这叫**没有假阴性（false negative）**。但\"存在\"的回答可能出错：`k` 个位置恰好都被别的元素凑巧插入时置成了 1，这种情况就是**假阳性（false positive）**，也是这个结构唯一可能犯的错误类型。\n\n举例：网址 A 从未被插入，但它的 3 个哈希位置恰好被网址 B、C、D 分别置 1，查询 A 时发现 3 位全 1，于是误判 A\"可能存在\"。\n\n## 假阳性概率怎么算\n\n课件给出推导思路（不重复完整公式推导，只说结论用途）：插入 `n` 个元素后，某个比特仍为 0 的概率约为 `e^(-kn/m)`；因此一个非成员的所有 `k` 个位置都恰好是 1（从而被误判为存在）的概率约为：\n\n`(1 - e^(-kn/m))^k`\n\n这个公式的用途是：给定要存的元素数量 `n`，可以据此估算需要多大的数组 `m`，以及用几个哈希函数 `k`，才能把假阳性率控制在可接受范围。课件也提醒，这里假设 `k` 个位置相互独立并不完全严谨，但用来估算容量已经够用。\n\n## 哈希函数个数怎么选\n\n课件指出，哈希函数数量存在权衡：太多则每次插入占满数组太快；太少则查询时依据的信息不够。最优取值为：\n\n`k = (m/n) ln 2`\n\n在这个取值下，数组大约有一半的比特是 1。\n\n## 用在哪里\n\n课件举了两个应用场景：\n\n- **浏览器**：在查完整的恶意网址黑名单（需要联网、成本高）之前，先用本地的 Bloom filter 筛一遍，绝大多数正常网址会被\"没见过\"直接放行，省掉网络查询。\n- **存储引擎**：每个数据文件配一个 Bloom filter，读取某个 key 时先查过滤器，如果显示\"绝对没有\"，就可以跳过整个文件，不用读盘查找。\n\n## 它的局限\n\nBloom filter **不支持删除元素**。课件原文说明：因为\"清除一个比特会破坏所有共享这个比特的其它元素的无假阴性保证\"。如果需要支持删除，得用一种叫**计数变体（counting variant）**的扩展结构，但课件到此为止，没有展开讲这个变体的具体细节。",
+          "usage": {
+            "input_tokens": 2,
+            "output_tokens": 1453,
+            "cache_creation_input_tokens": 1351,
+            "cache_read_input_tokens": 0
+          },
+          "cost_usd": 0.026867,
+          "latency_ms": 20728.4,
+          "stop_reason": "end_turn",
+          "model_reported": "claude-sonnet-5",
+          "attempt": 1,
+          "generated_at": "2026-09-08T19:53:50+00:00"
+        },
+        {
+          "sample_id": "depth_what_derivation.b",
+          "variant_label": "derivation",
+          "style": {
+            "detail_level": {
+              "value": "P0",
+              "enforced": true
+            },
+            "use_examples": {
+              "value": "more",
+              "enforced": false
+            },
+            "structure": {
+              "value": "conclusion_first",
+              "enforced": false
+            },
+            "depth": {
+              "value": "derivation",
+              "enforced": false
+            }
+          },
+          "style_config": {
+            "defaults_version": "2.0",
+            "explain_language": "zh",
+            "source_language": "en",
+            "chinese_ratio": {
+              "min": 0.85
+            },
+            "exclude_annotated_terms": true,
+            "term_annotation_enabled": false,
+            "term_policy": "translate_with_source",
+            "term_annotation_threshold": 0.9,
+            "term_count_mode": "first",
+            "term_min_occurrences": 5,
+            "paragraph_length": {
+              "min": 30,
+              "max": 120
+            },
+            "max_quote_chars": 100
+          },
+          "config_fingerprint": "a223ca42e77a",
+          "metric_set_id": "592d790a02e1",
+          "prompt": {
+            "a_class_rules": "- 段落长度：每段控制在 30–120 字。这是**平均**要求，不要靠拆行凑数——把内容讲完整，再决定分几段。\n- 讲解语言：用中文讲解。英文可以出现在专业名词和必要的原文引用里。\n- 引用课件原文时，**单段引用不超过 100 字**，其余内容用自己的话讲。这是版权约束，不可协商。",
+            "b_class_rules": "- 多举例子：每讲一个要点，配一个具体例子或类比帮助理解。\n- 先给结论：开头第一段就说出最重要的那句判断，后面再解释它为什么成立。\n- 讲到推导：在解释为什么的基础上，把关键结论一步步推出来，写出中间步骤和用到的假设。",
+            "system_sha256": "59e9acb563c7ab74",
+            "system_chars": 3254,
+            "request_signature": "0592f539e95c61d8"
+          },
+          "text": "# Bloom Filter 讲解\n\n**核心结论先说清楚**：Bloom filter 是一种用少量内存判断\"某个元素有没有出现过\"的数据结构，它牺牲了一点准确性（可能误报\"存在\"）换来极大的空间节省，而且它保证绝不会漏报——只要说\"没见过\"，就一定是真的没见过。\n\n## 为什么需要它\n\n如果用哈希集合（hash set）来记录见过的元素，答案是精确的，但代价是要把每个元素本身都存下来。课件举的场景是：一个服务每秒要回答几百万次\"这个东西我见过吗\"，如果要处理十亿条 URL，内存开销会非常惊人。于是问题变成：我们真的需要精确答案吗？Bloom filter 的思路是：不追求精确，只追求\"足够可靠的近似\"，用极小的空间代价换取效率。\n\n## 结构是什么\n\nBloom filter 本质上就是一个长度为 `m` 的位数组（bit array），一开始全部是 0，再配上 `k` 个相互独立的哈希函数，每个哈希函数把一个元素映射到 `m` 个位置中的某一个。**注意它不存元素本身，只存 0/1 位**。\n\n- **插入（Insert）**：加入元素 `x` 时，用 `k` 个哈希函数算出 `k` 个位置，把这些位置全部置为 1（本来就是1的不受影响，永远不清零）。\n- **查询（Query）**：判断 `y` 是否在集合里，同样算出这 `k` 个位置，只要有一个位置是 0，就说明 `y` 绝对没被插入过；如果 `k` 个位置全是 1，就报告\"很可能存在\"。\n\n**举例**：假设 `m=10` 的位数组，`k=2` 个哈希函数。插入元素 A 时，哈希得到位置 2 和 5，把这两位设为1。插入元素 B，哈希得到位置 5 和 8，也设为1。现在查询元素 C，如果 C 的哈希恰好也是位置 2 和 8，两个位都已经是1了——尽管 C 从未真正插入过，查询结果却是\"可能存在\"，这就是误报。\n\n## 为什么不会漏报（no false negatives）\n\n这一点的原理很简单：位只会被置1，从来不会被清零。课件里写道：\n\n> The asymmetry follows from the fact that bits are only ever turned on.\n\n也就是说，如果 `y` 真的被插入过，它对应的 `k` 个位在插入那一刻就全部变成了1，之后没有任何操作能把它们改回0。所以只要有一个位是0，就百分之百可以断定\"没插入过\"，这个判断永远正确。但反过来，\"全是1\"未必是真插入的结果——可能是别的若干个元素凑巧把这几个位置全点亮了，这就是**唯一可能出现的错误：假阳性（false positive）**。\n\n## 假阳性概率怎么推出来的\n\n课件给出了完整的推导链条，基于一个假设：**哈希函数把元素均匀且独立地分布到 m 个位置上**。插入 `n` 个元素后，一步步推：\n\n1. 单次哈希操作，某一个特定位**没有**被这次哈希命中的概率是 `1 - 1/m`（因为哈希均匀分布在 m 个位置里，命中该位的概率是 1/m）。\n2. 总共 `n` 个元素、每个元素用 `k` 个哈希函数，一共发生了 `kn` 次哈希操作。这某一位始终未被命中（即保持为0）的概率是 `(1 - 1/m)^(kn)`。当 `m` 较大时，这个式子近似等于 `e^(-kn/m)`（利用 `(1-1/m)^m ≈ e^{-1}` 的近似）。\n3. 于是该位为1的概率就是 `1 - e^(-kn/m)`。\n4. 一个从未插入过的元素 `y`，被误判为\"存在\"，需要它对应的 `k` 个位置**恰好全部**是1。若近似认为这 `k` 个位置相互独立，概率就是 `(1 - e^(-kn/m))^k`。\n\n课件特别提醒：第4步的独立性假设并不严格成立，因为这 `k` 个位置其实都来自同一个数组，彼此之间实际上有关联；但这个近似已经足够用来做容量规划（sizing）。\n\n**举例理解**：如果 `m` 很小、`n` 很大（数组塞得很满），`e^(-kn/m)` 就趋近于0，导致每个位为1的概率趋近于1，误报率飙升——就好比一个停车场（位数组）车位太少、车辆（元素）太多，几乎所有车位都被占用了，你很难通过\"车位是否空着\"来判断某辆特定的车是否真的停过。\n\n## 怎么选哈希函数个数 k\n\n`k` 太多，每次插入点亮的位太多，数组很快被填满，失去区分度；`k` 太少，每次查询能验证的证据太少，容易把随机命中的情况误判为存在。课件给出通过对误报率表达式求导得到的最优点：\n\n`k = (m/n) ln 2`\n\n在这个最优 `k` 下，数组大约有一半的位是1——这是一个直觉上的平衡点：既不空空荡荡（起不到过滤作用），也不密密麻麻（全是1，失去区分能力）。\n\n## 实际应用\n\n课件举了两个例子：\n\n- **浏览器**：在向网络查询完整的恶意网址黑名单之前，先用本地的 Bloom filter 筛一遍 URL，绝大多数正常网址会被\"确定未命中\"直接放行，省掉了昂贵的网络请求。\n- **存储引擎（Storage engines）**：给每个数据文件配一个 Bloom filter，读取某个 key 时，可以先查 filter，如果显示\"绝对没有\"，就跳过整个文件，不用去磁盘里翻找。\n\n## 局限性：不能删除元素\n\n因为位是共享的，如果要删除某个元素，理论上应该把它对应的位清零，但那些位可能同时被其他元素在用，一旦清零，其他元素的\"存在\"判断就可能被错误地改成\"不存在\"，这就破坏了\"绝不漏报\"的核心保证。所以标准 Bloom filter 不支持删除，如果需要删除功能，要用**计数变体（counting variant）**，不过课件里没有展开讲这个变体的具体细节，只是提到了这个方向。\n\n---\n\n如果这份材料里的某个具体公式推导或概念你还想再深入确认一下，可以告诉我，我们可以再细看。",
+          "usage": {
+            "input_tokens": 2,
+            "output_tokens": 2290,
+            "cache_creation_input_tokens": 1349,
+            "cache_read_input_tokens": 0
+          },
+          "cost_usd": 0.039415,
+          "latency_ms": 30551.2,
+          "stop_reason": "end_turn",
+          "model_reported": "claude-sonnet-5",
+          "attempt": 1,
+          "generated_at": "2026-09-08T19:54:20+00:00"
+        }
+      ]
+    },
+    {
+      "pair_id": "depth_what_why",
+      "target_dimension": "depth",
+      "samples": [
+        {
+          "sample_id": "depth_what_why.a",
+          "variant_label": "what",
+          "style": {
+            "detail_level": {
+              "value": "P0",
+              "enforced": true
+            },
+            "use_examples": {
+              "value": "more",
+              "enforced": false
+            },
+            "structure": {
+              "value": "conclusion_first",
+              "enforced": false
+            },
+            "depth": {
+              "value": "what",
+              "enforced": false
+            }
+          },
+          "style_config": {
+            "defaults_version": "2.0",
+            "explain_language": "zh",
+            "source_language": "en",
+            "chinese_ratio": {
+              "min": 0.85
+            },
+            "exclude_annotated_terms": true,
+            "term_annotation_enabled": false,
+            "term_policy": "translate_with_source",
+            "term_annotation_threshold": 0.9,
+            "term_count_mode": "first",
+            "term_min_occurrences": 5,
+            "paragraph_length": {
+              "min": 30,
+              "max": 120
+            },
+            "max_quote_chars": 100
+          },
+          "config_fingerprint": "a223ca42e77a",
+          "metric_set_id": "592d790a02e1",
+          "prompt": {
+            "a_class_rules": "- 段落长度：每段控制在 30–120 字。这是**平均**要求，不要靠拆行凑数——把内容讲完整，再决定分几段。\n- 讲解语言：用中文讲解。英文可以出现在专业名词和必要的原文引用里。\n- 引用课件原文时，**单段引用不超过 100 字**，其余内容用自己的话讲。这是版权约束，不可协商。",
+            "b_class_rules": "- 多举例子：每讲一个要点，配一个具体例子或类比帮助理解。\n- 先给结论：开头第一段就说出最重要的那句判断，后面再解释它为什么成立。\n- 只讲是什么：说清楚这个概念是什么、拿来做什么用。不解释它为什么这样设计，也不做推导。",
+            "system_sha256": "55593e490e21669f",
+            "system_chars": 3255,
+            "request_signature": "c4fac17e9bbdf062"
+          },
+          "text": "**结论：Bloom filter 是一种用极少内存判断“某个东西是否出现过”的概率型数据结构，它能保证说“没见过”时绝对正确，但说“见过”时有一定概率是误判——它用极小的空间换来了近似而非精确的查询结果。**\n\n**它是什么。** Bloom filter 由一个长度为 `m` 的位数组（初始全为 0）和 `k` 个独立哈希函数组成。它不存储任何具体物品，只存储比特位。比如要判断“这个 URL 是不是恶意网址”，用 Bloom filter 只需要几百万个比特，而不用存下每一条 URL 字符串。\n\n**插入操作。** 插入一个物品 `x` 时，用 `k` 个哈希函数算出 `x` 对应的 `k` 个位置，把这些位置的比特都置为 1。已经是 1 的位不受影响，从不清零。例如插入网址 A，哈希出位置 3、17、42，就把这三位设为 1。\n\n**查询操作。** 查询物品 `y` 时，同样算出它的 `k` 个位置：只要有一个位置是 0，就可以断定 `y` 绝对没被插入过；如果 `k` 个位置全是 1，则报告“`y` 可能存在”。比如查询网址 B，若哈希出的位置里有一个还是 0，说明 B 一定没被插入过。\n\n**没有假阴性（false negative）。** 课件说明：“If `y` was inserted, all `k` of its bits were set at that moment, and no later operation could have turned any of them back off.” 意思是只要插入过的东西，它对应的位一定是 1，所以“不存在”的回答永远可靠。\n\n**存在假阳性（false positive）。** 但“存在”的回答可能出错：`y` 从未被插入，但它对应的 `k` 个位置恰好被其他若干个物品插入时凑巧都置成了 1，这时查询会误报“可能存在”。这是 Bloom filter 唯一会犯的错误类型。\n\n**误判率是什么样的。** 课件给出结论：插入 `n` 个物品后，一个不存在的物品被误判为存在的概率约为 `(1 - e^(-kn/m))^k`。这个数值会随着插入的物品数增多而升高，说明填的物品越多，误判率越高。\n\n**哈希函数个数的取值。** 课件给出结论：当 `k = (m/n) ln 2` 时效果最优，此时数组中大约一半的位是 1。这是一个直接给出的结果，课件未做推导展开的部分我也不展开。\n\n**实际用途。** 课件提到两个例子：浏览器在向网络查询完整黑名单之前，先用本地的 Bloom filter 筛一遍 URL，避免每次都联网查询；存储引擎给每个数据文件配一个 Bloom filter，读取时可以直接跳过“肯定不含目标 key”的文件。\n\n**局限性。** Bloom filter 不支持删除物品：如果把某一位清零，会破坏其他共享这一位的物品的“无假阴性”保证。如果需要支持删除，课件提到需要用“计数型变体”（counting variant），但没有展开讲这个变体的细节。",
+          "usage": {
+            "input_tokens": 2,
+            "output_tokens": 1325,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 1351
+          },
+          "cost_usd": 0.020286,
+          "latency_ms": 18342.9,
+          "stop_reason": "end_turn",
+          "model_reported": "claude-sonnet-5",
+          "attempt": 2,
+          "generated_at": "2026-09-08T19:57:50+00:00"
+        },
+        {
+          "sample_id": "depth_what_why.b",
+          "variant_label": "why",
+          "style": {
+            "detail_level": {
+              "value": "P0",
+              "enforced": true
+            },
+            "use_examples": {
+              "value": "more",
+              "enforced": false
+            },
+            "structure": {
+              "value": "conclusion_first",
+              "enforced": false
+            },
+            "depth": {
+              "value": "why",
+              "enforced": false
+            }
+          },
+          "style_config": {
+            "defaults_version": "2.0",
+            "explain_language": "zh",
+            "source_language": "en",
+            "chinese_ratio": {
+              "min": 0.85
+            },
+            "exclude_annotated_terms": true,
+            "term_annotation_enabled": false,
+            "term_policy": "translate_with_source",
+            "term_annotation_threshold": 0.9,
+            "term_count_mode": "first",
+            "term_min_occurrences": 5,
+            "paragraph_length": {
+              "min": 30,
+              "max": 120
+            },
+            "max_quote_chars": 100
+          },
+          "config_fingerprint": "a223ca42e77a",
+          "metric_set_id": "592d790a02e1",
+          "prompt": {
+            "a_class_rules": "- 段落长度：每段控制在 30–120 字。这是**平均**要求，不要靠拆行凑数——把内容讲完整，再决定分几段。\n- 讲解语言：用中文讲解。英文可以出现在专业名词和必要的原文引用里。\n- 引用课件原文时，**单段引用不超过 100 字**，其余内容用自己的话讲。这是版权约束，不可协商。",
+            "b_class_rules": "- 多举例子：每讲一个要点，配一个具体例子或类比帮助理解。\n- 先给结论：开头第一段就说出最重要的那句判断，后面再解释它为什么成立。\n- 讲到为什么：在说清是什么之外，解释这个机制为什么成立、为什么这样设计。",
+            "system_sha256": "47733343ca3bc40c",
+            "system_chars": 3248,
+            "request_signature": "700c2080aa2ae0a7"
+          },
+          "text": "# Bloom Filter 讲解\n\n**结论先行**：Bloom filter 是一种用少量内存判断\"某个元素是否出现过\"的概率型数据结构，它绝不会漏报（说\"没见过\"就一定没见过），但可能误报（说\"见过\"其实没见过）。它牺牲了准确性来换取巨大的内存节省。\n\n## 为什么需要它\n\n课件举的例子很直接：一个服务每秒要回答百万次\"这个东西我见过吗？\"如果用哈希集合存所有见过的元素，当元素数量达到十亿级别时，内存开销会成为设计的主要瓶颈。于是问题变成——我们真的需要一个精确答案吗？Bloom filter 的答案是：不需要，用近似换空间。\n\n## 结构是什么\n\nBloom filter 本质上就是一个长度为 `m` 的比特数组，初始全为 0，配合 `k` 个相互独立的哈希函数，每个函数把元素映射到数组里的一个位置。**关键点是：它不存储元素本身，只存储比特位**。\n\n打个比方：假设有 100 个格子（比特位），每插入一个\"访客\"，就用 3 把不同的钥匙（哈希函数）在 100 个格子里各点亮一盏灯。之后你只能看灯亮不亮，看不到到底是谁点亮的。\n\n**插入操作**：对元素 `x` 计算 `k` 个哈希值，把对应的 `k` 个位置全部置为 1（已经是 1 的不受影响）。\n\n**查询操作**：对元素 `y` 计算同样的 `k` 个位置。只要有一个位置是 0，就能断定 `y` 绝对没被插入过；如果 `k` 个位置全是 1，则报告\"可能存在\"。\n\n## 为什么不会漏报（false negative）\n\n这是整个结构最核心的性质，原文说得很清楚：\n\n> \"The asymmetry follows from the fact that bits are only ever turned on... So a 'not present' answer is always correct.\"\n\n道理很简单：比特位只能从 0 变成 1，从不会被清零。如果 `y` 真的插入过，它对应的 `k` 个位置在插入那一刻就全部被置 1 了，之后不会有任何操作把它们改回 0。所以只要查询时发现有一个位是 0，就能100%确定这个元素没插入过。\n\n但反过来，\"全是 1\"不能保证这个元素真的插入过——因为这些位可能是被**其他若干个元素**凑巧共同点亮的。这就是**误报（false positive）**，也是这个结构唯一可能犯的错误类型。\n\n## 误报概率怎么算\n\n课件给出了一套推导逻辑，分四步：\n\n1. 插入 `n` 个元素后，某个具体比特位，被某一次哈希操作漏过的概率是 `1 - 1/m`；\n2. 一共有 `kn` 次哈希操作，这个位始终保持 0 的概率约为 `(1 - 1/m)^(kn) ≈ e^(-kn/m)`；\n3. 所以这个位是 1 的概率就是 `1 - e^(-kn/m)`；\n4. 一个从未插入过的元素被误判为\"存在\"，需要它的 `k` 个位置都恰好是 1，概率约为 `(1 - e^(-kn/m))^k`。\n\n举例理解：数组越小（`m` 小）或插入元素越多（`n` 大），比特位被填满的速度越快，1 越多，误报率自然上升——这符合直觉：格子太少、访客太多，灯迟早会被点得七七八八。\n\n课件也提醒了一点局限：第4步假设 `k` 个位置的状态是相互独立的，但实际上它们来自同一个数组，这个假设并不严格成立，只是用来估算容量时足够接近真实值。\n\n## 如何选择哈希函数个数 k\n\n哈希函数越多，每次插入点亮的位越多，数组填满（变成1）的速度越快；哈希函数太少，每次查询能提供的判断依据又太少。课件给出的最优点是：\n\n`k = (m/n) ln 2`\n\n在这个取值下，数组大约有一半的位是 1。这是一个权衡后的最优解，多一点少一点都会让误报率上升。\n\n## 实际应用\n\n课件举了两个例子：\n- 浏览器在向网络查询完整的恶意网址黑名单之前，先用本地的 Bloom filter 筛一遍，绝大多数正常网址会被\"绝对没见过\"直接放行，省掉网络开销。\n- 存储引擎给每个数据文件配一个 Bloom filter，读取时可以跳过那些\"绝对不含有这个 key\"的文件，避免无谓的磁盘读取。\n\n## 局限性：不能删除元素\n\n课件明确指出：Bloom filter **不支持删除操作**。原因也和\"为什么不漏报\"呼应——如果清除某个比特位，会破坏所有其他共享这个位的元素的\"无漏报\"保证。如果确实需要支持删除，得用一种叫作 **counting 变体**的扩展结构（课件只提到了名字，没有展开细节）。",
+          "usage": {
+            "input_tokens": 2,
+            "output_tokens": 1751,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 1342
+          },
+          "cost_usd": 0.026674,
+          "latency_ms": 23594.4,
+          "stop_reason": "end_turn",
+          "model_reported": "claude-sonnet-5",
+          "attempt": 2,
+          "generated_at": "2026-09-08T19:58:14+00:00"
+        }
+      ]
+    },
+    {
+      "pair_id": "depth_why_derivation",
+      "target_dimension": "depth",
+      "samples": [
+        {
+          "sample_id": "depth_why_derivation.a",
+          "variant_label": "why",
+          "style": {
+            "detail_level": {
+              "value": "P0",
+              "enforced": true
+            },
+            "use_examples": {
+              "value": "more",
+              "enforced": false
+            },
+            "structure": {
+              "value": "conclusion_first",
+              "enforced": false
+            },
+            "depth": {
+              "value": "why",
+              "enforced": false
+            }
+          },
+          "style_config": {
+            "defaults_version": "2.0",
+            "explain_language": "zh",
+            "source_language": "en",
+            "chinese_ratio": {
+              "min": 0.85
+            },
+            "exclude_annotated_terms": true,
+            "term_annotation_enabled": false,
+            "term_policy": "translate_with_source",
+            "term_annotation_threshold": 0.9,
+            "term_count_mode": "first",
+            "term_min_occurrences": 5,
+            "paragraph_length": {
+              "min": 30,
+              "max": 120
+            },
+            "max_quote_chars": 100
+          },
+          "config_fingerprint": "a223ca42e77a",
+          "metric_set_id": "592d790a02e1",
+          "prompt": {
+            "a_class_rules": "- 段落长度：每段控制在 30–120 字。这是**平均**要求，不要靠拆行凑数——把内容讲完整，再决定分几段。\n- 讲解语言：用中文讲解。英文可以出现在专业名词和必要的原文引用里。\n- 引用课件原文时，**单段引用不超过 100 字**，其余内容用自己的话讲。这是版权约束，不可协商。",
+            "b_class_rules": "- 多举例子：每讲一个要点，配一个具体例子或类比帮助理解。\n- 先给结论：开头第一段就说出最重要的那句判断，后面再解释它为什么成立。\n- 讲到为什么：在说清是什么之外，解释这个机制为什么成立、为什么这样设计。",
+            "system_sha256": "47733343ca3bc40c",
+            "system_chars": 3248,
+            "request_signature": "700c2080aa2ae0a7"
+          },
+          "text": "## 先说结论\n\nBloom filter 是一种**用空间换精确度**的判断\"元素是否存在\"的数据结构：它不存储元素本身，只存一堆比特位，查询时可能误报\"存在\"，但绝不会误报\"不存在\"。这个取舍换来的是极低的内存开销，适合海量数据场景。\n\n## 为什么需要它\n\n课件一开始就给出场景：一个服务每秒要回答几百万次\"这个东西我见过吗？\"。用哈希集合（hash set）能精确回答，但代价是要把每个见过的元素都存下来——十亿条 URL 级别的数据量下，内存就成了瓶颈。课件提出的问题是：**我们真的需要精确答案吗？** Bloom filter 就是对这个问题的回答：放弃一点精确性，换取巨大的空间节省。\n\n## 结构是什么\n\nBloom filter 由两部分组成：一个长度为 `m`、初始全为 0 的比特数组，加上 `k` 个相互独立的哈希函数，每个函数把一个元素映射到数组中的某个位置。关键点是：**它不存元素，只存比特**。\n\n- **插入**：对元素 `x` 算出 `k` 个哈希位置，把这些位置的比特都置为 1。已经是 1 的不受影响，也从不清零。\n- **查询**：对元素 `y` 算出同样的 `k` 个位置，如果其中任意一位是 0，就说明 `y` 绝对没被插入过；如果 `k` 位全是 1，就报告\"可能存在\"。\n\n举例：想象一个 20 位的比特数组，`k=3`。插入 \"apple\" 时，3 个哈希函数分别把第 2、7、15 位置 1。之后查询 \"banana\"，如果它的 3 个哈希位置里有一位是 0，就能确定 \"banana\" 从未插入过。\n\n## 为什么不会有假阴性\n\n这是结构设计的核心逻辑：比特只能被置为 1，从不会被清零。所以只要 `y` 曾经插入过，它对应的 `k` 位在插入那一刻就全被置 1 了，后续任何操作都不可能把它们改回 0。因此\"不存在\"这个回答**永远正确**。\n\n但\"存在\"这个回答可能出错：那 `k` 个位置恰好都是 1，可能是因为其他若干个元素插入时凑巧把这些位置都点亮了，而不是 `y` 本身插入过。这种情况叫**假阳性**（false positive），也是这个结构唯一可能犯的错误类型。\n\n比方说：元素 A 点亮了第 2、5 位，元素 B 点亮了第 5、9 位，元素 C 恰好也要查第 2 和 9 位，即使 C 从未插入过，查询结果也会显示\"可能存在\"。\n\n## 假阳性概率怎么算\n\n课件给出了一个推导链条，假设哈希函数把元素均匀独立地分布到数组上：\n\n1. 插入 `n` 个元素后，某一位被某次哈希漏掉的概率是 `1 - 1/m`；\n2. 经过 `kn` 次哈希（`n` 个元素各 `k` 次），这一位仍然是 0 的概率约为 `e^(-kn/m)`；\n3. 于是这一位是 1 的概率约为 `1 - e^(-kn/m)`；\n4. 一个从未插入的元素被误判为\"存在\"，需要它的 `k` 个位置都恰好是 1，概率约为 `(1 - e^(-kn/m))^k`。\n\n课件特别提醒：第 4 步里把 `k` 个位置当作独立事件来算，其实并不严格成立（因为它们共享同一个数组），但这个近似已经足够用来做容量规划。\n\n## 如何选哈希函数个数 k\n\n`k` 的选择存在权衡：哈希函数越多，每次插入点亮的比特越多，数组填满得越快（假阳性率上升）；哈希函数越少，每次查询能核对的证据就越少（区分度下降）。对上面的假阳性概率表达式求导后，可以得到最优点 `k = (m/n) ln 2`，此时数组大约有一半的位是 1。\n\n## 实际应用\n\n课件举了两个例子：浏览器在向网络请求完整的恶意网址黑名单之前，先用本地的 Bloom filter 过滤一遍 URL，省掉大部分不必要的网络查询；存储引擎（比如数据库）给每个数据文件配一个 Bloom filter，读取时可以直接跳过那些\"肯定不含目标 key\"的文件，减少磁盘 I/O。\n\n## 局限性：不能删除元素\n\n因为比特是被多个元素共享的，如果要删除某个元素而把它对应的位清零，很可能会误伤其他共享这一位的元素——把它们的某个位清成 0，就会让它们的查询产生假阴性，破坏了\"不存在的回答永远正确\"这个核心保证。课件指出，如果需要支持删除，就要用**计数型变体**（counting Bloom filter），不过课件没有展开讲这个变体的具体实现。",
+          "usage": {
+            "input_tokens": 2,
+            "output_tokens": 1768,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 1342
+          },
+          "cost_usd": 0.026929,
+          "latency_ms": 23341.5,
+          "stop_reason": "end_turn",
+          "model_reported": "claude-sonnet-5",
+          "attempt": 1,
+          "generated_at": "2026-09-08T19:55:31+00:00"
+        },
+        {
+          "sample_id": "depth_why_derivation.b",
+          "variant_label": "derivation",
+          "style": {
+            "detail_level": {
+              "value": "P0",
+              "enforced": true
+            },
+            "use_examples": {
+              "value": "more",
+              "enforced": false
+            },
+            "structure": {
+              "value": "conclusion_first",
+              "enforced": false
+            },
+            "depth": {
+              "value": "derivation",
+              "enforced": false
+            }
+          },
+          "style_config": {
+            "defaults_version": "2.0",
+            "explain_language": "zh",
+            "source_language": "en",
+            "chinese_ratio": {
+              "min": 0.85
+            },
+            "exclude_annotated_terms": true,
+            "term_annotation_enabled": false,
+            "term_policy": "translate_with_source",
+            "term_annotation_threshold": 0.9,
+            "term_count_mode": "first",
+            "term_min_occurrences": 5,
+            "paragraph_length": {
+              "min": 30,
+              "max": 120
+            },
+            "max_quote_chars": 100
+          },
+          "config_fingerprint": "a223ca42e77a",
+          "metric_set_id": "592d790a02e1",
+          "prompt": {
+            "a_class_rules": "- 段落长度：每段控制在 30–120 字。这是**平均**要求，不要靠拆行凑数——把内容讲完整，再决定分几段。\n- 讲解语言：用中文讲解。英文可以出现在专业名词和必要的原文引用里。\n- 引用课件原文时，**单段引用不超过 100 字**，其余内容用自己的话讲。这是版权约束，不可协商。",
+            "b_class_rules": "- 多举例子：每讲一个要点，配一个具体例子或类比帮助理解。\n- 先给结论：开头第一段就说出最重要的那句判断，后面再解释它为什么成立。\n- 讲到推导：在解释为什么的基础上，把关键结论一步步推出来，写出中间步骤和用到的假设。",
+            "system_sha256": "59e9acb563c7ab74",
+            "system_chars": 3254,
+            "request_signature": "0592f539e95c61d8"
+          },
+          "text": "# Bloom Filter 讲解\n\n**结论先说：** Bloom filter 是一种用很少的内存判断\"某个东西是否出现过\"的结构，代价是它可能会误判\"存在\"（false positive），但绝对不会误判\"不存在\"（false negative）。它牺牲了精确性，换来了极小的空间占用。\n\n## 为什么需要它\n\n课件开头提出的问题很实际：如果一个服务要每秒判断百万次\"这个东西我见过吗\"，用哈希集合（hash set）当然精确，但它得把每个见过的东西都存下来。当数据量达到十亿级别（比如十亿个 URL），内存开销就成了大问题。课件的核心追问是：**我们真的需要精确答案吗？** 很多场景下，不需要——这就是 Bloom filter 存在的意义。\n\n## 结构长什么样\n\nBloom filter 本质上就是一个长度为 `m` 的比特数组，初始全是 0，再配上 `k` 个相互独立的哈希函数。注意：**它不存任何实际的元素，只存比特位**。\n\n打个比方：想象一块有 m 个格子的黑板，每个格子只能写 0 或 1。你不记录\"谁来过\"，只记录\"哪些格子被涂黑了\"。\n\n**插入操作**：加入元素 `x` 时，用 k 个哈希函数算出 k 个位置，把这些位置的比特都置为 1。已经是 1 的不受影响，且**从不清零**。\n\n**查询操作**：判断 `y` 是否存在时，同样算出 k 个位置。只要有一个位置是 0，就可以断定 `y` 绝对没被插入过；如果 k 个位置全是 1，就报告\"y 大概率存在\"。\n\n## 为什么不会有假阴性（false negative）\n\n这是这个结构最关键的性质，课件给出的原因很直接：\n\n> \"The asymmetry follows from the fact that bits are only ever turned on.\"\n\n也就是说，比特位只会被点亮，从不会熄灭。如果 y 真的插入过，它对应的 k 个位置在插入那一刻就已经全部置 1，之后没有任何操作能把它们改回 0。所以只要查询时发现有一个位是 0，就一定是真的没插入过——\"不存在\"的回答永远正确。\n\n但反过来，\"存在\"的回答可能是错的：那 k 个位置恰好都被**其他若干个元素**合起来点亮了，纯属巧合覆盖。这种情况就是**假阳性（false positive）**，也是这个结构唯一会犯的错误类型。\n\n举例：假设数组只有 8 位，k=2。插入 A 点亮了位置 {1,3}，插入 B 点亮了位置 {5,7}。这时你查询一个从未插入的 C，如果 C 恰好也哈希到 {1,7}，查询结果会显示\"两位都是1\"，误判为存在——这就是假阳性。\n\n## 假阳性概率怎么算——推导过程\n\n假设哈希函数把元素均匀独立地映射到 m 个位置。插入 n 个元素之后，我们一步步推：\n\n**第一步**：单个哈希操作没有击中某个特定比特位的概率是 `1 - 1/m`（m 个位置里只有 1 个是\"目标\"，其余 m-1 个都算\"没击中\"）。\n\n**第二步**：n 个元素、每个用 k 个哈希函数，总共有 kn 次哈希操作。这个特定比特位始终没被任何一次击中的概率是 `(1 - 1/m)^(kn)`。当 m 较大时，这个式子近似等于 `e^(-kn/m)`（利用极限 `(1-1/m)^m ≈ e^-1`）。\n\n**第三步**：反过来，该比特位是 1（被点亮过）的概率就是 `1 - e^(-kn/m)`。\n\n**第四步**：一个从未插入的元素被误判为\"存在\"，需要它对应的 k 个位置**全部**是 1。假设这 k 个位置的状态相互独立（近似假设），概率就是：\n\n`(1 - e^(-kn/m))^k`\n\n课件也坦诚提醒：第四步的独立性假设并不完全成立——因为这 k 个位置终究是从同一个数组里抽出来的，彼此存在关联。但作为工程估算，这个近似已经足够精确，可以用来指导实际的容量设计。\n\n## 如何选择 k（哈希函数个数）\n\n这里有个权衡：k 越大，每次插入点亮的位越多，数组会更快被填满（假阳性率上升）；k 太小，每次查询能利用的\"证据\"就少（也可能让假阳性率上升）。两个方向拉扯之下存在一个最优点。\n\n课件直接给出结论：对上面的假阳性公式求导、找最小值，得到最优的 `k = (m/n) ln 2`，此时数组大约有一半的位是 1。这是一个可以直接拿来用的工程公式：知道 m 和 n，就能算出最佳的哈希函数个数。\n\n## 实际应用\n\n课件提到两个例子：\n\n- **浏览器**：在向网络发起真正的黑名单查询之前，先用本地的 Bloom filter 筛一遍 URL，大部分明显安全的网址可以直接跳过昂贵的网络请求。\n- **存储引擎**：每个数据文件配一个 Bloom filter，读取某个 key 时，如果 filter 说\"绝对没有\"，就可以跳过整个文件，不用做磁盘 I/O。\n\n这两个例子的共同点是：都利用了\"无假阴性\"这个保证——filter 说没有就真的没有，可以放心跳过；filter 说有，再去做更贵的精确检查。\n\n## 局限性：不能删除\n\n课件明确指出这个结构的短板：**元素不能被删除**。原因很直观——如果要删除一个元素，就得把它对应的某些比特位清零，但这些位可能同时也被其他元素共用。清零会破坏\"无假阴性\"这个对所有其他元素都成立的保证。\n\n比如前面的例子中，如果位置 1 同时被 A 和 C 共用，删除 A 时把位置 1 清零，就会导致本该存在的 C 被误判为\"不存在\"——这就打破了 Bloom filter 最核心的承诺。课件提到，如果需要支持删除，就得用**计数变体（counting variant）**，但课件没有展开讲这个变体的具体机制。",
+          "usage": {
+            "input_tokens": 2,
+            "output_tokens": 2197,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 1349
+          },
+          "cost_usd": 0.033366,
+          "latency_ms": 29390.0,
+          "stop_reason": "end_turn",
+          "model_reported": "claude-sonnet-5",
+          "attempt": 1,
+          "generated_at": "2026-09-08T19:56:01+00:00"
+        }
+      ]
+    }
+  ]
+}

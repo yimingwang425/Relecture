@@ -1,0 +1,132 @@
+"""F1 的四条风格轴：取值、默认值、prompt 片段。
+
+**A 类与 B 类在这里分道**：
+
+- A 类（详细程度）→ `StyleConfig`，由 `explain.style_prompt.render_style_rules`
+  渲染，**同一份配置也驱动审查判定**（口径 X05）。档位区间只读
+  `scan.points.AXIS_POINTS`，本文件不重写那四组数字（口径 F13）。
+- B 类（举例 / 结构 / 深度）→ 本文件自己拼措辞。**它们只进 prompt、不进判定**
+  （PRD §8.5 未校准前不做 B 类判断），所以每条都带 `enforced: false`。
+
+本阶段刻意**不扩展 `explain/style_prompt.py`**（约束 1）：产品侧怎么渲染 B 类
+是阶段 3/4 的事，现在把它焊进生产模块，等于在没有判定的情况下先定死接口形状。
+"""
+
+from __future__ import annotations
+
+from typing import Any
+
+import _paths  # noqa: F401  路径注入必须先于下面的导入
+
+from a_rules.config import StyleConfig
+from scan.points import BASE, point_by_id
+
+__all__ = [
+    "AXES", "DEFAULTS", "PAIRS", "ENFORCED",
+    "style_config_for", "render_b_class_rules", "B_CLASS_FRAGMENTS",
+]
+
+#: 四条轴的取值域。与 `style_config` 表的 CHECK 约束一致（阶段 1）。
+AXES: dict[str, tuple[str, ...]] = {
+    "detail_level": ("P0", "P1", "P2", "P3"),
+    "use_examples": ("more", "fewer"),
+    "structure": ("conclusion_first", "buildup_first"),
+    "depth": ("what", "why", "derivation"),
+}
+
+#: 口径 F01：每对只在目标维度上不同，非目标维度一律取默认值。
+DEFAULTS: dict[str, str] = {
+    "detail_level": "P0",
+    "use_examples": "more",
+    "structure": "conclusion_first",
+    "depth": "why",
+}
+
+#: 哪条轴被 A 类审查执行（F1方案 §2.2）。四条里只有一条。
+ENFORCED: dict[str, bool] = {
+    "detail_level": True,
+    "use_examples": False,
+    "structure": False,
+    "depth": False,
+}
+
+#: 八对。三对详细程度 + 一对举例 + 一对结构 + 三对深度 = 6 次比较的全部分支。
+PAIRS: tuple[tuple[str, str, str, str], ...] = (
+    ("detail_p0_p3", "detail_level", "P0", "P3"),
+    ("detail_p0_p1", "detail_level", "P0", "P1"),
+    ("detail_p2_p3", "detail_level", "P2", "P3"),
+    ("examples_more_fewer", "use_examples", "more", "fewer"),
+    ("structure_conclusion_buildup", "structure", "conclusion_first", "buildup_first"),
+    ("depth_what_derivation", "depth", "what", "derivation"),
+    ("depth_what_why", "depth", "what", "why"),
+    ("depth_why_derivation", "depth", "why", "derivation"),
+)
+
+# ---------------------------------------------------------------- A 类
+
+def style_config_for(detail_level: str) -> StyleConfig:
+    """档位 → `StyleConfig`。区间只读 `scan.points`（口径 F13）。
+
+    `point_by_id("P0").config()` 里 P0 的 30–120 不是字面量，而是
+    `StyleConfig` 的默认值（P0 的 `overrides` 是空的）——走 `.config()` 取值
+    才自动正确，抄一份数字进来早晚会漂。
+    """
+    if detail_level not in AXES["detail_level"]:
+        raise ValueError(f"未知档位 {detail_level!r}")
+    cfg = point_by_id(detail_level).config()
+    assert cfg.explain_language == BASE["explain_language"]  # zh 讲解
+    assert cfg.source_language == BASE["source_language"]    # en 课件
+    return cfg
+
+# ---------------------------------------------------------------- B 类
+
+#: **B 类三条轴的措辞写死在这里**，并原样进 pairs.json，供人工核对时对照
+#: （任务 D）。措辞变了，样例的可比性就变了——它和档位区间一样是口径。
+B_CLASS_FRAGMENTS: dict[str, dict[str, str]] = {
+    "use_examples": {
+        "more": "多举例子：每讲一个要点，配一个具体例子或类比帮助理解。",
+        "fewer": "少举例子：把要点本身讲清楚即可，不额外补例子或类比。",
+    },
+    "structure": {
+        "conclusion_first": (
+            "先给结论：开头第一段就说出最重要的那句判断，后面再解释它为什么成立。"
+        ),
+        "buildup_first": (
+            "先铺垫后收结论：按「问题 → 机制 → 结论」的顺序展开，"
+            "把最重要的那句判断放在最后。"
+        ),
+    },
+    "depth": {
+        "what": (
+            "只讲是什么：说清楚这个概念是什么、拿来做什么用。"
+            "不解释它为什么这样设计，也不做推导。"
+        ),
+        "why": (
+            "讲到为什么：在说清是什么之外，解释这个机制为什么成立、为什么这样设计。"
+        ),
+        "derivation": (
+            "讲到推导：在解释为什么的基础上，把关键结论一步步推出来，"
+            "写出中间步骤和用到的假设。"
+        ),
+    },
+}
+
+
+def render_b_class_rules(style: dict[str, str]) -> str:
+    """渲染 B 类三条。顺序固定——system 要能被缓存，任何非确定性都会让缓存失效。"""
+    lines = []
+    for axis in ("use_examples", "structure", "depth"):
+        value = style[axis]
+        if value not in AXES[axis]:
+            raise ValueError(f"{axis} 取值 {value!r} 不在取值域 {AXES[axis]}")
+        lines.append(f"- {B_CLASS_FRAGMENTS[axis][value]}")
+    return "\n".join(lines)
+
+
+def describe(style: dict[str, str]) -> dict[str, Any]:
+    """样例的风格描述，含每条轴是否被审查执行。
+
+    `enforced: false` 必须落进 pairs.json：v1.1 启用 B 类判定时要读历史数据，
+    没有这个标记就分不清「当时判了但没过」和「当时根本没判」（F1方案 §2.2）。
+    """
+    return {axis: {"value": style[axis], "enforced": ENFORCED[axis]} for axis in AXES}

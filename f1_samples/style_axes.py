@@ -26,9 +26,22 @@ __all__ = [
     "style_config_for", "render_b_class_rules", "B_CLASS_FRAGMENTS",
 ]
 
-#: 四条轴的取值域。与 `style_config` 表的 CHECK 约束一致（阶段 1）。
+#: 四条轴的**产品取值域**。
+#:
+#: ⚠️ **`detail_level` 不再是 `AXIS_POINTS` 的四个点**（口径 F23）。
+#: `AXIS_POINTS` 是配置扫描实验的自变量点位——扫描要覆盖参数空间，
+#: 产品要用户可分辨，**两个用途对点位的要求不同**。P1 因为完全被 P0 包含、
+#: 且模型在两条指令下的自然段落长度都落在 P1 区间里，作为产品档位不可分辨，
+#: 已退出（见 README §三的发现）。
+#:
+#: 区间数值仍只读 `scan.points`（口径 F13 不变）——**变的是取哪几个点，
+#: 不是那些点的数值**。
+#:
+#: ⚠️ `style_config` 表的 CHECK 仍允许 `P1`（阶段 1 建表时四档还都在）。
+#: 现在没有任何写入路径会产生 P1，所以留着无害；改 CHECK 与 F05 的反馈映射
+#: 一并在阶段 3 做，见 README §二。
 AXES: dict[str, tuple[str, ...]] = {
-    "detail_level": ("P0", "P1", "P2", "P3"),
+    "detail_level": ("P0", "P2", "P3"),
     "use_examples": ("more", "fewer"),
     "structure": ("conclusion_first", "buildup_first"),
     "depth": ("what", "why", "derivation"),
@@ -53,7 +66,10 @@ ENFORCED: dict[str, bool] = {
 #: 八对。三对详细程度 + 一对举例 + 一对结构 + 三对深度 = 6 次比较的全部分支。
 PAIRS: tuple[tuple[str, str, str, str], ...] = (
     ("detail_p0_p3", "detail_level", "P0", "P3"),
-    ("detail_p0_p1", "detail_level", "P0", "P1"),
+    # 原 P0 vs P1。P1 退出后改为 P0 vs P2——二分仍成立，比较次数仍是 6：
+    #   #1 P0 vs P3 → 选 P0 → #2 P0 vs P2 → 结果 P0 或 P2
+    #                 选 P3 → #2 P2 vs P3 → 结果 P2 或 P3
+    ("detail_p0_p2", "detail_level", "P0", "P2"),
     ("detail_p2_p3", "detail_level", "P2", "P3"),
     ("examples_more_fewer", "use_examples", "more", "fewer"),
     ("structure_conclusion_buildup", "structure", "conclusion_first", "buildup_first"),
@@ -63,6 +79,10 @@ PAIRS: tuple[tuple[str, str, str, str], ...] = (
 )
 
 # ---------------------------------------------------------------- A 类
+
+#: 产品档位按区间从宽到窄排序。反馈按钮「太啰嗦」沿它下移一格（口径 F05）。
+DETAIL_LADDER: tuple[str, ...] = ("P0", "P2", "P3")
+
 
 def style_config_for(detail_level: str) -> StyleConfig:
     """档位 → `StyleConfig`。区间只读 `scan.points`（口径 F13）。

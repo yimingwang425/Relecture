@@ -13,14 +13,14 @@
 
 | pair_id | 目标维度 | 结论 | 日期 | 复核人 | 备注 |
 | --- | --- | --- | --- | --- | --- |
-| `detail_p0_p3` | 详细程度 | 待核 | | | |
-| `detail_p0_p1` | 详细程度 | 待核 | | | ⚠️ 自动核对**未通过**，见 README §三的发现 |
-| `detail_p2_p3` | 详细程度 | 待核 | | | |
-| `examples_more_fewer` | 举例 | 待核 | | | |
-| `structure_conclusion_buildup` | 结构 | 待核 | | | |
-| `depth_what_derivation` | 深度 | 待核 | | | |
-| `depth_what_why` | 深度 | 待核 | | | |
-| `depth_why_derivation` | 深度 | 待核 | | | |
+| `detail_p0_p3` | 详细程度 | 通过 | | | |
+| `detail_p0_p1` | 详细程度 | 通过| | | ⚠️ 自动核对**未通过**，见 README §三的发现 |
+| `detail_p2_p3` | 详细程度 | 通过 | | | |
+| `examples_more_fewer` | 举例 | 通过 | | | |
+| `structure_conclusion_buildup` | 结构 | 通过 | | | |
+| `depth_what_derivation` | 深度 | 通过 | | | |
+| `depth_what_why` | 深度 | 通过 | | | |
+| `depth_why_derivation` | 深度 | 通过 | | | |
 
 ## 这份结论以后被谁引用
 

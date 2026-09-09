@@ -45,11 +45,12 @@ from typing import Any
 import _paths  # noqa: F401
 
 from a_rules.config import StyleConfig
+from a_rules.evaluator import evaluate
 from a_rules.metrics.chinese_ratio import chinese_ratio
 from a_rules.metrics.paragraph_length import avg_paragraph_length
 from a_rules.metrics.quote_length import max_quote_length
 from scan.points import AXIS_POINTS
-from style_axes import style_config_for
+from style_axes import AXES, style_config_for
 
 HERE = Path(__file__).resolve().parent
 PAIRS_JSON = HERE / "pairs.json"
@@ -82,19 +83,36 @@ def check(cond: bool, name: str, ok_detail: str = "", bad_detail: str = "") -> b
 # ---------------------------------------------------------------- 判据
 
 def tier_membership(mean: float) -> frozenset[str]:
-    """平均段落字数 → 它落进哪些档位区间。区间只读 AXIS_POINTS（口径 F13）。"""
+    """平均段落字数 → 它落进哪些**产品档位**的区间。
+
+    ⚠️ 遍历的是 `AXES["detail_level"]`（产品档位），**不是 `AXIS_POINTS` 的四个点**
+    （口径 F23）。P1 退出产品后仍留在扫描点位里；用扫描点位算隶属集合，
+    等于在一条用户选不到的档位上衡量「可分辨性」。区间数值仍只读
+    `scan.points`（口径 F13）——变的是取哪几个点，不是那些点的数值。
+    """
+    by_id = {p.id: p for p in AXIS_POINTS}
     return frozenset(
-        p.id for p in AXIS_POINTS if p.config().paragraph_length.contains(mean)
+        tier for tier in AXES["detail_level"]
+        if by_id[tier].config().paragraph_length.contains(mean)
     )
 
 
 def measure(text: str, detail_level: str) -> dict[str, Any]:
-    """跑 a_rules 的三个维度。配置取该样例自己的档位。"""
+    """跑 a_rules 的三个维度 + **生产判定**。配置取该样例自己的档位。"""
     cfg = style_config_for(detail_level)
+    # 生产链路里模型出完要过 a_rules 判定、不达标重生成，用户拿到的是过审后的
+    # 输出。样例若只过隶属集合判据，它就不是「用户真会得到的东西」——F18 的
+    # 目的没达到。这里跑的就是生产那一个 evaluate()，零新参数。
+    ev = evaluate(text, cfg)
     para = avg_paragraph_length(text, cfg)
     ratio = chinese_ratio(text, cfg)
     quote = max_quote_length(text, cfg)
     return {
+        "production_passed": ev.all_activated_passed,
+        "production_failed_dims": [
+            d.name for d in ev.dimensions
+            if d.counts_toward_score and d.passed is False
+        ],
         "mean": para.raw,
         "membership": tier_membership(para.raw) if para.raw is not None else frozenset(),
         "total_chars": (para.details or {}).get("total_chars"),
@@ -145,6 +163,19 @@ def run(data: dict, *, quiet: bool = False) -> tuple[int, int, dict[str, dict]]:
     check(n == 16, "核对了 16 个样例", f"{n} 个",
           f"{n} 个 —— 下面所有「全部达标」都不成立")
 
+    # **生产判定先于隶属集合判据**：一个没通过生产判定的样例，用户根本不会
+    # 看到它——在它上面比较「两个集合是否不同」是在比较一个不存在的东西。
+    #
+    # 注意 `paragraph_length` 的判定就是**均值是否落进区间**
+    # （`avg_paragraph_length`: `passed = rng.contains(mean)`），
+    # 不是按段落比例算的——这条是读实现测出来的，不是推断。
+    not_shipped = {sid: m["production_failed_dims"]
+                   for sid, m in measured.items() if not m["production_passed"]}
+    check(not not_shipped, "全部样例通过生产的 a_rules 判定",
+          f"16/16 达标（判定 = evaluate() 的 all_activated_passed）",
+          f"{len(not_shipped)} 个不达标：{not_shipped} —— "
+          f"用户看不到这样的输出，在它上面比可分辨性没有意义。按 F01 重生成")
+
     for pair in data["pairs"]:
         check_pair(pair, measured)
 
@@ -174,12 +205,16 @@ def run(data: dict, *, quiet: bool = False) -> tuple[int, int, dict[str, dict]]:
 
 def observations(data: dict, measured: dict[str, dict]) -> None:
     print("\n\033[1m观察项（打印，不判定 —— F1方案 §3.4 选项 B）\033[0m")
-    print(f"  {'sample_id':<34}{'档位':<6}{'字/段':>7}{'总字数':>8}{'段数':>6}{'中文占比':>9}{'引用':>6}")
+    print(f"  {'sample_id':<34}{'档位':<6}{'区间':<11}{'字/段':>7}{'达标':>5}"
+          f"{'总字数':>8}{'段数':>6}{'中文占比':>9}{'引用':>6}")
     for pair in data["pairs"]:
         for s in pair["samples"]:
             m = measured[s["sample_id"]]
-            print(f"  {s['sample_id']:<34}{s['style']['detail_level']['value']:<6}"
-                  f"{m['mean']:>7.1f}{m['total_chars']:>8}{m['paragraph_count']:>6}"
+            lvl = s["style"]["detail_level"]["value"]
+            rng = style_config_for(lvl).paragraph_length.describe()
+            print(f"  {s['sample_id']:<34}{lvl:<6}{rng:<11}"
+                  f"{m['mean']:>7.1f}{'✓' if m['production_passed'] else '✗':>5}"
+                  f"{m['total_chars']:>8}{m['paragraph_count']:>6}"
                   f"{m['chinese_ratio']:>9.3f}{m['max_quote'] or 0:>6}")
 
     print("\n  详细程度三对的实际差值：")
@@ -267,6 +302,12 @@ def reverse_checks() -> None:
     got = isolated([])
     check(named(got, "核对了 16 个样例"), "R3 扫 0 个样例 → 样例数那条变红",
           "← 否则「全部达标」在空集合上恒成立", f"0 个样例居然没红（红的是 {got}）")
+
+    # R5 · 生产判定那条：把一个 108 字/段的样例标成 P3（15–40）→ 必须红
+    got = isolated([fake_pair("R5_out_of_band", "detail_level",
+                              CN_LONG, EN_SHORT, "P3", "P3")])
+    check(named(got, "生产的 a_rules 判定"), "R5 样例落在自己档位外 → 生产判定那条变红",
+          "108 字/段 标成 P3 被挡下", f"没红 —— 生产判定那条是空的（红的是 {got}）")
 
     # R4 · 判据不是恒真：一对真正相同的样例，**那一对的断言**不该红。
     # 只看这一对的名字——样例数那条在单跑时必然红，把它算进来就等于没验。

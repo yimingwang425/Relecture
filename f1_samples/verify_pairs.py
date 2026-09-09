@@ -54,6 +54,7 @@ from style_axes import AXES, style_config_for
 
 HERE = Path(__file__).resolve().parent
 PAIRS_JSON = HERE / "pairs.json"
+REVIEW_RESULT = HERE / "manual_review_result.md"
 
 #: 生产默认阈值。**不是本脚本新引入的数字**——它就是 `StyleConfig` 的默认值。
 CHINESE_RATIO_MIN = StyleConfig().chinese_ratio.min      # 0.85
@@ -309,11 +310,69 @@ def reverse_checks() -> None:
     check(named(got, "生产的 a_rules 判定"), "R5 样例落在自己档位外 → 生产判定那条变红",
           "108 字/段 标成 P3 被挡下", f"没红 —— 生产判定那条是空的（红的是 {got}）")
 
+    # R6 · 时效检查那条：把一个已标「通过」的对的 attempt 改掉 → 必须红。
+    # 没有过期结论时那条恒绿，不验它就等于没有它。
+    import json as _json
+    bumped = _json.loads(PAIRS_JSON.read_text(encoding="utf-8"))
+    for pair in bumped["pairs"]:
+        if pair["pair_id"] == "examples_more_fewer":      # 表里标了「通过」的一对
+            for smp in pair["samples"]:
+                smp["attempt"] += 99
+    global passed, failed, failures
+    p0, f0, fx = passed, failed, list(failures)
+    failures = []
+    import io as _io, contextlib as _ctx
+    with _ctx.redirect_stdout(_io.StringIO()):
+        check_review_freshness(bumped)
+    got = list(failures)
+    passed, failed, failures = p0, f0, fx
+    check(named(got, "版本已过期"), "R6 把已通过的对改掉版本 → 时效那条变红",
+          "结论与样例脱锚被挡下", f"没红 —— 时效检查是恒绿的（红的是 {got}）")
+
     # R4 · 判据不是恒真：一对真正相同的样例，**那一对的断言**不该红。
     # 只看这一对的名字——样例数那条在单跑时必然红，把它算进来就等于没验。
     got = isolated([fake_pair("R4_same", "use_examples", CN_LONG, CN_LONG)])
     check(not named(got, "R4_same"), "R4 一对真正相同的样例 → 那一对不误报",
           "← 判据不是「永远红」", f"误报了（红的是 {got}）")
+
+
+def check_review_freshness(data: dict) -> None:
+    """人工结论是否还锚在当前样例版本上（口径 F25）。
+
+    B 类三条轴没有自动判定，这张表是它们**仅有的**质量证据。一条标了「通过」
+    但对应样例已经重生成的结论，比没有结论更糟——它会让人停止追问
+    （通则七：失效的验证会让人停止追问）。所以只有**「通过」且版本对不上**判红；
+    诚实的 `待核` / `暂缓` 不判红。
+    """
+    print("\n\033[1m人工结论的时效（口径 F25）\033[0m")
+    if not REVIEW_RESULT.is_file():
+        check(False, "manual_review_result.md 存在", "", "缺文件 —— B 类没有任何质量证据")
+        return
+
+    rows: dict[str, tuple[str, str]] = {}
+    for line in REVIEW_RESULT.read_text(encoding="utf-8").splitlines():
+        cells = [c.strip() for c in line.split("|")]
+        if len(cells) < 6 or not cells[1].startswith("`"):
+            continue
+        rows[cells[1].strip("`")] = (cells[3], cells[4])   # (结论, 样例版本)
+
+    current = {
+        p["pair_id"]: f"{p['samples'][0]['attempt']}/{p['samples'][1]['attempt']}"
+        for p in data["pairs"]
+    }
+    check(set(current) <= set(rows), "每一对都在结论表里有一行",
+          f"{len(rows)} 行", f"缺行：{sorted(set(current) - set(rows))}")
+
+    stale = {pid: (rows[pid][1], ver) for pid, ver in current.items()
+             if pid in rows and rows[pid][0] == "通过" and rows[pid][1] != ver}
+    check(not stale, "没有「已通过但版本已过期」的结论",
+          f"{sum(1 for v in rows.values() if v[0] == '通过')} 条通过，版本全部对得上",
+          f"过期：{stale}（表里版本 vs 当前版本）—— 结论是对旧文本做的，须重核")
+
+    pending = [pid for pid, v in rows.items() if pid in current and v[0] != "通过"]
+    if pending:
+        print(f"  \033[33m—\033[0m 尚未通过的对：{pending}"
+              f"（诚实状态，不判红；上线前须清零）")
 
 
 def main() -> int:
@@ -326,6 +385,7 @@ def main() -> int:
     print("\n\033[1m正向 —— 三维核对\033[0m")
     _, _, measured = run(data)
     observations(data, measured)
+    check_review_freshness(data)
     reverse_checks()
 
     print(f"\n\033[1m合计\033[0m  绿 {passed} · 红 {failed}\n")

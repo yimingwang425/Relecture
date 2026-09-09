@@ -32,3 +32,10 @@ logs/
 # Python
 __pycache__/
 *.py[cod]
+
+# Python virtualenvs / build & test artifacts
+# (each package also ignores these locally; this is the repo-wide safety net
+#  for dirs without their own .gitignore, e.g. f1_samples/)
+.venv/
+*.egg-info/
+.pytest_cache/

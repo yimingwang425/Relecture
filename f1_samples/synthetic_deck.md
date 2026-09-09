@@ -1,91 +1,224 @@
 <!--
 自写合成内容，非第三方课件，用于 F1 样例。
 
-作者：本项目（2026-09-09）。不含任何第三方课件原文或其改写。
-PRD §12.1：对外展示一律使用自写的合成课件——F1 样例给所有用户看，等于对外展示。
+作者：本项目（2026-09-07 初版 503 词 / 2026-09-09 扩写为 10 页）。
+不含任何第三方课件原文或其改写。PRD §12.1：对外展示一律使用自写的合成课件。
 
 ## 主题：Bloom filter（布隆过滤器）
 
-刻意避开 22.081J（能源 / 核工程）与 14.129（博弈论 / 机制设计）。F1 样例与
-F2/F3 测试集若是同一份材料，以后讲解质量出问题就分不清是样例设计的锅还是课件特性的锅。
+刻意避开 22.081J（能源/核工程）与 14.129（博弈论/机制设计）。
 
-## 为什么这个主题同时撑得住四条轴
+## 2026-09-09 为什么扩写
 
-换素材时用这一节判断新素材够不够格。**四条都要成立，缺一条那条轴的样例对就没有差异可造。**
+初版 503 词整份喂进 user turn，导致 16 个样例里 11 个以「这份课件片段里没有
+展开 counting variant……需要额外材料」收尾——**免责全部指向同一处前向引用**：
+课件提到「删除需要计数变体」却没解释它。模型按生产 system 的 X06 立场
+（「片段不够回答就说清楚缺什么」）如实说了出来。
 
-| 轴 | 本材料里的着力点 |
+扩写的目的**不是靠长度**，是让「只喂一部分」在结构上合法：
+那句前向引用现在落在第 8 页并在那里被真正解释，而第 8 页不喂。
+
+## 页与块
+
+每页 2–3 个**块**，每块 40–60 词（≈250–380 字符），对齐实测真实切片
+（n=450：字数中位 271、范围 60–433；每轮恒喂 5 个）。块 id 写在注释里，
+`generate_pairs.py` 按 id 取用，不靠行号或正则去猜。
+
+## 喂哪 5 块（口径 F28：我在扮演检索器）
+
+`p1b1` 问题 · `p2b1` 结构与两个操作 · `p4b1` 无假阴性 ·
+`p5b2` 误判率四步推导 · `p7b1` 两处真实应用
+
+自洽性：这 5 块合起来足以回答「讲解 Bloom filter」，且**其中没有任何前向引用**
+——counting variant / cuckoo filter / 定 m,k 的算例全部在不喂的页上。
+
+## 四条轴的着力点（换素材时照这节判断新素材够不够格）
+
+| 轴 | 着力点（且必须落在被喂的 5 块里） |
 | --- | --- |
-| **详细程度**（P0–P3） | 有六个可独立展开也可一句带过的层次：问题 → 结构 → 两个操作 → 无假阴性 → 误判率 → 参数选择。短讲取前三层，长讲六层全开，**两端都成立**而不是长的那端靠注水 |
-| **深度**（what / why / derivation） | 概念带**机制**而不只是定义：`what` 停在「概率型集合结构」；`why` 要解释「为什么不会漏、却会误判」；`derivation` 有一条四步可推的误判率式子（独立性假设是显式的，可被讨论），**三档各有实质内容可讲** |
-| **结构**（先结论 / 先铺垫） | 有一个**可前可后**的结论：「用可调的小误判率换大幅空间节省，且永不漏报」。先说它再解释机制成立，先铺垫问题与结构再收到它也成立 |
-| **举例**（more / fewer） | 有天然的类比（共用挂钩的衣帽间）与真实用例（浏览器恶意网址库、数据库读放大），**可举可不举**——`fewer` 那侧删掉例子讲解仍然完整 |
-
-英文撰写：`source_language='en'` / `explain_language='zh'`。中文课件会让
-`chinese_ratio` 维度不激活，那一维在核对脚本里就是空转的（通则七 #5）。
+| 详细程度 | 五块内容可一句带过也可逐块展开，短讲长讲两端都成立 |
+| 深度 | `what` 停在 p2b1；`why` 要用 p4b1 解释「为什么不漏却会误判」；`derivation` 有 p5b2 的四步式子，独立性假设显式 |
+| 结构 | p4b1 的「永不漏报」是可前可后的结论 |
+| 举例 | p7b1 给了浏览器与存储引擎两个真实用例，`fewer` 那侧删掉讲解仍完整 |
 -->
 
 # Lecture 7 — Bloom Filters
 
 **CS 2xx · Probabilistic Data Structures**
 
-## The problem
+---
 
-Suppose a service must answer one question, millions of times a second: *have I seen
-this item before?* A hash set answers it exactly, but it stores every item it has
-seen. When the set holds a billion URLs, the memory bill dominates the design. The
-question worth asking is whether we actually need an exact answer.
+## Page 1 — The problem
 
-## The structure
+<!-- p1b1 · FED -->
+A service must answer one question millions of times a second: have I seen this
+item before? A hash set answers exactly but stores every item. At a billion URLs the
+memory bill dominates the design, so it is worth asking whether an exact answer is
+required at all.
 
-A Bloom filter is an array of `m` bits, all initially zero, together with `k`
-independent hash functions. Each hash function maps an item to one of the `m`
-positions. The filter stores no items — only bits.
+<!-- p1b2 -->
+Many systems only need a cheap filter in front of an expensive check. If a structure
+can say "definitely not present" quickly and cheaply, the expensive check runs only
+on the remainder. Being occasionally wrong in one direction is acceptable; being
+wrong in the other direction is not.
 
-**Insert.** To add an item `x`, compute the `k` hash values and set all `k`
-corresponding bits to one. Bits that are already one stay one; nothing is ever
-cleared.
+---
 
-**Query.** To test whether `y` is present, compute the same `k` positions. If any
-one of them is zero, `y` was definitely never inserted. If all `k` are one, report
-that `y` is probably present.
+## Page 2 — The structure
 
-## Why there are no false negatives
+<!-- p2b1 · FED -->
+A Bloom filter is an array of `m` bits, all initially zero, plus `k` hash functions
+mapping an item to `k` positions. To insert `x`, set all `k` of its bits to one. To
+test `y`, read its `k` positions: any zero means `y` was never inserted; all ones
+means `y` is probably present.
 
-The asymmetry follows from the fact that bits are only ever turned on. If `y` was
-inserted, all `k` of its bits were set at that moment, and no later operation could
-have turned any of them back off. So a "not present" answer is always correct. A
-"present" answer can be wrong: the `k` bits may have been set by a combination of
-other items that happens to cover exactly those positions. This is a *false
-positive*, and it is the only kind of error the structure makes.
+<!-- p2b2 -->
+The filter stores no items, only bits. This is what buys the space saving: memory
+depends on `m` and not on how long the stored items are. A billion 60-byte URLs
+occupy gigabytes in a hash set and a few hundred megabytes in a filter sized for a
+one-percent error rate.
 
-## How likely is a false positive?
+---
 
-Assume the hash functions distribute items uniformly and independently. After
-inserting `n` items:
+## Page 3 — The two operations in detail
 
-1. A single bit is left at zero by one hash of one item with probability `1 - 1/m`.
-2. Across `kn` hashes, it stays zero with probability `(1 - 1/m)^(kn)`, which for
-   large `m` is approximately `e^(-kn/m)`.
-3. So a given bit is one with probability `1 - e^(-kn/m)`.
-4. A non-member is reported present when all `k` of its positions are one, which
-   happens with probability approximately `(1 - e^(-kn/m))^k`.
+<!-- p3b1 -->
+Insertion never clears a bit and never needs to read one first, so inserts are
+independent of each other and can be applied in any order. Two filters built over
+the same `m` and `k` can be merged with a bitwise OR, which is why filters compose
+well across shards.
 
-The independence assumption in step 4 is not exactly true — the `k` positions are
-drawn from the same array — but the approximation is close enough for sizing.
+<!-- p3b2 -->
+A query touches exactly `k` bit positions regardless of how many items the filter
+holds. Query cost is therefore constant, not logarithmic. On modern hardware the
+dominant cost is the `k` cache misses, which is one reason small `k` is often
+preferred in practice even when a larger `k` looks better on paper.
 
-## Choosing the number of hash functions
+---
 
-More hash functions set more bits per insert, which fills the array faster; fewer
-give each query less evidence to work with. Differentiating the expression above
-gives an optimum at `k = (m/n) ln 2`, where the array is about half ones.
+## Page 4 — Why there are no false negatives
 
-## Where this is used
+<!-- p4b1 · FED -->
+Bits are only ever turned on. If `y` was inserted, all `k` of its bits were set then
+and nothing could have cleared them, so "not present" is always correct. "Present"
+can be wrong: those `k` bits may have been set by other items. That is a false
+positive, and it is the only error the structure makes.
 
-Browsers screen URLs against a local filter before paying for a network lookup of
-the full blocklist. Storage engines keep a filter per data file so a read can skip
-files that certainly do not hold the key.
+<!-- p4b2 -->
+The asymmetry is what makes the structure usable. A system can act on "not present"
+immediately and treat "present" as a hint that triggers the expensive exact check.
+Designs that need the opposite guarantee — never claim absence wrongly — cannot use
+this structure at all.
 
-## The limitation
+---
 
-Items cannot be removed: clearing a bit would break the no-false-negatives
-guarantee for every other item sharing it. Deletions require a counting variant.
+## Page 5 — The false positive rate
+
+<!-- p5b1 -->
+The rate depends on three numbers: the array size `m`, the number of hash functions
+`k`, and the number of items inserted `n`. It does not depend on the items
+themselves, provided the hash functions spread them evenly. This is what makes the
+rate something you can size for in advance rather than measure afterwards.
+
+<!-- p5b2 · FED -->
+Assume the hash functions spread items uniformly and independently. After `n`
+inserts, one hash leaves a given bit at zero with probability `1 - 1/m`; across `kn`
+hashes it stays zero with probability `(1 - 1/m)^(kn)`, about `e^(-kn/m)`. So a bit
+is one with probability `1 - e^(-kn/m)`, and a non-member reads all ones with
+probability about `(1 - e^(-kn/m))^k`.
+
+<!-- p5b3 -->
+The independence assumption in the last step is not exactly true, because the `k`
+positions are drawn from the same array and are therefore weakly correlated. The
+approximation is close enough for sizing, and the exact treatment changes the third
+decimal place rather than the engineering decision.
+
+---
+
+## Page 6 — Choosing k
+
+<!-- p6b1 -->
+More hash functions set more bits per insert and fill the array faster; fewer give
+each query less evidence to work with. Differentiating the expression above with
+respect to `k` gives an optimum at `k = (m/n) ln 2`, at which point roughly half the
+bits in the array are ones.
+
+<!-- p6b2 -->
+Half-full is a useful sanity check when debugging a deployment. A filter whose bit
+array is nearly all ones is overloaded and its false positive rate has collapsed
+toward one; a filter that is nearly all zeros is oversized and wasting memory that
+some other part of the system could use.
+
+---
+
+## Page 7 — Where this is used
+
+<!-- p7b1 · FED -->
+Browsers screen URLs against a local filter before paying for a network lookup
+against the full malicious-site list, so a safe URL costs no round trip. Storage
+engines keep a filter per data file so a read can skip files that certainly do not
+hold the key.
+
+<!-- p7b2 -->
+Both cases share a shape: a cheap probabilistic no, followed by an expensive
+authoritative yes. When the expensive check is unavailable — offline, rate limited,
+or simply too slow for the request budget — the filter's answer has to stand alone,
+and a false positive becomes a user-visible error rather than a wasted lookup.
+
+---
+
+## Page 8 — Deletion and counting filters
+
+<!-- p8b1 -->
+A standard Bloom filter cannot delete. Clearing the `k` bits of a removed item would
+also clear bits that other items rely on, and any of those items would then be
+reported absent — destroying the no-false-negatives guarantee that made the
+structure worth using.
+
+<!-- p8b2 -->
+A counting Bloom filter replaces each bit with a small counter, typically four bits.
+Insertion increments the `k` counters, deletion decrements them, and a query asks
+whether all `k` counters are non-zero. The guarantee survives deletion because a
+counter only reaches zero when every item that set it has been removed.
+
+<!-- p8b3 -->
+The cost is memory: four-bit counters make the structure four times larger for the
+same `m`. Counters can also saturate under heavy insertion, and a saturated counter
+can never be safely decremented again, so deployments either size generously or
+accept a slow drift toward stale entries.
+
+---
+
+## Page 9 — Sizing: a worked example
+
+<!-- p9b1 -->
+Suppose `n` is ten million items and the target false positive rate is one percent.
+Solving the rate expression for `m` gives roughly `m = -n ln(p) / (ln 2)^2`, which
+here is about 96 million bits, or 12 megabytes. The optimal `k` follows as about
+seven hash functions.
+
+<!-- p9b2 -->
+Tightening the target to one in a thousand costs another 50 percent of memory and
+raises `k` to about ten. The relationship is logarithmic in `p`, so each additional
+decimal place of accuracy costs a fixed increment of memory rather than a
+multiplicative one.
+
+<!-- p9b3 -->
+In practice `n` is an estimate and the filter is sized for the upper end of it.
+Exceeding the assumed `n` does not fail loudly; the rate simply degrades, which is
+why production deployments monitor the fraction of set bits rather than waiting for
+complaints about wrong answers.
+
+---
+
+## Page 10 — When not to use one
+
+<!-- p10b1 -->
+A cuckoo filter supports deletion without counters and often uses less space at low
+error rates, at the cost of a more complex insert path that can fail and require a
+rebuild. Choose it when deletion matters and insert latency has slack.
+
+<!-- p10b2 -->
+When the item set is small enough to fit in memory exactly, use an exact set: the
+filter's whole value is trading accuracy for space, and there is nothing to trade
+when space is not the binding constraint.

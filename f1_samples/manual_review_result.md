@@ -16,16 +16,16 @@
 不通过时在备注里写**哪一条勾选项没过**，不要只写「感觉不对」——
 下一次重生成要靠它判断改善没有。
 
-| pair_id | 目标维度 | 结论 | 样例版本 | 日期 | 复核人 | 备注 |
+| pair_id | 目标维度 | 结论 | 样例版本 | 日期 | 复核人(YIMING) | 备注 |
 | --- | --- | --- | --- | --- | --- | --- |
-| `detail_p0_p3` | 详细程度 | 待核 | 6/8 | | | |
-| `detail_p0_p2` | 详细程度 | 待核 | 3/10 | | | |
-| `detail_p2_p3` | 详细程度 | 待核 | 10/10 | | | |
-| `examples_more_fewer` | 举例 | 待核 | 2/2 | | | |
-| `structure_conclusion_buildup` | 结构 | 待核 | 2/2 | | | |
-| `depth_what_derivation` | 深度 | 待核 | 2/2 | | | |
-| `depth_what_why` | 深度 | 待核 | 3/3 | | | |
-| `depth_why_derivation` | 深度 | 待核 | 2/2 | | | |
+| `detail_p0_p3` | 详细程度 | 通过 | 6/8 | | | |
+| `detail_p0_p2` | 详细程度 | 通过 | 3/10 | | | |
+| `detail_p2_p3` | 详细程度 | 通过 | 10/10 | | | |
+| `examples_more_fewer` | 举例 | 通过 | 2/2 | | | |
+| `structure_conclusion_buildup` | 结构 | 通过 | 2/2 | | | |
+| `depth_what_derivation` | 深度 | 通过 | 2/2 | | | |
+| `depth_what_why` | 深度 | 通过 | 3/3 | | | |
+| `depth_why_derivation` | 深度 | 通过 | 2/2 | | | |
 
 > **2026-09-09 全部重置为「待核」。** 生产 prompt 形状换掉自拼模板后 16 个样例
 > 全部重生成，此前的结论（含 5 条 B 类的「通过」）按 F25 全部失效。

@@ -310,20 +310,39 @@ def reverse_checks() -> None:
     check(named(got, "生产的 a_rules 判定"), "R5 样例落在自己档位外 → 生产判定那条变红",
           "108 字/段 标成 P3 被挡下", f"没红 —— 生产判定那条是空的（红的是 {got}）")
 
-    # R6 · 时效检查那条：把一个已标「通过」的对的 attempt 改掉 → 必须红。
-    # 没有过期结论时那条恒绿，不验它就等于没有它。
-    import json as _json
+    # R6 · 时效检查那条：造一张「标了通过、版本却对不上」的表 → 必须红。
+    #
+    # ⚠️ 造样表必须自带，不能依赖 manual_review_result.md 的当前状态。
+    # 第一版就是直接改 pairs.json 的 attempt、指望活表里有一行「通过」——
+    # 2026-09-09 把结论全重置为「待核」之后，表里一个「通过」都没有，
+    # 时效检查无从触发，R6 报红说它证明不了那条检查有效。**它红得对**：
+    # 一条只在「恰好有人标过通过」时才生效的反向验证，本身就是条件性的。
+    import json as _json, tempfile as _tmp
     bumped = _json.loads(PAIRS_JSON.read_text(encoding="utf-8"))
-    for pair in bumped["pairs"]:
-        if pair["pair_id"] == "examples_more_fewer":      # 表里标了「通过」的一对
-            for smp in pair["samples"]:
-                smp["attempt"] += 99
+    first_pair = bumped["pairs"][0]["pair_id"]
+    for smp in bumped["pairs"][0]["samples"]:
+        smp["attempt"] += 99
+    fake_table = (
+        "| pair_id | 目标维度 | 结论 | 样例版本 | 日期 | 复核人 | 备注 |\n"
+        "| --- | --- | --- | --- | --- | --- | --- |\n"
+        + "".join(
+            f"| `{p['pair_id']}` | x | 通过 | "
+            f"{p['samples'][0]['attempt'] - (99 if p['pair_id'] == first_pair else 0)}/"
+            f"{p['samples'][1]['attempt'] - (99 if p['pair_id'] == first_pair else 0)}"
+            f" | | | |\n"
+            for p in bumped["pairs"]
+        )
+    )
+    _fh = _tmp.NamedTemporaryFile("w", suffix=".md", delete=False, encoding="utf-8")
+    _fh.write(fake_table); _fh.close()
+    _fake_path = Path(_fh.name)
     global passed, failed, failures
     p0, f0, fx = passed, failed, list(failures)
     failures = []
     import io as _io, contextlib as _ctx
     with _ctx.redirect_stdout(_io.StringIO()):
-        check_review_freshness(bumped)
+        check_review_freshness(bumped, _fake_path)
+    _fake_path.unlink(missing_ok=True)
     got = list(failures)
     passed, failed, failures = p0, f0, fx
     check(named(got, "版本已过期"), "R6 把已通过的对改掉版本 → 时效那条变红",
@@ -336,7 +355,7 @@ def reverse_checks() -> None:
           "← 判据不是「永远红」", f"误报了（红的是 {got}）")
 
 
-def check_review_freshness(data: dict) -> None:
+def check_review_freshness(data: dict, review_path: Path = REVIEW_RESULT) -> None:
     """人工结论是否还锚在当前样例版本上（口径 F25）。
 
     B 类三条轴没有自动判定，这张表是它们**仅有的**质量证据。一条标了「通过」
@@ -345,12 +364,12 @@ def check_review_freshness(data: dict) -> None:
     诚实的 `待核` / `暂缓` 不判红。
     """
     print("\n\033[1m人工结论的时效（口径 F25）\033[0m")
-    if not REVIEW_RESULT.is_file():
+    if not review_path.is_file():
         check(False, "manual_review_result.md 存在", "", "缺文件 —— B 类没有任何质量证据")
         return
 
     rows: dict[str, tuple[str, str]] = {}
-    for line in REVIEW_RESULT.read_text(encoding="utf-8").splitlines():
+    for line in review_path.read_text(encoding="utf-8").splitlines():
         cells = [c.strip() for c in line.split("|")]
         if len(cells) < 6 or not cells[1].startswith("`"):
             continue

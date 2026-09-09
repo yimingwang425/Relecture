@@ -39,7 +39,11 @@ from pathlib import Path
 import _paths  # noqa: F401
 
 from a_rules.config import CONFIG_VERSION
+from a_rules.evaluator import evaluate
+from explain.context import ContextPack, ContextSlice
 from explain.llm import AnthropicModel
+from explain.prompt import build_system as production_build_system
+from explain.prompt import build_user_turn as production_build_user_turn
 from explain.style_prompt import render_style_rules
 from style_axes import DEFAULTS, PAIRS, B_CLASS_FRAGMENTS, describe, render_b_class_rules, style_config_for
 
@@ -53,32 +57,25 @@ OUT = HERE / "pairs.json"
 #: 会把「16 个样例的成本」说成「产出这批样例的成本」，两者不是一回事。
 SPEND_LOG = HERE / "spend_log.jsonl"
 
-#: 固定提问。**必须对 16 个样例完全相同**，否则差异就不只来自风格配置了
-#: （通则二：处理组多做的任何动作都可能在无关维度引入偏差）。
-#: 措辞刻意中性——若问「误判率是怎么来的」，`what` 那档会被问题本身逼着做推导，
-#: 深度轴的差异就成了问题的差异而不是配置的差异。
-QUESTION = "请给我讲解这份课件里的 Bloom filter。"
 
-#: system 模板。`{deck}` / `{a_class}` / `{b_class}` 三个槽。
+#: 提问模板。概念名随课件变——课件换了那个名词必须跟着换，这是不可消除的混杂。
+QUESTION_TEMPLATE = "请给我讲解这份课件里的 {concept}。"
+CONCEPT = "Bloom filter"
+COURSE_LABEL = "合成课件"
+
+#: 课件在 prompt 里的位置：**走生产的 user turn，不进 system**。
 #:
-#: **这不是生产的 system prompt。** 生产侧 `explain.prompt.build_system` 还含
-#: 检索片段清单、X06 的「片段可能不完整，缺什么就说缺什么」、X07 的跳过页事实，
-#: 三者都依赖 ContextPack。本阶段输入是课件全文、不走检索（任务书指定），
-#: 那三段没有对应物。**代价已登记**（README §三）：样例展示的是风格差异，
-#: 不代表带检索时的真实行为。
-SYSTEM_TEMPLATE = """你是一位课件讲解助手，帮助学生理解他上传的课程材料。
-
-下面是课件全文。只讲课件里写了的内容；课件没写的，说没写，不要补全。
-
-<courseware>
-{deck}
-</courseware>
-
-## 风格要求
-
-{a_class}
-{b_class}
-"""
+#: ⚠️ 这一段是 2026-09-09 改的，起因是「发现 A」那次误判（见 README §三）。
+#: 原先我自拼了一份 system 模板，把 2500 字英文课件放最前面、风格要求垫在最后。
+#: 生产的 `explain.prompt.SYSTEM_TEMPLATE` 恰恰相反——风格要求紧跟角色行，
+#: 课件片段走每轮的 user turn。实测这不是细微偏差，是**不同的输出分布**：
+#: P3 在自拼模板下 1/19 达标，在生产装置下 2/4，扫描实验落盘数据 33/54。
+#: 用自拼模板产出的样例做 onboarding，用户选了 P3 拿到的是另一种东西——
+#: **F18 事实上没成立**。
+#:
+#: 仍然不执行检索（任务书指定）：整份课件包成**一个 `ContextSlice`**
+#: 交给生产的 `build_system` / `build_user_turn`，检索一次都不跑，
+#: 但 prompt 形状是生产的。
 
 
 def deck_body() -> str:
@@ -92,20 +89,45 @@ def sha256(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
 
 
-def build_system(deck: str, style: dict[str, str]) -> tuple[str, str, str]:
-    """→ (完整 system, A 类片段, B 类片段)。"""
+def context_pack(deck: str) -> ContextPack:
+    """整份课件 = 一个切片。**不执行检索**，只是借生产的 prompt 形状。"""
+    return ContextPack(
+        question="",
+        slices=(ContextSlice(
+            source_file="synthetic_deck.md", slice_id="whole", page_indices=(1,),
+            title=None, text=deck, char_count=len(deck), score=None, via="hit",
+        ),),
+    )
+
+
+def build_prompt(deck: str, style: dict[str, str]) -> tuple[str, str, str, str]:
+    """→ (system, user, A 类片段, B 类片段)。**system 与 user 都由生产函数产出。**
+
+    A 类走 `explain.style_prompt.render_style_rules`（只读调用）。
+    B 类仍是 `f1_samples` 自己拼的三句——约束 1：不扩展 `explain/style_prompt.py`，
+    产品侧怎么渲染 B 类是阶段 3/4 的事。两段拼在一起交给生产的 `build_system`。
+    """
     a_class = render_style_rules(style_config_for(style["detail_level"]))
     b_class = render_b_class_rules(style)
-    return SYSTEM_TEMPLATE.format(deck=deck, a_class=a_class, b_class=b_class), a_class, b_class
+    pack = context_pack(deck)
+    system = production_build_system(a_class + "\n" + b_class, pack, COURSE_LABEL)
+    user = production_build_user_turn(pack, QUESTION_TEMPLATE.format(concept=CONCEPT))
+    return system, user, a_class, b_class
+
+
+#: 单个样例最多试几次。用尽仍不过就**留最后一次**并标记，不留「最好的那次」。
+MAX_TRIES = 6
 
 
 def generate_one(model: AnthropicModel, deck: str, sample_id: str, variant: str,
                  style: dict[str, str], attempt: int) -> dict:
-    system, a_class, b_class = build_system(deck, style)
-    messages = [{"role": "user", "content": QUESTION}]
+    """发一次请求。花费当场记流水——**包括之后会被丢弃的那些次**。"""
+    system, user, a_class, b_class = build_prompt(deck, style)
+    messages = [{"role": "user", "content": user}]
     cfg = style_config_for(style["detail_level"])
 
     completion = model.complete(system, messages)
+    ev = evaluate(completion.text, cfg)
 
     with SPEND_LOG.open("a", encoding="utf-8") as fh:
         fh.write(json.dumps({
@@ -114,6 +136,8 @@ def generate_one(model: AnthropicModel, deck: str, sample_id: str, variant: str,
             "model": completion.model, "cost_usd": round(completion.cost, 6),
             "input_tokens": completion.usage.input_tokens,
             "output_tokens": completion.usage.output_tokens,
+            "production_passed": ev.all_activated_passed,
+            "mean_paragraph_chars": round(ev.by_name("paragraph_length").raw, 1),
         }, ensure_ascii=False) + "\n")
 
     return {
@@ -124,16 +148,17 @@ def generate_one(model: AnthropicModel, deck: str, sample_id: str, variant: str,
         "config_fingerprint": cfg.fingerprint(),
         "metric_set_id": cfg.metric_set_id(),
         "prompt": {
-            # 模板存一份在文件顶层，这里只存随样例变化的两段 + 全文 hash。
-            # 任务书允许「完整 prompt 或其 hash + 模板」——16 份近乎相同的
-            # 全文会把这个文件变成没人读的东西。
+            "shape": "生产：explain.prompt.build_system / build_user_turn（口径 F19）",
             "a_class_rules": a_class,
             "b_class_rules": b_class,
             "system_sha256": sha256(system),
             "system_chars": len(system),
+            "user_sha256": sha256(user),
             "request_signature": model.request_signature(system, messages),
         },
         "text": completion.text,
+        "production_passed": ev.all_activated_passed,
+        "mean_paragraph_chars": round(ev.by_name("paragraph_length").raw, 1),
         "usage": {
             "input_tokens": completion.usage.input_tokens,
             "output_tokens": completion.usage.output_tokens,
@@ -147,6 +172,28 @@ def generate_one(model: AnthropicModel, deck: str, sample_id: str, variant: str,
         "attempt": attempt,
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
+
+
+def generate_until_pass(model: AnthropicModel, deck: str, sample_id: str, variant: str,
+                        style: dict[str, str], base_attempt: int) -> dict:
+    """**通过即停。留下的是第一个通过生产判定的样例，不是试出来的最好的那个。**
+
+    「生成一批再挑」会把 F01 变成「选一个好看的」，而 F18 要的是**代表性**——
+    用户真会拿到的输出长什么样。所以：一次一次地生成，不通过就丢弃、不比较、
+    不记「差多少」，通过就停。用尽 `MAX_TRIES` 仍不过，**留最后一次**
+    （不是最接近的那次）并标 `production_passed: false`，让核对红出来。
+
+    每一次尝试都进 `spend_log.jsonl`——被丢弃的那些次照样花了钱（口径 F22）。
+    """
+    rec = None
+    for k in range(1, MAX_TRIES + 1):
+        rec = generate_one(model, deck, sample_id, variant, style, base_attempt + k)
+        rec["tries_in_run"] = k
+        mark = "✓" if rec["production_passed"] else "✗"
+        print(f"      第 {k} 次 {rec['mean_paragraph_chars']:>5.1f} 字/段 {mark}", flush=True)
+        if rec["production_passed"]:
+            return rec
+    return rec
 
 
 def main() -> int:
@@ -173,10 +220,9 @@ def main() -> int:
     }
 
     if args.dry_run:
-        style = {**DEFAULTS}
-        system, _, _ = build_system(deck, style)
-        print(system)
-        print("\n--- user ---\n" + QUESTION)
+        system, user, _, _ = build_prompt(deck, {**DEFAULTS})
+        print("=== system ===\n" + system)
+        print("\n=== user ===\n" + user)
         return 0
 
     pairs_out = []
@@ -192,10 +238,10 @@ def main() -> int:
             if not regenerate and sample_id in prior:
                 samples.append(prior[sample_id])
                 continue
-            attempt = prior.get(sample_id, {}).get("attempt", 0) + 1
+            base = prior.get(sample_id, {}).get("attempt", 0)
             style = {**DEFAULTS, axis: value}
-            print(f"  生成 {sample_id}（{axis}={value}，第 {attempt} 次）…", flush=True)
-            samples.append(generate_one(model, deck, sample_id, value, style, attempt))
+            print(f"  {sample_id}（{axis}={value}）", flush=True)
+            samples.append(generate_until_pass(model, deck, sample_id, value, style, base))
         pairs_out.append({"pair_id": pair_id, "target_dimension": axis, "samples": samples})
 
     for pair in pairs_out:
@@ -219,8 +265,16 @@ def main() -> int:
             "source": "explain.llm.AnthropicModel() 的默认值（口径 F19）",
         },
         "a_rules_config_version": CONFIG_VERSION,
-        "question": QUESTION,
-        "system_template": SYSTEM_TEMPLATE,
+        "question": QUESTION_TEMPLATE.format(concept=CONCEPT),
+        "prompt_shape": {
+            "source": "explain.prompt.build_system / build_user_turn（口径 F19）",
+            "note": "整份课件包成一个 ContextSlice 走 user turn；不执行检索",
+            "course_label": COURSE_LABEL,
+        },
+        "selection_rule": (
+            "通过即停：留下的是第一个通过生产判定的样例，不是试出来的最好的那个"
+            "（口径 F27）。用尽 MAX_TRIES 仍不过则留最后一次并标 production_passed:false"
+        ),
         "defaults": DEFAULTS,
         "b_class_prompt_fragments": B_CLASS_FRAGMENTS,
         "cost_usd_total": round(total_cost, 6),

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import { AppNav } from "@/app/components/app-nav";
 import { RowStateNotice } from "@/app/components/row-state";
+import { TOTAL_STEPS, makeFlips } from "@/lib/style/flow";
 import { SAMPLE_QUESTION, loadPairs } from "@/lib/style/pairs";
 import { loadStyleRow } from "@/lib/style/session";
 
@@ -35,10 +36,26 @@ export default async function PairwiseOnboardingPage() {
   return (
     <main data-state="ok" data-arm="pairwise" className="mx-auto w-full max-w-[1220px] px-5 py-8">
       <AppNav email={result.email} />
+      {/*
+        左右顺序**在服务端抽一次**，作为 prop 传下去。
+
+        起初是在客户端组件里 `useState(() => makeFlips(...))` 抽的，那是错的：
+        惰性初始化在 **SSR 渲染时跑一次**、**hydrate 时又跑一次**，两次 `Math.random()`
+        约有一半概率不一致 —— 于是 React 报 hydration 文本不匹配（#418），
+        服务端先绘制的那一版被换掉。
+
+        它不只是控制台里一条报错，而是直接打穿随机化的目的：
+        用户看到并点下去的可能是服务端那一版，而 `leftVariant` 记的是客户端那一版，
+        「这次点击对应哪个档位在左」就对不上了 —— 位置效应照样分离不出来。
+
+        放在服务端则只抽一次：prop 随 RSC 载荷序列化过去，两侧渲染同一份数据。
+        页面是 force-dynamic，所以每次加载仍是新的一次抽取。
+      */}
       <PairwiseOnboarding
         userId={result.userId}
         pairs={loadPairs()}
         question={SAMPLE_QUESTION}
+        flips={makeFlips(TOTAL_STEPS)}
         alreadyOnboarded={result.row.onboarded_at !== null}
       />
     </main>

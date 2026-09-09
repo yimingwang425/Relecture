@@ -22,7 +22,7 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -40,6 +40,84 @@ function check(cond, name, detail = "") {
 }
 
 const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+
+/** 递归列出所有带 "use client" 的组件源码。 */
+function listClientComponents(dir) {
+  const out = [];
+  for (const e of readdirSync(dir, { withFileTypes: true })) {
+    const full = join(dir, e.name);
+    if (e.isDirectory()) out.push(...listClientComponents(full));
+    else if (/\.(tsx|ts)$/.test(e.name)) {
+      const src = readFileSync(full, "utf8");
+      if (/^\s*["']use client["']/m.test(src)) out.push({ path: full, src });
+    }
+  }
+  return out;
+}
+
+/**
+ * 从 `lib/style/` 里推导出「会产生随机的导出函数」名单。
+ *
+ * **不写死名单**：第一版判据只查字面的 `Math.random(`，而真实的 bug 是
+ * `useState(() => makeFlips(...))` —— 随机藏在一层函数调用后面，
+ * 客户端源码里根本没有 `Math.random` 这几个字，判据当场空转
+ * （这一点是被它自己的反向控制抓出来的，不是想出来的）。
+ *
+ * 所以改成推导：谁的函数体里有 `Math.random`，谁就是随机源。
+ * 以后在 lib/style 里新加一个随机 helper，它会**自动**成为客户端组件的违禁标识符，
+ * 不需要有人记得回来改名单。
+ */
+function randomSourceNames(libDir) {
+  const names = new Set(["Math.random"]);
+  for (const f of readdirSync(libDir)) {
+    if (!/\.tsx?$/.test(f)) continue;
+    // **先剥注释再分析**：注释写在下一个 export 之前，不剥的话它会落进上一块，
+    // 把文档里提到的 `Math.random()` 算成上一个函数的随机性（实测踩到，
+    // configFromPicks 因此被误判成随机源）。
+    const src = stripComments(readFileSync(join(libDir, f), "utf8"));
+    const chunks = src.split(/export\s+function\s+/).slice(1);
+    for (const chunk of chunks) {
+      const name = chunk.match(/^(\w+)/)?.[1];
+      if (!name) continue;
+      const body = chunk.split(/\nexport\s/)[0];
+      // 不要求后面跟 `(`：`rng = Math.random` 这种**把随机函数当值传**的写法
+      // 同样是随机源，而它后面跟的是 `)`（实测：makeFlips 因此被漏判）。
+      if (/Math\.random\b/.test(body)) names.add(name);
+    }
+  }
+  return [...names];
+}
+
+/** 剥掉块注释与行注释。判据只该看代码，不该看文档里举的例子。 */
+function stripComments(src) {
+  return src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
+}
+
+/**
+ * 客户端组件里的随机源。**纯函数**，好让反向控制直接喂修复前的源码。
+ *
+ * 查的是**引用**而不是字面量：`makeFlips` 出现在客户端组件里就算，
+ * 哪怕它自己不含 `Math.random`——随机发生在哪一侧才是判据关心的事。
+ * 同样先剥注释：解释「为什么不能在这里随机」的那段注释本身提到了函数名，
+ * 不剥就会把注释算成违规（判据把自己的文档判红）。
+ *
+ * ⚠️ 覆盖不到的：渲染期用 `Date.now()` / `new Date()` 是同一类问题
+ * （SSR 与 hydrate 两次取值不同），但本项目里这两个只出现在事件处理里
+ * （写 `onboarded_at`），拦了会误伤，所以没拦。**如实登记，不写成已覆盖。**
+ */
+function clientRandomnessProblems(files, sources) {
+  const problems = [];
+  for (const { path, src } of files) {
+    const code = stripComments(src);
+    for (const name of sources) {
+      const re = new RegExp("(^|[^\\w.])" + name.replace(".", "\\.") + "\\s*\\(", "m");
+      if (re.test(code)) {
+        problems.push(`${path} 引用了随机源 ${name} —— SSR 与 hydrate 会各跑一次`);
+      }
+    }
+  }
+  return problems;
+}
 
 // ---------------------------------------------------------------- 编译
 
@@ -270,7 +348,67 @@ console.log("\n\x1b[1m五 · 两处「一处出处」的接线\x1b[0m");
     "响应里回了 call，阶段 4 的事件能原样带走",
   );
 
-  // --- 主臂：左右位置真的随机，且记下了谁在左
+  // --- 主臂：随机**不许发生在客户端组件里**（2026-09-10 人工验收报的 React #418）
+  //
+  // 这条补的是一个真实的缺口：`makeFlips` 是纯函数、组件也确实调了它——
+  // 原来那两条断言**都成立**，而 bug 照样在。问题在**调用发生的位置**：
+  // 客户端组件的渲染在 SSR 与 hydrate 各跑一次，`useState(() => makeFlips())`
+  // 的惰性初始化两侧各跑一遍，约一半概率抽出不同结果 → hydration 文本不匹配，
+  // 服务端先绘制的那一版被换掉。
+  //
+  // 后果不止是控制台报错：用户看到并点下去的可能是服务端那一版，
+  // 而 `leftVariant` 记的是客户端那一版，「点击对应哪个档位在左」就对不上——
+  // **位置随机化的目的（让点击可归因）直接失效**。
+  //
+  // 所以判据从「函数对不对」上移到「随机发生在哪一侧」。
+  const clientFiles = listClientComponents(join(WEB, "app"));
+  check(clientFiles.length >= 3, "扫到客户端组件", `${clientFiles.length} 个`);
+
+  const randomSources = randomSourceNames(join(WEB, "lib", "style"));
+  check(
+    randomSources.includes("makeFlips"),
+    "推导出的随机源名单含 makeFlips",
+    randomSources.join(" / ") + "  ← 名单是推导的，不是写死的",
+  );
+
+  const randomInClient = clientRandomnessProblems(clientFiles, randomSources);
+  check(
+    randomInClient.length === 0,
+    "客户端组件里没有随机源",
+    randomInClient.length === 0
+      ? "← 随机只能在服务端抽好传进来"
+      : randomInClient.join("；"),
+  );
+
+  // 允许控制：随机**必须还在**，只是搬到了服务端。
+  // 少了这条，把随机整个删掉也会让上一条全绿——而那正是最坏的结果（位置恒定）。
+  const pageSrc = readFileSync(join(WEB, "app/onboarding/style/page.tsx"), "utf8");
+  check(
+    /makeFlips\(\s*TOTAL_STEPS\s*\)/.test(pageSrc) && /flips=\{/.test(pageSrc),
+    "服务端页面抽随机并作为 prop 传下去",
+    "← 只删不搬的话，位置会恒定而上一条照样绿",
+  );
+  check(
+    /flips:\s*\(0 \| 1\)\[\]/.test(pairSrc),
+    "客户端组件把 flips 作为 prop 接收",
+  );
+
+  // 判据自身的分辨力：把修复前的写法塞回去，这条**必须**报出问题。
+  const preFix = pairSrc.replace(
+    "const [frozenFlips] = useState<(0 | 1)[]>(flips);",
+    "const [frozenFlips] = useState<(0 | 1)[]>(() => makeFlips(TOTAL_STEPS));",
+  );
+  const detected = clientRandomnessProblems(
+    [{ path: "pairwise-client.tsx(修复前)", src: preFix }],
+    randomSources,
+  );
+  check(
+    detected.length > 0,
+    "反向控制：把修复前的写法塞回去，判据变红",
+    detected.length > 0 ? `报出 ${detected.length} 条` : "没报出 —— 这条护栏是空转的",
+  );
+
+  // --- 主臂：记下了谁在左
   // 两个分支都要真的可达。写成 `rng() < 0` 时位置会恒定，而页面看起来完全正常——
   // 与 f1_assign_arm 那条「两个臂都要被断言碰到」是同一个形态（通则七 #7）。
   const flipDist = makeFlips(400).reduce((m, f) => ((m[f] = (m[f] ?? 0) + 1), m), {});
@@ -285,7 +423,7 @@ console.log("\n\x1b[1m五 · 两处「一处出处」的接线\x1b[0m");
       JSON.stringify(makeFlips(3, () => 0.9)) === "[1,1,1]",
     "rng 的两侧分别落到 0 与 1",
   );
-  check(pairSrc.includes("makeFlips(TOTAL_STEPS)"), "组件用的是被测过的那个函数");
+  check(pageSrc.includes("makeFlips(TOTAL_STEPS)"), "页面用的是被测过的那个函数");
   check(
     pairSrc.includes("leftVariant"),
     "记录了 leftVariant",

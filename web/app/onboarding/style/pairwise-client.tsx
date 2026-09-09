@@ -6,7 +6,7 @@ import { useState } from "react";
 
 import { ConfigSummary } from "@/app/components/config-summary";
 import { AXIS_LABEL, type StyleConfig } from "@/lib/style/axes";
-import { TOTAL_STEPS, configFromPicks, makeFlips, stepAt, type Picks } from "@/lib/style/flow";
+import { TOTAL_STEPS, configFromPicks, stepAt, type Picks } from "@/lib/style/flow";
 import { Markdown } from "@/lib/style/markdown";
 import type { PairView } from "@/lib/style/pairs";
 import { createClient } from "@/lib/supabase/client";
@@ -39,6 +39,10 @@ import { createClient } from "@/lib/supabase/client";
  *    **它不能事后补**：位置未随机化的那批数据，事后无法从中分离位置效应，
  *    而第一批内测用户恰好是最需要理解的那批。所以必须早于任何真实用户。
  *
+ *    **随机发生在服务端**（`page.tsx` 抽好当 prop 传进来），组件内不许有随机：
+ *    客户端组件的渲染在 SSR 与 hydrate 各跑一次，渲染期取随机数会让两次分叉
+ *    （React #418），用户看到／点到的是哪一版就不确定了。
+ *
  *    代价：**「同一串选择重放出同一串比较」不再成立**。比较的**内容**仍然确定
  *    （`stepAt` 只看已选的轴），随机的只是左右呈现；一次会话内每步的位置在
  *    首次渲染时定死，重渲染不会跳动。这个代价是知情接受的。
@@ -47,11 +51,20 @@ export function PairwiseOnboarding({
   userId,
   pairs,
   question,
+  flips,
   alreadyOnboarded,
 }: {
   userId: string;
   pairs: Record<string, PairView>;
   question: string;
+  /**
+   * 每步的左右顺序，**由服务端抽好传进来**（见 `page.tsx` 的注释）。
+   *
+   * 这个组件里**不许有随机**：客户端组件的渲染在 SSR 与 hydrate 各跑一次，
+   * 渲染期取随机数必然让两次结果分叉 —— React 报 #418，而且用户看到／点到的
+   * 是哪一版不确定，`leftVariant` 就可能记的不是他实际比较的那一版。
+   */
+  flips: (0 | 1)[];
   alreadyOnboarded: boolean;
 }) {
   const router = useRouter();
@@ -64,12 +77,13 @@ export function PairwiseOnboarding({
   const [saved, setSaved] = useState<StyleConfig | null>(null);
 
   /**
-   * 每步一次抛硬币，决定 `samples[0]` 放左还是放右。
+   * 把服务端传来的顺序**冻在 state 里**。
    *
-   * 用 `useState` 的惰性初始化一次性抛完 6 次，而不是在渲染里现抛：
-   * 渲染里抛会让每次重渲染（选中、报错、失焦）都换一次左右，用户点着点着位置就变了。
+   * 直接用 prop 也对，但 `commit()` 之后会调 `router.refresh()`，那会让服务端
+   * 重新渲染并抽一份新的 `flips`。冻住之后，一次会话内的左右顺序不会因为任何
+   * 刷新而变——同一步重渲染（选中、报错、失焦）时位置也不跳。
    */
-  const [flips] = useState<(0 | 1)[]>(() => makeFlips(TOTAL_STEPS));
+  const [frozenFlips] = useState<(0 | 1)[]>(flips);
 
   /**
    * 每一步「谁在左」的记录。阶段 4 的 `style_pair_shown` / `style_pair_chosen`
@@ -86,7 +100,7 @@ export function PairwiseOnboarding({
   const isLast = stepIndex === TOTAL_STEPS;
 
   // 左右呈现顺序：flip=0 → samples[0] 在左；flip=1 → samples[1] 在左。
-  const order: [0 | 1, 0 | 1] = flips[stepIndex - 1] === 0 ? [0, 1] : [1, 0];
+  const order: [0 | 1, 0 | 1] = frozenFlips[stepIndex - 1] === 0 ? [0, 1] : [1, 0];
   const leftVariant = pair.samples[order[0]].variantLabel;
 
   async function commit(config: StyleConfig) {

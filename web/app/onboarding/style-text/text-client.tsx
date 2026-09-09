@@ -142,7 +142,8 @@ export function TextOnboarding({
       >
         <h1 className="t-display">我们把你的描述理解成了这样</h1>
         <p className="t-body mt-3 max-w-[62ch]">
-          确认之后就按它来。<b>这一屏只读</b>——想调哪一条，保存后去风格设置改，那里每条轴都能单独选。
+          确认之后就按它来。<b>这一屏只读</b>——想单独调某一条，点下面的「就按这个来」之后，
+          在「风格设置」里改，那里每条轴都能单独选。
         </p>
 
         <dl className="card mt-6 divide-y divide-[var(--c-border-row)] p-2">

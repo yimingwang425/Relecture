@@ -29,8 +29,16 @@
 `p1b1` 问题 · `p2b1` 结构与两个操作 · `p4b1` 无假阴性 ·
 `p5b2` 误判率四步推导 · `p7b1` 两处真实应用
 
-自洽性：这 5 块合起来足以回答「讲解 Bloom filter」，且**其中没有任何前向引用**
-——counting variant / cuckoo filter / 定 m,k 的算例全部在不喂的页上。
+**FED 块的两条准入条件**（换素材时逐块过一遍）：
+
+1. **页间无前向引用**——不提任何只在不喂的页上解释的东西。
+   counting variant / cuckoo filter / 定 m,k 的算例全部在不喂的页上。
+2. **块内无悬空前提**——不承接未喂块的假设、指代或符号。
+   2026-09-09 实测踩到：p5b2 原文以「Assume the hash functions…」起句，
+   假设承接的是不喂的 p5b1；且 `n` 在全部 5 个 FED 块里从未定义过
+   （`m`/`k` 在 p2b1 有定义，`n` 没有）。已改为让假设与三个符号在块内自足。
+   这两条是同一类，只是引用对象一个在页间、一个在块内——
+   而后者正是上一轮候选列表里没有的那一项（口径 F26）。
 
 ## 四条轴的着力点（换素材时照这节判断新素材够不够格）
 
@@ -121,11 +129,11 @@ themselves, provided the hash functions spread them evenly. This is what makes t
 rate something you can size for in advance rather than measure afterwards.
 
 <!-- p5b2 · FED -->
-Assume the hash functions spread items uniformly and independently. After `n`
-inserts, one hash leaves a given bit at zero with probability `1 - 1/m`; across `kn`
-hashes it stays zero with probability `(1 - 1/m)^(kn)`, about `e^(-kn/m)`. So a bit
-is one with probability `1 - e^(-kn/m)`, and a non-member reads all ones with
-probability about `(1 - e^(-kn/m))^k`.
+The standard derivation assumes the `k` hash functions spread items uniformly and
+independently. Insert `n` items into the `m`-bit array: one hash leaves a bit at zero
+with probability `1 - 1/m`, so across `kn` hashes it stays zero with probability
+about `e^(-kn/m)`. So a bit is one with probability `1 - e^(-kn/m)`, and a
+non-member reads all ones with probability about `(1 - e^(-kn/m))^k`.
 
 <!-- p5b3 -->
 The independence assumption in the last step is not exactly true, because the `k`

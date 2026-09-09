@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import re
 import json
 import re
 from datetime import datetime, timezone
@@ -78,29 +79,61 @@ COURSE_LABEL = "合成课件"
 #: 但 prompt 形状是生产的。
 
 
-def deck_body() -> str:
-    """课件正文。剥掉文件头那段 HTML 注释——它是给人看的元信息，不该进 prompt。"""
+#: 课件里的块。`<!-- pXbY · FED -->` 标记的才喂进 user turn。
+BLOCK_RE = re.compile(
+    r"<!-- (p(\d+)b\d+)( · FED)? -->\n(.*?)(?=\n\n<!--|\n\n---|\Z)", re.S
+)
+#: 生产实测：每轮恒为 5 片。数量对不上要炸，不要静默少喂——
+#: 少一片会改变整个输出分布，而它不会报错（通则六）。
+EXPECTED_FED = 5
+
+
+def fed_blocks() -> list[tuple[str, int, str]]:
+    """→ [(块 id, 页号, 正文)]，只取 FED 的那几块。
+
+    按**块 id**取，不靠行号或正则去猜内容边界：课件是人写的，
+    行号会随任何一次编辑漂掉，而 id 是显式标注的。
+    """
     text = DECK.read_text(encoding="utf-8")
     body = text.split("-->", 1)[1] if text.lstrip().startswith("<!--") else text
-    return body.strip()
+    out = [
+        (bid, int(page), blk.strip())
+        for bid, page, fed, blk in BLOCK_RE.findall(body)
+        if fed
+    ]
+    if len(out) != EXPECTED_FED:
+        raise SystemExit(
+            f"课件里标了 {len(out)} 个 FED 块，应为 {EXPECTED_FED} 个："
+            f"{[b for b, _, _ in out]}。少喂或多喂都会改变输出分布，不静默继续。"
+        )
+    return out
 
 
 def sha256(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
 
 
-def context_pack(deck: str) -> ContextPack:
-    """整份课件 = 一个切片。**不执行检索**，只是借生产的 prompt 形状。"""
+def context_pack(blocks: list[tuple[str, int, str]]) -> ContextPack:
+    """5 个 FED 块 = 5 个切片。**不执行检索**（口径 F28：我在扮演检索器）。
+
+    规模按实测对齐：真实每轮恒 5 片、单片字符中位 271（范围 60–433）、
+    每轮合计四分位 1128–1498。**规模像不等于质量像**——真实检索会带回不相关片、
+    会漏关键片，这 5 片一种都没有，偏差方向单向（样例比真实情况好看）。
+    """
     return ContextPack(
         question="",
-        slices=(ContextSlice(
-            source_file="synthetic_deck.md", slice_id="whole", page_indices=(1,),
-            title=None, text=deck, char_count=len(deck), score=None, via="hit",
-        ),),
+        slices=tuple(
+            ContextSlice(
+                source_file="synthetic_deck.md", slice_id=bid, page_indices=(page,),
+                title=None, text=txt, char_count=len(txt), score=None, via="hit",
+            )
+            for bid, page, txt in blocks
+        ),
     )
 
 
-def build_prompt(deck: str, style: dict[str, str]) -> tuple[str, str, str, str]:
+def build_prompt(blocks: list[tuple[str, int, str]],
+                 style: dict[str, str]) -> tuple[str, str, str, str]:
     """→ (system, user, A 类片段, B 类片段)。**system 与 user 都由生产函数产出。**
 
     A 类走 `explain.style_prompt.render_style_rules`（只读调用）。
@@ -109,7 +142,7 @@ def build_prompt(deck: str, style: dict[str, str]) -> tuple[str, str, str, str]:
     """
     a_class = render_style_rules(style_config_for(style["detail_level"]))
     b_class = render_b_class_rules(style)
-    pack = context_pack(deck)
+    pack = context_pack(blocks)
     system = production_build_system(a_class + "\n" + b_class, pack, COURSE_LABEL)
     user = production_build_user_turn(pack, QUESTION_TEMPLATE.format(concept=CONCEPT))
     return system, user, a_class, b_class
@@ -119,10 +152,10 @@ def build_prompt(deck: str, style: dict[str, str]) -> tuple[str, str, str, str]:
 MAX_TRIES = 6
 
 
-def generate_one(model: AnthropicModel, deck: str, sample_id: str, variant: str,
+def generate_one(model: AnthropicModel, blocks: list, sample_id: str, variant: str,
                  style: dict[str, str], attempt: int) -> dict:
     """发一次请求。花费当场记流水——**包括之后会被丢弃的那些次**。"""
-    system, user, a_class, b_class = build_prompt(deck, style)
+    system, user, a_class, b_class = build_prompt(blocks, style)
     messages = [{"role": "user", "content": user}]
     cfg = style_config_for(style["detail_level"])
 
@@ -174,7 +207,7 @@ def generate_one(model: AnthropicModel, deck: str, sample_id: str, variant: str,
     }
 
 
-def generate_until_pass(model: AnthropicModel, deck: str, sample_id: str, variant: str,
+def generate_until_pass(model: AnthropicModel, blocks: list, sample_id: str, variant: str,
                         style: dict[str, str], base_attempt: int) -> dict:
     """**通过即停。留下的是第一个通过生产判定的样例，不是试出来的最好的那个。**
 
@@ -187,7 +220,7 @@ def generate_until_pass(model: AnthropicModel, deck: str, sample_id: str, varian
     """
     rec = None
     for k in range(1, MAX_TRIES + 1):
-        rec = generate_one(model, deck, sample_id, variant, style, base_attempt + k)
+        rec = generate_one(model, blocks, sample_id, variant, style, base_attempt + k)
         rec["tries_in_run"] = k
         mark = "✓" if rec["production_passed"] else "✗"
         print(f"      第 {k} 次 {rec['mean_paragraph_chars']:>5.1f} 字/段 {mark}", flush=True)
@@ -207,7 +240,7 @@ def main() -> int:
     if wanted - known:
         raise SystemExit(f"未知 pair_id：{sorted(wanted - known)}；可选 {sorted(known)}")
 
-    deck = deck_body()
+    blocks = fed_blocks()
     model = AnthropicModel()
 
     existing: dict = {}
@@ -220,7 +253,7 @@ def main() -> int:
     }
 
     if args.dry_run:
-        system, user, _, _ = build_prompt(deck, {**DEFAULTS})
+        system, user, _, _ = build_prompt(blocks, {**DEFAULTS})
         print("=== system ===\n" + system)
         print("\n=== user ===\n" + user)
         return 0
@@ -241,7 +274,7 @@ def main() -> int:
             base = prior.get(sample_id, {}).get("attempt", 0)
             style = {**DEFAULTS, axis: value}
             print(f"  {sample_id}（{axis}={value}）", flush=True)
-            samples.append(generate_until_pass(model, deck, sample_id, value, style, base))
+            samples.append(generate_until_pass(model, blocks, sample_id, value, style, base))
         pairs_out.append({"pair_id": pair_id, "target_dimension": axis, "samples": samples})
 
     for pair in pairs_out:
@@ -255,7 +288,15 @@ def main() -> int:
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "deck": {
             "path": "synthetic_deck.md",
-            "sha256": sha256(deck),
+            "sha256": sha256(DECK.read_text(encoding="utf-8")),
+            "fed_blocks": [
+                {"id": b, "page": pg, "chars": len(t)} for b, pg, t in blocks
+            ],
+            "fed_chars_total": sum(len(t) for _, _, t in blocks),
+            "fed_note": (
+                "5 块由人工选定，非检索产出（口径 F28）。规模对齐实测："
+                "真实每轮恒 5 片、单片中位 271 字符、每轮合计四分位 1128–1498"
+            ),
             "note": "自写合成内容，非第三方课件（PRD §12.1）",
         },
         "model": {

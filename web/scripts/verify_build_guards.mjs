@@ -181,6 +181,40 @@ console.log("\n\x1b[1m三 · 构建产物里有没有真实凭据（口径 F16�
     ".c2lnc2ln";
   check(scanText(mkJwt("service_role")).length === 1, "service_role JWT 命中", "解载荷判的，不看字面量");
   check(scanText(mkJwt("anon")).length === 0, "anon JWT 不命中", "← 判据不是「凡是 JWT 都算」");
+
+  // 阶段 3 新增的凭据类型：对照臂 route handler 用的模型 API key。
+  // 两条性质与上面同构——真 key 形态要命中，源码/示例里的前缀字面量不能命中，
+  // 否则这条判据会像当初的 `sb_secret_` 那样被自己的护栏永久钝化。
+  const fakeAnthropic = "sk-ant-api03-" + "T7hQ2xM9vB4kL8nR3wZ6";
+  check(scanText(fakeAnthropic).length === 1, "模型 API key 形态命中", "sk-ant- + ≥20 个 key 字符");
+  check(
+    scanText(readFileSync(join(WEB, ".env.example"), "utf8")).length === 0,
+    ".env.example 里的 sk-ant-... 占位不命中",
+    "← 占位命中的话，「产物 0 命中」就永远读不出信号",
+  );
+}
+
+{
+  // 阶段 3 的新暴露面：对照臂要一个**服务端**模型 API key。
+  //
+  // 「它不带 NEXT_PUBLIC_ 前缀，所以不会进 bundle」是**推理**，不是测量。
+  // 这里把一个真 key 形态的值真的注进构建环境，然后扫产物——
+  // 万一哪天有人把它改名成 NEXT_PUBLIC_ANTHROPIC_API_KEY（或在客户端组件里读它），
+  // 这条会红。判据的分辨力上面已经验过（真形态命中 / 占位不命中 / canary 能红）。
+  const CANARY_KEY = "sk-ant-api03-" + "J4dW8sK1qF6mX2bV9pT5";
+  const withKey = build({ ANTHROPIC_API_KEY: CANARY_KEY });
+  if (withKey.failedBuild) {
+    check(false, "带 ANTHROPIC_API_KEY 的构建", "", withKey.out.slice(-400));
+  } else {
+    const { filesScanned, hits } = await scanDir(join(WEB, ".next"));
+    check(filesScanned > 0, "确实扫到了文件（服务端 key 这一轮）", `${filesScanned} 个`);
+    check(
+      hits.length === 0,
+      "环境里有真实模型 key，产物里仍 0 命中",
+      "← 服务端变量没有被内联进任何产物",
+      hits.map((h) => `${h.kind} @ ${h.file}`).join("\n      "),
+    );
+  }
 }
 
 {

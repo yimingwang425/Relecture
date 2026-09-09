@@ -1,26 +1,256 @@
 @import "tailwindcss";
 
+/**
+ * 设计口径取自 docs/F1/UI设计.md（Quantum² 参考稿），按本项目改了三处：
+ *
+ * 1. **不做 1290×860 的绝对定位舞台。** 参考稿是一屏营销页，内容长度固定；
+ *    我们的页面要放两段 1400–2700 字的中文讲解，必须能滚动、能换行。
+ *    保留的是 token 体系（字族 / 字重 / 字距 / 色板 / 圆角 / 阴影）与
+ *    黑色胶囊导航、卡片-面板两层结构，布局换成正常文档流。
+ * 2. **字族加中文回退。** Figtree 没有中文字形，正文全是中文——
+ *    只写 Figtree 的话中文会落到浏览器默认衬线，参考稿的紧字距也就无从谈起。
+ *    Figtree 负责拉丁字母与数字（术语、公式符号、档位 id），中文走系统字体栈。
+ * 3. **字距不套用在中文上。** `-0.057em` 这类紧字距是为拉丁字母调的，
+ *    施加到中文会让字挤在一起。只有标题与 UI 短文案用紧字距，正文不用。
+ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* 字族 —— Figtree 由 next/font 注入 --font-figtree，中文回退在后 */
+  --font-sans: var(--font-figtree), -apple-system, BlinkMacSystemFont, "Segoe UI",
+    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", Helvetica, Arial,
+    sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+
+  /* 字重（Figtree 是可变字体，这些是真实的字重实例） */
+  --fw-light: 388;
+  --fw-regular: 470;
+  --fw-medium: 500;
+  --fw-semibold: 511;
+  --fw-bold: 577;
+  --fw-black: 783;
+
+  /* 字距 —— 只用于拉丁/短文案，见文件头第 3 条 */
+  --tr-display: -0.0572em;
+  --tr-title: -0.057em;
+  --tr-heading: -0.02em;
+  --tr-ui: -0.008em;
+  --tr-wordmark: -0.0075em;
+
+  /* 墨色与表面 */
+  --c-ink: #000000;
+  --c-ink-soft: #2e2e2e;
+  --c-muted: #b8b8b8;
+  --c-muted-text: #6b6b6b;
+  --c-on-dark: #ffffff;
+  --c-surface-nav: #000000;
+  --c-surface-page: #ffffff;
+  --c-surface-card: #f2f2f2;
+  --c-surface-panel: #ffffff;
+  --c-border-row: #ededed;
+  --c-border-strong: #d8d8d8;
+  --c-accent: #38c6ec;
+  --c-accent-ink: #0b6f8a;
+  --c-accent-wash: #eaf8fd;
+  --c-code-bg: #eaeaea;
+  --c-quote-bg: #f7f7f7;
+  --c-danger: #b42318;
+  --c-danger-wash: #fef3f2;
+  --c-warn: #915930;
+  --c-warn-wash: #fffaeb;
+
+  /* 圆角与阴影（参考稿的卡片） */
+  --radius-card: 16px;
+  --radius-panel: 10px;
+  --radius-pill: 26px;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.03), 0 12px 32px rgba(2, 72, 105, 0.08);
+  --shadow-row: 0 1px 2px rgba(0, 0, 0, 0.03);
+
+  /* 动效 */
+  --ease-settle: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --color-accent: var(--c-accent);
+  --color-ink: var(--c-ink);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background: var(--c-surface-page);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--c-surface-page);
+  color: var(--c-ink);
+  font-family: var(--font-sans);
+  font-weight: var(--fw-regular);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: geometricPrecision;
+}
+
+/* ---------------------------------------------------------------- 排版工具 */
+
+.t-display {
+  font-size: clamp(28px, 3.4vw, 42px);
+  font-weight: var(--fw-regular);
+  letter-spacing: var(--tr-display);
+  line-height: 1.18;
+}
+
+.t-title {
+  font-size: 20px;
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--tr-title);
+  line-height: 1.25;
+}
+
+.t-heading {
+  font-size: 16px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tr-heading);
+}
+
+.t-ui {
+  font-size: 15px;
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--tr-ui);
+}
+
+.t-meta {
+  font-size: 13px;
+  font-weight: var(--fw-regular);
+  color: var(--c-muted-text);
+}
+
+/* 正文：**不加紧字距**，中文行高放宽 */
+.t-body {
+  font-size: 15px;
+  line-height: 1.85;
+  letter-spacing: 0;
+  color: var(--c-ink-soft);
+}
+
+/**
+ * 成对比较里的样例正文。
+ *
+ * 这两栏不是短标签，是各一两千字的中文讲解，**用户要真的读完两遍**再做判断。
+ * 读起来累的直接后果是退回按位置或按长度粗选——那正好抵消掉 F31
+ * （不显示档位标签）想要的东西：让点击归因到讲法本身。
+ *
+ * 所以三处放宽：行高 2.0（中文比拉丁更需要行间距）、字号 15.5、
+ * 字距 +0.01em（中文字面本身就满，负字距会糊成一片）。
+ * 单栏字数落在 34–38 字，接近中文阅读的舒适区间。
+ */
+.t-sample {
+  font-size: 15.5px;
+  line-height: 2;
+  letter-spacing: 0.01em;
+  overflow-wrap: anywhere;
+}
+
+/* ---------------------------------------------------------------- 组件 */
+
+.pill-nav {
+  background: var(--c-surface-nav);
+  color: var(--c-on-dark);
+  border-radius: var(--radius-pill);
+}
+
+.card {
+  background: var(--c-surface-card);
+  border-radius: var(--radius-card);
+}
+
+.panel {
+  background: var(--c-surface-panel);
+  border: 1px solid var(--c-border-row);
+  border-radius: var(--radius-panel);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 17px;
+  height: 38px;
+  padding: 0 18px;
+  font-size: 15px;
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--tr-ui);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn--primary {
+  background: var(--c-ink);
+  color: var(--c-on-dark);
+  font-weight: var(--fw-bold);
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--c-ink);
+  border: 1px solid var(--c-border-strong);
+}
+
+.btn--ghost:hover:not(:disabled) {
+  border-color: var(--c-ink);
+}
+
+:where(a, button, input, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 2px;
+}
+
+/* 选中态：口径 —— 用 accent 描边 + 淡底，不靠颜色**单独**表意（描边宽度同时变化） */
+.choice {
+  background: var(--c-surface-panel);
+  border: 1px solid var(--c-border-row);
+  border-radius: var(--radius-panel);
+  transition:
+    border-color 0.15s var(--ease-settle),
+    box-shadow 0.15s var(--ease-settle);
+}
+
+.choice:hover {
+  border-color: var(--c-border-strong);
+}
+
+.choice[data-selected="true"] {
+  border-color: var(--c-accent);
+  box-shadow: 0 0 0 2px var(--c-accent);
+}
+
+/* ---------------------------------------------------------------- 入场动效 */
+
+@keyframes enter-rise {
+  from {
+    opacity: 0;
+    translate: 0 14px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+.enter {
+  animation: enter-rise 0.5s var(--ease-settle) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }

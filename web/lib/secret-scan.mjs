@@ -32,6 +32,19 @@
 /** `sb_secret_` + 真实 key 字符。护栏源码里的字面量比较不会命中。 */
 const SB_SECRET = /sb_secret_[A-Za-z0-9_-]{20,}/g;
 
+/**
+ * 模型 API key（阶段 3 新增）。
+ *
+ * 阶段 3 起产物里多了一类可能泄露的凭据：对照臂 route handler 用的
+ * `ANTHROPIC_API_KEY`。它按设计只在服务端，但**「按设计不会进产物」和
+ * 「产物里确实没有」是两件事**——后者要有人去量，这条正则就是那把尺子。
+ *
+ * 形态同 `sb_secret_`：前缀之后必须跟 ≥20 个 key 字符，所以
+ * `.env.example` 里的 `sk-ant-...` 与源码里的 `"sk-ant-"` 字面量都不命中，
+ * 判据不会因为自己的护栏而永久失效（口径 F16）。
+ */
+const ANTHROPIC_KEY = /sk-ant-[A-Za-z0-9_-]{20,}/g;
+
 /** JWT 形态。命中后必须解载荷确认 role，不看字面量。 */
 const JWT_SHAPED = /eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{4,}/g;
 
@@ -52,6 +65,9 @@ export function scanText(text) {
 
   for (const m of text.matchAll(SB_SECRET)) {
     hits.push({ kind: "sb_secret", sample: m[0].slice(0, 24) + "…" });
+  }
+  for (const m of text.matchAll(ANTHROPIC_KEY)) {
+    hits.push({ kind: "anthropic_key", sample: m[0].slice(0, 24) + "…" });
   }
   for (const m of text.matchAll(JWT_SHAPED)) {
     if (jwtRole(m[0]) === "service_role") {

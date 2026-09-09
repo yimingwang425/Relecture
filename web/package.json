@@ -7,12 +7,15 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "verify:guards": "npm run verify:identity && npm run verify:build-guards",
+    "verify:guards": "npm run verify:identity && npm run verify:axes && npm run verify:logic && npm run verify:build-guards",
     "verify:browser": "node scripts/verify_browser.mjs",
     "verify:identity": "node scripts/verify_git_identity.mjs",
-    "verify:build-guards": "node scripts/verify_build_guards.mjs"
+    "verify:build-guards": "node scripts/verify_build_guards.mjs",
+    "verify:axes": "node scripts/verify_style_axes.mjs",
+    "verify:logic": "node scripts/verify_style_logic.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.124.0",
     "@supabase/ssr": "^0.12.6",
     "@supabase/supabase-js": "^2.115.0",
     "next": "16.3.4",

@@ -27,11 +27,17 @@ const UID_B = "22222222-2222-4222-8222-222222222222";
 const SUPABASE_STUBS = `
   create role anon nologin;
   create role authenticated nologin;
+  -- 模拟 Supabase 注册时写 auth.users 的那个角色。**对 style_config 没有任何权限**——
+  -- 这正是「触发器靠 security definer 而不是靠调用者权限」的检验条件。
+  create role auth_admin_sim nologin;
   create schema auth;
   create table auth.users (
     id    uuid primary key default gen_random_uuid(),
     email text unique
   );
+  -- auth_admin_sim 要能进 auth schema 才谈得上「往 auth.users 插行」。
+  -- 这是环境搭建，不是断言的一部分——它对 public.style_config 仍然一无所有。
+  grant usage on schema auth to auth_admin_sim;
   -- 与 Supabase 的 auth.uid() 同形：读 JWT claim。
   create or replace function auth.uid() returns uuid
   language sql stable as $$
@@ -72,6 +78,16 @@ async function asUser(db, uid, fn) {
  * 从 42501 变成 23505，「报了错」照样成立——**断言测的是主键不是 with check**。
  * 实测（2026-09-07，PGlite/PG18）：RLS 开 → 42501；RLS 关 → 23505。
  */
+/** 同 errcodeOf，但把整个错误交出去——有的断言要看文本，不只看码。 */
+async function errorOf(fn) {
+  try {
+    await fn();
+    return null;
+  } catch (e) {
+    return e;
+  }
+}
+
 async function errcodeOf(fn) {
   try {
     await fn();
@@ -116,14 +132,58 @@ const CHECKS = {
   },
 
   /**
-   * 步骤 4 · A 冒名 insert 一行 user_id = B → **必须是 42501**（RLS with check），
-   * 不是 23505（主键冲突）。理由见 errcodeOf 的注释。
+   * 步骤 4 · A 冒名 insert 一行 user_id = B → **必须是 42501**，不是 23505（主键冲突）。
+   *
+   * ⚠️ **2026-09-10 起这条断言测的对象换了。** 迁移 `20260910090000` 收回了
+   * `authenticated` 的 insert 授权并删掉了 insert 策略，所以现在拦住它的是
+   * **权限层**，不再是 RLS 的 with check。两者的 SQLSTATE **都是 42501**——
+   * 只断错误码的话，这条断言会在「对象已经换了」的情况下静默保持绿色
+   * （与 F11 当初那个「报了错就算过」是同一个形态，只是换了一层）。
+   *
+   * 所以这里同时看错误文本：权限层报 `permission denied`，RLS 层报
+   * `row-level security`。断言要求**当前必须是权限层**，把「防护从哪一层来的」
+   * 也钉住。真要哪天把 grant 加回来，这条会红并指出它退回了 RLS 层。
    */
   async a_cannot_insert_as_b(db) {
-    const code = await asUser(db, UID_A, () =>
-      errcodeOf(() =>
+    const err = await errorOf(() =>
+      asUser(db, UID_A, () =>
         db.query("insert into public.style_config (user_id, f1_arm) values ($1, 'pairwise')", [UID_B])));
-    return code === "42501";
+    return err?.code === "42501" && /permission denied/i.test(err?.message ?? "");
+  },
+
+  /**
+   * 步骤 4.5 · **「拒绝」的那条允许控制**（口径 F11）。
+   *
+   * 上一条断言「客户端插不进去」。**只有它的话，把注册一起打死也会全绿**——
+   * 收回授权、删掉策略、再顺手让触发器失效，客户端照样插不进去，而没有任何
+   * 断言会红，直到第一个新用户注册后发现自己没有配置行（F09 说的那个坏状态）。
+   *
+   * 这条补的就是那一半：用一个**对 style_config 毫无权限**的角色
+   * （模拟 Supabase 的 supabase_auth_admin）往 auth.users 插行，
+   * style_config 必须仍然多出一行——因为 `handle_new_user_style_config` 是
+   * **security definer**，以函数所有者身份执行，不看调用者权限。
+   *
+   * 反向控制是 R7：把 security definer 换成 security invoker，这条必须变红。
+   */
+  async trigger_inserts_for_unprivileged_role(db) {
+    const uid = "55555555-5555-4555-8555-555555555555";
+    await db.exec("reset role;");
+    // 先确认这个角色确实没有 insert 权限，否则下面「它也能建行」就没有信息量。
+    const priv = (await db.query(
+      "select has_table_privilege('auth_admin_sim', 'public.style_config', 'insert') p")).rows[0].p;
+    if (priv) return false;
+
+    await db.exec("grant insert on auth.users to auth_admin_sim;");
+    await db.exec("set role auth_admin_sim;");
+    try {
+      await db.query("insert into auth.users (id, email) values ($1, 'authadmin@t.local')", [uid]);
+    } catch {
+      return false;
+    } finally {
+      await db.exec("reset role;");
+    }
+    const rows = await db.query("select 1 from public.style_config where user_id = $1", [uid]);
+    return rows.rows.length === 1;
   },
 
   /** 步骤 5 · B 改自己的 f1_arm → 抛 23514（口径 F10：不静默改写）。 */
@@ -253,6 +313,63 @@ async function main() {
     await db.close();
   }
 
+  // ============================================================ P1 收紧
+  //
+  // 迁移 20260909130000 把 detail_level 的 CHECK 收紧到 P0/P2/P3，并在收紧前
+  // **拒绝静默改写**：存量若有 P1 就抛异常让整条迁移回滚，因为「P1 该移到 P0 还是 P2」
+  // 是产品决策。
+  //
+  // 生产上这个异常大概率永远不触发（没有写入路径会产生 P1），
+  // 那正是通则七 #5 的形态——**一条永远不触发的守卫，和一条被删掉的守卫，表现完全一样**。
+  // 所以在这里构造它唯一会做事的场景，把两面都测一遍。
+  console.log("\n\x1b[1mP1 收紧 · 迁移守卫的两面\x1b[0m");
+  {
+    const files = migrationFiles();
+    const first = files[0];
+    const p1Mig = files.find((f) => f.includes("detail_level_drop_p1"));
+    if (!p1Mig) throw new Error("找不到 P1 收紧迁移 —— 这一节已失效");
+
+    // ---- 拒绝：存量有 P1 → 抛异常，且那一行原样留着
+    {
+      const db = await PGlite.create();
+      await db.exec(SUPABASE_STUBS);
+      await db.exec(readFileSync(join(MIGRATIONS, first), "utf8")); // 这一版 CHECK 还允许 P1
+      await db.query("insert into auth.users (id, email) values ($1, 'a@t.local')", [UID_A]);
+      await db.query("update public.style_config set detail_level='P1' where user_id=$1", [UID_A]);
+
+      const err = await errorOf(() => db.exec(readFileSync(join(MIGRATIONS, p1Mig), "utf8")));
+      const row = (await db.query("select detail_level from public.style_config where user_id=$1", [UID_A])).rows[0];
+
+      err !== null && /P1/.test(err.message ?? "") && row.detail_level === "P1"
+        ? ok("存量有 P1 → 迁移抛异常，且那一行未被改写", `errcode=${err.code} 仍是 ${row.detail_level}`)
+        : bad("守卫没拦住", `err=${err?.message ?? "无"} 行=${row?.detail_level}`);
+      await db.close();
+    }
+
+    // ---- 允许（反向控制）：存量无 P1 → 迁移正常通过，且 CHECK 此后拒绝 P1
+    //
+    // 少了这条，上一条在「迁移永远抛异常」的实现下同样绿。
+    {
+      const db = await freshDb(); // 全部迁移，存量无 P1
+      const n = (await db.query(
+        "select count(*)::int c from public.style_config where detail_level='P1'")).rows[0].c;
+      const code = await errcodeOf(() =>
+        db.query("update public.style_config set detail_level='P1' where user_id=$1", [UID_A]));
+
+      n === 0 && code === "23514"
+        ? ok("存量无 P1 → 迁移通过，且此后写 P1 被 CHECK 拒", `P1 存量 ${n} 行，写 P1 → ${code}`)
+        : bad("收紧后的状态不对", `P1 存量 ${n} 行，写 P1 → ${code}`);
+
+      // 反向控制的反向控制：P2 必须写得进去，否则上一条可能只是「什么都写不进去」。
+      const okCode = await errcodeOf(() =>
+        db.query("update public.style_config set detail_level='P2' where user_id=$1", [UID_A]));
+      okCode === null
+        ? ok("同一条件下写 P2 成功", "← 上一条拒的是 P1，不是「所有写入都失败」")
+        : bad("连 P2 都写不进去", `errcode=${okCode}`);
+      await db.close();
+    }
+  }
+
   // ============================================================ 反向
   console.log("\n\x1b[1m反向 · 拆掉防护后，对应断言必须变红\x1b[0m");
 
@@ -261,7 +378,13 @@ async function main() {
       id: "R1",
       what: "关掉 RLS",
       sql: "alter table public.style_config disable row level security;",
-      mustFail: ["a_cannot_read_b", "a_cannot_update_b", "a_cannot_insert_as_b"],
+      // ⚠️ 2026-09-10 起 `a_cannot_insert_as_b` **不在这张表里**了。
+      // 迁移 20260910090000 收回了 insert 授权，所以关掉 RLS 之后插入仍然被
+      // **权限层**拒绝——那条断言不会变红，而它不变红是**对的**，不是空转。
+      // 把它留在这里会让 R1 红，然后有人「顺手修好」它（多半是弱化断言）。
+      // 它现在的反向控制是 R8（把两层都加回来，插入必须成功）。
+      mustFail: ["a_cannot_read_b", "a_cannot_update_b"],
+      note: "insert 那条已改由权限层承担，反向控制见 R8",
     },
     {
       id: "R2",
@@ -294,6 +417,7 @@ async function main() {
     const db = await freshDb();
     await db.exec(rev.sql);
     console.log(`\n  \x1b[1m${rev.id} · ${rev.what}\x1b[0m`);
+    if (rev.note && rev.mustFail) console.log(`  \x1b[2m${rev.note}\x1b[0m`);
     if (rev.mustFail) {
       for (const name of rev.mustFail) {
         const stillGreen = await CHECKS[name](db);
@@ -347,6 +471,58 @@ async function main() {
     n === 0
       ? ok("无回填时存量用户补不上", "← 回填那段确实在做事，不是死代码")
       : bad("去掉回填后仍被补上了", "← 说明补行的不是回填语句，上面那条断言测错了对象");
+    await db.close();
+  }
+
+  // R7 · 触发器的 security definer 是承重的吗？
+  //
+  // 上面那条「无权限角色插 auth.users → 仍然建行」若在 security invoker 下**也绿**，
+  // 说明它测的不是 security definer，而是本地实例恰好权限宽松。
+  console.log("\n  \x1b[1mR7 · 触发器函数从 security definer 改成 security invoker\x1b[0m");
+  {
+    const db = await PGlite.create();
+    await db.exec(SUPABASE_STUBS);
+    // 与生产同一份迁移文本，只把那一个词换掉——分节标记若变了这里抛错，不静默跳过。
+    const files = migrationFiles();
+    let replaced = 0;
+    for (const f of files) {
+      const src = readFileSync(join(MIGRATIONS, f), "utf8");
+      const weakened = src.replace(/security definer/gi, (m) => (replaced++, "security invoker"));
+      await db.exec(weakened);
+    }
+    if (replaced === 0) throw new Error("迁移里找不到 security definer —— 这条反向验证已失效");
+    await db.query("insert into auth.users (id, email) values ($1, 'a@t.local'), ($2, 'b@t.local')", [UID_A, UID_B]);
+
+    const stillGreen = await CHECKS.trigger_inserts_for_unprivileged_role(db);
+    stillGreen
+      ? bad("trigger_inserts_for_unprivileged_role 应变红，却仍是绿的", "← 那条断言没测到 security definer")
+      : ok("security invoker 下建行失败", `替换了 ${replaced} 处 ← security definer 是承重的`);
+    await db.close();
+  }
+
+  // R8 · 「客户端插不进去」的**允许控制**（口径 F11）。
+  //
+  // 把 20260910090000 收走的两样东西都加回来（权限 + 一条宽松的 insert 策略），
+  // 插入必须成功。不加这条，「插不进去」可能只是因为表根本不可写、或那一行已存在——
+  // 与 F11 当初那个「A 读 B 返回空」在 B 无行时也成立，是同一个形态。
+  console.log("\n  \x1b[1mR8 · 把 insert 授权与策略都加回来（允许控制）\x1b[0m");
+  {
+    const db = await freshDb();
+    // 先腾空 A 那一行，否则插入会撞主键，测出来的又是主键不是权限。
+    await db.exec("reset role;");
+    await db.query("delete from public.style_config where user_id = $1", [UID_A]);
+    await db.exec(`grant insert on public.style_config to authenticated;
+                   create policy style_config_insert_own on public.style_config
+                     for insert to authenticated with check (user_id = auth.uid());`);
+
+    const err = await errorOf(() =>
+      asUser(db, UID_A, () =>
+        db.query("insert into public.style_config (user_id, f1_arm) values ($1, 'pairwise')", [UID_A])));
+    const back = (await db.query("select 1 from public.style_config where user_id=$1", [UID_A])).rows.length;
+
+    err === null && back === 1
+      ? ok("加回权限与策略后，A 能插自己那一行", "← 上面的「插不进去」确实是被那两样东西拦的")
+      : bad("加回来仍插不进去", `err=${err?.code} ${err?.message ?? ""}`);
     await db.close();
   }
 

@@ -26,6 +26,16 @@
 都已有行，所以冒名 insert 必然也撞唯一约束。**只断言「报了错」测的是主键，
 不是 with check**——RLS 关掉后错误码从 42501 变成 23505，断言照样绿。
 本地实测（2026-09-07）：RLS 开 → 42501；RLS 关 → 23505。故断言 42501。
+
+⚠️ **2026-09-10 起步骤 4 拦它的层换了。** 迁移 20260910090000 收回了 authenticated
+的 insert 授权并删掉 insert 策略，所以现在先被**权限层**拒。权限层与 RLS 层的
+SQLSTATE **都是 42501**——只断错误码的话，这条断言会在「测的对象已经换了」的
+情况下静默保持绿色（与它当初要修的那个毛病同形，只是换了一层）。故同时断错误文本：
+权限层报 permission denied，RLS 层报 row-level security。
+
+配套的「允许」控制在本地（口径 F11/F12）：`verify_rls_local.mjs` 的
+`trigger_inserts_for_unprivileged_role`（无权限角色注册仍建行）与 R8（把两层加回来
+即可插入）。**生产上不做破坏性验证**，所以那两条不在这里。
 """
 
 from __future__ import annotations
@@ -208,11 +218,28 @@ def main() -> int:
     check("B 的值确实没被改动", rows(r) and rows(r)[0]["detail_level"] == b_before.get("detail_level"),
           f"{b_before.get('detail_level')} → {rows(r)[0]['detail_level'] if rows(r) else '?'}")
 
-    print("\n\033[1m4 · A 冒名 insert user_id = B → 42501（不是 23505）\033[0m")
+    print("\n\033[1m4 · A 冒名 insert user_id = B → 42501 权限层（不是 23505，也不该是 RLS 层）\033[0m")
     r = call("POST", sc, tok_a, payload={"user_id": uid_b, "f1_arm": "pairwise"})
-    check("被 RLS 的 with check 拒绝", r.pg_code == "42501",
+    body = (r.raw or "").lower()
+    check("被拒且错误码是 42501", r.pg_code == "42501",
           f"HTTP {r.status} code={r.pg_code}"
-          + ("  ← 23505 说明挡它的是主键不是 RLS" if r.pg_code == "23505" else ""))
+          + ("  ← 23505 说明挡它的是主键，不是权限也不是 RLS" if r.pg_code == "23505" else ""))
+    # 把「哪一层拦的」也钉住：insert 授权已收回，正确答案是权限层。
+    # 退回 RLS 层（permission denied 变成 row-level security）说明有人把 grant 加回来了，
+    # 那时这条会红并指出退化，而不是继续绿着。
+    check("拦它的是权限层，不是 RLS 层", "permission denied" in body,
+          f"body={r.raw[:120]}"
+          + ("  ← 报的是 RLS，说明 insert 授权被加回来了" if "row-level security" in body else ""))
+
+    print("\n\033[1m4.5 · 触发器建行仍然有效【步骤 4 的允许控制】\033[0m")
+    # 步骤 4 只说明「客户端插不进去」。**把注册一起打死也会让它绿**——
+    # 而那正是 F09 说的坏状态（用户没有配置行，进不了 onboarding）。
+    # 生产上不能造新用户来测触发器，所以这里断言的是它的产物：
+    # 两个验收账号的行都在，且 f1_arm 与 f1_assign_arm 算出来的一致。
+    # 那两行只可能来自触发器——客户端从来没有过 insert 通路。
+    r = call("GET", f"{sc}?user_id=eq.{uid_b}&select=user_id,f1_arm", tok_b)
+    check("B 的行存在（只可能由触发器建）", len(rows(r)) == 1,
+          f"HTTP {r.status} 行数={len(rows(r))}  ← 0 行说明触发器没跑或被 RLS 挡住")
 
     print("\n\033[1m5 · B 改自己的 f1_arm → 抛异常（口径 F10，不静默改写）\033[0m")
     other = "text" if b_before.get("f1_arm") == "pairwise" else "pairwise"

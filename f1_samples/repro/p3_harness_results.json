@@ -1,0 +1,112 @@
+{
+  "purpose": "只换 prompt 装置（自拼 vs 生产 build_system），课件固定 deck1",
+  "generated_at": "2026-09-09T07:46:40+00:00",
+  "model": {
+    "id": "claude-sonnet-5",
+    "params": {
+      "effort": "medium",
+      "thinking": "adaptive",
+      "max_tokens": 8000,
+      "cache_system": true,
+      "cache_conversation": true,
+      "temperature": null,
+      "temperature_note": "Opus 5 / Sonnet 5 已移除 temperature/top_p/top_k，传入返回 400"
+    }
+  },
+  "target_range": "15–40 字",
+  "scan_baseline": "扫描实验 P3 首次尝试 33/54 达标，中位数 36.5 字/段",
+  "not_in_pairs_json": true,
+  "summary": {
+    "mine": {
+      "n": 4,
+      "passed": 1,
+      "mean_range": [
+        37.7,
+        45.9
+      ]
+    },
+    "production": {
+      "n": 4,
+      "passed": 2,
+      "mean_range": [
+        34.9,
+        44.6
+      ]
+    }
+  },
+  "runs": [
+    {
+      "harness": "mine",
+      "run": 1,
+      "mean_paragraph_chars": 37.7,
+      "paragraph_count": 29,
+      "total_chars": 1093,
+      "production_passed": true,
+      "cost_usd": 0.027739
+    },
+    {
+      "harness": "production",
+      "run": 1,
+      "mean_paragraph_chars": 44.6,
+      "paragraph_count": 21,
+      "total_chars": 936,
+      "production_passed": false,
+      "cost_usd": 0.029327
+    },
+    {
+      "harness": "mine",
+      "run": 2,
+      "mean_paragraph_chars": 45.7,
+      "paragraph_count": 21,
+      "total_chars": 960,
+      "production_passed": false,
+      "cost_usd": 0.024454
+    },
+    {
+      "harness": "production",
+      "run": 2,
+      "mean_paragraph_chars": 37.1,
+      "paragraph_count": 24,
+      "total_chars": 891,
+      "production_passed": true,
+      "cost_usd": 0.021798
+    },
+    {
+      "harness": "mine",
+      "run": 3,
+      "mean_paragraph_chars": 45.9,
+      "paragraph_count": 17,
+      "total_chars": 781,
+      "production_passed": false,
+      "cost_usd": 0.019594
+    },
+    {
+      "harness": "production",
+      "run": 3,
+      "mean_paragraph_chars": 41.6,
+      "paragraph_count": 23,
+      "total_chars": 957,
+      "production_passed": false,
+      "cost_usd": 0.022203
+    },
+    {
+      "harness": "mine",
+      "run": 4,
+      "mean_paragraph_chars": 44.5,
+      "paragraph_count": 30,
+      "total_chars": 1334,
+      "production_passed": false,
+      "cost_usd": 0.031939
+    },
+    {
+      "harness": "production",
+      "run": 4,
+      "mean_paragraph_chars": 34.9,
+      "paragraph_count": 23,
+      "total_chars": 802,
+      "production_passed": true,
+      "cost_usd": 0.017613
+    }
+  ],
+  "cost_usd_total": 0.194667
+}

@@ -12,6 +12,7 @@ import {
   type AxisId,
   type StyleConfig,
 } from "@/lib/style/axes";
+import { recordEvent, textMapped } from "@/lib/style/events";
 import { TEXT_ARM_CALL } from "@/lib/style/text-arm";
 import { createClient } from "@/lib/supabase/server";
 
@@ -38,12 +39,28 @@ import { createClient } from "@/lib/supabase/server";
  * 1. **要登录**：未登录直接 401，不调模型。没有这条，拿到 URL 的人就能烧我们的额度。
  * 2. **要在 `text` 臂**：主臂用户不该走到这里，走到了就是前端 bug——**报 409，不静默放行**。
  * 3. **限长**：`MAX_CHARS` 是成本上界，不是体验偏好。超了报 400 并说明。
+ *
+ * ## `style_text_mapped` 事件为什么写在服务端（阶段 4）
+ *
+ * 两个理由：
+ *
+ * 1. **`call` 只有这里知道是真的。** 客户端拿到的 `call` 是响应体里的一份拷贝，
+ *    由这里发出去；让客户端回填事件，等于让被记录方自己报告自己用了什么。
+ * 2. **失败也要有记录。** 模型跑偏、限流、返回非法取值这些分支根本走不到客户端的
+ *    成功路径，而失败率恰恰是这条臂最该看的数字之一（分类质量至今没有金标准，
+ *    见 F1进度 §五「已知未控制」）。
+ *
+ * **事件里没有描述原文**：`textMapped()` 压根不接受这个参数（见 `lib/style/events.ts`）。
+ * 用「记得别传」来保证是不行的，参数里没有这个东西才是真的传不进来。
  */
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const MAX_CHARS = 800;
+
+/** 8-4-4-4-12 十六进制。只判形状，不判版本位——它是我们自己生成的。 */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** 每条轴的取值 + 一句依据；`unspecified` = 描述里没提到这一维。 */
 const UNSPECIFIED = "unspecified";
@@ -134,12 +151,32 @@ export async function POST(request: Request) {
     );
   }
 
+  const arm = rows[0].f1_arm as "pairwise" | "text";
+
   let description: unknown;
+  let sessionId: unknown;
   try {
-    description = (await request.json())?.description;
+    const body = await request.json();
+    description = body?.description;
+    sessionId = body?.session_id;
   } catch {
     return NextResponse.json({ error: "请求体不是合法 JSON" }, { status: 400 });
   }
+
+  // session_id 由页面在**服务端**生成后传给客户端组件，客户端原样带回来。
+  // 这里只校验形状：拿到一个不是 uuid 的东西说明前端接线断了，
+  // **判失败而不是补一个新的**——补一个新的会让这次调用挂在一个凭空出现的
+  // session 上，而事后没有任何东西指得出它是补的（同 F32「回落必须显式」）。
+  if (typeof sessionId !== "string" || !UUID_RE.test(sessionId)) {
+    return NextResponse.json(
+      { error: `session_id 不是合法 uuid：${JSON.stringify(sessionId)}` },
+      { status: 400 },
+    );
+  }
+
+  /** 事件写库。失败只记日志，不改变这次请求的结果——采集不该打断用户。 */
+  const track = async (event: ReturnType<typeof textMapped>) =>
+    (await recordEvent(supabase, { userId: auth.user.id, arm, sessionId, event })).ok;
 
   if (typeof description !== "string" || description.trim().length === 0) {
     return NextResponse.json({ error: "描述为空" }, { status: 400 });
@@ -178,10 +215,14 @@ export async function POST(request: Request) {
       messages: [{ role: "user", content: description }],
     });
 
+    // 失败分支各记一条 `ok: false` 的事件。**`failure` 是分类不是文案**——
+    // 记一句人话的话，事后要按正则去分组，而正则会随文案漂。
     if (message.stop_reason === "max_tokens") {
+      await track(textMapped({ ok: false, failure: "max_tokens" }));
       return NextResponse.json({ error: "模型输出被截断，请重试" }, { status: 502 });
     }
     if (message.stop_reason === "refusal") {
+      await track(textMapped({ ok: false, failure: "refusal" }));
       return NextResponse.json(
         { error: "模型拒绝处理这段描述，请换一种说法" },
         { status: 422 },
@@ -190,19 +231,24 @@ export async function POST(request: Request) {
 
     const text = message.content.find((b) => b.type === "text");
     if (!text || text.type !== "text") {
+      await track(textMapped({ ok: false, failure: "no_text_block" }));
       return NextResponse.json({ error: "模型没有返回文本" }, { status: 502 });
     }
     raw = text.text;
   } catch (err) {
     if (err instanceof Anthropic.RateLimitError) {
+      await track(textMapped({ ok: false, failure: "rate_limited" }));
       return NextResponse.json({ error: "模型调用被限流，请稍后重试" }, { status: 429 });
     }
     if (err instanceof Anthropic.AuthenticationError) {
+      await track(textMapped({ ok: false, failure: "bad_credentials" }));
       return NextResponse.json({ error: "服务端的模型凭据无效" }, { status: 503 });
     }
     if (err instanceof Anthropic.APIConnectionError) {
+      await track(textMapped({ ok: false, failure: "connection" }));
       return NextResponse.json({ error: "连不上模型服务，请稍后重试" }, { status: 504 });
     }
+    await track(textMapped({ ok: false, failure: "api_error" }));
     const detail = err instanceof Anthropic.APIError ? `（${err.status}）` : "";
     return NextResponse.json({ error: `模型调用失败${detail}` }, { status: 502 });
   }
@@ -211,6 +257,7 @@ export async function POST(request: Request) {
   try {
     parsed = JSON.parse(raw);
   } catch {
+    await track(textMapped({ ok: false, failure: "not_json" }));
     return NextResponse.json({ error: "模型返回的不是合法 JSON" }, { status: 502 });
   }
 
@@ -231,6 +278,7 @@ export async function POST(request: Request) {
       continue;
     }
     if (!isAxisValue(axis, value)) {
+      await track(textMapped({ ok: false, failure: "value_out_of_domain" }));
       return NextResponse.json(
         {
           error: `模型给出的 ${axis} 取值不在取值域内：${JSON.stringify(value)}`,
@@ -244,13 +292,29 @@ export async function POST(request: Request) {
     (config as Record<string, string>)[axis] = value;
   }
 
-  // `call` 回给客户端，是为了让阶段 4 的 `style_text_mapped` 事件能**原样**带上
-  // 模型与参数字符串。它一变，两条臂的对照关系就变了，而事后从数据里看不出来。
-  //
-  // 事件表要到阶段 4 才有，所以现在先在服务端留一条结构化日志——
-  // **不记描述原文**（那是用户内容），只记这次调用用了什么。
+  // 哪几条轴来自描述、哪几条回落默认（口径 F32：回落必须显式）。
+  // 存成两个列表而不是一个 map，是因为分析时问的就是「几条来自描述」——
+  // 存 map 的话每次都要在查询里数一遍。
+  const axesFromText = AXIS_IDS.filter((a) => axes[a]?.source === "text");
+  const axesFromDefault = AXIS_IDS.filter((a) => axes[a]?.source === "default");
+
+  const written = await track(
+    textMapped({ ok: true, axesFromText, axesFromDefault }),
+  );
+
+  // 结构化日志保留：事件表要靠 SQL 才看得到，而 Vercel 日志是部署当场就能看的
+  // 那一份（人工验收清单里靠它核对 call 与 text-arm.ts 一致）。
+  // **仍然不记描述原文**——那是用户内容（PRD §12.2）。
+  // `event_written` 让「事件没写进去」与「我查错了地方」在日志里就能分开。
   console.log(
-    JSON.stringify({ event: "style_text_mapped", call: TEXT_ARM_CALL, ok: true }),
+    JSON.stringify({
+      event: "style_text_mapped",
+      call: TEXT_ARM_CALL,
+      ok: true,
+      axes_from_text: axesFromText,
+      axes_from_default: axesFromDefault,
+      event_written: written,
+    }),
   );
 
   return NextResponse.json({ config, axes, call: TEXT_ARM_CALL });

@@ -20,6 +20,21 @@
  * 的触发条件**不成立**，那一项继续挂着。哪天真要显示数字，先做提升，不要在这里写字面量。
  */
 
+/**
+ * B 类三条轴的 prompt 措辞版本。**镜像自 `f1_samples/style_axes.py` 的
+ * `PROMPT_TEMPLATE_VERSION`**，由 `scripts/verify_style_axes.mjs` 逐字比对。
+ *
+ * 它是 `prompt_profile_id` 的构成字段之一（口径 F04 / F39）：事件里存
+ * 「B 类三条轴的取值 + 这个版本号」，分析时由 Python 侧的
+ * `explain.prompt_profile.prompt_profile_id()` 算出 id。**TS 不碰那个算法。**
+ *
+ * ⚠️ 措辞改了必须改这个版本号，否则同一个 id 会盖住两份不同的 prompt。
+ * 靠人记得是不行的，所以护栏另有一条：`style_axes.py` 里 `PROMPT_TEMPLATE_DIGEST`
+ * 记着措辞本身的摘要，措辞一动摘要就对不上，`verify:axes` 直接变红
+ * （口径 F33 的形态——多份出处存在 ≠ 多份出处一致，后者要有人去量）。
+ */
+export const PROMPT_TEMPLATE_VERSION = "b1";
+
 export const AXIS_IDS = ["detail_level", "use_examples", "structure", "depth"] as const;
 export type AxisId = (typeof AXIS_IDS)[number];
 

@@ -2,10 +2,17 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { ConfigSummary } from "@/app/components/config-summary";
 import { AXIS_LABEL, type StyleConfig } from "@/lib/style/axes";
+import { createDwellClock, type DwellClock } from "@/lib/style/dwell";
+import {
+  onboardingCompleted,
+  pairChosen,
+  pairShown,
+  recordEvent,
+} from "@/lib/style/events";
 import { TOTAL_STEPS, configFromPicks, stepAt, type Picks } from "@/lib/style/flow";
 import { Markdown } from "@/lib/style/markdown";
 import type { PairView } from "@/lib/style/pairs";
@@ -43,18 +50,33 @@ import { createClient } from "@/lib/supabase/client";
  *    客户端组件的渲染在 SSR 与 hydrate 各跑一次，渲染期取随机数会让两次分叉
  *    （React #418），用户看到／点到的是哪一版就不确定了。
  *
+ * 4. **一步一个事件**（口径 F37，阶段 4 接线）。每步渲染发 `style_pair_shown`、
+ *    点选发 `style_pair_chosen`，两条都带 `left_variant`。
+ *
+ *    只记最终结果的代价是两样东西一起丢：**弃流点**（onboarding 完成率是 A5
+ *    预登记的三个指标之一，只知道完成率不知道卡在哪等于没法改）与**位置效应**
+ *    （没有逐步的 `left_variant`，上面第 3 条那次随机化就白做了）。
+ *
+ *    停留时长只采集不判读（口径 F38）：`dwell_ms` + `hidden_ms` 两个数分开记，
+ *    **代码里没有任何毫秒阈值常量**，判读标准等数据落盘后单独立。
+ *
  *    代价：**「同一串选择重放出同一串比较」不再成立**。比较的**内容**仍然确定
  *    （`stepAt` 只看已选的轴），随机的只是左右呈现；一次会话内每步的位置在
  *    首次渲染时定死，重渲染不会跳动。这个代价是知情接受的。
  */
 export function PairwiseOnboarding({
   userId,
+  arm,
+  sessionId,
   pairs,
   question,
   flips,
   alreadyOnboarded,
 }: {
   userId: string;
+  arm: "pairwise" | "text";
+  /** 一次页面加载一个，**由服务端生成**（见 `page.tsx`）。 */
+  sessionId: string;
   pairs: Record<string, PairView>;
   question: string;
   /**
@@ -92,9 +114,12 @@ export function PairwiseOnboarding({
   const [shownLog, setShownLog] = useState<
     { step: number; pairId: string; leftVariant: string; chosenVariant: string }[]
   >([]);
+  /** 埋点写不进去时给出的一句话。**不打断 onboarding，但也不静默。** */
+  const [eventError, setEventError] = useState<string | null>(null);
 
-  if (saved) return <DoneScreen config={saved} log={shownLog} />;
+  const [frozenSessionId] = useState(sessionId);
 
+  // 步骤计算放在早退之前：hooks 必须无条件执行，而下面的 effect 要用到它们。
   const step = stepAt(stepIndex, picks);
   const pair = pairs[step.pairId];
   const isLast = stepIndex === TOTAL_STEPS;
@@ -102,6 +127,59 @@ export function PairwiseOnboarding({
   // 左右呈现顺序：flip=0 → samples[0] 在左；flip=1 → samples[1] 在左。
   const order: [0 | 1, 0 | 1] = frozenFlips[stepIndex - 1] === 0 ? [0, 1] : [1, 0];
   const leftVariant = pair.samples[order[0]].variantLabel;
+
+  /**
+   * 停留时长的表。**在 effect 里创建，不在渲染里**——`createDwellClock()` 一造出来
+   * 就取一次 `performance.now()`，而渲染在 SSR 与 hydrate 各跑一次，
+   * 那两次取到的是两条不同的时间轴（同 #418 的形态，只是这次不显示在页面上）。
+   */
+  const clockRef = useRef<DwellClock | null>(null);
+  /** 整段 onboarding 的起点，用于 `style_onboarding_completed` 的总耗时。 */
+  const startedAtRef = useRef<number | null>(null);
+  /** 已发过 `style_pair_shown` 的步。effect 在 dev 的 StrictMode 下会跑两次。 */
+  const shownSentRef = useRef<Set<number>>(new Set());
+
+  async function send(event: Parameters<typeof recordEvent>[1]["event"]) {
+    const r = await recordEvent(createClient(), {
+      userId,
+      arm,
+      sessionId: frozenSessionId,
+      event,
+    });
+    if (!r.ok) setEventError(`埋点没写进去：${r.message}`);
+  }
+
+  // 页面可见性：切走不扣 dwell_ms，但累加 hidden_ms（口径 F38）。
+  // 只记一个总数的话，「读了 40 秒」和「挂着 40 秒」永久混在一起。
+  useEffect(() => {
+    function onVisibility() {
+      if (document.visibilityState === "hidden") clockRef.current?.markHidden();
+      else clockRef.current?.markVisible();
+    }
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, []);
+
+  // 每进入一步：计时归零 + 发 `style_pair_shown`。
+  // 落在 effect 里而不是渲染里，因为「渲染完成」才是 dwell 的起点定义。
+  useEffect(() => {
+    if (saved) return;
+    if (clockRef.current === null) {
+      clockRef.current = createDwellClock();
+      startedAtRef.current = performance.now();
+    } else {
+      clockRef.current.reset();
+    }
+    if (shownSentRef.current.has(stepIndex)) return;
+    shownSentRef.current.add(stepIndex);
+    void send(
+      pairShown({ step: stepIndex, axis: step.axis, pairId: step.pairId, leftVariant }),
+    );
+    // leftVariant / step 由 stepIndex 与已冻结的 flips 唯一决定，故只依赖 stepIndex。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stepIndex, saved]);
+
+  if (saved) return <DoneScreen config={saved} log={shownLog} eventError={eventError} />;
 
   async function commit(config: StyleConfig) {
     setBusy(true);
@@ -128,6 +206,16 @@ export function PairwiseOnboarding({
       return;
     }
 
+    // **落库成功之后**才发完成事件——不是「点了完成」。上面那段刚断言过
+    // 库里那一行真的变了（影响 1 行），事件挂在这个断言后面才有意义。
+    await send(
+      onboardingCompleted({
+        config,
+        stepsCompleted: TOTAL_STEPS,
+        totalMs: Math.round(performance.now() - (startedAtRef.current ?? performance.now())),
+      }),
+    );
+
     setSaved(config);
     setBusy(false);
     router.refresh();
@@ -138,6 +226,21 @@ export function PairwiseOnboarding({
     // 记的是**档位**，不是左右位置——位置随机之后，只有这个还稳定。
     const chosen = pair.samples[selected].variantLabel;
     const nextPicks: Picks = { ...picks, [step.axis]: chosen };
+
+    // 读数在改 state 之前取：setStepIndex 之后 leftVariant / step 都会变成下一步的。
+    const { dwell_ms, hidden_ms } = clockRef.current?.read() ?? { dwell_ms: 0, hidden_ms: 0 };
+    void send(
+      pairChosen({
+        step: stepIndex,
+        axis: step.axis,
+        pairId: step.pairId,
+        leftVariant,
+        chosenVariant: chosen,
+        dwellMs: dwell_ms,
+        hiddenMs: hidden_ms,
+      }),
+    );
+
     setPicks(nextPicks);
     setSelected(null);
     setShownLog((log) => [
@@ -248,6 +351,19 @@ export function PairwiseOnboarding({
         </p>
       )}
 
+      {/* 埋点失败**不打断 onboarding**（用户的配置比我们的数据重要），
+          但也不静默：人工验收要能一眼看出「事件没写进去」与「事件写了但我没查对」
+          的区别。`data-event-error` 供回归工具定位。 */}
+      {eventError && (
+        <p
+          role="status"
+          data-event-error
+          className="panel mt-5 bg-[var(--c-accent-wash)] p-3 text-sm text-[var(--c-accent-ink)]"
+        >
+          {eventError}（配置本身不受影响，可以继续）
+        </p>
+      )}
+
       <div className="mt-6 flex items-center gap-4">
         <button
           type="button"
@@ -281,10 +397,12 @@ function Progress({ current }: { current: number }) {
 function DoneScreen({
   config,
   log,
+  eventError,
 }: {
   config: StyleConfig;
-  /** 6 步的呈现与选择记录。阶段 4 的埋点从这里取 `left_variant`。 */
+  /** 6 步的呈现与选择记录。`data-left-variants` 供人工核对随机化真的在发生。 */
   log: { step: number; pairId: string; leftVariant: string; chosenVariant: string }[];
+  eventError: string | null;
 }) {
   return (
     <div
@@ -300,6 +418,16 @@ function DoneScreen({
       <div className="mt-6">
         <ConfigSummary config={config} />
       </div>
+
+      {eventError && (
+        <p
+          role="status"
+          data-event-error
+          className="panel mt-6 bg-[var(--c-accent-wash)] p-3 text-sm text-[var(--c-accent-ink)]"
+        >
+          {eventError}（配置已保存，受影响的只有埋点）
+        </p>
+      )}
 
       <div className="mt-6 flex flex-wrap gap-3">
         <Link href="/" className="btn btn--primary no-underline">

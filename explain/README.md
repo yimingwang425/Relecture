@@ -11,6 +11,14 @@ python3 -m venv .venv && ./.venv/bin/pip install -e ".[dev]"
 ./.venv/bin/python -m pytest        # 59 条，零 API 成本
 ```
 
+⚠️ **`tests/test_prompt_profile.py` 是例外：它不依赖 venv。**
+那 14 条断言由 `web/scripts/verify_prompt_profile.mjs` 接进 `npm run verify:guards`，
+用文件自带的 stdlib 跑法执行（`python3 explain/tests/test_prompt_profile.py`）。
+理由：venv 是本地产物，`.gitignore` 挡在仓库外——**没有 venv 的机器上
+`import pytest` 直接失败，那 14 条就以「有测试」的样子存在而从不执行**。
+与 F14 的「承诺存在 ≠ 承诺被测量」同一件事，换成了「测试存在 ≠ 测试被执行」。
+文件仍保持 pytest 兼容（`Test*` 类 / `test_*` 方法 / **不用 fixture**）。
+
 核心链路**零第三方依赖**（与 a_rules 同一约定：PRD §9.2 的方案 C 要求审查能在
 流式输出中按句并行执行）。两个可选依赖各自只被一个模块用到：
 `retrieval_adapter` → `retrieval`，`llm.AnthropicModel` → `anthropic`（运行时 import）。
@@ -170,6 +178,7 @@ prompt 里明确写着「专业术语首次出现时用『中文译名（English
 | `context.py` | `ContextPack`：检索片 + `skipped_pages` + 签名。`Retriever` 协议 |
 | `retrieval_adapter.py` | 唯一 import `retrieval` 的模块；另含不需要网络的 `InMemoryRetriever` |
 | `style_prompt.py` | `StyleConfig` → prompt 片段。**这是 F1 的接口形状** |
+| `prompt_profile.py` | `prompt_profile_id` —— F04 三个标识里的第三个（**含 B 类**）。见下 |
 | `prompt.py` | system/messages 组装 + caching 断点 + 可缓存性检查 |
 | `review.py` | 三维规则审查 + 反馈生成 |
 | `gap.py` | F3b 插入点 |
@@ -177,6 +186,29 @@ prompt 里明确写着「专业术语首次出现时用『中文译名（English
 | `pipeline.py` | 一轮的编排；`Trajectory` 持有轨迹状态 |
 | `log.py` | 每轮一条 JSONL |
 | `fake.py` | 段落长度可控的假模型，供 `--fake` 全链路 |
+
+### `prompt_profile.py` 为什么在这里而不是 `a_rules/`（2026-09-10，F1 阶段 4）
+
+F04 要求三个标识分工：`config_fingerprint`（阈值）/ `metric_set_id`（指标集）/
+`prompt_profile_id`（prompt 侧，**含 B 类**）。前两个是
+`a_rules.StyleConfig` 的方法，本包的 `log.py` 每轮把它们记进日志。
+
+第三个**不能**放进 `StyleConfig`：那个类刻意不含 B 类字段，而 B 类进指纹会让
+两个 A 类判定完全相同的用户拿到不同指纹，`verify` 里「点内指纹唯一」那类守卫
+在真实用户数据上直接噪声化（F04 的原话）。`tests/test_prompt_profile.py` 里有一条
+断言钉着这一点——`StyleConfig.to_dict()` 里出现任何 B 类字段即红。
+
+本包是渲染 prompt（`style_prompt.py`）并记录三个标识（`log.py`）的地方，
+所以第三个标识住这儿。**只写函数，不建服务**：它只在**分析时**被消费，
+埋点事件里存的是构成它的原始字段（B 类三条轴 + `prompt_template_version`），
+分析时再算。为一个纯函数启用整条 Railway 部署链、多一条 PRD §13.3 的出境记录、
+多一道接缝，换不到任何东西——FastAPI 推迟到 F2 接线时再建（口径 F39）。
+
+`prompt_template_version` 的出处是 `f1_samples/style_axes.py` 的
+`PROMPT_TEMPLATE_VERSION`。⚠️ 真正容易漏的不是版本号在两处不一致（那有比对），
+而是**措辞改了但版本号没改**——那时两处版本号仍然相等、比对全绿，
+而同一个 id 会盖住两份不同的 prompt。故 `style_axes.py` 另记一个
+`PROMPT_TEMPLATE_DIGEST`（措辞正文的摘要），`web/scripts/verify_style_axes.mjs` 重算比对。
 
 ### 为什么 `llm.py` 从漂移实验提升上来
 

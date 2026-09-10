@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import { AppNav } from "@/app/components/app-nav";
 import { RowStateNotice } from "@/app/components/row-state";
+import { newSessionId } from "@/lib/style/events";
 import { TOTAL_STEPS, makeFlips } from "@/lib/style/flow";
 import { SAMPLE_QUESTION, loadPairs } from "@/lib/style/pairs";
 import { loadStyleRow } from "@/lib/style/session";
@@ -51,8 +52,21 @@ export default async function PairwiseOnboardingPage() {
         放在服务端则只抽一次：prop 随 RSC 载荷序列化过去，两侧渲染同一份数据。
         页面是 force-dynamic，所以每次加载仍是新的一次抽取。
       */}
+      {/*
+        `sessionId` 与 `flips` 同一条处置：**在服务端抽一次**，当 prop 传下去。
+
+        客户端组件的渲染在 SSR 与 hydrate 各跑一次，渲染期取随机数两侧必然分叉
+        （React #418）。`session_id` 分叉不会像左右位置那样肉眼可见 ——
+        它只是让同一次 onboarding 的 6 步事件挂在两个 session 上，
+        而弃流点分析正是按 session 分组的。
+
+        「一次页面加载 = 一个 session」是**占位口径**：PRD §3.4.5 的会话切分规则
+        至今未定，内测第 1 周数据落盘后再立（见 f1_samples/README.md §二）。
+      */}
       <PairwiseOnboarding
         userId={result.userId}
+        arm={result.row.f1_arm}
+        sessionId={newSessionId()}
         pairs={loadPairs()}
         question={SAMPLE_QUESTION}
         flips={makeFlips(TOTAL_STEPS)}

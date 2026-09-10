@@ -24,6 +24,7 @@
  * 一个永远绿的检查不是检查。
  */
 
+import { createHash } from "node:crypto";
 import { readFileSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -103,7 +104,22 @@ function readPython() {
   const pairs = [...pairsBlock.matchAll(/\(\s*["'](\w+)["']\s*,\s*["'](\w+)["']\s*,\s*["'](\w+)["']\s*,\s*["'](\w+)["']\s*\)/g)]
     .map((m) => ({ id: m[1], axis: m[2], a: m[3], b: m[4] }));
 
-  return { axes, defaults, enforced, detailLadder, pairs };
+  // B 类措辞的版本号与摘要（阶段 4，口径 F39）。摘要拿**块正文**算，见 §四。
+  const promptVersion = /^PROMPT_TEMPLATE_VERSION\s*:\s*str\s*=\s*["']([^"']+)["']/m.exec(src)?.[1] ?? null;
+  const promptDigest = /^PROMPT_TEMPLATE_DIGEST\s*:\s*str\s*=\s*["']([0-9a-f]+)["']/m.exec(src)?.[1] ?? null;
+  const fragmentsBlock = blockAfter(src, /^B_CLASS_FRAGMENTS\s*:/m) ?? "";
+
+  return { axes, defaults, enforced, detailLadder, pairs, promptVersion, promptDigest, fragmentsBlock };
+}
+
+/**
+ * B 类措辞的摘要。**压掉空白后哈希块正文**——缩进与换行的变化不该逼人改版本号，
+ * 措辞本身的变化必须。
+ *
+ * 纯函数，好让下面的反向控制直接喂一段改过的文本。
+ */
+function fragmentsDigest(block) {
+  return createHash("sha256").update(block.replace(/\s+/g, " ").trim(), "utf8").digest("hex").slice(0, 12);
 }
 
 // -------- SQL：supabase/migrations/*.sql，按时间戳取每列**最后一次**定义
@@ -149,7 +165,9 @@ function readTs(overrideAxesSrc) {
   const reachableBlock = blockAfter(flowSrc, /REACHABLE_PAIR_IDS[^=]*=/, "[", "]") ?? "";
   const reachable = [...reachableBlock.matchAll(STRINGS)].map((m) => m[1]);
 
-  return { axes, defaults, enforced, reachable };
+  const promptVersion = /export const PROMPT_TEMPLATE_VERSION\s*=\s*["']([^"']+)["']/.exec(src)?.[1] ?? null;
+
+  return { axes, defaults, enforced, reachable, promptVersion };
 }
 
 // -------- pairs.json
@@ -204,6 +222,15 @@ function compare(py, sql, ts, pairsJson) {
   if (!eq(pyIds, tsIds)) problems.push(`pair_id：Python ${JSON.stringify(pyIds)} ≠ flow.ts ${JSON.stringify(tsIds)}`);
   if (!eq(pyIds, jsonIds)) problems.push(`pair_id：Python ${JSON.stringify(pyIds)} ≠ pairs.json ${JSON.stringify(jsonIds)}`);
 
+  // B 类措辞版本（阶段 4）。它是 prompt_profile_id 的构成字段之一（口径 F39），
+  // 事件里存的是 TS 那一份，算 id 的是 Python 那一份——两份不等于同一个版本号时，
+  // 同一个 id 会盖住两份不同的 prompt，而**没有任何东西会报错**。
+  if (py.promptVersion !== ts.promptVersion) {
+    problems.push(
+      `PROMPT_TEMPLATE_VERSION：Python ${JSON.stringify(py.promptVersion)} ≠ TS ${JSON.stringify(ts.promptVersion)}`,
+    );
+  }
+
   // 每个样例的档位必须在该轴的取值域里——P1 那种已退出的取值混进样例，这条会红。
   for (const p of pairsJson) {
     for (const label of p.labels) {
@@ -234,6 +261,10 @@ console.log("\n\x1b[1m一 · 判据自身的分辨力（先验，再读结论）
   check(Object.keys(sql.checks).length >= 4, "迁移里解析出 ≥4 条 CHECK", `实得 ${Object.keys(sql.checks).length}`);
   check(sql.files.length > 0, "扫到迁移文件", `${sql.files.length} 个：${sql.files.join(", ")}`);
   check(pairsJson.length === 8, "pairs.json 解析出 8 对", `实得 ${pairsJson.length}`);
+  check(py.promptVersion !== null, "style_axes.py 解析出 PROMPT_TEMPLATE_VERSION", String(py.promptVersion));
+  check(ts.promptVersion !== null, "axes.ts 解析出 PROMPT_TEMPLATE_VERSION", String(ts.promptVersion));
+  check(py.promptDigest !== null, "style_axes.py 解析出 PROMPT_TEMPLATE_DIGEST", String(py.promptDigest));
+  check(py.fragmentsBlock.length > 200, "解析出 B_CLASS_FRAGMENTS 块正文", `${py.fragmentsBlock.length} 字符`);
 
   // 正向控制：把 TS 的取值域改坏，比对**必须**报出问题。否则这条护栏是空转的。
   const broken = readTs(
@@ -269,6 +300,38 @@ console.log("\n\x1b[1m三 · P1 确已退出\x1b[0m");
     !pairsJson.some((p) => p.labels.includes("P1")),
     "pairs.json 里没有 P1 样例",
   );
+}
+
+console.log("\n\x1b[1m四 · B 类措辞版本与摘要（口径 F39，阶段 4）\x1b[0m");
+{
+  // `prompt_profile_id` = f(B 类三条轴取值, PROMPT_TEMPLATE_VERSION)。
+  // 版本号本身在两处（Python 算 id、TS 写事件），上面 §二 已比过。
+  //
+  // 这里补的是另一半，也是更容易漏的一半：**措辞改了但版本号没改**。
+  // 那种情况下两处版本号仍然相等，§二 全绿，而同一个 prompt_profile_id
+  // 会盖住两份不同的 prompt —— F04 要这个标识回答的问题（「讲解质量变了，
+  // 是阈值变了还是 prompt 变了」）当场失效，且不会报错。
+  const actual = fragmentsDigest(py.fragmentsBlock);
+  check(
+    actual === py.promptDigest,
+    "B_CLASS_FRAGMENTS 的摘要与 PROMPT_TEMPLATE_DIGEST 相符",
+    actual === py.promptDigest
+      ? `${actual}  ← 措辞未变`
+      : `实算 ${actual} ≠ 记录 ${py.promptDigest}  ← 措辞改了，把 PROMPT_TEMPLATE_VERSION（含 axes.ts 那份）与本摘要一起改`,
+  );
+
+  // 判据自身的分辨力：改一个字，摘要必须变。
+  // 少了这条，一个恒返回同一个字符串的 fragmentsDigest 也能让上一条永远绿。
+  const tampered = fragmentsDigest(py.fragmentsBlock.replace("多举例子", "多举些例子"));
+  check(
+    tampered !== actual,
+    "反向控制：措辞改一个词，摘要就变",
+    tampered !== actual ? `${actual} → ${tampered}` : "摘要没变 —— 这条护栏是空转的",
+  );
+
+  // 空白不该触发。缩进/换行变一下就逼人改版本号的话，这条护栏会被习惯性忽略。
+  const respaced = fragmentsDigest(py.fragmentsBlock.replace(/\n/g, "\n  "));
+  check(respaced === actual, "缩进与换行的变化不影响摘要", "← 只对措辞敏感");
 }
 
 console.log(

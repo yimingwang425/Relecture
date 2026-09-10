@@ -14,7 +14,7 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -215,6 +215,58 @@ console.log("\n\x1b[1m三 · 构建产物里有没有真实凭据（口径 F16�
       hits.map((h) => `${h.kind} @ ${h.file}`).join("\n      "),
     );
   }
+}
+
+{
+  // 阶段 4 的新暴露面：邀请制脚本要一个 **service_role key**（口径 F40）。
+  //
+  // 它绕过全部 RLS —— 进了前端 bundle 等于把整个数据库开放出去，**且不会报错**。
+  // 「它住在 scripts/.env、web 从来不读它，所以不会进产物」是**推理**，不是测量。
+  // 这里把一个真 key 形态的值真的注进 `next build` 的环境再扫产物。
+  //
+  // 判据的分辨力上面 §三 已经先验过（sb_secret_ + ≥20 个 key 字符命中、
+  // 护栏源码不命中），所以这一条读出来的 0 命中才携带信息。
+  const SERVICE_CANARY = "sb_secret_" + "Q8mN3xV7bK2rT5wZ9jL4";
+  check(scanText(SERVICE_CANARY).length === 1, "service_role canary 本身可被扫出", "← 先验分辨力");
+
+  const withService = build({ SUPABASE_SECRET_KEY: SERVICE_CANARY });
+  if (withService.failedBuild) {
+    check(false, "带 SUPABASE_SECRET_KEY 的构建", "", withService.out.slice(-400));
+  } else {
+    const { filesScanned, hits } = await scanDir(join(WEB, ".next"));
+    check(filesScanned > 0, "确实扫到了文件（service_role 这一轮）", `${filesScanned} 个`);
+    check(
+      hits.length === 0,
+      "环境里有真实 service_role key，产物里仍 0 命中",
+      "← 它没有被内联进任何产物",
+      hits.map((h) => `${h.kind} @ ${h.file}`).join("\n      "),
+    );
+  }
+
+  // 反向控制：**带 NEXT_PUBLIC_ 前缀就必须让构建直接失败**。
+  // 这是最可能出事的那条路——有人为了「前端也要用一下」顺手加个前缀。
+  const misnamed = build({ NEXT_PUBLIC_SUPABASE_SECRET_KEY: SERVICE_CANARY });
+  check(
+    misnamed.failedBuild && misnamed.out.includes("NEXT_PUBLIC_SUPABASE_SECRET_KEY"),
+    "NEXT_PUBLIC_SUPABASE_SECRET_KEY=<真 key 形态> → 构建失败并点名变量",
+    "← 改名加前缀是最可能出事的那条路",
+    misnamed.out.slice(-400),
+  );
+
+  // 源码层面：`web/` 里不该有任何地方读这个变量。它是运维脚本的东西。
+  // 上面那条真构建管的是「值有没有进产物」，这条管的是「有没有人开始依赖它」——
+  // 一旦 app 里出现一处读它的代码，下一步就是有人给它加前缀。
+  const readsIt = [];
+  (function walk(dir) {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      const full = join(dir, e.name);
+      if (e.isDirectory()) walk(full);
+      else if (/\.(tsx?|mjs|js)$/.test(e.name) && readFileSync(full, "utf8").includes("SUPABASE_SECRET_KEY")) {
+        readsIt.push(full);
+      }
+    }
+  })(join(WEB, "app"));
+  check(readsIt.length === 0, "web/app 里没有任何地方读 SUPABASE_SECRET_KEY", "", readsIt.join(" "));
 }
 
 {

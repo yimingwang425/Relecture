@@ -7,12 +7,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "verify:guards": "npm run verify:identity && npm run verify:axes && npm run verify:logic && npm run verify:build-guards",
+    "verify:guards": "npm run verify:identity && npm run verify:axes && npm run verify:logic && npm run verify:prompt-profile && npm run verify:build-guards",
     "verify:browser": "node scripts/verify_browser.mjs",
     "verify:identity": "node scripts/verify_git_identity.mjs",
     "verify:build-guards": "node scripts/verify_build_guards.mjs",
     "verify:axes": "node scripts/verify_style_axes.mjs",
-    "verify:logic": "node scripts/verify_style_logic.mjs"
+    "verify:logic": "node scripts/verify_style_logic.mjs",
+    "verify:prompt-profile": "node scripts/verify_prompt_profile.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.124.0",

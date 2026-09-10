@@ -15,11 +15,18 @@
 cp .env.example .env.local && $EDITOR .env.local
 npm install && npm run dev
 
-npm run verify:guards    # 全部四组：身份 + 取值域 + 反馈逻辑 + 构建护栏（含 5 次真实 next build）
-npm run verify:axes      # 只查四条轴的取值域三处一致，秒级
-npm run verify:logic     # 只查 F05–F07 与比较树，秒级
-npm run verify:identity  # 只查提交身份，秒级；推完跑这一条
+npm run verify:guards          # 全部五组，含 10 次真实 next build（几分钟）
+npm run verify:axes            # 取值域四处一致 + B 类措辞版本与摘要，秒级
+npm run verify:logic           # F05–F07 · 比较树 · 埋点五事件 · 随机只在服务端，秒级
+npm run verify:prompt-profile  # explain 侧的 14 条 Python 断言，秒级（不需要 venv）
+npm run verify:identity        # 只查提交身份，秒级；推完跑这一条
 ```
+
+> `verify:prompt-profile` 是个包装：断言写在 `explain/tests/test_prompt_profile.py`，
+> 而 `explain/` 的 venv 是本地产物（`.gitignore` 挡在仓库外）。**没有 venv 的机器上
+> `import pytest` 直接失败，那 14 条就以「有测试」的样子存在而从不执行**——
+> 所以它们被接进这条**真的会被跑**的链，用文件自带的 stdlib 跑法执行。
+> 包装自己也配了反向控制（改坏一条断言必须变红）。
 
 口径表在 [`../f1_samples/README.md`](../f1_samples/README.md) §一，全项目唯一一份。
 

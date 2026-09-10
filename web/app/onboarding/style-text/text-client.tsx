@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { ConfigSummary } from "@/app/components/config-summary";
 import { AXIS_IDS, AXIS_LABEL, VALUE_LABEL, type StyleConfig } from "@/lib/style/axes";
+import { onboardingCompleted, recordEvent } from "@/lib/style/events";
 import { createClient } from "@/lib/supabase/client";
 
 /**
@@ -23,22 +24,47 @@ import { createClient } from "@/lib/supabase/client";
  *
  * 描述里没提到的轴用默认值，这件事**要说出来**。静默补默认值会让
  * 「用户选的」和「没提到所以用默认」在库里长得一模一样，之后没人分得开。
+ *
+ * ## 埋点分两处写，不是疏漏（阶段 4）
+ *
+ * - `style_text_mapped` 由 **route handler 写**：`call` 只有服务端知道是真的，
+ *   而且模型跑偏、限流这些失败分支根本走不到这里。
+ * - `style_onboarding_completed` 由**本组件写**：它的触发条件是「配置那一行真的变了」，
+ *   而写库发生在客户端（与主臂同一条路径）。
+ *
+ * **对照臂也必须发完成事件。** onboarding 完成率是 A5 预登记的三个指标之一，
+ * 按臂分组读；这条臂不发，那条曲线就只有一半。
+ * `steps_completed` 在这条臂上恒为 1（一段描述），与主臂的 1–6 **含义不同、不可跨臂比**。
  */
 
 const MAX_CHARS = 800;
 
 type AxisOutcome = { value: string; source: "text" | "default"; reason: string };
 
-/** 这次调用用了哪个模型与参数。阶段 4 的事件字段照抄它（见 `lib/style/text-arm.ts`）。 */
+/**
+ * 这次调用用了哪个模型与参数（出处是 `lib/style/text-arm.ts`）。
+ *
+ * 客户端拿到它只为在 DOM 上暴露 `data-call-model` / `data-call-effort` 供核对；
+ * **`style_text_mapped` 事件是服务端写的**，不由这份拷贝回填——
+ * 让被记录方自己报告自己用了什么，记录就没有独立性可言。
+ */
 type CallInfo = { model: string; effort: string; thinking: string; max_tokens: number };
 
 type Mapped = { config: StyleConfig; axes: Record<string, AxisOutcome>; call?: CallInfo };
 
 export function TextOnboarding({
   userId,
+  arm,
+  sessionId,
   alreadyOnboarded,
 }: {
   userId: string;
+  arm: "pairwise" | "text";
+  /**
+   * 一次页面加载一个，**由服务端生成**（见 `page.tsx`）。
+   * 这里只负责原样带给 route handler —— 事件由服务端写（`call` 与失败分支都在那边）。
+   */
+  sessionId: string;
   alreadyOnboarded: boolean;
 }) {
   const router = useRouter();
@@ -49,6 +75,18 @@ export function TextOnboarding({
   const [savedCall, setSavedCall] = useState<CallInfo | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** 埋点写不进去时的一句话。**不打断流程，但也不静默。** */
+  const [eventError, setEventError] = useState<string | null>(null);
+
+  const [frozenSessionId] = useState(sessionId);
+  /**
+   * 这条臂的总耗时起点。**在 effect 里取，不在渲染里**——渲染在 SSR 与 hydrate
+   * 各跑一次，两次取到的是两条不同的时间轴（同 React #418 的形态）。
+   */
+  const startedAtRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (startedAtRef.current === null) startedAtRef.current = performance.now();
+  }, []);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -59,7 +97,7 @@ export function TextOnboarding({
       const res = await fetch("/api/style/from-text", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ description: text }),
+        body: JSON.stringify({ description: text, session_id: sessionId }),
       });
       const body = await res.json();
       if (!res.ok) {
@@ -99,6 +137,20 @@ export function TextOnboarding({
       return;
     }
 
+    // **落库成功之后**才发（上面刚断言影响 1 行）。`steps_completed` 在这条臂上
+    // 恒为 1：一段描述就是全部采集，没有「卡在第几步」可言。
+    const r = await recordEvent(createClient(), {
+      userId,
+      arm,
+      sessionId: frozenSessionId,
+      event: onboardingCompleted({
+        config: mapped.config,
+        stepsCompleted: 1,
+        totalMs: Math.round(performance.now() - (startedAtRef.current ?? performance.now())),
+      }),
+    });
+    if (!r.ok) setEventError(`埋点没写进去：${r.message}`);
+
     setSaved(mapped.config);
     setSavedCall(mapped.call ?? null);
     setBusy(false);
@@ -120,6 +172,15 @@ export function TextOnboarding({
         <div className="mt-6">
           <ConfigSummary config={saved} />
         </div>
+        {eventError && (
+          <p
+            role="status"
+            data-event-error
+            className="panel mt-6 bg-[var(--c-accent-wash)] p-3 text-sm text-[var(--c-accent-ink)]"
+          >
+            {eventError}（配置已保存，受影响的只有埋点）
+          </p>
+        )}
         <div className="mt-6 flex flex-wrap gap-3">
           <Link href="/" className="btn btn--primary no-underline">
             回到首页

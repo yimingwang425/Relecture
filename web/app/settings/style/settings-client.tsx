@@ -13,6 +13,12 @@ import {
   VALUE_LABEL,
   type StyleConfig,
 } from "@/lib/style/axes";
+import {
+  feedbackChange,
+  manualChange,
+  recordEvent,
+  type StyleEvent,
+} from "@/lib/style/events";
 import { FEEDBACK_KINDS, FEEDBACK_LABEL, applyFeedback, type FeedbackKind } from "@/lib/style/feedback";
 import { createClient } from "@/lib/supabase/client";
 
@@ -25,6 +31,19 @@ import { createClient } from "@/lib/supabase/client";
  * **现在就有一条能走通、能被断言的实现**：语义写在 `lib/style/feedback.ts` 的纯函数里，
  * 阶段 4 的接口应当调同一个函数，而不是在服务端把三条映射再写一遍。
  *
+ * ## 反馈接口的埋点（阶段 4）
+ *
+ * **行为一个字没改**（F05–F07 已在阶段 3 验收通过），只在写库之后补了一条
+ * `style_config_changed` 事件。事件里的 `config_changed` 与 `counts_as_config_edit`
+ * **不在这里判**，由 `lib/style/events.ts` 的 `feedbackChange()` 调同一个
+ * `applyFeedback` 得出——在埋点里重新判一遍就是给 F06 开第二个出处，
+ * 而两处不一致不会报错：§3.2 的「配置修改频率趋近 0」会因为埋点少写一个分支
+ * 而自己达标。
+ *
+ * **配置没变的那两种情况（F06 例子没懂 / F07 端点）照样发事件。** 它们是这两条
+ * 口径唯一的数据痕迹——不发的话，「用户点了但我们决定不改」与「用户没点」
+ * 在库里长得一模一样。
+ *
  * ## 有未保存改动时反馈按钮禁用
  *
  * 反馈按钮作用在**已保存的配置**上并立即写库。若此时手工草稿还没保存，
@@ -36,11 +55,14 @@ export function StyleSettings({
   initialConfig,
   onboarded,
   arm,
+  sessionId,
 }: {
   userId: string;
   initialConfig: StyleConfig;
   onboarded: boolean;
   arm: "pairwise" | "text";
+  /** 一次页面加载一个，**由服务端生成**（见 `page.tsx`）。 */
+  sessionId: string;
 }) {
   const router = useRouter();
   const [saved, setSaved] = useState<StyleConfig>(initialConfig);
@@ -48,10 +70,24 @@ export function StyleSettings({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  /** 埋点写不进去时的一句话。**不打断保存，但也不静默。** */
+  const [eventError, setEventError] = useState<string | null>(null);
+
+  const [frozenSessionId] = useState(sessionId);
 
   const dirty = AXIS_IDS.some((axis) => draft[axis] !== saved[axis]);
 
-  async function write(config: StyleConfig, message: string) {
+  async function send(event: StyleEvent) {
+    const r = await recordEvent(createClient(), {
+      userId,
+      arm,
+      sessionId: frozenSessionId,
+      event,
+    });
+    if (!r.ok) setEventError(`埋点没写进去：${r.message}`);
+  }
+
+  async function write(config: StyleConfig, message: string, event: StyleEvent) {
     setBusy(true);
     setError(null);
     setNotice(null);
@@ -75,6 +111,10 @@ export function StyleSettings({
       return;
     }
 
+    // 事件发在**断言过「库里那一行真的变了」之后**（上面刚断言影响 1 行）。
+    // 反过来先发事件的话，事件流里会有一批实际没落库的「配置修改」。
+    await send(event);
+
     setSaved(config);
     setDraft(config);
     setNotice(message);
@@ -84,15 +124,22 @@ export function StyleSettings({
 
   function onFeedback(kind: FeedbackKind) {
     const outcome = applyFeedback(saved, kind);
+    // 事件由 events.ts 自己调 applyFeedback 构造，**不把上面这个 outcome 传过去**：
+    // 传过去就等于允许「页面按一份判断行动、事件里记另一份」，而两份不一致不报错。
+    const event = feedbackChange(saved, kind);
 
     // F06 /（在端点时）F07：配置不变 → **不写库**，只给那一句说明。
     // 静默吞掉会让用户以为生效了，也会在埋点里多一次假的配置变更。
+    //
+    // ⚠️ 但**事件照发**：这两条口径的全部数据痕迹就是这条事件
+    // （`config_changed: false` + `counts_as_config_edit: false`）。
     if (!outcome.config_changed) {
       setError(null);
       setNotice(outcome.message);
+      void send(event);
       return;
     }
-    void write(outcome.config, outcome.message);
+    void write(outcome.config, outcome.message, event);
   }
 
   return (
@@ -166,7 +213,7 @@ export function StyleSettings({
           type="button"
           className="btn btn--primary"
           disabled={!dirty || busy}
-          onClick={() => void write(draft, "已保存。")}
+          onClick={() => void write(draft, "已保存。", manualChange(saved, draft))}
           data-action="save"
         >
           {busy ? "保存中…" : "保存"}
@@ -246,6 +293,18 @@ export function StyleSettings({
           className="panel mt-6 border-[color:var(--c-danger)]/30 bg-[var(--c-danger-wash)] p-3 text-sm text-[var(--c-danger)]"
         >
           {error}
+        </p>
+      )}
+
+      {/* 埋点失败不影响配置本身，但要说出来——「没写」与「写了但我查错了地方」
+          在人工验收时必须能分开。 */}
+      {eventError && (
+        <p
+          role="status"
+          data-event-error
+          className="panel mt-6 bg-[var(--c-accent-wash)] p-3 text-sm text-[var(--c-accent-ink)]"
+        >
+          {eventError}（配置本身不受影响）
         </p>
       )}
     </div>

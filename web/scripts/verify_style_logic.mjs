@@ -40,6 +40,7 @@ function check(cond, name, detail = "") {
 }
 
 const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+const sorted_ = (xs) => [...xs].sort();
 
 /** 递归列出所有带 "use client" 的组件源码。 */
 function listClientComponents(dir) {
@@ -67,22 +68,37 @@ function listClientComponents(dir) {
  * 以后在 lib/style 里新加一个随机 helper，它会**自动**成为客户端组件的违禁标识符，
  * 不需要有人记得回来改名单。
  */
+/**
+ * 渲染期取值两侧会分叉的**原始**随机源。名单只有这两个，其余都是从它们推导出来的。
+ *
+ * `crypto.randomUUID` 是阶段 4 加的：`session_id` 用它生成，而它与 `Math.random`
+ * 是**同一类危险**——客户端组件的渲染在 SSR 与 hydrate 各跑一次，两次取到不同的
+ * uuid。左右位置分叉肉眼可见（#418 报错），`session_id` 分叉**看不见**：
+ * 它只是让同一次 onboarding 的 6 步事件挂在两个 session 上，而弃流点分析正是
+ * 按 session 分组的。看不见的那个更需要护栏。
+ */
+const PRIMITIVE_RANDOM_SOURCES = ["Math.random", "crypto.randomUUID"];
+
 function randomSourceNames(libDir) {
-  const names = new Set(["Math.random"]);
+  const names = new Set(PRIMITIVE_RANDOM_SOURCES);
   for (const f of readdirSync(libDir)) {
     if (!/\.tsx?$/.test(f)) continue;
     // **先剥注释再分析**：注释写在下一个 export 之前，不剥的话它会落进上一块，
     // 把文档里提到的 `Math.random()` 算成上一个函数的随机性（实测踩到，
     // configFromPicks 因此被误判成随机源）。
     const src = stripComments(readFileSync(join(libDir, f), "utf8"));
-    const chunks = src.split(/export\s+function\s+/).slice(1);
+    // `export async function` 也要能切开。原来只切 `export function`，
+    // 于是一个 async 导出的函数体会被算进**上一个**同步导出函数的身体里——
+    // 那会同时造成误判（上一个被算成随机源）和漏判（async 那个永远进不了名单）。
+    const chunks = src.split(/export\s+(?:async\s+)?function\s+/).slice(1);
     for (const chunk of chunks) {
       const name = chunk.match(/^(\w+)/)?.[1];
       if (!name) continue;
       const body = chunk.split(/\nexport\s/)[0];
       // 不要求后面跟 `(`：`rng = Math.random` 这种**把随机函数当值传**的写法
       // 同样是随机源，而它后面跟的是 `)`（实测：makeFlips 因此被漏判）。
-      if (/Math\.random\b/.test(body)) names.add(name);
+      const re = new RegExp(PRIMITIVE_RANDOM_SOURCES.map((n) => n.replace(".", "\\.")).join("|") + "\\b");
+      if (re.test(body)) names.add(name);
     }
   }
   return [...names];
@@ -133,6 +149,8 @@ try {
       "lib/style/feedback.ts",
       "lib/style/flow.ts",
       "lib/style/text-arm.ts",
+      "lib/style/events.ts",
+      "lib/style/dwell.ts",
       "lib/style/markdown.tsx",
       "--module", "commonjs",
       "--target", "es2020",
@@ -370,6 +388,13 @@ console.log("\n\x1b[1m五 · 两处「一处出处」的接线\x1b[0m");
     "推导出的随机源名单含 makeFlips",
     randomSources.join(" / ") + "  ← 名单是推导的，不是写死的",
   );
+  // 阶段 4：session_id 也必须在服务端抽。它进名单是**自动**的（函数体里有
+  // crypto.randomUUID），不需要有人记得回来改名单——这正是当初改成推导的理由。
+  check(
+    randomSources.includes("newSessionId"),
+    "推导出的随机源名单含 newSessionId",
+    "← session_id 与 left_variant 同一条处置：服务端抽好传 prop",
+  );
 
   const randomInClient = clientRandomnessProblems(clientFiles, randomSources);
   check(
@@ -391,6 +416,35 @@ console.log("\n\x1b[1m五 · 两处「一处出处」的接线\x1b[0m");
   check(
     /flips:\s*\(0 \| 1\)\[\]/.test(pairSrc),
     "客户端组件把 flips 作为 prop 接收",
+  );
+
+  // 允许控制（阶段 4）：三个服务端页面**必须**各自抽一个 session_id 并传下去。
+  // 少了这条，把 newSessionId 整个删掉也会让「客户端没有随机源」全绿——
+  // 而那时事件全部落在 undefined/空 session 上，弃流点分析直接没了。
+  for (const rel of [
+    "app/onboarding/style/page.tsx",
+    "app/onboarding/style-text/page.tsx",
+    "app/settings/style/page.tsx",
+  ]) {
+    const src = readFileSync(join(WEB, rel), "utf8");
+    check(
+      /sessionId=\{newSessionId\(\)\}/.test(src),
+      `${rel} 在服务端抽 session_id 并作为 prop 传下去`,
+      "← 只删不搬的话，上一条照样绿",
+    );
+  }
+
+  // 反向控制：把 newSessionId 的调用塞进一个客户端组件，判据必须报出来。
+  // 与上面 makeFlips 那条同构 —— 判据自己先过一遍反向控制（F16）。
+  const fakeClient = {
+    path: "settings-client.tsx(把 session 生成搬回客户端)",
+    src: '"use client";\nconst id = newSessionId();\n',
+  };
+  const sessionDetected = clientRandomnessProblems([fakeClient], randomSources);
+  check(
+    sessionDetected.length > 0,
+    "反向控制：客户端组件里调 newSessionId → 判据变红",
+    sessionDetected.length > 0 ? `报出 ${sessionDetected.length} 条` : "没报出 —— 这条是空转的",
   );
 
   // 判据自身的分辨力：把修复前的写法塞回去，这条**必须**报出问题。
@@ -488,6 +542,326 @@ console.log("\n\x1b[1m六 · 16 个样例都渲染得出来\x1b[0m");
     !evil.includes("<img") && evil.includes("&lt;img"),
     "正文里的 HTML 被转义，不当标签渲染",
     evil.slice(0, 80),
+  );
+}
+
+
+// ---------------------------------------------------------------- 埋点五事件
+
+console.log("\n\x1b[1m七 · 埋点五事件（阶段 4）\x1b[0m");
+{
+  const ev = require_(join(out, "events.js"));
+  const { createDwellClock } = require_(join(out, "dwell.js"));
+  const { TEXT_ARM_CALL } = require_(join(out, "text-arm.js"));
+
+  // -------- 7.1 TS 的必需字段表 vs 迁移里的 f1_event_required_keys
+  //
+  // 同一份清单住在两处，各有不可替代的理由：
+  //   · SQL 那份是最后一道防线，但它变红的时候事件已经丢了（insert 被拒，用户无感）；
+  //   · TS 那份让缺字段在构造时就抛出来，跑一次 verify:logic 就能发现。
+  // **两份存在 ≠ 两份一致**（口径 F33），所以有这一节。
+  const migDir = join(WEB, "..", "supabase", "migrations");
+  const migSrc = readdirSync(migDir)
+    .filter((f) => f.endsWith(".sql"))
+    .sort()
+    .map((f) => readFileSync(join(migDir, f), "utf8"))
+    .join("\n");
+
+  /** 纯函数，好让下面的反向控制直接喂一段改过的 SQL。 */
+  function parseSqlRequiredKeys(sql) {
+    const block = /create or replace function public\.f1_event_required_keys[\s\S]*?\$\$;/.exec(sql)?.[0];
+    if (!block) return null;
+    const out = {};
+    for (const m of block.matchAll(/when\s+'(\w+)'\s*then\s*array\[([^\]]*)\]/g)) {
+      out[m[1]] = [...m[2].matchAll(/'(\w+)'/g)].map((k) => k[1]);
+    }
+    return out;
+  }
+
+  const sqlKeys = parseSqlRequiredKeys(migSrc);
+  // 判据自身的分辨力：解析失败会得到 null 或空对象，而空对象之间的比对必然相等。
+  check(sqlKeys !== null, "迁移里找到 f1_event_required_keys");
+  check(Object.keys(sqlKeys ?? {}).length === 5, "SQL 解析出 5 个 event_type", `实得 ${Object.keys(sqlKeys ?? {}).length}`);
+  check(ev.EVENT_TYPES.length === 5, "TS 的 EVENT_TYPES 是 5 个", ev.EVENT_TYPES.join(" · "));
+
+  /** 返回不一致的说明。空数组 = 两份相同。 */
+  function compareKeys(tsKeys, sql) {
+    const problems = [];
+    const tsTypes = sorted_(Object.keys(tsKeys));
+    const sqlTypes = sorted_(Object.keys(sql ?? {}));
+    if (!eq(tsTypes, sqlTypes)) problems.push(`event_type 集合：TS ${JSON.stringify(tsTypes)} ≠ SQL ${JSON.stringify(sqlTypes)}`);
+    for (const t of tsTypes) {
+      if (!eq(sorted_(tsKeys[t] ?? []), sorted_(sql?.[t] ?? []))) {
+        problems.push(`${t}：TS ${JSON.stringify(tsKeys[t])} ≠ SQL ${JSON.stringify(sql?.[t])}`);
+      }
+    }
+    return problems;
+  }
+
+  const keyProblems = compareKeys(ev.REQUIRED_PAYLOAD_KEYS, sqlKeys);
+  check(keyProblems.length === 0, "TS 与 SQL 的必需字段表逐项一致", keyProblems.join("；"));
+
+  // 反向控制：从 SQL 那份里拿掉 left_variant，比对**必须**报出来。
+  const tamperedSql = migSrc.replace(
+    "then array['step', 'axis', 'pair_id', 'left_variant']",
+    "then array['step', 'axis', 'pair_id']",
+  );
+  check(
+    compareKeys(ev.REQUIRED_PAYLOAD_KEYS, parseSqlRequiredKeys(tamperedSql)).length > 0,
+    "反向控制：SQL 少一个字段时比对变红",
+    "← 少了它，两个空对象之间的相等也会被读成一致",
+  );
+
+  // `schema_version`（PRD §13.0 要求必埋）由**数据库的 default** 给，客户端一个字都不发。
+  // 让客户端发就是第二处出处，而两处漂开的表现是「版本号说没变，其实变了」——
+  // 比没有版本号更糟，因为它会让人停止追问。
+  check(
+    /schema_version text not null default '[a-z0-9-]+'/.test(migSrc),
+    "迁移里 schema_version 有 default",
+    /schema_version text not null default '([a-z0-9-]+)'/.exec(migSrc)?.[1] ?? "",
+  );
+  check(
+    !/schema_version/.test(stripComments(readFileSync(join(WEB, "lib/style/events.ts"), "utf8"))),
+    "TS 侧不发 schema_version",
+    "← 由 default 给，客户端不碰",
+  );
+
+  // 公共列不该在 payload 里再存一遍——两处存同一个值就有两处会漂。
+  const dupes = Object.entries(ev.REQUIRED_PAYLOAD_KEYS).flatMap(([t, keys]) =>
+    keys.filter((k) => ["user_id", "arm", "session_id", "created_at"].includes(k)).map((k) => `${t}.${k}`),
+  );
+  check(dupes.length === 0, "payload 里不重复存公共列", dupes.join(" "));
+
+  // -------- 7.2 五个构造函数产出的 payload 必带必需字段
+  //
+  // 「缺一个字段」是这套埋点最容易发生也最安静的坏法：数据库会拒，用户无感，
+  // 报表里那一列就是空的。所以每个事件都真的构造一次再逐字段核。
+  const cfg0 = cfg();
+  const built = {
+    style_pair_shown: ev.pairShown({ step: 1, axis: "detail_level", pairId: "detail_p0_p3", leftVariant: "P0" }),
+    style_pair_chosen: ev.pairChosen({
+      step: 1, axis: "detail_level", pairId: "detail_p0_p3",
+      leftVariant: "P0", chosenVariant: "P3", dwellMs: 1234, hiddenMs: 0,
+    }),
+    style_onboarding_completed: ev.onboardingCompleted({ config: cfg0, stepsCompleted: 6, totalMs: 42000 }),
+    style_text_mapped: ev.textMapped({ ok: true, axesFromText: ["detail_level"], axesFromDefault: ["depth"] }),
+    style_config_changed: ev.manualChange(cfg0, { ...cfg0, depth: "derivation" }),
+  };
+  for (const t of ev.EVENT_TYPES) {
+    const payload = built[t].payload;
+    const missing = ev.REQUIRED_PAYLOAD_KEYS[t].filter(
+      (k) => payload[k] === undefined || payload[k] === null || payload[k] === "",
+    );
+    check(missing.length === 0, `${t} 的 payload 必需字段齐全`, missing.length ? `缺 ${missing.join(", ")}` : `${ev.REQUIRED_PAYLOAD_KEYS[t].length} 个`);
+    check(built[t].event_type === t, `${t} 的 event_type 对得上`);
+  }
+
+  // 反向控制：构造函数自己也要会拒。少了这条，`complete()` 可以是个恒真的空壳。
+  let refused = false;
+  try {
+    ev.pairShown({ step: 1, axis: "detail_level", pairId: "detail_p0_p3", leftVariant: "" });
+  } catch (e) {
+    refused = /left_variant/.test(e.message);
+  }
+  check(refused, "反向控制：left_variant 为空时构造函数抛异常且点名字段");
+
+  // -------- 7.3 `dwell_ms` / `hidden_ms`：只采集不判读（口径 F38）
+  //
+  // 注入一个可控时钟，把两个数各钉一次。用真时间的话这几条会变成薛定谔的绿。
+  {
+    let t = 0;
+    const clock = createDwellClock(() => t);
+    t = 100; clock.markHidden();
+    t = 400; clock.markVisible();   // 隐藏 300ms
+    t = 1000;
+    const r = clock.read();
+    check(r.dwell_ms === 1000, "dwell_ms 是墙钟时长，切走的时间**照算**", `${r.dwell_ms}ms`);
+    check(r.hidden_ms === 300, "hidden_ms 单独累计页面不可见时长", `${r.hidden_ms}ms`);
+    check(r.hidden_ms <= r.dwell_ms, "hidden_ms ≤ dwell_ms");
+
+    // 两个数分开的意义：只记一个总数的话，「读了 40 秒」与「挂着 40 秒」不可分。
+    let t2 = 0;
+    const c2 = createDwellClock(() => t2);
+    t2 = 1000;
+    const r2 = c2.read();
+    check(
+      r2.dwell_ms === r.dwell_ms && r2.hidden_ms !== r.hidden_ms,
+      "两次同样长的停留，靠 hidden_ms 才分得开",
+      `都是 ${r2.dwell_ms}ms，hidden ${r.hidden_ms} vs ${r2.hidden_ms}`,
+    );
+
+    // 换步要归零，否则第 2 步的时长里混着第 1 步的。
+    let t3 = 0;
+    const c3 = createDwellClock(() => t3);
+    t3 = 5000; c3.reset();
+    t3 = 5200;
+    check(c3.read().dwell_ms === 200, "reset() 后计时归零", `${c3.read().dwell_ms}ms`);
+
+    // 重复调用不该重复累加（visibilitychange 在某些浏览器上会连发）。
+    let t4 = 0;
+    const c4 = createDwellClock(() => t4);
+    t4 = 100; c4.markHidden(); c4.markHidden();
+    t4 = 300; c4.markVisible(); c4.markVisible();
+    t4 = 500;
+    check(c4.read().hidden_ms === 200, "markHidden / markVisible 重复调用不重复累加", `${c4.read().hidden_ms}ms`);
+  }
+
+  // **代码里不许出现毫秒阈值常量**（口径 F38 / F29）。
+  //
+  // v1 不设阈值、不做「乱点」判定：我们没有任何先验知道读完一段 400 字讲解要多久，
+  // 现在拍一个数字是瞎猜，而拿到数据再按分布划线等于用结果定义判据。
+  // 一旦有人在这里写下 `dwell_ms > 1500`，那条线就再也说不清是怎么来的了。
+  const THRESHOLD_SHAPES = [
+    /(dwell|hidden)[A-Za-z_]*\s*[<>]=?\s*\d/i,
+    /\d\s*[<>]=?\s*(dwell|hidden)/i,
+    /\b[A-Z_]*(DWELL|HIDDEN)[A-Z_]*\s*=\s*\d/,
+  ];
+  function thresholdHits(src) {
+    const code = stripComments(src);
+    return THRESHOLD_SHAPES.filter((re) => re.test(code)).map((re) => String(re));
+  }
+  const trackedFiles = [
+    "lib/style/events.ts",
+    "lib/style/dwell.ts",
+    "app/onboarding/style/pairwise-client.tsx",
+    "app/settings/style/settings-client.tsx",
+  ];
+  const thresholdProblems = trackedFiles.flatMap((rel) =>
+    thresholdHits(readFileSync(join(WEB, rel), "utf8")).map((re) => `${rel} 命中 ${re}`),
+  );
+  check(thresholdProblems.length === 0, "埋点代码里没有毫秒阈值常量", thresholdProblems.join("；"));
+  check(
+    thresholdHits("if (dwell_ms < 1500) return;").length > 0,
+    "反向控制：写下一个毫秒阈值，判据变红",
+    "← 判据自己先过一遍分辨力",
+  );
+
+  // -------- 7.4 `config_changed` 与 feedback.ts 同源（任务书 §4.2 硬要求 3）
+  //
+  // F06 要「例子没懂」不进「配置修改频率」的分子。在埋点里重新判一遍就等于给这条
+  // 口径开第二个出处，而两处不一致**不会报错**：§3.2 的「修改次数趋近 0」
+  // 会因为埋点少写一个分支而自己达标。
+  let sameSource = true;
+  let mismatch = "";
+  for (const detail of AXES.detail_level) {
+    for (const depth of AXES.depth) {
+      const before = cfg({ detail_level: detail, depth });
+      for (const kind of FEEDBACK_KINDS) {
+        const outcome = applyFeedback(before, kind);
+        const payload = ev.feedbackChange(before, kind).payload;
+        if (
+          payload.config_changed !== outcome.config_changed ||
+          payload.counts_as_config_edit !== outcome.counts_as_config_edit ||
+          !eq(payload.after, outcome.config) ||
+          payload.trigger !== `feedback:${kind}`
+        ) {
+          sameSource = false;
+          mismatch = `${detail}/${depth} + ${kind}`;
+        }
+      }
+    }
+  }
+  check(sameSource, "任意配置 × 任意反馈：事件字段与 applyFeedback 逐项相同", mismatch || "3×3×4 = 36 组");
+
+  // F06 在事件里的样子：两个 false，而且是**两个独立的字段**。
+  for (const detail of AXES.detail_level) {
+    const pl = ev.feedbackChange(cfg({ detail_level: detail }), "example_unclear").payload;
+    check(
+      pl.config_changed === false && pl.counts_as_config_edit === false,
+      `${detail} + 例子没懂 → 事件里 config_changed 与 counts_as_config_edit 都是 false`,
+      "← F06：不改配置，且不进「配置修改频率」的分子",
+    );
+  }
+  // F07 端点：同样两个 false，但**事件照发**——不发的话，「点了但没改」与「没点」
+  // 在库里长得一模一样，而这条事件是 F07 唯一的数据痕迹。
+  const endpoint = ev.feedbackChange(cfg({ detail_level: "P3" }), "too_verbose").payload;
+  check(
+    endpoint.config_changed === false && eq(endpoint.before, endpoint.after),
+    "端点（P3 + 太啰嗦）→ 事件里 before 与 after 相同且 config_changed 为 false",
+  );
+  // 反向控制：真的改了配置的那种，两个字段必须都是 true。
+  const moved2 = ev.feedbackChange(cfg({ detail_level: "P0" }), "too_verbose").payload;
+  check(
+    moved2.config_changed === true && moved2.counts_as_config_edit === true && moved2.after.detail_level === "P2",
+    "反向控制：P0 + 太啰嗦 → 两个字段都是 true，after 是 P2",
+    "← 少了它，一个恒返回 false 的实现也能让上面全绿",
+  );
+
+  // 手动改轴：改了就是 true，没改就是 false。
+  const manualMoved = ev.manualChange(cfg0, { ...cfg0, depth: "derivation" }).payload;
+  const manualSame = ev.manualChange(cfg0, { ...cfg0 }).payload;
+  check(manualMoved.config_changed === true && manualMoved.trigger === "manual", "手动改轴 → trigger=manual 且 config_changed=true");
+  check(manualSame.config_changed === false, "手动保存但一个字段都没改 → config_changed=false");
+
+  // -------- 7.5 `call` 必须从 text-arm.ts 读，描述原文不得进事件
+  const mapped = ev.textMapped({ ok: true, axesFromText: ["detail_level"], axesFromDefault: [] }).payload;
+  check(eq(mapped.call, TEXT_ARM_CALL), "事件里的 call 与 TEXT_ARM_CALL 逐字段相同", JSON.stringify(mapped.call));
+
+  const eventsSrc = readFileSync(join(WEB, "lib/style/events.ts"), "utf8");
+  // 结构上传不进来：构造函数根本没有描述这个参数。**这比「记得别传」强**。
+  check(
+    !/function textMapped\([\s\S]*?\)\s*:/.test(eventsSrc) ||
+      !/description/.test(/function textMapped\(([\s\S]*?)\}\)/.exec(eventsSrc)?.[1] ?? ""),
+    "textMapped 的参数里没有描述原文",
+    "← 参数里没有这个东西，才是真的传不进来（PRD §12.2）",
+  );
+  // 行为上也核一次：喂一段 canary，它不该出现在任何字段里。
+  const CANARY = "我希望讲得细一点并且多举例子ZZCANARYZZ";
+  const canaryJson = JSON.stringify(
+    ev.textMapped({ ok: true, axesFromText: ["detail_level"], axesFromDefault: [] }).payload,
+  );
+  check(!canaryJson.includes("ZZCANARYZZ") && !canaryJson.includes(CANARY), "事件 payload 里不含描述原文");
+
+  // 失败也要能落库：ok=false 时字段仍然在（空列表），否则失败永远进不了库，
+  // 而失败率恰恰是这条臂最该看的数字之一。
+  const failed_ = ev.textMapped({ ok: false, failure: "rate_limited" }).payload;
+  check(
+    failed_.ok === false && Array.isArray(failed_.axes_from_text) && Array.isArray(failed_.axes_from_default),
+    "ok=false 时两个轴列表仍在（空数组），事件仍能落库",
+    `failure=${failed_.failure}`,
+  );
+
+  // -------- 7.6 接线：这些构造函数**真的被页面调了**
+  //
+  // 单测能证明构造函数会算，证明不了页面调了它（F3a 那次 59 条全绿而
+  // request_signature 被改名没人发现，就是这个形态，通则七 #7）。
+  const pairSrc = readFileSync(join(WEB, "app/onboarding/style/pairwise-client.tsx"), "utf8");
+  const settingsSrc = readFileSync(join(WEB, "app/settings/style/settings-client.tsx"), "utf8");
+  const textRouteSrc = readFileSync(join(WEB, "app/api/style/from-text/route.ts"), "utf8");
+
+  check(/pairShown\(\{/.test(pairSrc) && /pairChosen\(\{/.test(pairSrc), "成对比较页两个事件都发（一步一个事件，口径 F37）");
+  check(/leftVariant,/.test(pairSrc), "两个事件都带上 leftVariant", "← 阶段 3 那次位置随机化靠它才有意义");
+  check(/onboardingCompleted\(\{/.test(pairSrc), "主臂收尾屏发 style_onboarding_completed");
+  // **对照臂也必须发。** onboarding 完成率是 A5 预登记的三个指标之一，按臂分组读——
+  // 这条臂不发，那条曲线就只有一半，而少的那一半不会以任何形式报错。
+  const textClientSrc = readFileSync(join(WEB, "app/onboarding/style-text/text-client.tsx"), "utf8");
+  check(
+    /onboardingCompleted\(\{/.test(textClientSrc),
+    "对照臂收尾也发 style_onboarding_completed",
+    "← 不发的话，text 臂的 onboarding 完成率根本算不出来",
+  );
+  check(/textMapped\(\{\s*ok:\s*true/.test(textRouteSrc), "route.ts 成功路径发 style_text_mapped");
+  check(
+    (textRouteSrc.match(/textMapped\(\{\s*ok:\s*false/g) ?? []).length >= 5,
+    "route.ts 的失败分支也发事件",
+    `${(textRouteSrc.match(/textMapped\(\{\s*ok:\s*false/g) ?? []).length} 处 ← 失败率是这条臂最该看的数字之一`,
+  );
+  check(/feedbackChange\(saved, kind\)/.test(settingsSrc), "设置页反馈按钮发 style_config_changed");
+  check(/manualChange\(saved, draft\)/.test(settingsSrc), "设置页手动保存发 style_config_changed");
+  // 反馈按钮**在配置没变时也要发**——F06/F07 的唯一数据痕迹。
+  check(
+    /if \(!outcome\.config_changed\) \{[\s\S]*?void send\(event\);/.test(settingsSrc),
+    "配置没变的分支里也发了事件",
+    "← 不发的话，「点了但我们决定不改」与「没点」在库里一模一样",
+  );
+
+  // 客户端对 style_events **只有 insert 权限**，带 select 的写入会直接 42501。
+  // 先剥注释：文档里解释「为什么不 .select()」的那句话本身含这几个字，
+  // 不剥的话判据会把自己的文档判红（与 randomSourceNames 那次同一个坑）。
+  check(
+    !/\.select\(/.test(stripComments(eventsSrc)),
+    "recordEvent 不带 .select()",
+    "← 事件表只授予 insert，读走 service_role",
   );
 }
 

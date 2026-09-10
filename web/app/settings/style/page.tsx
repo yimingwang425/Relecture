@@ -1,5 +1,6 @@
 import { AppNav } from "@/app/components/app-nav";
 import { RowStateNotice } from "@/app/components/row-state";
+import { newSessionId } from "@/lib/style/events";
 import { configOf, loadStyleRow } from "@/lib/style/session";
 
 import { StyleSettings } from "./settings-client";
@@ -29,11 +30,15 @@ export default async function StyleSettingsPage() {
           <RowStateNotice result={result} />
         </div>
       ) : (
+        /* `sessionId` 在**服务端**抽（同 /onboarding/style/page.tsx）：客户端组件的
+           渲染在 SSR 与 hydrate 各跑一次，渲染期取随机数两侧会分叉（React #418）。
+           「一次页面加载 = 一个 session」是占位口径，PRD §3.4.5 的切分规则未定。 */
         <StyleSettings
           userId={result.userId}
           initialConfig={configOf(result.row)}
           onboarded={result.row.onboarded_at !== null}
           arm={result.row.f1_arm}
+          sessionId={newSessionId()}
         />
       )}
     </main>

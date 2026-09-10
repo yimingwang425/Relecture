@@ -547,6 +547,236 @@ async function main() {
     await db.close();
   }
 
+
+  // ============================================================ style_events
+  //
+  // 阶段 4 的事件表。四组断言，各防一件事：
+  //
+  //   1. **RLS 与权限**：只能 insert 自己的，读/改/删一律不行；
+  //   2. **payload 必需字段**（口径 F36）：jsonb 没有 schema，漏字段不会报错，
+  //      所以每个 event_type 的必需字段各缺一次都要判红；
+  //   3. **arm 不可伪造**：arm 由 user_id 确定（F08），客户端改不了自己的臂；
+  //   4. **cascade**（口径 F14 / PRD §12.1「注销即清空」）：删账号 → 事件行也没了。
+  //
+  // 第 4 组是本阶段唯一会让 §12.1 在事件表上重新变成「一条没被测量过的承诺」的地方。
+  console.log("\n\x1b[1mstyle_events · 埋点表（阶段 4）\x1b[0m");
+
+  /** 五个事件各一份**齐全**的 payload。缺字段的用例从它们身上逐个删键造出来。 */
+  const FULL_PAYLOADS = {
+    style_pair_shown: { step: 1, axis: "detail_level", pair_id: "detail_p0_p3", left_variant: "P0" },
+    style_pair_chosen: {
+      step: 1, axis: "detail_level", pair_id: "detail_p0_p3",
+      left_variant: "P0", chosen_variant: "P3", dwell_ms: 1234, hidden_ms: 0,
+    },
+    style_onboarding_completed: {
+      config: { detail_level: "P0", use_examples: "more", structure: "conclusion_first", depth: "why" },
+      steps_completed: 6, total_ms: 42000, prompt_template_version: "b1",
+    },
+    style_text_mapped: {
+      call: { model: "claude-sonnet-5", effort: "low", thinking: "disabled", max_tokens: 1500 },
+      axes_from_text: ["detail_level"], axes_from_default: ["depth"], ok: true,
+      prompt_template_version: "b1",
+    },
+    style_config_changed: {
+      before: { detail_level: "P0" }, after: { detail_level: "P2" },
+      trigger: "feedback:too_verbose", config_changed: true, counts_as_config_edit: true,
+      prompt_template_version: "b1",
+    },
+  };
+
+  const SESSION = "99999999-9999-4999-8999-999999999999";
+
+  /** 以某个用户的身份写一条事件。返回错误对象（成功则 null）。 */
+  async function putEvent(db, uid, { type, arm, payload, asUid = uid }) {
+    const realArm = arm ?? (await db.query("select public.f1_assign_arm($1) a", [uid])).rows[0].a;
+    return await errorOf(() =>
+      asUser(db, asUid, () =>
+        db.query(
+          `insert into public.style_events (user_id, event_type, arm, session_id, payload)
+           values ($1, $2, $3, $4, $5::jsonb)`,
+          [uid, type, realArm, SESSION, JSON.stringify(payload)],
+        )));
+  }
+
+  {
+    const db = await freshDb();
+
+    // ---- 允许控制先跑：五个事件都写得进去。
+    // 少了它，下面所有「被拒」在「整张表根本写不进去」的情况下也全绿。
+    let allOk = true;
+    let firstErr = "";
+    for (const [type, payload] of Object.entries(FULL_PAYLOADS)) {
+      const err = await putEvent(db, UID_A, { type, payload });
+      if (err) { allOk = false; firstErr = `${type}: ${err.code} ${err.message}`; }
+    }
+    const n = (await db.query("select count(*)::int c from public.style_events")).rows[0].c;
+    allOk && n === 5
+      ? ok("五个事件都能写进去", `${n} 行 ← 下面每一条「被拒」的允许控制`)
+      : bad("齐全的事件写不进去", firstErr || `行数 ${n}`);
+
+    // ---- payload 必需字段：每个 event_type 的每个必需字段，各缺一次都要判红
+    for (const [type, payload] of Object.entries(FULL_PAYLOADS)) {
+      const keys = Object.keys(payload);
+      const missed = [];
+      for (const k of keys) {
+        const partial = { ...payload };
+        delete partial[k];
+        const err = await putEvent(db, UID_A, { type, payload: partial });
+        if (err?.code !== "23514") missed.push(`${k}(${err?.code ?? "未报错"})`);
+      }
+      missed.length === 0
+        ? ok(`${type} 缺任一必需字段都判红`, `${keys.length}/${keys.length} 个字段`)
+        : bad(`${type} 有字段缺了也放行`, missed.join(" "));
+    }
+
+    // 键在、值是 null / 空字符串，同样算缺——这两种是前端拼错时最常见的形态，
+    // 而它们在 jsonb 里与「字段有值」长得完全不一样，却对分析同样无用。
+    const nullErr = await putEvent(db, UID_A, {
+      type: "style_pair_shown",
+      payload: { ...FULL_PAYLOADS.style_pair_shown, left_variant: null },
+    });
+    nullErr?.code === "23514"
+      ? ok("left_variant 是 JSON null 也判红", "← 前端拿到 undefined 序列化成 null 的常见形态")
+      : bad("JSON null 被放行", String(nullErr?.code));
+
+    const emptyErr = await putEvent(db, UID_A, {
+      type: "style_pair_shown",
+      payload: { ...FULL_PAYLOADS.style_pair_shown, left_variant: "" },
+    });
+    emptyErr?.code === "23514"
+      ? ok("left_variant 是空字符串也判红", "← 变量名拼错时最常见的形态")
+      : bad("空字符串被放行", String(emptyErr?.code));
+
+    // ---- 未知 event_type。取值域与必需字段表是**同一处出处**，不另立 CHECK。
+    const unknownErr = await putEvent(db, UID_A, { type: "style_bogus", payload: { a: 1 } });
+    unknownErr?.code === "23514"
+      ? ok("未知 event_type 被拒", "← 取值域由 f1_event_required_keys 一处给出")
+      : bad("未知 event_type 被放行", String(unknownErr?.code));
+
+    // ---- arm 不可伪造。A5 的三个预登记指标全部按臂分组，
+    // 谁都能往事件里写 arm 的话，那三个读数当场被搅浑且没有任何东西会红。
+    const realArm = (await db.query("select public.f1_assign_arm($1) a", [UID_A])).rows[0].a;
+    const forgedErr = await putEvent(db, UID_A, {
+      type: "style_pair_shown",
+      arm: realArm === "pairwise" ? "text" : "pairwise",
+      payload: FULL_PAYLOADS.style_pair_shown,
+    });
+    forgedErr?.code === "23514"
+      ? ok("伪造 arm 被拒", `${realArm} 之外的值写不进去 ← arm = f1_assign_arm(user_id)`)
+      : bad("伪造 arm 被放行", String(forgedErr?.code));
+
+    // ---- 冒名：A 写 user_id = B 的事件。挡它的是 RLS 的 with check（insert 有授权）。
+    // 与 style_config 那条不同层，所以错误文本也不同——**两条都断文本**，
+    // 免得哪天层换了而断言静默保持绿色。
+    const impersonateErr = await errorOf(() =>
+      asUser(db, UID_A, () =>
+        db.query(
+          `insert into public.style_events (user_id, event_type, arm, session_id, payload)
+           values ($1, 'style_pair_shown', public.f1_assign_arm($1), $2, $3::jsonb)`,
+          [UID_B, SESSION, JSON.stringify(FULL_PAYLOADS.style_pair_shown)],
+        )));
+    impersonateErr?.code === "42501" && /row-level security/i.test(impersonateErr?.message ?? "")
+      ? ok("A 写不了 B 的事件", "42501 且拦它的是 RLS 层（insert 有授权，策略承重）")
+      : bad("冒名写入没被 RLS 拦", `${impersonateErr?.code} ${impersonateErr?.message ?? "未报错"}`);
+
+    // ---- 读 / 改 / 删：三个动作**权限层就没给**，不是靠策略挡的。
+    for (const [what, sql] of [
+      ["select", "select * from public.style_events"],
+      ["update", "update public.style_events set payload = '{}'::jsonb"],
+      ["delete", "delete from public.style_events"],
+    ]) {
+      const err = await errorOf(() => asUser(db, UID_A, () => db.query(sql)));
+      err?.code === "42501" && /permission denied/i.test(err?.message ?? "")
+        ? ok(`用户 ${what} 事件被拒`, "42501 权限层 ← 读事件是分析行为，走 service_role")
+        : bad(`用户 ${what} 事件没被拒`, `${err?.code} ${err?.message ?? "未报错"}`);
+    }
+
+    await db.close();
+  }
+
+  // ---- cascade（口径 F14 / PRD §12.1）
+  //
+  // 事件表同样**刻意不给 delete 策略**，清空完全依赖 auth.users 的 on delete cascade。
+  // 少了这条断言，「注销即清空」在事件表上又变成一条没被测量过的承诺。
+  console.log("\n  \x1b[1m注销 · style_events 的 on delete cascade\x1b[0m");
+  {
+    const db = await freshDb();
+    await putEvent(db, UID_A, { type: "style_pair_shown", payload: FULL_PAYLOADS.style_pair_shown });
+    await putEvent(db, UID_A, { type: "style_pair_chosen", payload: FULL_PAYLOADS.style_pair_chosen });
+    await putEvent(db, UID_B, { type: "style_pair_shown", payload: FULL_PAYLOADS.style_pair_shown });
+
+    const before = (await db.query("select count(*)::int c from public.style_events")).rows[0].c;
+    // 前提先验一遍：A 真的有事件。没有的话下面的「删完就没了」是空转的
+    // （与「A 读 B 返回空」在 B 无行时也成立同形，通则七 #5）。
+    const aBefore = (await db.query("select count(*)::int c from public.style_events where user_id=$1", [UID_A])).rows[0].c;
+    aBefore === 2 ? ok("删之前 A 有 2 条事件", `总共 ${before} 条 ← 下一条的前提`) : bad("前提不成立", `A 有 ${aBefore} 条`);
+
+    await db.query("delete from auth.users where id = $1", [UID_A]);
+    const aAfter = (await db.query("select count(*)::int c from public.style_events where user_id=$1", [UID_A])).rows[0].c;
+    const bAfter = (await db.query("select count(*)::int c from public.style_events where user_id=$1", [UID_B])).rows[0].c;
+
+    aAfter === 0
+      ? ok("删 auth.users 的行 → 该用户的事件随之消失", `${aBefore} → 0`)
+      : bad("cascade 没有触发", `仍有 ${aAfter} 条`);
+    bAfter === 1 ? ok("只清掉被注销的那个用户", "B 的事件仍在") : bad("误删了别的用户的事件", `B 剩 ${bAfter} 条`);
+    await db.close();
+  }
+
+  // ---- R9 · cascade 的反向验证
+  console.log("\n  \x1b[1mR9 · style_events 的外键从 cascade 改成 no action\x1b[0m");
+  {
+    const db = await freshDb();
+    await db.exec(`alter table public.style_events
+                     drop constraint style_events_user_id_fkey,
+                     add constraint style_events_user_id_fkey
+                       foreign key (user_id) references auth.users (id);`);
+    await putEvent(db, UID_A, { type: "style_pair_shown", payload: FULL_PAYLOADS.style_pair_shown });
+    const code = await errcodeOf(() => db.query("delete from auth.users where id=$1", [UID_A]));
+    const still = (await db.query("select count(*)::int c from public.style_events where user_id=$1", [UID_A])).rows[0].c;
+    code !== null || still > 0
+      ? ok("无 cascade 时注销清不掉事件", `errcode=${code} 残留 ${still} 条 ← cascade 是承重的`)
+      : bad("去掉 cascade 后事件仍被清掉", "← 说明清空的不是 cascade，上面那条断言测错了对象");
+    await db.close();
+  }
+
+  // ---- R10 · payload 护栏的反向验证
+  //
+  // 「缺字段被拒」若在**没有那条 CHECK** 的情况下也绿，说明拒它的是别的东西。
+  console.log("\n  \x1b[1mR10 · 去掉 payload 必需字段的 CHECK\x1b[0m");
+  {
+    const db = await freshDb();
+    await db.exec("alter table public.style_events drop constraint style_events_payload_check;");
+    const err = await putEvent(db, UID_A, {
+      type: "style_pair_shown",
+      payload: { step: 1, axis: "detail_level", pair_id: "detail_p0_p3" }, // 缺 left_variant
+    });
+    err === null
+      ? ok("去掉 CHECK 后缺 left_variant 的事件写得进去", "← 拒它的确实是那条 CHECK，不是别的东西")
+      : bad("去掉 CHECK 后仍被拒", `${err.code} ${err.message} ← 上面那组断言测错了对象`);
+    await db.close();
+  }
+
+  // ---- R11 · 「读不到」的允许控制
+  //
+  // 把授权与策略都加回来，读必须成功。不加这条，「用户读不到事件」可能只是因为
+  // 表里根本没有行、或者整表不可用——与 F11 当初那个「A 读 B 返回空」同形。
+  console.log("\n  \x1b[1mR11 · 把 select 授权与策略加回来（允许控制）\x1b[0m");
+  {
+    const db = await freshDb();
+    await putEvent(db, UID_A, { type: "style_pair_shown", payload: FULL_PAYLOADS.style_pair_shown });
+    await db.exec(`grant select on public.style_events to authenticated;
+                   create policy style_events_select_own on public.style_events
+                     for select to authenticated using (user_id = auth.uid());`);
+    const rowsA = await asUser(db, UID_A, async () =>
+      (await db.query("select count(*)::int c from public.style_events")).rows[0].c);
+    const rowsB = await asUser(db, UID_B, async () =>
+      (await db.query("select count(*)::int c from public.style_events")).rows[0].c);
+    rowsA === 1 && rowsB === 0
+      ? ok("加回授权与策略后 A 读得到自己的 1 条、B 读到 0 条", "← 上面的「读不到」确实是被那两样东西拦的")
+      : bad("加回来仍读不到", `A ${rowsA} 条 / B ${rowsB} 条`);
+    await db.close();
+  }
+
   console.log(`\n\x1b[1m合计\x1b[0m  绿 ${passed} · 红 ${failed}\n`);
   process.exit(failed === 0 ? 0 : 1);
 }

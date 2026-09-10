@@ -4,10 +4,36 @@ F1 阶段 1 的交付物。**口径决策表不在这里，在 [`f1_samples/READ
 （F08–F14 是本阶段新增的）——一张表分成两处必然漂，而漂掉的那份通常是没人再看的那份。
 
 ```
-migrations/20260907120000_f1_style_config.sql   唯一 DDL 出处
+migrations/20260907120000_f1_style_config.sql   style_config 的唯一 DDL 出处
+migrations/20260909130000_…_drop_p1.sql         detail_level CHECK 收紧到 P0/P2/P3
+migrations/20260910090000_…_revoke_client_insert.sql   收回 style_config 的客户端 insert
+migrations/20260910140000_f1_style_events.sql   style_events 的唯一 DDL 出处（阶段 4）
 verify_rls_prod.py                              生产验收（正向，publishable key）
 verify_rls_local.mjs                            本地反向验证（拆防护，断言必须红）
 ```
+
+## 阶段 4 · `style_events`（埋点，2026-09-10）
+
+一张表 + `event_type` 列 + `payload jsonb`（口径 F36）。与 `style_config` 的三处不同：
+
+| | `style_config` | `style_events` |
+| --- | --- | --- |
+| 客户端权限 | select / update 自己那行 | **只有 insert** —— 读事件是分析行为，走 service_role |
+| 差异字段 | 一列一个 | 进 `payload jsonb`，**每个 `event_type` 的必需字段有一条会红的 CHECK** |
+| 谁定 `arm` | 触发器（F08） | CHECK `arm = f1_assign_arm(user_id)` —— 客户端**改不了自己在事件里的臂** |
+
+`payload` 是 jsonb，**漏一个字段不会报错**：表看起来正常，只是那一列全空，
+而漏采集补不回来。所以 `f1_event_required_keys` + `f1_event_payload_ok` 两个 immutable
+函数撑起一条 CHECK，缺键 / JSON null / 空字符串三种都判 `23514`；
+**事件类型的取值域也由同一处给**（未知类型 → 必需字段表返回 NULL → 判假），不另立第二条 CHECK。
+
+`verify_rls_local.mjs` 把五个事件的 26 个必需字段**各缺一次**跑了一遍，
+R10 把那条 CHECK 拆掉证明拒它的确实是它；cascade 与 R9 是 §12.1 在事件表上的 F14。
+
+⚠️ **`verify_rls_prod.py` 尚未覆盖 `style_events`**，如实登记：它要跑在生产账号上，
+而我没有凭据也没跑过——写一段没跑过的自动化比没有更糟（同阶段 3 对 `verify_browser.mjs`
+的处置）。生产侧目前靠 `docs/F1/F1进度.md` §七 的人工清单，第 4 组用 devtools 的
+`fetch` 直打 PostgREST，每条「拒绝」都配了允许控制。
 
 ---
 
@@ -80,7 +106,7 @@ npm install && npm run verify
 | 不存 | 为什么 |
 | --- | --- |
 | `chinese_ratio_min` · `max_quote_chars` | 恒 0.85 / 恒 100，是常量。存了就会漂（口径 F03） |
-| `config_fingerprint` · `prompt_profile_id` · `metric_set_id` | Python 侧现算。TS 一份 Python 一份必然漂（约束 3 / 口径 F04） |
+| `config_fingerprint` · `prompt_profile_id` · `metric_set_id` | Python 侧现算。TS 一份 Python 一份必然漂（约束 3 / 口径 F04）。⚠️ 阶段 4 起 `prompt_profile_id` 已实现（`explain/explain/prompt_profile.py`），但**仍不进表**：事件里存构成它的原始字段，分析时才算（口径 F39） |
 | `config_version` | `a_rules.config.CONFIG_VERSION` 是模块常量，不是每用户字段 |
 | 配置历史表 | 修改次数从埋点事件反推。多一张表就多一处会与事件流不一致的地方 |
 

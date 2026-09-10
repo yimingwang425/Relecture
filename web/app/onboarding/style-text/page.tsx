@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import { AppNav } from "@/app/components/app-nav";
 import { RowStateNotice } from "@/app/components/row-state";
+import { newSessionId } from "@/lib/style/events";
 import { loadStyleRow } from "@/lib/style/session";
 
 import { TextOnboarding } from "./text-client";
@@ -35,8 +36,17 @@ export default async function TextOnboardingPage() {
   return (
     <main data-state="ok" data-arm="text" className="mx-auto w-full max-w-[880px] px-5 py-8">
       <AppNav email={result.email} />
+      {/*
+        `sessionId` 在**服务端**抽（同主臂）：客户端组件的渲染在 SSR 与 hydrate
+        各跑一次，渲染期取随机数两侧会分叉（React #418）。
+
+        这条臂的事件由 **route handler 写**（`call` 只有服务端知道是真的，
+        且失败分支根本走不到客户端），所以客户端要做的只是把这个 id **原样带回去**。
+      */}
       <TextOnboarding
         userId={result.userId}
+        arm={result.row.f1_arm}
+        sessionId={newSessionId()}
         alreadyOnboarded={result.row.onboarded_at !== null}
       />
     </main>

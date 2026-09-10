@@ -24,6 +24,7 @@ from scan.points import BASE, point_by_id
 __all__ = [
     "AXES", "DEFAULTS", "PAIRS", "ENFORCED",
     "style_config_for", "render_b_class_rules", "B_CLASS_FRAGMENTS",
+    "PROMPT_TEMPLATE_VERSION", "PROMPT_TEMPLATE_DIGEST",
 ]
 
 #: 四条轴的**产品取值域**。
@@ -130,6 +131,29 @@ B_CLASS_FRAGMENTS: dict[str, dict[str, str]] = {
         ),
     },
 }
+
+
+#: B 类措辞的**版本号**。它是 `prompt_profile_id` 的构成字段之一
+#: （口径 F04 / F39）：埋点事件里存「B 类三条轴的取值 + 这个版本号」，
+#: 分析时由 `explain.prompt_profile.prompt_profile_id()` 算出 id。
+#:
+#: ⚠️ **上面的措辞改了，这个版本号必须一起改。** 不改的话，同一个
+#: `prompt_profile_id` 会盖住两份不同的 prompt——而那正是 F04 要这个标识
+#: 回答的问题（「讲解质量变了，是阈值变了还是 prompt 变了」）失效的方式，
+#: 且它**不会报错**。
+PROMPT_TEMPLATE_VERSION: str = "b1"
+
+#: 上一行那个版本号对应的**措辞摘要**：`B_CLASS_FRAGMENTS` 块正文
+#: （压掉空白后）的 sha256 前 12 位。
+#:
+#: 靠人记得同时改版本号是不行的（F13 那个坑的又一个入口），所以摘要在这里，
+#: 由 `web/scripts/verify_style_axes.mjs` 重算并比对：措辞一动摘要就对不上，
+#: `npm run verify:axes` 直接变红，逼人把版本号一起改。
+#:
+#: 它对块内的**任何**字符变化都敏感（包括缩进以外的注释），宁可多红一次也不漏。
+#: 真要改措辞：先改措辞 → 跑 verify:axes 看它红并抄下新摘要 → 同时改
+#: PROMPT_TEMPLATE_VERSION 与 web/lib/style/axes.ts 的同名常量。
+PROMPT_TEMPLATE_DIGEST: str = "292b62f6b396"
 
 
 def render_b_class_rules(style: dict[str, str]) -> str:

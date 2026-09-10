@@ -154,6 +154,10 @@ try {
       "lib/style/markdown.tsx",
       "--module", "commonjs",
       "--target", "es2020",
+      // **跟 tsconfig 一样开 strict。** 不开的话联合类型的收窄行为与真实构建不同：
+      // 这里编得过、`next build` 编不过（或反过来），而两边编的是同一份源码——
+      // 那就等于用一个不同的编译器去验一个我们并不发布的东西（同 F12 的「跑的是原文」）。
+      "--strict",
       "--skipLibCheck",
       "--jsx", "react-jsx",
       "--esModuleInterop",
@@ -863,6 +867,172 @@ console.log("\n\x1b[1m七 · 埋点五事件（阶段 4）\x1b[0m");
     "recordEvent 不带 .select()",
     "← 事件表只授予 insert，读走 service_role",
   );
+}
+
+
+// ---------------------------------------------------------------- 写入失败之后
+
+console.log("\n\x1b[1m八 · 事件写入失败之后（2026-09-11 人工验收的红）\x1b[0m");
+{
+  const ev = require_(join(out, "events.js"));
+
+  // 实测：某账号 style_pair_chosen 6 条而 style_pair_shown 只有 5 条，缺的固定是 step 1，
+  // Console 里 ERR_CONNECTION_CLOSED + TypeError: Failed to fetch。
+  //
+  // **红的不是「网络会抖」——网络抖是必然的。** 红的是失败之后没有任何补偿：
+  // 事件丢了、日志里一行、然后就没了。而 shown/chosen 配对是算位置效应的基础。
+  //
+  // 下面这一组测的就是「补偿真的在」，而不是「代码里写了 retry 这个词」。
+
+  /** 可编程的假 sink：按脚本逐次返回成功或失败，并记下收到的每一行。 */
+  function fakeSink(script) {
+    const seen = [];
+    let i = 0;
+    return {
+      seen,
+      calls: () => i,
+      from() {
+        return {
+          insert(row) {
+            const step = script[Math.min(i, script.length - 1)];
+            i++;
+            if (step === null) {
+              seen.push(row);
+              return Promise.resolve({ error: null });
+            }
+            return Promise.resolve({ error: step });
+          },
+        };
+      },
+    };
+  }
+
+  const NET = { message: "TypeError: Failed to fetch", code: "" };     // 实测那条
+  const BAD_PAYLOAD = { message: "violates check constraint", code: "23514" };
+  const noSleep = () => Promise.resolve();
+  const memStorage = () => {
+    const m = new Map();
+    return {
+      getItem: (k) => (m.has(k) ? m.get(k) : null),
+      setItem: (k, v) => m.set(k, v),
+      removeItem: (k) => m.delete(k),
+      _dump: () => m,
+    };
+  };
+  const CTX = { userId: "u1", arm: "pairwise", sessionId: "s1" };
+  const anEvent = () =>
+    ev.pairShown({ step: 1, axis: "detail_level", pairId: "detail_p0_p3", leftVariant: "P0" });
+
+  // -------- 8.1 分类：什么算瞬时
+  check(ev.classifyInsertFailure({ code: "" }) === "transient", "没有错误码 → 瞬时", "← fetch 被网络层拒掉时就是这样，实测那条正是它");
+  check(ev.classifyInsertFailure({}) === "transient", "code 缺失 → 瞬时");
+  check(ev.classifyInsertFailure({ code: "PGRST301" }) === "transient", "JWT 过期 → 瞬时");
+  check(ev.classifyInsertFailure({ code: "503" }) === "transient", "503 → 瞬时");
+  // 方向是刻意的：把瞬时当永久 → 一条响亮的报告；反过来 → 静默空转。
+  check(ev.classifyInsertFailure({ code: "23514" }) === "permanent", "23514 → 永久", "← payload 缺字段，重试一万次也不会成功");
+  check(ev.classifyInsertFailure({ code: "42501" }) === "permanent", "42501 → 永久", "← 权限/RLS，重试无用");
+  check(ev.classifyInsertFailure({ code: "PGRST204" }) === "permanent", "PGRST204 → 永久", "← 列不存在是真 bug，要吵不要重试");
+
+  // -------- 8.2 瞬时失败**最终会落库**（这就是那条红的直接修复）
+  {
+    const sink = fakeSink([NET, NET, null]);
+    const q = ev.createEventQueue(sink, CTX, { delaysMs: [1, 1, 1], sleep: noSleep, storage: memStorage() });
+    q.enqueue(anEvent());
+    await q.flush();
+    check(sink.seen.length === 1, "前两次网络失败后，第三次真的写进去了", `尝试 ${sink.calls()} 次，落库 ${sink.seen.length} 条`);
+    check(q.state().pending === 0 && q.state().dropped === 0, "落库后队列清空、无丢弃", JSON.stringify(q.state()));
+    check(sink.seen[0]?.payload?.left_variant === "P0", "落库的那条带着 left_variant", "← 缺 shown 的那一步位置效应无从算起");
+  }
+
+  // -------- 8.3 瞬时失败用尽重试 → **留在队列里，不算丢**
+  //
+  // 这条是 8.2 的反向控制：少了它，一个「失败就 shift 掉」的实现也能让 8.2 全绿
+  // （只要偶尔成功一次），而丢掉的那些没有任何东西会红。
+  {
+    const sink = fakeSink([NET]);
+    const q = ev.createEventQueue(sink, CTX, { delaysMs: [1, 1], sleep: noSleep, storage: memStorage() });
+    q.enqueue(anEvent());
+    await q.flush();
+    const st = q.state();
+    check(st.pending === 1 && st.dropped === 0 && st.stalled === true,
+      "一直失败 → pending 仍是 1、dropped 是 0、stalled 为真",
+      `${JSON.stringify(st)} ← 网络问题不丢任何东西`);
+    check(st.lastError !== null && /Failed to fetch/.test(st.lastError), "错误原文留着，供页面显示", st.lastError ?? "");
+  }
+
+  // -------- 8.4 永久失败 → 丢掉并计数，**且不重试**
+  {
+    const sink = fakeSink([BAD_PAYLOAD]);
+    const q = ev.createEventQueue(sink, CTX, { delaysMs: [1, 1, 1], sleep: noSleep, storage: memStorage() });
+    q.enqueue(anEvent());
+    await q.flush();
+    check(sink.calls() === 1, "永久失败只试一次", `实际 ${sink.calls()} 次 ← 重试会把「我们构造了一条坏事件」拖成「队列一直不空」`);
+    check(q.state().dropped === 1 && q.state().pending === 0, "计入 dropped 并出队", JSON.stringify(q.state()));
+  }
+
+  // -------- 8.5 顺序：shown 卡住时 chosen 不许插队
+  //
+  // 乱序不会丢数据，但「先看到再点选」这个事实会没了——而那是位置效应分析的前提。
+  {
+    const sink = fakeSink([NET, null, null]);
+    const q = ev.createEventQueue(sink, CTX, { delaysMs: [1], sleep: noSleep, storage: memStorage() });
+    q.enqueue(anEvent());
+    q.enqueue(
+      ev.pairChosen({
+        step: 1, axis: "detail_level", pairId: "detail_p0_p3",
+        leftVariant: "P0", chosenVariant: "P3", dwellMs: 1, hiddenMs: 0,
+      }),
+    );
+    await q.flush();
+    check(
+      sink.seen.length === 2 &&
+        sink.seen[0].event_type === "style_pair_shown" &&
+        sink.seen[1].event_type === "style_pair_chosen",
+      "shown 先于 chosen 落库，即使 shown 失败过一次",
+      sink.seen.map((r) => r.event_type).join(" → "),
+    );
+  }
+
+  // -------- 8.6 跨页面存活：卡住的那条落进 storage，下一个队列捡得起来
+  //
+  // 用户在收尾屏点「回到首页」时组件会卸载，内存队列跟着没。
+  {
+    const store = memStorage();
+    const dead = fakeSink([NET]);
+    const q1 = ev.createEventQueue(dead, CTX, { delaysMs: [1], sleep: noSleep, storage: store });
+    q1.enqueue(anEvent());
+    await q1.flush();
+    check(q1.state().pending === 1, "第一个队列没发出去，留在 pending", JSON.stringify(q1.state()));
+
+    const alive = fakeSink([null]);
+    const q2 = ev.createEventQueue(alive, CTX, { delaysMs: [1], sleep: noSleep, storage: store });
+    check(q2.state().pending === 1, "新队列从 storage 里读到了那一条", "← 组件卸载不等于事件没了");
+    await q2.flush();
+    check(alive.seen.length === 1 && q2.state().pending === 0, "下一次页面加载把它冲了出去", `落库 ${alive.seen.length} 条`);
+    check(store._dump().size === 0, "冲完把 storage 清干净", "← 不清的话下次会重复发");
+  }
+
+  // -------- 8.7 服务端那条路径也重试（route handler 没有队列可排）
+  {
+    const sink = fakeSink([NET, null]);
+    const r = await ev.recordEvent(sink, { ...CTX, arm: "text", event: anEvent() }, { delaysMs: [1], sleep: noSleep });
+    check(r.ok === true && sink.calls() === 2, "recordEvent 对瞬时失败会重试", `${sink.calls()} 次`);
+    const sink2 = fakeSink([BAD_PAYLOAD]);
+    const r2 = await ev.recordEvent(sink2, { ...CTX, arm: "text", event: anEvent() }, { delaysMs: [1, 1], sleep: noSleep });
+    check(r2.ok === false && r2.kind === "permanent" && sink2.calls() === 1, "永久失败不重试并报出 kind", `${sink2.calls()} 次，kind=${r2.kind}`);
+  }
+
+  // -------- 8.8 接线：三个页面用的是队列，不是裸插入
+  const pairSrc2 = readFileSync(join(WEB, "app/onboarding/style/pairwise-client.tsx"), "utf8");
+  const settingsSrc2 = readFileSync(join(WEB, "app/settings/style/settings-client.tsx"), "utf8");
+  const textSrc2 = readFileSync(join(WEB, "app/onboarding/style-text/text-client.tsx"), "utf8");
+  for (const [name, src] of [["主臂", pairSrc2], ["设置页", settingsSrc2], ["对照臂", textSrc2]]) {
+    const code = stripComments(src);
+    check(/createEventQueue\(/.test(code), `${name} 用 createEventQueue`);
+    check(/\.flush\(\)/.test(code), `${name} 挂载时冲一次队列`, "← 上一次页面加载没发完的靠它出去");
+    check(!/recordEvent\(/.test(code), `${name} 不直接调 recordEvent`, "← 裸插入没有重试也没有排队，正是这次的红");
+    check(/data-events-pending/.test(code), `${name} 在 DOM 上暴露 pending/dropped`, "← 人工验收要能当场看见，不是事后查库");
+  }
 }
 
 rmSync(out, { recursive: true, force: true });

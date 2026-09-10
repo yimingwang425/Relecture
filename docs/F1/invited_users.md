@@ -30,3 +30,6 @@ node scripts/invite_user.mjs --email someone@example.com --password '……' --n
 
 | 邮箱 | 日期 | 用途 | user_id |
 | --- | --- | --- | --- |
+| a1@test.local | 2026-09-10 | 阶段4验收 主臂 | `65ee1780-f952-4f1f-8f3c-ea17db96380e` |
+| a2@test.local | 2026-09-10 | 阶段4验收 主臂 | `50def9f4-755f-447c-aab3-a454bb5b4cb9` |
+| a3@test.local | 2026-09-10 | 阶段4验收 主臂 | `28150f95-c3a0-4a1f-b79d-173822fcf514` |

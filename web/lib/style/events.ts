@@ -278,7 +278,45 @@ type EventSink = {
   };
 };
 
-export type RecordResult = { ok: true } | { ok: false; message: string };
+type QueuedRow = {
+  user_id: string;
+  event_type: EventType;
+  arm: string;
+  session_id: string;
+  payload: EventPayload;
+};
+
+export type RecordResult =
+  | { ok: true }
+  | { ok: false; kind: "transient" | "permanent"; message: string; code: string | null };
+
+/**
+ * 瞬时失败的**白名单**。不在名单上的一律当永久失败。
+ *
+ * 方向是刻意的：**把瞬时错当成永久错，结果是一条响亮的报告；反过来会静默空转。**
+ * 一个 `23514`（payload 缺字段）重试一万次也不会成功，而重试掩盖的正是
+ * 「我们构造了一条坏事件」这个真 bug——它会以「队列一直不空」的样子存在，
+ * 而没有人会去看队列。
+ *
+ * 空字符串在这里是**最重要的一项**：`fetch` 被网络层拒掉时
+ * （`TypeError: Failed to fetch` / `ERR_CONNECTION_CLOSED`），
+ * supabase-js 给不出数据库错误码，`code` 就是空的——请求连数据库都没到。
+ */
+const TRANSIENT_CODES = new Set([
+  "PGRST301", // JWT 过期：刷新后可能成功
+  "408",
+  "429",
+  "500",
+  "502",
+  "503",
+  "504",
+]);
+
+export function classifyInsertFailure(error: { code?: string | null }): "transient" | "permanent" {
+  const code = (error.code ?? "").trim();
+  if (code === "") return "transient";
+  return TRANSIENT_CODES.has(code) ? "transient" : "permanent";
+}
 
 /**
  * 写一条事件。
@@ -297,26 +335,288 @@ export type RecordResult = { ok: true } | { ok: false; message: string };
 export async function recordEvent(
   sink: EventSink,
   args: { userId: string; arm: "pairwise" | "text"; sessionId: string; event: StyleEvent },
+  opts: { delaysMs?: readonly number[]; sleep?: (ms: number) => Promise<void> } = {},
 ): Promise<RecordResult> {
-  const { error } = await sink.from("style_events").insert({
+  const delays = opts.delaysMs ?? SERVER_RETRY_DELAYS_MS;
+  const sleep = opts.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
+
+  const row: QueuedRow = {
     user_id: args.userId,
     event_type: args.event.event_type,
     arm: args.arm,
     session_id: args.sessionId,
     payload: args.event.payload,
-  });
+  };
+
+  // 服务端没有队列可排（请求一结束进程就走了），所以**在这次请求里把重试做完**。
+  // 阶梯比浏览器那份短：用户正在等这一屏，不能为了一条事件把响应拖到 12 秒。
+  let last: RecordResult = { ok: false, kind: "transient", message: "未尝试", code: null };
+  for (let attempt = 0; attempt <= delays.length; attempt++) {
+    last = await attemptInsert(sink, row, attempt + 1);
+    if (last.ok || last.kind === "permanent") return last;
+    if (attempt < delays.length) await sleep(delays[attempt]);
+  }
+  return last;
+}
+
+/** 服务端的退避阶梯。**比浏览器那份短**——用户正在等这一屏。 */
+const SERVER_RETRY_DELAYS_MS = [200, 700] as const;
+
+/**
+ * 一次插入尝试。**队列与服务端共用这一份**——分类规则、日志形状、错误文案
+ * 各写一份的话，「什么算瞬时失败」就有了两个答案，而它们漂开不会报错。
+ */
+async function attemptInsert(sink: EventSink, row: QueuedRow, attempt: number): Promise<RecordResult> {
+  const { error } = await sink.from("style_events").insert(row);
 
   if (error) {
-    const message = `${error.message}（${error.code ?? "?"}）`;
+    const code = (error.code ?? "").trim() || null;
+    const kind = classifyInsertFailure(error);
     console.error(
       JSON.stringify({
         event: "style_event_insert_failed",
-        event_type: args.event.event_type,
-        code: error.code ?? null,
+        event_type: row.event_type,
+        code,
+        kind,
+        attempt,
         message: error.message,
       }),
     );
-    return { ok: false, message };
+    return { ok: false, kind, message: `${error.message}（${code ?? "无错误码"}）`, code };
   }
   return { ok: true };
+}
+
+// ---------------------------------------------------------------- 失败之后
+
+/**
+ * 有序、带重试、跨页面存活的事件队列。
+ *
+ * ## 它修的是什么（2026-09-11 人工验收第 1 组的红）
+ *
+ * 实测：某个账号走完 6 步后 `style_pair_chosen` 有 6 条而 `style_pair_shown` 只有 5 条，
+ * **缺的固定是 step 1**，Console 里对应一行
+ * `ERR_CONNECTION_CLOSED` + `TypeError: Failed to fetch`；另一个账号同样流程 6/6 全绿。
+ *
+ * **判红的不是「网络会抖」——网络抖是必然的。** 红的是失败之后没有任何补偿：
+ * 事件丢了、日志里一行、然后就没了。而 shown/chosen 配对是算位置效应的基础，
+ * 缺 shown 的那一步位置效应无从算起——那正是阶段 3 做位置随机化要保住的东西。
+ *
+ * ## 为什么偏偏是 step 1（**这是与证据相符的推断，不是已证实的机制**）
+ *
+ * step 1 的事件是这次页面加载中**浏览器对 Supabase 主机的第一个请求**
+ * （服务端组件那次取数发生在服务端）。浏览器此时可能去复用上一次导航留下的
+ * keep-alive 连接，而服务端早已按空闲超时关掉了它——复用失败即 `ERR_CONNECTION_CLOSED`。
+ * 浏览器**会**在这种情况下自动重发幂等的 GET，**但不会自动重发 POST**，
+ * 所以页面本身照常加载，只有我们这条 POST 死掉。step 2–6 用的是已经握好手的连接。
+ *
+ * 这解释了「固定在 step 1」与「概率性」两点。**但它只是与证据相符**：
+ * 能确证的三件事是——① `createBrowserClient` 在浏览器里是单例（`@supabase/ssr` 源码），
+ * 所以「每次发事件新建 client」不是原因；② 失败发生在 fetch 层，没有数据库错误码；
+ * ③ 浏览器不自动重发 POST。真要坐实机制得抓一次 net-export，代价不值。
+ *
+ * **而这不影响处置**：重试对上面任何一种机制都有效，
+ * 而「把首屏事件延后到 client 就绪」只降低概率、让它更罕见因而更难被抓到——
+ * 那是把判据的分辨力拿去换一个好看的数字（同 F16 反对的那件事）。所以没有那样做。
+ *
+ * ## 四条设计
+ *
+ * 1. **有序**：永远发 `queue[0]`，成功或永久失败才出队。
+ *    乱序会让 `style_pair_chosen` 先于同一步的 `style_pair_shown` 落库——
+ *    配对还在，但「先看到再点选」这个事实没了。
+ * 2. **瞬时失败不出队**：本轮重试用尽后**留在队列里**并标 `stalled`，
+ *    等下一次 `enqueue` 或下一次页面加载再试。**没有任何东西因为网络而被丢掉。**
+ * 3. **永久失败才丢**，并且丢得很响（`dropped` 计数 + 页面上的一句话 + console.error）。
+ *    那是「我们构造了一条坏事件」，要的就是吵。
+ * 4. **落 `sessionStorage`**：`router.refresh()` 不卸载组件，但用户点「回到首页」会。
+ *    存起来之后，下次打开三个风格页中的任何一个都会把它冲出去。
+ *    ⚠️ **残留风险如实登记**：关掉标签页且再也不回来的那部分仍然会丢。
+ *    这一条靠**检出**兜底而不是靠承诺——验收清单里有一条按 session 比
+ *    `shown` / `chosen` 条数并查 step 连号的判据（F42）。
+ */
+export type EventQueueState = {
+  /** 还没写进去的条数。 */
+  pending: number;
+  /** 永久失败、已放弃的条数。**只可能是内容或权限问题**，不会是网络。 */
+  dropped: number;
+  /** 瞬时失败已用尽本轮重试，仍在队列里等下一次。**不是「丢了」。** */
+  stalled: boolean;
+  lastError: string | null;
+};
+
+export type EventQueue = {
+  enqueue(event: StyleEvent): void;
+  /** 手动催一次。页面挂载时调它，把上一次页面加载没发完的冲出去。 */
+  flush(): Promise<void>;
+  state(): EventQueueState;
+  subscribe(fn: (s: EventQueueState) => void): () => void;
+};
+
+/** `sessionStorage` 的最小面。抽成接口是为了能在断言里喂一个假的。 */
+export type QueueStorage = {
+  getItem(key: string): string | null;
+  setItem(key: string, value: string): void;
+  removeItem(key: string): void;
+};
+
+const STORAGE_KEY = "f1.style_events.pending";
+
+/**
+ * 退避阶梯。**这不是 F38 说的那种阈值常量**——F38 管的是 `dwell_ms` 的**判读**
+ * （多短算「乱点」），那种线现在拍就是瞎猜；这里是重试节奏，改了只影响
+ * 「多久放弃这一轮」，不影响任何数据的解释。
+ */
+const RETRY_DELAYS_MS = [300, 1000, 3000, 8000] as const;
+
+export function createEventQueue(
+  sink: EventSink,
+  ctx: { userId: string; arm: "pairwise" | "text"; sessionId: string },
+  opts: {
+    delaysMs?: readonly number[];
+    sleep?: (ms: number) => Promise<void>;
+    storage?: QueueStorage | null;
+  } = {},
+): EventQueue {
+  const delays = opts.delaysMs ?? RETRY_DELAYS_MS;
+  const sleep = opts.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
+  const storage =
+    opts.storage !== undefined
+      ? opts.storage
+      : typeof sessionStorage !== "undefined"
+        ? sessionStorage
+        : null;
+
+  const queue: QueuedRow[] = load();
+  let dropped = 0;
+  let stalled = false;
+  let lastError: string | null = null;
+  /**
+   * 正在跑的那一轮。**存的是 promise 不是布尔**——存布尔的话，
+   * `flush()` 在已有一轮在跑时会直接返回，调用方以为「冲完了」而其实刚开始。
+   * 这一条是被 `verify:logic` 的 8.2 抓出来的：第一版用布尔，
+   * 断言读到「尝试 1 次、落库 0 条」。
+   */
+  let current: Promise<void> | null = null;
+  const listeners = new Set<(s: EventQueueState) => void>();
+
+  function load(): QueuedRow[] {
+    if (!storage) return [];
+    try {
+      const raw = storage.getItem(STORAGE_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? (parsed as QueuedRow[]) : [];
+    } catch {
+      // 存坏了就当空的。**不抛**——一个读不出来的队列不该让 onboarding 打不开。
+      return [];
+    }
+  }
+
+  function persist() {
+    if (!storage) return;
+    try {
+      if (queue.length === 0) storage.removeItem(STORAGE_KEY);
+      else storage.setItem(STORAGE_KEY, JSON.stringify(queue));
+    } catch {
+      // 配额满 / 隐私模式。忽略，内存队列照常工作。
+    }
+  }
+
+  function snapshot(): EventQueueState {
+    return { pending: queue.length, dropped, stalled, lastError };
+  }
+
+  function notify() {
+    const s = snapshot();
+    for (const fn of listeners) fn(s);
+  }
+
+  /**
+   * 催一轮。已经有一轮在跑就**返回那一轮的 promise**（而不是直接返回）。
+   *
+   * 末尾那次 re-check 补的是一个小窗口：`drain()` 刚跑完、`current` 还没清空时
+   * 进来的 `enqueue`，会拿到一个即将 resolve 的 promise，然后那条事件就没人管了。
+   */
+  function kick(): Promise<void> {
+    if (current) return current;
+    current = (async () => {
+      try {
+        await drain();
+      } finally {
+        current = null;
+      }
+      if (queue.length > 0 && !stalled) await kick();
+    })();
+    return current;
+  }
+
+  async function drain() {
+    {
+      while (queue.length > 0) {
+        const row = queue[0];
+        let failure: { kind: "transient" | "permanent"; message: string } | null = null;
+
+        for (let attempt = 0; attempt <= delays.length; attempt++) {
+          const r = await attemptInsert(sink, row, attempt + 1);
+          if (r.ok) {
+            failure = null;
+            break;
+          }
+          failure = { kind: r.kind, message: r.message };
+          if (r.kind === "permanent") break;
+          if (attempt < delays.length) await sleep(delays[attempt]);
+        }
+
+        if (failure === null) {
+          queue.shift();
+          stalled = false;
+          lastError = null;
+          persist();
+          notify();
+          continue;
+        }
+
+        lastError = failure.message;
+        if (failure.kind === "permanent") {
+          // 内容或权限问题。重试一万次也不会成功，**丢掉并吵一声**。
+          queue.shift();
+          dropped++;
+          persist();
+          notify();
+          continue;
+        }
+
+        // 瞬时失败用尽本轮重试：**留在队列里**，等下一次 enqueue 或下一次页面加载。
+        stalled = true;
+        persist();
+        notify();
+        return;
+      }
+    }
+  }
+
+  return {
+    enqueue(event) {
+      queue.push({
+        user_id: ctx.userId,
+        event_type: event.event_type,
+        arm: ctx.arm,
+        session_id: ctx.sessionId,
+        payload: event.payload,
+      });
+      // 新事件进来 → 重新试一轮。上一轮若是因为网络卡住的（stalled），
+      // 这次连它一起重试：队列是有序的，卡住的那条仍然排在最前面。
+      stalled = false;
+      persist();
+      notify();
+      void kick();
+    },
+    async flush() {
+      await kick();
+    },
+    state: snapshot,
+    subscribe(fn) {
+      listeners.add(fn);
+      return () => listeners.delete(fn);
+    },
+  };
 }

@@ -6,7 +6,12 @@ import { useEffect, useRef, useState } from "react";
 
 import { ConfigSummary } from "@/app/components/config-summary";
 import { AXIS_IDS, AXIS_LABEL, VALUE_LABEL, type StyleConfig } from "@/lib/style/axes";
-import { onboardingCompleted, recordEvent } from "@/lib/style/events";
+import {
+  createEventQueue,
+  onboardingCompleted,
+  type EventQueue,
+  type EventQueueState,
+} from "@/lib/style/events";
 import { createClient } from "@/lib/supabase/client";
 
 /**
@@ -75,10 +80,45 @@ export function TextOnboarding({
   const [savedCall, setSavedCall] = useState<CallInfo | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  /** 埋点写不进去时的一句话。**不打断流程，但也不静默。** */
-  const [eventError, setEventError] = useState<string | null>(null);
+  /** 埋点队列的状态。**不打断流程，但也不静默。** */
+  const [eventState, setEventState] = useState<EventQueueState>({
+    pending: 0,
+    dropped: 0,
+    stalled: false,
+    lastError: null,
+  });
 
   const [frozenSessionId] = useState(sessionId);
+
+  /**
+   * 事件队列，**每个组件实例一个**，且**只在 effect / 事件处理里取用**。
+   *
+   * 不在渲染里建：`createClient()` 与 `sessionStorage` 都是浏览器的东西，
+   * 而客户端组件的渲染在 SSR 时也会跑一次（同 React #418 的那条教训）。
+   * 不重新建：重建会把内存里还没发出去的那几条丢掉，而那正是这次要修的东西。
+   */
+  const queueRef = useRef<EventQueue | null>(null);
+  function eventQueue(): EventQueue {
+    if (queueRef.current === null) {
+      queueRef.current = createEventQueue(createClient(), {
+        userId,
+        arm,
+        sessionId: frozenSessionId,
+      });
+    }
+    return queueRef.current;
+  }
+
+  useEffect(() => {
+    const q = eventQueue();
+    const off = q.subscribe(setEventState);
+    setEventState(q.state());
+    // 冲一次：上一次页面加载没发完的那几条落在 sessionStorage 里等着。
+    void q.flush();
+    return off;
+    // eventQueue 是本实例内稳定的惰性构造器，不进依赖数组。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   /**
    * 这条臂的总耗时起点。**在 effect 里取，不在渲染里**——渲染在 SSR 与 hydrate
    * 各跑一次，两次取到的是两条不同的时间轴（同 React #418 的形态）。
@@ -139,17 +179,13 @@ export function TextOnboarding({
 
     // **落库成功之后**才发（上面刚断言影响 1 行）。`steps_completed` 在这条臂上
     // 恒为 1：一段描述就是全部采集，没有「卡在第几步」可言。
-    const r = await recordEvent(createClient(), {
-      userId,
-      arm,
-      sessionId: frozenSessionId,
-      event: onboardingCompleted({
+    eventQueue().enqueue(
+      onboardingCompleted({
         config: mapped.config,
         stepsCompleted: 1,
         totalMs: Math.round(performance.now() - (startedAtRef.current ?? performance.now())),
       }),
-    });
-    if (!r.ok) setEventError(`埋点没写进去：${r.message}`);
+    );
 
     setSaved(mapped.config);
     setSavedCall(mapped.call ?? null);
@@ -163,6 +199,8 @@ export function TextOnboarding({
         data-state="saved"
         data-call-model={savedCall?.model}
         data-call-effort={savedCall?.effort}
+        data-events-pending={eventState.pending}
+        data-events-dropped={eventState.dropped}
         className="enter mt-10"
       >
         <h1 className="t-display">配置好了</h1>
@@ -172,13 +210,21 @@ export function TextOnboarding({
         <div className="mt-6">
           <ConfigSummary config={saved} />
         </div>
-        {eventError && (
+        {(eventState.pending > 0 || eventState.dropped > 0) && (
           <p
             role="status"
             data-event-error
             className="panel mt-6 bg-[var(--c-accent-wash)] p-3 text-sm text-[var(--c-accent-ink)]"
           >
-            {eventError}（配置已保存，受影响的只有埋点）
+            {eventState.dropped > 0 && (
+              <b>有 {eventState.dropped} 条埋点被永久拒绝（请把这句话报给开发）。</b>
+            )}
+            {eventState.pending > 0 &&
+              (eventState.stalled
+                ? `还有 ${eventState.pending} 条埋点没写进去，网络恢复后会自动重试。`
+                : `还有 ${eventState.pending} 条埋点在写入中。`)}
+            <br />
+            <span className="t-meta">配置已保存，受影响的只有埋点。</span>
           </p>
         )}
         <div className="mt-6 flex flex-wrap gap-3">

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   AXES,
@@ -14,9 +14,11 @@ import {
   type StyleConfig,
 } from "@/lib/style/axes";
 import {
+  createEventQueue,
   feedbackChange,
   manualChange,
-  recordEvent,
+  type EventQueue,
+  type EventQueueState,
   type StyleEvent,
 } from "@/lib/style/events";
 import { FEEDBACK_KINDS, FEEDBACK_LABEL, applyFeedback, type FeedbackKind } from "@/lib/style/feedback";
@@ -70,22 +72,54 @@ export function StyleSettings({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  /** 埋点写不进去时的一句话。**不打断保存，但也不静默。** */
-  const [eventError, setEventError] = useState<string | null>(null);
+  /** 埋点队列的状态。**不打断保存，但也不静默。** */
+  const [eventState, setEventState] = useState<EventQueueState>({
+    pending: 0,
+    dropped: 0,
+    stalled: false,
+    lastError: null,
+  });
 
   const [frozenSessionId] = useState(sessionId);
 
   const dirty = AXIS_IDS.some((axis) => draft[axis] !== saved[axis]);
 
-  async function send(event: StyleEvent) {
-    const r = await recordEvent(createClient(), {
-      userId,
-      arm,
-      sessionId: frozenSessionId,
-      event,
-    });
-    if (!r.ok) setEventError(`埋点没写进去：${r.message}`);
+  /**
+   * 事件队列，**每个组件实例一个**，且**只在 effect / 事件处理里取用**。
+   *
+   * 不在渲染里建：`createClient()` 与 `sessionStorage` 都是浏览器的东西，
+   * 而客户端组件的渲染在 SSR 时也会跑一次（同 React #418 的那条教训）。
+   * 不重新建：重建会把内存里还没发出去的那几条丢掉，而那正是这次要修的东西。
+   */
+  const queueRef = useRef<EventQueue | null>(null);
+  function eventQueue(): EventQueue {
+    if (queueRef.current === null) {
+      queueRef.current = createEventQueue(createClient(), {
+        userId,
+        arm,
+        sessionId: frozenSessionId,
+      });
+    }
+    return queueRef.current;
   }
+
+  function send(event: StyleEvent) {
+    eventQueue().enqueue(event);
+  }
+
+  // 挂载时冲一次队列。**这一页是那条兜底路径**：用户在 onboarding 末尾
+  // 点「回到首页」时若还有事件排在队里，组件卸载后靠 sessionStorage 留着，
+  // 下次打开风格设置就会被发出去。
+  useEffect(() => {
+    const q = eventQueue();
+    const off = q.subscribe(setEventState);
+    setEventState(q.state());
+    // 冲一次：上一次页面加载没发完的那几条落在 sessionStorage 里等着。
+    void q.flush();
+    return off;
+    // eventQueue 是本实例内稳定的惰性构造器，不进依赖数组。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function write(config: StyleConfig, message: string, event: StyleEvent) {
     setBusy(true);
@@ -113,7 +147,7 @@ export function StyleSettings({
 
     // 事件发在**断言过「库里那一行真的变了」之后**（上面刚断言影响 1 行）。
     // 反过来先发事件的话，事件流里会有一批实际没落库的「配置修改」。
-    await send(event);
+    send(event);
 
     setSaved(config);
     setDraft(config);
@@ -143,7 +177,11 @@ export function StyleSettings({
   }
 
   return (
-    <div className="enter mt-10">
+    <div
+      className="enter mt-10"
+      data-events-pending={eventState.pending}
+      data-events-dropped={eventState.dropped}
+    >
       <header className="mb-6">
         <h1 className="t-display">风格设置</h1>
         <p className="t-body mt-3 max-w-[62ch]">
@@ -296,15 +334,24 @@ export function StyleSettings({
         </p>
       )}
 
-      {/* 埋点失败不影响配置本身，但要说出来——「没写」与「写了但我查错了地方」
-          在人工验收时必须能分开。 */}
-      {eventError && (
+      {/* 埋点失败不影响配置本身，但要说出来——「还在重试」「等下次」「永久拒绝」
+          三种的处置完全不同，所以分开说，不合成一句。 */}
+      {(eventState.pending > 0 || eventState.dropped > 0) && (
         <p
           role="status"
           data-event-error
           className="panel mt-6 bg-[var(--c-accent-wash)] p-3 text-sm text-[var(--c-accent-ink)]"
         >
-          {eventError}（配置本身不受影响）
+          {eventState.dropped > 0 && (
+            <b>有 {eventState.dropped} 条埋点被永久拒绝（不是网络问题，请把这句话报给开发）。</b>
+          )}
+          {eventState.pending > 0 &&
+            (eventState.stalled
+              ? `还有 ${eventState.pending} 条埋点没写进去，网络恢复后会自动重试。`
+              : `还有 ${eventState.pending} 条埋点在写入中。`)}
+          {eventState.lastError ? ` 最后一次的错误：${eventState.lastError}` : ""}
+          <br />
+          <span className="t-meta">你的配置不受影响。</span>
         </p>
       )}
     </div>

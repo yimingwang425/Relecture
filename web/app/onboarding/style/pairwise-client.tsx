@@ -8,10 +8,13 @@ import { ConfigSummary } from "@/app/components/config-summary";
 import { AXIS_LABEL, type StyleConfig } from "@/lib/style/axes";
 import { createDwellClock, type DwellClock } from "@/lib/style/dwell";
 import {
+  createEventQueue,
   onboardingCompleted,
   pairChosen,
   pairShown,
-  recordEvent,
+  type EventQueue,
+  type EventQueueState,
+  type StyleEvent,
 } from "@/lib/style/events";
 import { TOTAL_STEPS, configFromPicks, stepAt, type Picks } from "@/lib/style/flow";
 import { Markdown } from "@/lib/style/markdown";
@@ -114,8 +117,13 @@ export function PairwiseOnboarding({
   const [shownLog, setShownLog] = useState<
     { step: number; pairId: string; leftVariant: string; chosenVariant: string }[]
   >([]);
-  /** 埋点写不进去时给出的一句话。**不打断 onboarding，但也不静默。** */
-  const [eventError, setEventError] = useState<string | null>(null);
+  /** 埋点队列的状态。**不打断 onboarding，但也不静默。** */
+  const [eventState, setEventState] = useState<EventQueueState>({
+    pending: 0,
+    dropped: 0,
+    stalled: false,
+    lastError: null,
+  });
 
   const [frozenSessionId] = useState(sessionId);
 
@@ -139,15 +147,44 @@ export function PairwiseOnboarding({
   /** 已发过 `style_pair_shown` 的步。effect 在 dev 的 StrictMode 下会跑两次。 */
   const shownSentRef = useRef<Set<number>>(new Set());
 
-  async function send(event: Parameters<typeof recordEvent>[1]["event"]) {
-    const r = await recordEvent(createClient(), {
-      userId,
-      arm,
-      sessionId: frozenSessionId,
-      event,
-    });
-    if (!r.ok) setEventError(`埋点没写进去：${r.message}`);
+  /**
+   * 事件队列。**每个组件实例一个**，靠 ref 保住——重新建一个会把内存里
+   * 还没发出去的那几条丢掉，而那正是这次要修的东西。
+   */
+  /**
+   * 事件队列，**每个组件实例一个**，且**只在 effect / 事件处理里取用**。
+   *
+   * 不在渲染里建：`createClient()` 与 `sessionStorage` 都是浏览器的东西，
+   * 而客户端组件的渲染在 SSR 时也会跑一次（同 React #418 的那条教训）。
+   * 不重新建：重建会把内存里还没发出去的那几条丢掉，而那正是这次要修的东西。
+   */
+  const queueRef = useRef<EventQueue | null>(null);
+  function eventQueue(): EventQueue {
+    if (queueRef.current === null) {
+      queueRef.current = createEventQueue(createClient(), {
+        userId,
+        arm,
+        sessionId: frozenSessionId,
+      });
+    }
+    return queueRef.current;
   }
+
+  function send(event: StyleEvent) {
+    eventQueue().enqueue(event);
+  }
+
+  // 订阅队列状态 + 挂载时冲一次：上一次页面加载没发完的那几条落在 sessionStorage 里。
+  useEffect(() => {
+    const q = eventQueue();
+    const off = q.subscribe(setEventState);
+    setEventState(q.state());
+    // 冲一次：上一次页面加载没发完的那几条落在 sessionStorage 里等着。
+    void q.flush();
+    return off;
+    // eventQueue 是本实例内稳定的惰性构造器，不进依赖数组。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // 页面可见性：切走不扣 dwell_ms，但累加 hidden_ms（口径 F38）。
   // 只记一个总数的话，「读了 40 秒」和「挂着 40 秒」永久混在一起。
@@ -179,7 +216,7 @@ export function PairwiseOnboarding({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stepIndex, saved]);
 
-  if (saved) return <DoneScreen config={saved} log={shownLog} eventError={eventError} />;
+  if (saved) return <DoneScreen config={saved} log={shownLog} eventState={eventState} />;
 
   async function commit(config: StyleConfig) {
     setBusy(true);
@@ -208,7 +245,7 @@ export function PairwiseOnboarding({
 
     // **落库成功之后**才发完成事件——不是「点了完成」。上面那段刚断言过
     // 库里那一行真的变了（影响 1 行），事件挂在这个断言后面才有意义。
-    await send(
+    send(
       onboardingCompleted({
         config,
         stepsCompleted: TOTAL_STEPS,
@@ -253,7 +290,11 @@ export function PairwiseOnboarding({
   }
 
   return (
-    <div className="enter mt-10">
+    <div
+      className="enter mt-10"
+      data-events-pending={eventState.pending}
+      data-events-dropped={eventState.dropped}
+    >
       <header className="mb-6">
         <p className="t-meta mb-2" data-step={stepIndex}>
           第 {stepIndex} / {TOTAL_STEPS} 步
@@ -352,17 +393,10 @@ export function PairwiseOnboarding({
       )}
 
       {/* 埋点失败**不打断 onboarding**（用户的配置比我们的数据重要），
-          但也不静默：人工验收要能一眼看出「事件没写进去」与「事件写了但我没查对」
-          的区别。`data-event-error` 供回归工具定位。 */}
-      {eventError && (
-        <p
-          role="status"
-          data-event-error
-          className="panel mt-5 bg-[var(--c-accent-wash)] p-3 text-sm text-[var(--c-accent-ink)]"
-        >
-          {eventError}（配置本身不受影响，可以继续）
-        </p>
-      )}
+          但也不静默。三个数各有含义，别合成一个：
+          `pending` 还在队列里（会继续重试）· `stalled` 本轮重试用尽（等下次）·
+          `dropped` **永久失败已放弃**（只可能是内容或权限问题，是真 bug）。 */}
+      <EventNotice state={eventState} />
 
       <div className="mt-6 flex items-center gap-4">
         <button
@@ -397,17 +431,19 @@ function Progress({ current }: { current: number }) {
 function DoneScreen({
   config,
   log,
-  eventError,
+  eventState,
 }: {
   config: StyleConfig;
   /** 6 步的呈现与选择记录。`data-left-variants` 供人工核对随机化真的在发生。 */
   log: { step: number; pairId: string; leftVariant: string; chosenVariant: string }[];
-  eventError: string | null;
+  eventState: EventQueueState;
 }) {
   return (
     <div
       data-state="saved"
       data-left-variants={log.map((l) => l.leftVariant).join(",")}
+      data-events-pending={eventState.pending}
+      data-events-dropped={eventState.dropped}
       className="enter mt-10"
     >
       <h1 className="t-display">配置好了</h1>
@@ -419,15 +455,7 @@ function DoneScreen({
         <ConfigSummary config={config} />
       </div>
 
-      {eventError && (
-        <p
-          role="status"
-          data-event-error
-          className="panel mt-6 bg-[var(--c-accent-wash)] p-3 text-sm text-[var(--c-accent-ink)]"
-        >
-          {eventError}（配置已保存，受影响的只有埋点）
-        </p>
-      )}
+      <EventNotice state={eventState} className="mt-6" />
 
       <div className="mt-6 flex flex-wrap gap-3">
         <Link href="/" className="btn btn--primary no-underline">
@@ -438,5 +466,35 @@ function DoneScreen({
         </Link>
       </div>
     </div>
+  );
+}
+
+/**
+ * 埋点队列的状态条。**三个数分开说，不合成一句。**
+ *
+ * `pending`（还在重试）、`stalled`（本轮重试用尽，等下次页面加载）、
+ * `dropped`（永久失败已放弃）三种的处置完全不同：前两个等一等就好，
+ * 第三个是**我们构造了一条坏事件**，是真 bug。合成「埋点出问题了」一句的话，
+ * 最该被看见的那种反而最不显眼。
+ */
+function EventNotice({ state, className = "mt-5" }: { state: EventQueueState; className?: string }) {
+  if (state.pending === 0 && state.dropped === 0) return null;
+  return (
+    <p
+      role="status"
+      data-event-error
+      className={`panel ${className} bg-[var(--c-accent-wash)] p-3 text-sm text-[var(--c-accent-ink)]`}
+    >
+      {state.dropped > 0 && (
+        <b>有 {state.dropped} 条埋点被永久拒绝（不是网络问题，请把这句话报给开发）。</b>
+      )}
+      {state.pending > 0 &&
+        (state.stalled
+          ? `还有 ${state.pending} 条埋点没写进去，网络恢复后会自动重试。`
+          : `还有 ${state.pending} 条埋点在写入中。`)}
+      {state.lastError ? ` 最后一次的错误：${state.lastError}` : ""}
+      <br />
+      <span className="t-meta">你的配置不受影响，可以继续。</span>
+    </p>
   );
 }

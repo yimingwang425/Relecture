@@ -9,9 +9,16 @@ class FakeRest:
     def __init__(self, rows_by_user: dict[str, list[dict[str, Any]]]) -> None:
         self.rows_by_user = rows_by_user
         self.seen: list[tuple[str, dict[str, str]]] = []
+        self.writes: list[tuple[str, Any]] = []
 
-    def __call__(self, url: str, headers: dict[str, str]) -> Any:
+    def __call__(self, url: str, headers: dict[str, str], body: Any = None) -> Any:
         self.seen.append((url, dict(headers)))
+        if body is not None:          # 写入
+            self.writes.append((url, body))
+            if "/documents" in url:
+                import uuid as _uuid
+                return [{"id": str(_uuid.uuid4()), **(body if isinstance(body, dict) else {})}]
+            return None
         # 模拟 RLS：**看得见谁由 Authorization 里那个 token 的 sub 决定**，
         # 不由 URL 上的 `user_id=eq.` 决定。「服务端自己过滤 user_id」这种写法
         # 在这里会露馅——它会在 token 换人之后仍然返回同一行。

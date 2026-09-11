@@ -25,7 +25,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-__all__ = ["StyleRow", "SupabaseError", "SupabaseClient"]
+__all__ = ["StyleRow", "SupabaseError", "DuplicateDocument", "SupabaseClient"]
 
 STYLE_COLUMNS = "user_id,detail_level,use_examples,structure,depth,f1_arm,onboarded_at"
 
@@ -35,6 +35,17 @@ class SupabaseError(Exception):
         super().__init__(message)
         self.message = message
         self.status = status
+
+
+class DuplicateDocument(SupabaseError):
+    """同一用户、同一课程、同一份文件（唯一索引 `documents_owner_course_sha_idx`）。
+
+    ⚠️ 数据库那条是**硬失败 23505，不是「提示」**。不翻译的话用户看到的是
+    一个数据库错误码。翻译在这里做，而不是让每个调用方各写一遍。
+    """
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message, status=409)
 
 
 @dataclass(frozen=True, slots=True)
@@ -84,7 +95,7 @@ class SupabaseClient:
         }
         url = f"{self._rest}{path}"
         if self._transport is not None:
-            return self._transport(url, headers)
+            return self._transport(url, headers, None)
 
         import httpx
 
@@ -121,3 +132,59 @@ class SupabaseClient:
             f1_arm=r["f1_arm"],
             onboarded_at=r.get("onboarded_at"),
         )
+
+    # ---------------------------------------------------------------- 写入
+    #
+    # 全部带**用户自己的 JWT**，RLS 由数据库执行（与读取同一条路径）。
+
+    def _post(self, path: str, token: str, rows: Any, *, prefer: str | None = None) -> Any:
+        headers = {
+            "apikey": self._apikey,
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        }
+        if prefer:
+            headers["Prefer"] = prefer
+        url = f"{self._rest}{path}"
+        if self._transport is not None:
+            return self._transport(url, headers, rows)
+
+        import httpx
+
+        try:
+            resp = httpx.post(url, headers=headers, json=rows, timeout=30.0)
+        except Exception as exc:  # noqa: BLE001
+            raise SupabaseError(f"连不上数据库：{exc}", status=504) from exc
+        if resp.status_code >= 400:
+            body = resp.text[:400]
+            # 23505 = 唯一索引。翻译成人话，**不把数据库错误码丢给用户**。
+            if "23505" in body and "content_sha256" in body:
+                raise DuplicateDocument("这门课里已经有同一份文件了")
+            raise SupabaseError(f"数据库返回 {resp.status_code}：{body}", status=502)
+        return resp.json() if resp.content else None
+
+    def insert_document(self, *, token: str, row: dict[str, Any]) -> dict[str, Any]:
+        out = self._post("/documents", token, row, prefer="return=representation")
+        if not isinstance(out, list) or len(out) != 1:
+            raise SupabaseError(f"建文档返回 {out!r}，应为 1 行")
+        return out[0]
+
+    def insert_slices(self, *, token: str, rows: list[dict[str, Any]]) -> None:
+        if rows:
+            self._post("/slices", token, rows)
+
+    def insert_embeddings(self, *, token: str, rows: list[dict[str, Any]]) -> None:
+        if rows:
+            self._post("/slice_embeddings", token, rows)
+
+    def create_course(self, *, token: str, owner: str, name: str) -> dict[str, Any]:
+        out = self._post("/courses", token, {"owner": owner, "name": name},
+                         prefer="return=representation")
+        if not isinstance(out, list) or len(out) != 1:
+            raise SupabaseError(f"建课返回 {out!r}，应为 1 行")
+        return out[0]
+
+    def courses(self, token: str) -> list[dict[str, Any]]:
+        out = self._get("/courses?select=id,name,created_at&order=created_at.desc", token)
+        return out if isinstance(out, list) else []

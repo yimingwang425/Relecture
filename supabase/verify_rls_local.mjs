@@ -198,10 +198,38 @@ const CHECKS = {
   },
 };
 
-function migrationFiles() {
+/**
+ * 本地**验不了**的迁移。分界线是「要不要 pgvector」。
+ *
+ * PGlite 的 contrib 里没有 vector（实测 0.5.8：34 个扩展，没有它），所以
+ * `20260911100100_f2_embeddings.sql` 在本地一条都跑不了。
+ *
+ * **跳过是吵着跳过的**：下面 `migrationFiles()` 会断言这些文件确实存在——
+ * 改名之后这个跳过会**抛错**，而不是静默变成「没这回事」。
+ * 主流程另有一条显眼的提示行，且本地绿数与待真库验证的条数**分两行报，不报合计**。
+ *
+ * ⚠️ 刻意不给本地造一个假的 `<=>` 来让它「跑得起来」：假的排序语义会让召回类
+ * 断言全部失去意义，而那正是 `InMemoryRetriever` 文档里那句话的同一条。
+ */
+const NOT_VERIFIABLE_LOCALLY = ["20260911100100_f2_embeddings.sql"];
+
+function allMigrationFiles() {
   const files = readdirSync(MIGRATIONS).filter((f) => f.endsWith(".sql")).sort();
   if (files.length === 0) throw new Error("migrations/ 下没有 .sql——没有被测对象");
   return files;
+}
+
+function migrationFiles() {
+  const all = allMigrationFiles();
+  for (const skipped of NOT_VERIFIABLE_LOCALLY) {
+    if (!all.includes(skipped)) {
+      throw new Error(
+        `跳过清单里的 ${skipped} 在 migrations/ 下不存在——` +
+          "它被改名或删掉了，而这个跳过正在静默地什么都不做。先修跳过清单。",
+      );
+    }
+  }
+  return all.filter((f) => !NOT_VERIFIABLE_LOCALLY.includes(f));
 }
 
 async function runMigrations(db) {
@@ -217,7 +245,13 @@ async function freshDb() {
 }
 
 async function main() {
-  console.log("\n迁移文件：" + migrationFiles().join(", "));
+  console.log("\n本地执行的迁移：" + migrationFiles().join(", "));
+  console.log(
+    "\x1b[33m本地跳过（需 pgvector，只能对真库验）：" +
+      NOT_VERIFIABLE_LOCALLY.join(", ") +
+      "\x1b[0m\n  \x1b[2m→ 验证走 supabase/verify_corpus_prod.py。" +
+      "本地绿数**不含**它的任何一条。\x1b[0m",
+  );
 
   // ============================================================ 正向
   console.log("\n\x1b[1m正向 · 五条断言应全绿\x1b[0m");
@@ -777,7 +811,249 @@ async function main() {
     await db.close();
   }
 
-  console.log(`\n\x1b[1m合计\x1b[0m  绿 ${passed} · 红 ${failed}\n`);
+
+  // ============================================================ F2 语料
+  //
+  // courses / documents / slices。**不含向量**——那部分本地验不了，见文件头。
+  //
+  // 五组：①允许控制先立 ②跨用户 ③owner 一致性（RLS 挡不住的那一类）
+  // ④唯一索引的两面 ⑤cascade 两级 + 控制项。
+  console.log("\n\x1b[1mF2 语料 · courses / documents / slices\x1b[0m");
+
+  const VERSIONS = {
+    parse_schema_version: "1.0",
+    slice_schema_version: "1.0",
+    slicer_version: "0.1.0",
+    slice_ruleset_version: "slice-1.0",
+  };
+
+  /** 以 uid 的身份建一门课，返回 course_id。 */
+  async function mkCourse(db, uid, name) {
+    return await asUser(db, uid, async () => {
+      const r = await db.query(
+        "insert into public.courses (owner, name) values ($1, $2) returning id",
+        [uid, name],
+      );
+      return r.rows[0].id;
+    });
+  }
+
+  /** 以 uid 的身份往 courseId 里放一份文档。`asUid` 用于冒名尝试。 */
+  async function mkDoc(db, uid, courseId, sha, { owner = uid, asUid = uid, split = null } = {}) {
+    return await errorOf(() =>
+      asUser(db, asUid, () =>
+        db.query(
+          `insert into public.documents
+             (owner, course_id, filename, source_format, content_sha256,
+              page_count, usable_page_count, verdict, parser,
+              parse_schema_version, slice_schema_version, slicer_version,
+              slice_ruleset_version, split_threshold_chars)
+           values ($1,$2,'lec.pdf','pdf',$3, 10, 9, 'usable', '{"service_version":"0.1.0"}'::jsonb,
+                   $4,$5,$6,$7,$8)`,
+          [owner, courseId, sha, VERSIONS.parse_schema_version, VERSIONS.slice_schema_version,
+           VERSIONS.slicer_version, VERSIONS.slice_ruleset_version, split],
+        )));
+  }
+
+  async function docId(db, courseId, sha) {
+    const r = await db.query(
+      "select id from public.documents where course_id=$1 and content_sha256=$2", [courseId, sha]);
+    return r.rows[0]?.id ?? null;
+  }
+
+  async function mkSlice(db, uid, documentId, sliceId, { owner = uid } = {}) {
+    return await errorOf(() =>
+      asUser(db, uid, () =>
+        db.query(
+          `insert into public.slices
+             (document_id, slice_id, owner, ordinal, page_indices, text, char_count, units)
+           values ($1,$2,$3,1,'{1}','片段正文',5,'[]'::jsonb)`,
+          [documentId, sliceId, owner],
+        )));
+  }
+
+  {
+    const db = await freshDb();
+
+    // ---- ① 允许控制先立。没有它，下面所有「被拒」都不携带信息。
+    const courseA = await mkCourse(db, UID_A, "22.081J");
+    const errDoc = await mkDoc(db, UID_A, courseA, "sha-aaa");
+    const dA = await docId(db, courseA, "sha-aaa");
+    const errSlice = await mkSlice(db, UID_A, dA, "s001");
+    errDoc === null && dA !== null && errSlice === null
+      ? ok("A 能建课、放文档、写切片", `course ${String(courseA).slice(0, 8)} → doc ${String(dA).slice(0, 8)}`)
+      : bad("正常路径就走不通", `doc=${errDoc?.message} slice=${errSlice?.message}`);
+
+    // ---- ② 跨用户：B 看不见 A 的任何东西
+    const seen = await asUser(db, UID_B, async () => ({
+      courses: (await db.query("select count(*)::int c from public.courses")).rows[0].c,
+      docs: (await db.query("select count(*)::int c from public.documents")).rows[0].c,
+      slices: (await db.query("select count(*)::int c from public.slices")).rows[0].c,
+    }));
+    seen.courses === 0 && seen.docs === 0 && seen.slices === 0
+      ? ok("B 读不到 A 的课/文档/切片", "三张表都是 0 行")
+      : bad("跨用户读到了东西", JSON.stringify(seen));
+
+    const selfSeen = await asUser(db, UID_A, async () =>
+      (await db.query("select count(*)::int c from public.courses")).rows[0].c);
+    selfSeen === 1
+      ? ok("而 A 读得到自己的", "← 上一条的允许控制：否则可能整表不可读")
+      : bad("A 读不到自己的课", `${selfSeen} 行`);
+
+    // ---- ③ owner 一致性：**RLS 挡不住的那一类**
+    //
+    // documents 的 with check 只问「这一行的 owner 是不是我」，
+    // 不问「我引用的那门课是不是我的」。所以 B 可以把自己的文档挂进 A 的课——
+    // 而那样 A 一检索就会召回 B 的内容。靠触发器补。
+    const courseB = await mkCourse(db, UID_B, "14.129");
+    const cross = await mkDoc(db, UID_B, courseA, "sha-bbb");   // B 的文档 → A 的课
+    cross?.code === "42501"
+      ? ok("B 把文档挂进 A 的课 → 被拒", "42501 ← RLS 挡不住这个，靠 owner 一致性触发器")
+      : bad("跨 owner 挂课没被拦", `${cross?.code} ${cross?.message ?? "未报错"}`);
+
+    const okOwn = await mkDoc(db, UID_B, courseB, "sha-bbb");
+    okOwn === null
+      ? ok("而 B 挂进自己的课成功", "← 上一条的允许控制")
+      : bad("B 挂自己的课也失败", okOwn.message);
+
+    // 切片同理：切片的 owner 必须等于它所属文档的 owner。
+    const crossSlice = await mkSlice(db, UID_B, dA, "s001");
+    crossSlice !== null
+      ? ok("B 往 A 的文档里写切片 → 被拒", `${crossSlice.code}`)
+      : bad("跨 owner 写切片没被拦");
+
+    // ---- ④ 唯一索引的两面（2026-09-11 拍板：带 course_id）
+    const dup = await mkDoc(db, UID_A, courseA, "sha-aaa");     // 同课同 sha
+    dup?.code === "23505"
+      ? ok("同一课里传同一份文件 → 23505", "⚠️ 这是**硬失败不是提示**，摄入路径必须翻译它")
+      : bad("同课重复上传没被拦", `${dup?.code}`);
+
+    const courseA2 = await mkCourse(db, UID_A, "6.006");
+    const reuse = await mkDoc(db, UID_A, courseA2, "sha-aaa");  // 换一门课，同 sha
+    reuse === null
+      ? ok("同一份文件挂到另一门课 → 成功", "← 唯一索引带 course_id 的全部意义（跨学期复用）")
+      : bad("跨课复用被拦了", `${reuse?.code} ${reuse?.message}`);
+
+    // ---- 版本列：少一个就写不进去
+    const missingVersion = await errorOf(() =>
+      asUser(db, UID_A, () =>
+        db.query(
+          `insert into public.documents
+             (owner, course_id, filename, source_format, content_sha256, page_count,
+              usable_page_count, verdict, parser, parse_schema_version,
+              slice_schema_version, slicer_version)
+           values ($1,$2,'x.pdf','pdf','sha-zzz',1,1,'usable','{}'::jsonb,'1.0','1.0','0.1.0')`,
+          [UID_A, courseA])));
+    missingVersion?.code === "23502"
+      ? ok("缺 slice_ruleset_version → 23502", "← 口径版本列是 not null，漏了写不进去")
+      : bad("缺版本列却写进去了", `${missingVersion?.code}`);
+
+    // split_threshold_chars 允许 NULL —— **NULL 有含义**（= 不拆），不是「忘了填」。
+    const nullSplit = await db.query(
+      "select split_threshold_chars from public.documents where content_sha256='sha-aaa' limit 1");
+    nullSplit.rows[0].split_threshold_chars === null
+      ? ok("split_threshold_chars 可为 NULL", "← NULL = 不拆，是取值不是缺失")
+      : bad("split_threshold_chars 不该有默认值");
+
+    // slices 没给 update 授权：切片是解析的产物，改它会让库与文档不一致且无人发现。
+    const updSlice = await errorOf(() =>
+      asUser(db, UID_A, () => db.query("update public.slices set text='改了' where slice_id='s001'")));
+    updSlice?.code === "42501"
+      ? ok("用户改不了切片", "42501 权限层 ← 要变就重切")
+      : bad("切片可被改写", `${updSlice?.code}`);
+
+    await db.close();
+  }
+
+  // ---- ⑤ cascade 两级 + 控制项
+  console.log("\n  \x1b[1m注销与删课 · cascade 两级\x1b[0m");
+  {
+    const db = await freshDb();
+    const cA = await mkCourse(db, UID_A, "22.081J");
+    const cA2 = await mkCourse(db, UID_A, "6.006");
+    const cB = await mkCourse(db, UID_B, "14.129");
+    await mkDoc(db, UID_A, cA, "s1");
+    await mkDoc(db, UID_A, cA2, "s2");
+    await mkDoc(db, UID_B, cB, "s3");
+    await mkSlice(db, UID_A, await docId(db, cA, "s1"), "s001");
+    await mkSlice(db, UID_A, await docId(db, cA2, "s2"), "s001");
+    await mkSlice(db, UID_B, await docId(db, cB, "s3"), "s001");
+
+    const count = async (t, where = "") =>
+      (await db.query(`select count(*)::int c from public.${t} ${where}`)).rows[0].c;
+
+    (await count("slices")) === 3
+      ? ok("前提：三份文档各一个切片", "← 少了它，下面的「删完就没了」是空转的")
+      : bad("前提不成立", `${await count("slices")} 个切片`);
+
+    // 删一门课 → 该课的文档与切片没了，**别的课不受影响**
+    await db.exec("reset role;");
+    await db.query("delete from public.courses where id = $1", [cA]);
+    const afterCourse = {
+      docs: await count("documents"),
+      slices: await count("slices"),
+      aOther: await count("documents", `where course_id = '${cA2}'`),
+    };
+    afterCourse.docs === 2 && afterCourse.slices === 2 && afterCourse.aOther === 1
+      ? ok("删一门课 → 它的文档与切片一起没了", `文档 3→2，切片 3→2`)
+      : bad("删课的 cascade 不对", JSON.stringify(afterCourse));
+
+    // 注销 → 该用户的一切没了，**别人的不受影响**
+    await db.query("delete from auth.users where id = $1", [UID_A]);
+    const afterUser = {
+      aCourses: await count("courses", `where owner = '${UID_A}'`),
+      aDocs: await count("documents", `where owner = '${UID_A}'`),
+      aSlices: await count("slices", `where owner = '${UID_A}'`),
+      bDocs: await count("documents", `where owner = '${UID_B}'`),
+      bSlices: await count("slices", `where owner = '${UID_B}'`),
+    };
+    afterUser.aCourses === 0 && afterUser.aDocs === 0 && afterUser.aSlices === 0
+      ? ok("注销 → 该用户的课/文档/切片全部消失", "PRD §12.1「注销即清空」")
+      : bad("注销没清干净", JSON.stringify(afterUser));
+    afterUser.bDocs === 1 && afterUser.bSlices === 1
+      ? ok("而 B 的一条没动", "← 控制项：少了它，「整表被清空」也会让上一条绿")
+      : bad("误删了别的用户", JSON.stringify(afterUser));
+
+    await db.close();
+  }
+
+  // ---- R12 · owner 一致性触发器是承重的吗
+  console.log("\n  \x1b[1mR12 · 去掉 documents 的 owner 一致性触发器\x1b[0m");
+  {
+    const db = await freshDb();
+    const cA = await mkCourse(db, UID_A, "22.081J");
+    await db.exec("drop trigger documents_course_owner_check on public.documents;");
+    const cross = await mkDoc(db, UID_B, cA, "sha-x");
+    cross === null
+      ? ok("去掉触发器后，B 真的能把文档挂进 A 的课", "← 那条断言确实是它在挡，不是 RLS")
+      : bad("去掉之后仍被拦", `${cross.code} ${cross.message} ← 上面那条测错了对象`);
+    await db.close();
+  }
+
+  // ---- R13 · 唯一索引带 course_id 是承重的吗
+  console.log("\n  \x1b[1mR13 · 把唯一索引换回 (owner, sha)\x1b[0m");
+  {
+    const db = await freshDb();
+    await db.exec(`drop index public.documents_owner_course_sha_idx;
+                   create unique index documents_owner_sha_idx
+                     on public.documents (owner, content_sha256);`);
+    const cA = await mkCourse(db, UID_A, "22.081J");
+    const cA2 = await mkCourse(db, UID_A, "6.006");
+    await mkDoc(db, UID_A, cA, "sha-same");
+    const reuse = await mkDoc(db, UID_A, cA2, "sha-same");
+    reuse?.code === "23505"
+      ? ok("换回旧索引后，跨课复用同一份文件被拦", "← 带 course_id 确实在承重，不是装饰")
+      : bad("换回旧索引也没拦住", `${reuse?.code} ← 上面那条「跨课复用成功」测错了对象`);
+    await db.close();
+  }
+
+  console.log(`\n\x1b[1m本地\x1b[0m  绿 ${passed} · 红 ${failed}`);
+  console.log(
+    `\x1b[1m待真库验证\x1b[0m  ${NOT_VERIFIABLE_LOCALLY.join(", ")} ` +
+      `的全部行为（slice_embeddings 的 RLS/cascade、match_slices 的作用域与排序语义、` +
+      `vector(1024) 经 JSON 传参）\n` +
+      `  \x1b[2m两行分开报，不合计——两种证据不得互相顶替（同 F34）。\x1b[0m\n`,
+  );
   process.exit(failed === 0 ? 0 : 1);
 }
 

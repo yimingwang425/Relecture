@@ -75,7 +75,25 @@ F1 阶段 1.5 论证过：F1 全部读写落在一张表上，多一跳 FastAPI 
 两个区间各自达标 **+ `mean(P0) > mean(P3)`（方向）**，外加允许控制
 「两次的 `config_fingerprint` 不同」。
 
-## 六、部署
+## 六、摄入（阶段 4）
+
+`POST /courses` · `GET /courses` · `POST /courses/{id}/documents`。
+
+**`parse-service` 并入本服务**：解析 → 切片 → 嵌入 → 落库对用户是**一次动作**，
+拆两个服务意味着整份 PDF 多走一次网络、两套部署、两条 §13.3 记录。
+连带后果是 `/parse` 从「无鉴权无状态」变成要鉴权 —— **那本来就得改，它现在谁都能调**。
+
+| | |
+| --- | --- |
+| **真解析、真切片、假嵌入** | 断言喂的是仓库里的真 PDF，走生产的 `parse_pdf` / `slice_document`。嵌入是唯一要出境的一步（PRD §13.3 **第二次出境**），所以注入 |
+| **一份文档是事务边界** | `compose()` 的 boilerplate 检测是**整份文档范围**的，嵌入不能增量 |
+| **23505 翻译成人话** | 唯一索引 `(owner, course_id, sha)` 是**硬失败不是提示**。不翻译的话用户看到的是数据库错误码 |
+| **五个口径版本列** | 含 `split_threshold_chars`——它是**改变切片结果的输入**，今天恒为 `None` 所以看不出问题，一旦按 embedding 窗口注入值，新旧切片就再也分不开 |
+
+⚠️ **受限页排除对真实用户恒不触发**：`RESTRICTED_PAGES` 是按测试集文件名写死的清单
+（以 `SOURCES.md` 为准）。如实登记 —— 不写成「受限页已排除」，那是对测试语料成立的句子。
+
+## 七、部署
 
 Railway · 新加坡区 · `api/Dockerfile`（**构建上下文是仓库根**，
 Root Directory 留 `/`，Dockerfile Path 填 `api/Dockerfile`）。

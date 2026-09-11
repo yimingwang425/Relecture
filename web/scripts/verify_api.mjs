@@ -30,7 +30,7 @@ const API = join(dirname(WEB), "api");
 const PY = join(API, ".venv", "bin", "python");
 
 /** 期望的最少用例数。「0 通过」与「26 通过」在退出码上没有区别。 */
-const MIN_CASES = 26;
+const MIN_CASES = 46;
 
 let passed = 0;
 let failed = 0;

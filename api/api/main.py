@@ -26,7 +26,7 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Any
 
-from fastapi import Depends, FastAPI, Header, HTTPException
+from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
 from .auth import AuthError, HttpJwks, Principal, TokenVerifier, bearer_token
@@ -53,12 +53,26 @@ class ExplainRequest(BaseModel):
     question: str = Field(min_length=1, max_length=500)
 
 
+class CourseRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+
+
+#: 上传体积上限。沿用 `parse_service.app.MAX_UPLOAD_BYTES` 的那个数与它的来源说明
+#: （**占位待定**，现值是测试集最大文件的近 30 倍，不会误伤）——
+#: 不在这里写第二个数字。
+def _max_upload_bytes() -> int:
+    from parse_service.app import MAX_UPLOAD_BYTES
+
+    return MAX_UPLOAD_BYTES
+
+
 def create_app(
     settings: Settings | None = None,
     verifier: TokenVerifier | None = None,
     supabase: SupabaseClient | None = None,
     retriever: Any | None = None,
     model_factory: Any | None = None,
+    embedder_factory: Any | None = None,
 ) -> FastAPI:
     """组装。每个依赖都可注入，**为的是断言能喂真东西**。
 
@@ -156,7 +170,87 @@ def create_app(
             "style_rules": result.system_text.split("## 材料范围")[0].strip(),
         }
 
+    # ---------------------------------------------------------------- 摄入
+    #
+    # `parse-service` 并入本服务（2026-09-11 拍板）：解析 → 切片 → 嵌入 → 落库
+    # 对用户是**一次动作**，拆两个服务意味着整份 PDF 多走一次网络、两套部署、
+    # 两条 §13.3 记录。连带后果是 `/parse` 从「无鉴权无状态」变成要鉴权——
+    # **那本来就得改，它现在谁都能调。**
+
+    @app.get("/courses")
+    def list_courses(p: Principal = Depends(principal)) -> list[dict[str, Any]]:
+        try:
+            return db.courses(p.token)
+        except SupabaseError as exc:
+            raise HTTPException(status_code=exc.status, detail=exc.message) from exc
+
+    @app.post("/courses", status_code=201)
+    def create_course(req: CourseRequest, p: Principal = Depends(principal)) -> dict[str, Any]:
+        try:
+            return db.create_course(token=p.token, owner=p.user_id, name=req.name.strip())
+        except SupabaseError as exc:
+            raise HTTPException(status_code=exc.status, detail=exc.message) from exc
+
+    @app.post("/courses/{course_id}/documents", status_code=201)
+    async def upload(
+        course_id: str,
+        file: UploadFile = File(...),
+        p: Principal = Depends(principal),
+    ) -> dict[str, Any]:
+        """上传一份课件。**一次事务性的动作**（见 `ingest.py` 的模块说明）。"""
+        from .ingest import DuplicateDocument as _Dup  # noqa: F401  —— 保持符号可见
+        from .ingest import ingest_document
+        from .supabase import DuplicateDocument
+
+        name = file.filename or "upload"
+        if not name.lower().endswith(".pdf"):
+            # 区分「不支持」与「还没做」——PPTX 的 schema 已定，解析器未交付。
+            # 压成一句「不支持」会让人以为是永久不支持而去做别的兜底。
+            if name.lower().endswith(".pptx"):
+                raise HTTPException(501, "PPTX 解析尚未实现（schema 已定义，解析器为下一次交付）")
+            raise HTTPException(415, f"仅支持 .pdf，收到 {name}")
+
+        data = await file.read()
+        if not data:
+            raise HTTPException(400, "文件为空")
+        limit = _max_upload_bytes()
+        if len(data) > limit:
+            raise HTTPException(413, f"文件超过 {limit // 1024 // 1024} MB 上限")
+
+        make_embedder = embedder_factory or _default_embedder
+        try:
+            result = ingest_document(
+                data=data, filename=name, owner=p.user_id, course_id=course_id,
+                token=p.token, store=db, embedder=make_embedder(),
+            )
+        except DuplicateDocument as exc:
+            # 数据库那条唯一索引是**硬失败 23505**，不是「提示」。翻译成人话。
+            raise HTTPException(status_code=409, detail=exc.message) from exc
+        except SupabaseError as exc:
+            raise HTTPException(status_code=exc.status, detail=exc.message) from exc
+        except Exception as exc:  # 解析器对损坏文件抛的异常类型不统一
+            raise HTTPException(422, f"无法处理该 PDF：{exc}") from exc
+
+        return {
+            "document_id": result.document_id,
+            "slice_count": result.slice_count,
+            "embedded_count": result.embedded_count,
+            "skipped_pages": result.skipped_pages,
+            "verdict": result.verdict,
+        }
+
     return app
+
+
+def _default_embedder() -> Any:
+    """真嵌入器。**这是 PRD §13.3 的第二次出境**——切片原文 → OpenAI。
+
+    模型与维度从 `retrieval.selection` 读（那是它们在代码里的唯一出处）。
+    """
+    from retrieval.embed import OpenAIEmbedder
+    from retrieval.selection import SELECTED_DIMENSIONS, SELECTED_MODEL
+
+    return OpenAIEmbedder(SELECTED_MODEL, SELECTED_DIMENSIONS)
 
 
 _COURSE_LABEL = "合成课件（阶段 3：检索尚未接库）"

@@ -19,14 +19,20 @@ WORKDIR /srv
 
 # 先装依赖再拷源码：源码一改不必重装依赖。
 COPY api/pyproject.toml /srv/api/pyproject.toml
-RUN pip install --no-cache-dir fastapi "uvicorn[standard]" pydantic httpx "pyjwt[crypto]" anthropic
+# numpy 与 openai 是 retrieval 的依赖（组文本与嵌入）；pymupdf 是解析。
+RUN pip install --no-cache-dir fastapi "uvicorn[standard]" pydantic httpx \
+    "pyjwt[crypto]" anthropic numpy openai pymupdf python-multipart
 
 # 兄弟包。目录名含中文是既有事实（`实验脚本/A类规则计算脚本`），
 # COPY 走 UTF-8 路径没问题；改名是另一件事，不夹在这次接线里。
 COPY explain /srv/explain
+COPY retrieval/retrieval /srv/retrieval/retrieval
+COPY slicer /srv/slicer
+COPY parse-service /srv/parse-service
 COPY 实验脚本/A类规则计算脚本 /srv/实验脚本/A类规则计算脚本
 COPY f1_samples/synthetic_deck.md /srv/f1_samples/synthetic_deck.md
 COPY api /srv/api
+RUN pip install --no-cache-dir -e /srv/slicer -e /srv/parse-service
 
 ENV PYTHONUNBUFFERED=1 PYTHONPATH=/srv/api
 EXPOSE 8000

@@ -35,3 +35,5 @@ node scripts/invite_user.mjs --email someone@example.com --password '……' --n
 | a3@test.local | 2026-09-10 | 阶段4验收 主臂 | `28150f95-c3a0-4a1f-b79d-173822fcf514` |
 | a4@test.local | 2026-09-10 | 阶段4复验 主臂 | `72088832-3e3a-467a-9651-b7c2c907260d` |
 | a5@test.local | 2026-09-10 | 阶段4复验 主臂 | `6ffac4ab-4842-451e-8548-d30d31bb7da4` |
+| f1-rls-a@example.com | 2026-09-11 | 真库验证 A | `765c629b-52d7-441f-bdb8-d123872fe53d` |
+| f1-rls-b@example.com | 2026-09-11 | 真库验证 B | `1326580d-33b2-45e2-b26f-4c63d4f8aca3` |

@@ -45,12 +45,22 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from . import _paths  # noqa: F401  —— 必须先于下面的 a_rules / explain 导入
+
 from a_rules.config import StyleConfig
+from explain.style_axes import DETAIL_OVERRIDES, STYLE_BASE
 
 __all__ = ["ConfigPoint", "POINTS", "AXIS_POINTS", "point_by_id", "build_config"]
 
 #: 全部点共享的基底。跨语言 → chinese_ratio 激活、term_annotation 仍不激活（v1）。
-BASE: dict[str, Any] = {"explain_language": "zh", "source_language": "en"}
+#:
+#: **2026-09-11 起从 `explain.style_axes` 读，本文件不再自己定义。** 方向是
+#: 「生产拥有，实验再导出」（口径 F46，与 `llm.py` 从漂移实验提升上来同一处置）——
+#: F1→F3 接线要求生产路径能把档位变成 StyleConfig，而那件事原本只有
+#: `f1_samples.style_axes` 会做，它 import 的正是本文件。
+#: **数值一个都没动**：`explain/tests/test_style_axes.py` 把 P0/P2/P3 搬家前的三个
+#: `config_fingerprint` 钉死在断言里，改了任何一个数那条会红。
+BASE: dict[str, Any] = STYLE_BASE
 
 
 @dataclass(frozen=True, slots=True)
@@ -83,7 +93,10 @@ class ConfigPoint:
 POINTS: tuple[ConfigPoint, ...] = (
     ConfigPoint(
         id="P0",
-        overrides={},
+        # P0/P2/P3 的覆盖项从 explain 读（见上）。P1 与 P4 仍由本文件定义：
+        # P1 已退出产品档位（口径 F23），P4 是语言轴的孤点——**两者都不是产品的东西**，
+        # 提到生产模块里去反而会让「产品档位」这张表混进实验点位（F23 要防的正是这个）。
+        overrides=DETAIL_OVERRIDES["P0"],
         axis="detail",
         axis_order=0,
         deviation="0（默认）",
@@ -100,7 +113,7 @@ POINTS: tuple[ConfigPoint, ...] = (
     ),
     ConfigPoint(
         id="P2",
-        overrides={"paragraph_length": {"min": 25, "max": 55}},
+        overrides=DETAIL_OVERRIDES["P2"],
         axis="detail",
         axis_order=2,
         deviation="中",
@@ -108,7 +121,7 @@ POINTS: tuple[ConfigPoint, ...] = (
     ),
     ConfigPoint(
         id="P3",
-        overrides={"paragraph_length": {"min": 15, "max": 40}},
+        overrides=DETAIL_OVERRIDES["P3"],
         axis="detail",
         axis_order=3,
         deviation="强",

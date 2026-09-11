@@ -7,9 +7,14 @@
  *
  * 阶段 3 之后，同一份取值域存在于三处，而且不可能合并成一处：
  *
+ * ⚠️ **2026-09-11：Python 侧的出处从 `f1_samples/style_axes.py` 搬到了
+ * `explain/`**（口径 F45 / F46）。`f1_samples` 那份退化为再导出，只剩 `PAIRS`。
+ * 本护栏跟着改了解析位置——**不改的话它会继续解析一个只剩 import 的文件，
+ * 解析出空对象，而空对象之间的比对必然相等**（下面 §一 的分辨力断言正是防这个）。
+ *
  * | 出处 | 为什么非有不可 |
  * | --- | --- |
- * | `f1_samples/style_axes.py` 的 `AXES` | 生成/核对样例的脚本读它 |
+ * | `explain/explain/style_axes.py` 的 `AXES` | 生成链路与核对样例的脚本都读它 |
  * | `supabase/migrations/*.sql` 的 CHECK | 数据库自己执行，不信任应用层 |
  * | `web/lib/style/axes.ts` 的 `AXES` | 浏览器跑不了 Python，也读不到 CHECK |
  *
@@ -83,7 +88,11 @@ function parseScalarMap(block, entryRe) {
 // -------- Python：f1_samples/style_axes.py
 
 function readPython() {
-  const src = readFileSync(join(ROOT, "f1_samples", "style_axes.py"), "utf8");
+  // 三份来源，各有其家：取值域与档位在 explain/style_axes，B 类措辞与版本号在
+  // explain/style_prompt，八对样例的定义仍在 f1_samples（那是样例专有的）。
+  const src = readFileSync(join(ROOT, "explain", "explain", "style_axes.py"), "utf8");
+  const promptSrc = readFileSync(join(ROOT, "explain", "explain", "style_prompt.py"), "utf8");
+  const samplesSrc = readFileSync(join(ROOT, "f1_samples", "style_axes.py"), "utf8");
 
   const axes = parseListMap(
     blockAfter(src, /^AXES\s*:/m) ?? "",
@@ -100,14 +109,14 @@ function readPython() {
   const ladderBlock = blockAfter(src, /^DETAIL_LADDER\s*:/m, "(", ")") ?? "";
   const detailLadder = [...ladderBlock.matchAll(STRINGS)].map((m) => m[1]);
 
-  const pairsBlock = blockAfter(src, /^PAIRS\s*:/m, "(", ")") ?? "";
+  const pairsBlock = blockAfter(samplesSrc, /^PAIRS\s*:/m, "(", ")") ?? "";
   const pairs = [...pairsBlock.matchAll(/\(\s*["'](\w+)["']\s*,\s*["'](\w+)["']\s*,\s*["'](\w+)["']\s*,\s*["'](\w+)["']\s*\)/g)]
     .map((m) => ({ id: m[1], axis: m[2], a: m[3], b: m[4] }));
 
   // B 类措辞的版本号与摘要（阶段 4，口径 F39）。摘要拿**块正文**算，见 §四。
-  const promptVersion = /^PROMPT_TEMPLATE_VERSION\s*:\s*str\s*=\s*["']([^"']+)["']/m.exec(src)?.[1] ?? null;
-  const promptDigest = /^PROMPT_TEMPLATE_DIGEST\s*:\s*str\s*=\s*["']([0-9a-f]+)["']/m.exec(src)?.[1] ?? null;
-  const fragmentsBlock = blockAfter(src, /^B_CLASS_FRAGMENTS\s*:/m) ?? "";
+  const promptVersion = /^PROMPT_TEMPLATE_VERSION\s*:\s*str\s*=\s*["']([^"']+)["']/m.exec(promptSrc)?.[1] ?? null;
+  const promptDigest = /^PROMPT_TEMPLATE_DIGEST\s*:\s*str\s*=\s*["']([0-9a-f]+)["']/m.exec(promptSrc)?.[1] ?? null;
+  const fragmentsBlock = blockAfter(promptSrc, /^B_CLASS_FRAGMENTS\s*:/m) ?? "";
 
   return { axes, defaults, enforced, detailLadder, pairs, promptVersion, promptDigest, fragmentsBlock };
 }
@@ -266,6 +275,23 @@ console.log("\n\x1b[1m一 · 判据自身的分辨力（先验，再读结论）
   check(py.promptDigest !== null, "style_axes.py 解析出 PROMPT_TEMPLATE_DIGEST", String(py.promptDigest));
   check(py.fragmentsBlock.length > 200, "解析出 B_CLASS_FRAGMENTS 块正文", `${py.fragmentsBlock.length} 字符`);
 
+  // 搬家之后**旧的那份必须真的不在了**。留着一份没人读的副本，比没搬更糟：
+  // 它看起来是出处，改它不会有任何效果，而没有任何东西会报错。
+  {
+    const samplesSrc = readFileSync(join(ROOT, "f1_samples", "style_axes.py"), "utf8");
+    const leftovers = [
+      ["AXES 的定义", /^AXES\s*:\s*dict/m],
+      ["B_CLASS_FRAGMENTS 的定义", /^B_CLASS_FRAGMENTS\s*:\s*dict/m],
+      ["style_config_for 的定义", /^def style_config_for/m],
+      ["PROMPT_TEMPLATE_VERSION 的定义", /^PROMPT_TEMPLATE_VERSION\s*:/m],
+    ].filter(([, re]) => re.test(samplesSrc));
+    check(
+      leftovers.length === 0,
+      "f1_samples/style_axes.py 已退化为再导出，没有留下第二份定义",
+      leftovers.length ? leftovers.map(([w]) => w).join("、") + " 还在" : "只剩 PAIRS 与 describe",
+    );
+  }
+
   // 正向控制：把 TS 的取值域改坏，比对**必须**报出问题。否则这条护栏是空转的。
   const broken = readTs(
     readFileSync(join(WEB, "lib", "style", "axes.ts"), "utf8").replace(
@@ -302,7 +328,7 @@ console.log("\n\x1b[1m三 · P1 确已退出\x1b[0m");
   );
 }
 
-console.log("\n\x1b[1m四 · B 类措辞版本与摘要（口径 F39，阶段 4）\x1b[0m");
+console.log("\n\x1b[1m四 · B 类措辞版本与摘要（口径 F39）\x1b[0m");
 {
   // `prompt_profile_id` = f(B 类三条轴取值, PROMPT_TEMPLATE_VERSION)。
   // 版本号本身在两处（Python 算 id、TS 写事件），上面 §二 已比过。

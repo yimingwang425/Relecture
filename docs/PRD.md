@@ -1024,6 +1024,40 @@ A4 已验证：每个教学周有 3–4 门不同课程的课件需要学习。
 
 结论需写入 §13.3 数据流向图，并与隐私政策逐条对齐。
 
+#### ✅ 查证结果（2026-09-11）
+
+**两个服务商，不是一个。** Anthropic 已在用（讲解生成 + F1 对照臂分类）；
+OpenAI 是 F2 摄入接线要引入的第二个（embedding），**查证是它接入前的 gate**。
+
+| | **Anthropic**（已接入） | **OpenAI**（待接入，embedding） |
+| --- | --- | --- |
+| **① 用于训练？** | **默认不用**。原文：「By default, we will not use your inputs or outputs from our commercial products (e.g. Claude for Work, Anthropic API, Claude Gov, etc.) to train our models.」 | **默认不用**。原文：「data sent to the OpenAI API is not used to train or improve OpenAI models (unless you explicitly opt in to share data with us).」 |
+| **例外** | 用户**显式提交反馈**（👍/👎）时可用于训练，该反馈数据留存**至多 5 年** | 显式 opt-in 才用 |
+| **② 保留期限** | ⚠️ **该页面未给出通用 API 的保留期限**，只写了反馈数据的 5 年。**如实登记为未查清**，不编一个数 | 滥用监控日志**至多 30 天**（除非法律要求更长）。`/v1/embeddings` **支持 Zero Data Retention**（需申请批准），开启后请求完成即不留存 |
+| **③ 存储地** | ⚠️ 未在上述页面查到。**未查清** | 提供多区域数据驻留（含美国、欧盟、新加坡等）。⚠️ **关键差异：美国与欧盟支持「存储 + 处理」，其余多数区域（含新加坡）只支持存储**——所以即使选新加坡驻留，**处理仍在境外** |
+
+**对本产品的三条推论：**
+
+1. **Anthropic 的训练例外对我们不适用。** 产品里的四个反馈按钮（F05–F07）
+   是**内部**的——它们改的是 `style_config` 那一行，**从不回传给模型服务商**。
+   我们没有任何通路把用户内容作为「反馈」提交给 Anthropic。
+2. **OpenAI 接入前应当申请 ZDR**（`/v1/embeddings` 在支持列表里）。不申请也能用，
+   但那样课件原文会进滥用监控日志留存至多 30 天，而课件的著作权不属于用户本人（§12.1）。
+   ⚠️ **申请与否是产品决策，不是实现细节**——在 F2 摄入接线前拍。
+3. **「应用服务器在新加坡」不等于「数据不出境」。** §13.3 原本只列了模型 API 一次出境；
+   加上 embedding 是第二次，且新加坡区只存不算。**隐私政策要按两次出境改写。**
+
+⚠️ **两项仍未查清**（Anthropic 的通用保留期限与存储地），**不写成已查证**。
+它们不阻塞 F2 摄入（那是 OpenAI 的 gate），但阻塞**对外开放**——
+隐私政策要写「传给哪些第三方、存多久、存在哪」，现在有两个格子填不出来。
+
+**查证时间 2026-09-11，来源见下。条款会变，这张表带日期不是装饰**——
+下次要引用它之前先看日期，超过三个月就重查一遍。
+
+来源：
+[Anthropic · Is my data used for model training?](https://privacy.claude.com/en/articles/7996868-is-my-data-used-for-model-training) ·
+[OpenAI · Data controls in the OpenAI platform](https://developers.openai.com/api/docs/guides/your-data)
+
 ### 12.4 备案与资质
 
 | 法域 | 现状判断 |
@@ -1226,11 +1260,28 @@ A4 已验证：每个教学周有 3–4 门不同课程的课件需要学习。
 
 | 项 | 状态 |
 | --- | --- |
-| 模型 API 服务商的训练用途条款 | 待查证 |
-| 数据保留期限 | 待查证 |
-| 数据存储地 | 待查证 |
-| embedding 服务是否为第三方 | 待决策 |
-| 应用服务器部署地 | 新加坡 |
+| 模型 API 服务商的训练用途条款 | ✅ **已查证 2026-09-11**：Anthropic 与 OpenAI **默认都不用于训练**。见 §12.3 的表与来源 |
+| 数据保留期限 | 🟡 **一半**：OpenAI 滥用监控日志 ≤30 天、`/v1/embeddings` 可申请 ZDR；**Anthropic 的通用 API 保留期限未查到**，如实登记 |
+| 数据存储地 | 🟡 **一半**：OpenAI 有多区域驻留，但**新加坡只支持存储、不支持处理**；**Anthropic 的存储地未查到** |
+| embedding 服务是否为第三方 | ✅ **是**。选型结论 `text-embedding-3-large@1024`（`retrieval/README.md` §七），**OpenAI**。这是**第二次数据出境** |
+| 应用服务器部署地 | 新加坡（**Railway**，2026-09-11 拍板；此前从未部署过任何 Python 服务） |
+
+⚠️ **出境从一次变成两次**（2026-09-11）。原图只画了「检索片段 + 提问 → 模型 API」
+这一次；F2 摄入接线后，**课件原文会先出境一次做 embedding**：
+
+```
+用户上传课件
+   → 应用服务器（Railway · 新加坡）
+   → 解析 & 切片（本地，不出境）
+   → **embedding：切片原文 → OpenAI（第二次出境，处理不在新加坡）**  ← 新增
+   → 向量落库（Supabase）
+   → 检索片段 + 提问 → Anthropic（第一次出境）
+   → 输出返回用户
+```
+
+**两处与原图不同，都要反映到隐私政策里**：出境两次而非一次；
+出境的内容里**包含课件原文本身**（embedding 喂的是切片全文），
+而不只是「检索到的片段 + 提问」。
 
 ---
 

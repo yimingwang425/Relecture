@@ -45,7 +45,7 @@ from explain.context import ContextPack, ContextSlice
 from explain.llm import AnthropicModel
 from explain.prompt import build_system as production_build_system
 from explain.prompt import build_user_turn as production_build_user_turn
-from explain.style_prompt import render_style_rules
+from explain.style_prompt import render_all_style_rules, render_style_rules
 from style_axes import DEFAULTS, PAIRS, B_CLASS_FRAGMENTS, describe, render_b_class_rules, style_config_for
 
 HERE = Path(__file__).resolve().parent
@@ -136,14 +136,22 @@ def build_prompt(blocks: list[tuple[str, int, str]],
                  style: dict[str, str]) -> tuple[str, str, str, str]:
     """→ (system, user, A 类片段, B 类片段)。**system 与 user 都由生产函数产出。**
 
-    A 类走 `explain.style_prompt.render_style_rules`（只读调用）。
-    B 类仍是 `f1_samples` 自己拼的三句——约束 1：不扩展 `explain/style_prompt.py`，
-    产品侧怎么渲染 B 类是阶段 3/4 的事。两段拼在一起交给生产的 `build_system`。
+    A 类与 B 类**都走生产渲染**，拼接也走生产的 `render_all_style_rules`
+    （2026-09-11：B 类已从本目录搬进 `explain/style_prompt.py`，口径 F45）。
+
+    ⚠️ **拼法不在这里写第二遍**。样例是用户据以选择的东西；生产改了拼法而这里没改
+    （或反过来），没有任何东西会报错，只是用户按样例选完拿到的不是他选的那个。
+    `a_class` / `b_class` 仍单独算一份，那是**写进 pairs.json 的元数据**
+    （核对时要能看见当时那两段原文），不是第二处拼接。
     """
     a_class = render_style_rules(style_config_for(style["detail_level"]))
     b_class = render_b_class_rules(style)
     pack = context_pack(blocks)
-    system = production_build_system(a_class + "\n" + b_class, pack, COURSE_LABEL)
+    system = production_build_system(
+        render_all_style_rules(style_config_for(style["detail_level"]), style),
+        pack,
+        COURSE_LABEL,
+    )
     user = production_build_user_turn(pack, QUESTION_TEMPLATE.format(concept=CONCEPT))
     return system, user, a_class, b_class
 

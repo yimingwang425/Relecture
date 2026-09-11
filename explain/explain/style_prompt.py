@@ -19,6 +19,21 @@ F1 产出 `StyleConfig`，本模块把它渲染成模型能读的约束，审查
 「专业术语首次出现时用『中文译名（English original）』标注」这一句，
 在 v1 下必须删掉，否则模型会花输出 token 做一件审查根本不看的事。
 
+## B 类三条轴也在这里渲染（2026-09-11 从 `f1_samples/` 搬上来）
+
+原来本模块只渲染 A 类，B 类（举例 / 结构 / 深度）的措辞住在 `f1_samples/style_axes.py`，
+理由是「**不判定的东西先不焊进生产模块**」（当时的约束 1）。
+
+**那条理由只支持「不判定」，不支持「不进 prompt」**（口径 F45）。PRD §8.5 未校准
+说的是不做 B 类**判定**；而 B 类不进 prompt 的后果是：F1 那 6 步成对比较里有 4 步
+（举例 1 步、结构 1 步、深度 2 步）在采集一个对输出毫无影响的东西——
+用户认真比较了四次，而那四次的结果从不改变他拿到的任何一个字。
+
+⚠️ **搬家是移动，不是重写。** 措辞逐字节不变、拼接顺序（A + `"\n"` + B）也不变——
+`pairs.json` 里 16 个样例就是按这个形状生成的（口径 F18/F19），
+措辞或拼法一变，用户按样例选完拿到的就不是他选的那个。
+`explain/tests/test_style_axes.py` 与 `web/scripts/verify_style_axes.mjs` 两处钉着这一点。
+
 ## 阈值不直接报给模型
 
 `chinese_ratio ≥ 0.95` 这种数字对模型没有可操作性——它不会去数自己的汉字占比。
@@ -32,7 +47,17 @@ from __future__ import annotations
 
 from a_rules.config import StyleConfig
 
-__all__ = ["render_style_rules", "LANGUAGE_BANDS"]
+from .style_axes import AXES
+
+__all__ = [
+    "render_style_rules",
+    "render_b_class_rules",
+    "render_all_style_rules",
+    "LANGUAGE_BANDS",
+    "B_CLASS_FRAGMENTS",
+    "PROMPT_TEMPLATE_VERSION",
+    "PROMPT_TEMPLATE_DIGEST",
+]
 
 #: 讲解语言一致性的分档。阈值 → 指令强度。
 #:
@@ -86,3 +111,84 @@ def render_style_rules(config: StyleConfig) -> str:
         )
 
     return "\n".join(rules)
+
+
+# ---------------------------------------------------------------- B 类
+
+#: **B 类三条轴的措辞写死在这里**，并原样进 pairs.json，供人工核对时对照
+#: （任务 D）。措辞变了，样例的可比性就变了——它和档位区间一样是口径。
+B_CLASS_FRAGMENTS: dict[str, dict[str, str]] = {
+    "use_examples": {
+        "more": "多举例子：每讲一个要点，配一个具体例子或类比帮助理解。",
+        "fewer": "少举例子：把要点本身讲清楚即可，不额外补例子或类比。",
+    },
+    "structure": {
+        "conclusion_first": (
+            "先给结论：开头第一段就说出最重要的那句判断，后面再解释它为什么成立。"
+        ),
+        "buildup_first": (
+            "先铺垫后收结论：按「问题 → 机制 → 结论」的顺序展开，"
+            "把最重要的那句判断放在最后。"
+        ),
+    },
+    "depth": {
+        "what": (
+            "只讲是什么：说清楚这个概念是什么、拿来做什么用。"
+            "不解释它为什么这样设计，也不做推导。"
+        ),
+        "why": (
+            "讲到为什么：在说清是什么之外，解释这个机制为什么成立、为什么这样设计。"
+        ),
+        "derivation": (
+            "讲到推导：在解释为什么的基础上，把关键结论一步步推出来，"
+            "写出中间步骤和用到的假设。"
+        ),
+    },
+}
+
+#: B 类措辞的**版本号**。它是 `prompt_profile_id` 的构成字段之一
+#: （口径 F04 / F39）：埋点事件里存「B 类三条轴的取值 + 这个版本号」，
+#: 分析时由 `explain.prompt_profile.prompt_profile_id()` 算出 id。
+#:
+#: ⚠️ **上面的措辞改了，这个版本号必须一起改。** 不改的话，同一个
+#: `prompt_profile_id` 会盖住两份不同的 prompt——而那正是 F04 要这个标识
+#: 回答的问题（「讲解质量变了，是阈值变了还是 prompt 变了」）失效的方式，
+#: 且它**不会报错**。
+PROMPT_TEMPLATE_VERSION: str = "b1"
+
+#: 上一行那个版本号对应的**措辞摘要**：`B_CLASS_FRAGMENTS` 块正文
+#: （压掉空白后）的 sha256 前 12 位。
+#:
+#: 靠人记得同时改版本号是不行的（F13 那个坑的又一个入口），所以摘要在这里，
+#: 由 `web/scripts/verify_style_axes.mjs` 重算并比对：措辞一动摘要就对不上，
+#: `npm run verify:axes` 直接变红，逼人把版本号一起改。
+#:
+#: 它对块内的**任何**字符变化都敏感（包括缩进以外的注释），宁可多红一次也不漏。
+#: 真要改措辞：先改措辞 → 跑 verify:axes 看它红并抄下新摘要 → 同时改
+#: PROMPT_TEMPLATE_VERSION 与 web/lib/style/axes.ts 的同名常量。
+PROMPT_TEMPLATE_DIGEST: str = "292b62f6b396"
+
+
+def render_b_class_rules(style: dict[str, str]) -> str:
+    """渲染 B 类三条。顺序固定——system 要能被缓存，任何非确定性都会让缓存失效。"""
+    lines = []
+    for axis in ("use_examples", "structure", "depth"):
+        value = style[axis]
+        if value not in AXES[axis]:
+            raise ValueError(f"{axis} 取值 {value!r} 不在取值域 {AXES[axis]}")
+        lines.append(f"- {B_CLASS_FRAGMENTS[axis][value]}")
+    return "\n".join(lines)
+
+
+def render_all_style_rules(config: StyleConfig, b_class: dict[str, str]) -> str:
+    """A 类 + B 类，**这是进 `build_system()` 的那一段**。
+
+    拼法是 `A + "\n" + B`，**与 `pairs.json` 里 16 个样例的生成形状逐字节一致**
+    （见 `f1_samples/generate_pairs.py` 的 `build_prompt`）。
+    这不是风格选择：样例是用户在 onboarding 里据以选择的东西，
+    它的 prompt 形状与生产分叉，F18/F19 的前提就垮了。
+
+    `render_style_rules` 的签名与行为**一个字没动**：配置扫描实验按它跑过 180 轮，
+    改它等于让那批已落盘的数据对应不上任何现存代码（口径 F19 的同一条理由）。
+    """
+    return render_style_rules(config) + "\n" + render_b_class_rules(b_class)

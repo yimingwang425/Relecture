@@ -1,0 +1,28 @@
+[project]
+name = "api"
+version = "0.1.0"
+description = "AI 课件讲解助手 · 产品服务端：鉴权 + 读风格配置 + 讲解生成（F1→F3 接线）"
+requires-python = ">=3.11"
+# 同仓库的本地兄弟包（explain / a_rules / retrieval / slicer / parse_service）
+# 走路径注入或 `pip install -e`，不列这里——与 parse-service 同一约定。
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.27",
+    "pydantic>=2.6",
+    "httpx>=0.27",          # 调 PostgREST 与取 JWKS
+    "pyjwt[crypto]>=2.8",   # ES256 验签；crypto extra 带 cryptography
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["api*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

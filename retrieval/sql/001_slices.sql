@@ -83,10 +83,30 @@ create table if not exists public.slice_embeddings (
         references public.slices (document_id, slice_id) on delete cascade
 );
 
--- ANN 索引。当前 1024 维在上限内，可建。
--- 注：对 v1 的规模（单门课数十切片）精确扫描本就够用，这个索引是为规模增长留的。
-create index if not exists slice_embeddings_hnsw_idx
-    on public.slice_embeddings using hnsw (embedding vector_cosine_ops);
+-- ── ANN 索引：**v1 不建**（2026-09-11 拍板，口径 F47）─────────────────────────
+--
+-- 原本这里有一条 `create index ... using hnsw (embedding vector_cosine_ops)`。
+-- 现在注掉，理由不是性能，是**观测范围与应用范围错配**（F23 的形态）：
+--
+--   `retrieval/README.md` §七 的全部选型证据 —— large 优于 small、1024 与 3072
+--   不可区分、四个文本变体与三种扩展模式的对照 —— **都是在精确余弦上取得的**
+--   （`retrieval/index.py` 的 `VectorIndex.search`，全表扫描 + 确定性排序）。
+--   HNSW 是近似最近邻，**有召回损失**。建上它，生产检索就不再是那批数字描述的
+--   那个对象了，而 R17 那些「无一致方向」的结论会被悄悄挪用到一个没测过的配置上。
+--
+-- 而 v1 根本不需要它：实测本语料**每门课 15–46 个切片**，精确扫描的代价可忽略
+-- （这也正是 `retrieval/index.py` 文件头选精确扫描的理由，对生产同样成立）。
+--
+-- ⚠️ **重新评估的触发线：单门课的 `slice_embeddings` 行数超过 5,000。**
+--   这个数是**当前实测规模的 100 倍以上**（46 → 5,000），不是量出来的延迟阈值——
+--   如实说明，免得日后有人把它当成「测过 5,000 行会变慢」。
+--
+-- 触发之后**第一件事不是建索引**，是先量一次 ANN 与精确扫描的 top-5 一致率：
+-- 不一致到什么程度会翻转 §七 的选型结论，那才是要不要建它的判据。
+-- 建之前还要重读一遍本文件头的维度说明（1024 在 ANN 的 2000 维上限内，可建）。
+--
+-- create index if not exists slice_embeddings_hnsw_idx
+--     on public.slice_embeddings using hnsw (embedding vector_cosine_ops);
 
 -- ── RLS ─────────────────────────────────────────────────────────────────────
 alter table public.documents        enable row level security;

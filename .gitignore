@@ -39,3 +39,6 @@ __pycache__/
 .venv/
 *.egg-info/
 .pytest_cache/
+
+# api 的本地 venv 与 .env（根 .gitignore 已覆盖 .venv/ 与 .env*，这里只是显式化）
+api/.venv/

@@ -33,9 +33,9 @@ from a_rules.evaluator import evaluate  # noqa: E402
 from explain.context import ContextPack, ContextSlice  # noqa: E402
 from explain.llm import AnthropicModel  # noqa: E402
 from explain.prompt import build_system, build_user_turn  # noqa: E402
-from explain.style_prompt import render_style_rules  # noqa: E402
+from explain.style_prompt import render_all_style_rules  # noqa: E402
 from generate_pairs import SPEND_LOG, build_system as my_build_system  # noqa: E402
-from style_axes import render_b_class_rules, style_config_for  # noqa: E402
+from style_axes import style_config_for  # noqa: E402
 from run_p3_repro import DECKS, P3_STYLE, QUESTION_TEMPLATE, body_of  # noqa: E402
 
 N = 4
@@ -44,8 +44,8 @@ N = 4
 def production_prompt(deck: str, concept: str, style: dict) -> tuple[str, str]:
     """生产的 prompt 形状。整份课件当作一个切片，不执行检索。"""
     cfg = style_config_for(style["detail_level"])
-    # A 类走生产渲染；B 类仍是 f1_samples 自己拼的那三句（约束 1：不扩展 style_prompt）
-    rules = render_style_rules(cfg) + "\n" + render_b_class_rules(style)
+    # A 类与 B 类都走生产渲染，拼接也走生产函数（2026-09-11 搬家后，口径 F45）
+    rules = render_all_style_rules(cfg, style)
     pack = ContextPack(
         question="",
         slices=(ContextSlice(

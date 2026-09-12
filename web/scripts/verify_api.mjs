@@ -29,8 +29,16 @@ const WEB = dirname(dirname(fileURLToPath(import.meta.url)));
 const API = join(dirname(WEB), "api");
 const PY = join(API, ".venv", "bin", "python");
 
-/** 期望的最少用例数。「0 通过」与「26 通过」在退出码上没有区别。 */
-const MIN_CASES = 46;
+/** 期望的最少用例数。「0 通过」与「26 通过」在退出码上没有区别。
+ *
+ * ⚠️ **加了用例就把这个数抬上去。** 不抬的话它会慢慢退化成一条永远满足的下界，
+ * 而它存在的全部理由是「有一批用例被 collect 漏了」这件事会静默发生
+ * （import 错误让整个文件被跳过时，pytest 仍然退出 0 报「N passed」）。
+ *
+ * 变更史：26（阶段 2/3）→ 46（阶段 4 摄入）→ 101（阶段 5 检索 + 阶段 6 埋点）
+ * → 118（Render 首次部署后的补正：构建标识 + extra=forbid + hit_documents）。
+ */
+const MIN_CASES = 118;
 
 let passed = 0;
 let failed = 0;

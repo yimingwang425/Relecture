@@ -1047,6 +1047,232 @@ async function main() {
     await db.close();
   }
 
+  // ============================================================ 四个讲解事件（阶段 6）
+  //
+  // §13.0 的 `explain_turn` / `style_review_result` / `regeneration_triggered` /
+  // `retrieval_executed`，迁移 20260912120000_f3_explain_events.sql。
+  //
+  // 四组断言，各防一件事：
+  //   ① 允许控制先立：四个齐全的 payload 都写得进去；
+  //   ② 必需字段各缺一次都判红（口径 F36 —— jsonb 漏字段不会报错）；
+  //   ③ **null 有含义的那几个字段必须仍然写得进去**。这一组是本阶段特有的：
+  //      `f1_event_payload_ok` 把 JSON null 判成「没有」，而 `all_activated_passed`
+  //      无维度可判时就是 null（口径 D42）、`first_token_latency_ms` 不流式恒 null。
+  //      它们进了必需清单的话，一条**完全正确**的事件会被 CHECK 拒掉，
+  //      而被拒的事件是静默消失的；
+  //   ④ course_id / deck_id 这两列：写得进、能按课分组、且**删课不带走事件**。
+  console.log("\n\x1b[1mstyle_events · 四个讲解事件（阶段 6）\x1b[0m");
+
+  /** 四个事件各一份**齐全**的 payload，字段依据 PRD §13.0 那四张表。 */
+  const EXPLAIN_PAYLOADS = {
+    explain_turn: {
+      turn_index: 1,
+      question: "城市规划的历史传统有哪些？",
+      question_tags: [],
+      usage: { input_tokens: 1200, cache_read: 0, cache_creation: 0, output_tokens: 430 },
+      cost_usd: 0.0071,
+      pricing_rates: { input: 3, output: 15 },
+      pricing_intro_until: "2026-08-31",
+      latency_ms: 18234.5,
+      // first_token_latency_ms 刻意**不给**：不流式测不了，如实 null 不塞假数。
+      first_token_latency_ms: null,
+      accepted: true,
+      regenerations: 0,
+      style_config_fingerprint: "a223ca42e77a",
+      metric_set_id: "m1",
+    },
+    style_review_result: {
+      dimensions: [
+        { name: "paragraph_length", raw: 82.1, passed: true, target: "30–120",
+          activated: true, reason: null },
+      ],
+      // all_activated_passed 是 null 的那一份在下面第 ③ 组单独试。
+      all_activated_passed: true,
+      counted_dimensions: ["paragraph_length"],
+    },
+    regeneration_triggered: {
+      attempt_index: 1,
+      failed_dimensions: ["paragraph_length"],
+      final_accepted: false,     // 触顶降级时就是 false，不是 null
+    },
+    retrieval_executed: {
+      top_k_scores: [0.568, 0.541, 0.502],
+      slice_ids: [{ document_id: "b9b5912f-3df1-4f70-8698-3c75e44239a5", slice_id: "s007" }],
+      pages: [12],
+      latency_ms: 412.3,
+      embed_model: "text-embedding-3-large",
+      dimensions: 1024,
+      ruleset_versions: { embed_text: "embed-text-1.0" },
+      backend: "supabase",
+    },
+  };
+
+  {
+    const db = await freshDb();
+
+    // ---- ① 允许控制先跑。少了它，下面所有「被拒」在整张表写不进去时也全绿。
+    let allOk = true;
+    let firstErr = "";
+    for (const [type, payload] of Object.entries(EXPLAIN_PAYLOADS)) {
+      const err = await putEvent(db, UID_A, { type, payload });
+      if (err) { allOk = false; firstErr = `${type}: ${err.code} ${err.message}`; }
+    }
+    const n4 = (await db.query("select count(*)::int c from public.style_events")).rows[0].c;
+    allOk && n4 === 4
+      ? ok("四个讲解事件都能写进去", `${n4} 行 ← 下面每一条「被拒」的允许控制`)
+      : bad("齐全的讲解事件写不进去", firstErr || `行数 ${n4}`);
+
+    // ---- ② 必需字段：**只对清单里的字段**要求判红。
+    //
+    // ⚠️ 不能像阶段 4 那样对 payload 的全部键循环：这四份 payload 里有几个键
+    // **刻意不在必需清单里**（null 有含义的那几个 + question_tags / pricing_intro_until）。
+    // 对它们要求判红等于把「有意义的 null」和「漏了」重新压成同一件事。
+    // 清单从**数据库那个函数**读回来，不在这里抄第二份（口径 F13 / F33）。
+    for (const type of Object.keys(EXPLAIN_PAYLOADS)) {
+      const required = (await db.query(
+        "select public.f1_event_required_keys($1) k", [type])).rows[0].k;
+      if (!required || required.length === 0) {
+        bad(`${type} 的必需字段清单是空的`, "← 未知 event_type？取值域与清单同一处出处");
+        continue;
+      }
+      const missed = [];
+      for (const k of required) {
+        const partial = { ...EXPLAIN_PAYLOADS[type] };
+        delete partial[k];
+        const err = await putEvent(db, UID_A, { type, payload: partial });
+        if (err?.code !== "23514") missed.push(`${k}(${err?.code ?? "未报错"})`);
+      }
+      missed.length === 0
+        ? ok(`${type} 缺任一必需字段都判红`, `${required.length}/${required.length} 个字段`)
+        : bad(`${type} 有字段缺了也放行`, missed.join(" "));
+    }
+
+    // ---- ③ **null 有含义的字段必须仍然写得进去。**
+    //
+    // 这一组防的失败方向与 ② 相反，而它更安静：② 红的时候是「漏字段进了库」，
+    // ③ 红的时候是「一条正确的事件被拒掉了」——而被拒的事件在任何报表里
+    // 都不出现，也没有任何东西会红。
+    const nullOk = [
+      ["style_review_result", "all_activated_passed",
+       "无维度可判时为 null，**不是 true**（口径 D42）"],
+      ["explain_turn", "first_token_latency_ms",
+       "不流式，测不了。如实写 null，不塞假数（PRD §9.2）"],
+    ];
+    for (const [type, key, why] of nullOk) {
+      const err = await putEvent(db, UID_A, {
+        type, payload: { ...EXPLAIN_PAYLOADS[type], [key]: null },
+      });
+      err === null
+        ? ok(`${type}.${key} = null 仍写得进去`, `← ${why}`)
+        : bad(`${type}.${key} = null 被拒了`, `${err.code} ${err.message} ← 它不该在必需清单里`);
+    }
+    // 而它们**确实不在**清单里 —— 直接问数据库，不靠上面那两条的绿色推断。
+    for (const [type, key] of nullOk) {
+      const required = (await db.query(
+        "select public.f1_event_required_keys($1) k", [type])).rows[0].k;
+      !required.includes(key)
+        ? ok(`${key} 不在 ${type} 的必需清单里`, "← 上一条为什么绿，这一条给出原因")
+        : bad(`${key} 竟在必需清单里`, "← 那么 null 的那一版会被静默拒掉");
+    }
+
+    // ---- 未知类型仍被拒：新增四个类型不该把取值域开成口袋。
+    const bogus = await putEvent(db, UID_A, { type: "explain_bogus", payload: { a: 1 } });
+    bogus?.code === "23514"
+      ? ok("新增四个类型后，未知 event_type 仍被拒", "← 取值域仍由 f1_event_required_keys 一处给出")
+      : bad("未知 event_type 被放行", String(bogus?.code));
+
+    // ---- 阶段 4 那五个**一个都没被改坏**。同一个函数被 replace 过，
+    // 顺手漏掉一个 when 分支的话，那五个事件会当场变成「未知类型」全部被拒。
+    let fiveStillOk = true;
+    let fiveErr = "";
+    for (const [type, payload] of Object.entries(FULL_PAYLOADS)) {
+      const err = await putEvent(db, UID_A, { type, payload });
+      if (err) { fiveStillOk = false; fiveErr = `${type}: ${err.code}`; }
+    }
+    fiveStillOk
+      ? ok("阶段 4 的五个事件仍然写得进去", "← f1_event_required_keys 被 replace 过，漏一个 when 分支就会红")
+      : bad("replace 之后阶段 4 的事件被拒了", fiveErr);
+
+    await db.close();
+  }
+
+  // ---- ④ course_id / deck_id
+  console.log("\n  \x1b[1mcourse_id / deck_id（触发条件已满足，阶段 6 补上）\x1b[0m");
+  {
+    const db = await freshDb();
+    const cid = await mkCourse(db, UID_A, "22.081J");
+    const did = await mkDoc(db, UID_A, cid, "sha-events");
+
+    const withCourse = await errorOf(() =>
+      asUser(db, UID_A, () =>
+        db.query(
+          `insert into public.style_events
+             (user_id, event_type, arm, session_id, payload, course_id, deck_id)
+           values ($1, 'explain_turn', public.f1_assign_arm($1), $2, $3::jsonb, $4, $5)`,
+          [UID_A, SESSION, JSON.stringify(EXPLAIN_PAYLOADS.explain_turn), cid, did])));
+    withCourse === null
+      ? ok("带 course_id / deck_id 的事件写得进去", "← PRD §13.0：从第一天起就要能按课分组")
+      : bad("带 course_id 的事件写不进去", `${withCourse.code} ${withCourse.message}`);
+
+    // 按课分组真的分得开（这是这两列唯一的用途）。
+    const grouped = (await db.query(
+      "select course_id, count(*)::int c from public.style_events group by course_id")).rows;
+    grouped.length === 1 && grouped[0].course_id === cid && grouped[0].c === 1
+      ? ok("按 course_id 分得开", `1 组 × 1 行`)
+      : bad("按 course_id 分不开", JSON.stringify(grouped));
+
+    // F1 那五个事件此列为 null —— 那是它们的真实情况，不是缺数据。
+    await putEvent(db, UID_A, { type: "style_pair_shown", payload: FULL_PAYLOADS.style_pair_shown });
+    const nulls = (await db.query(
+      "select count(*)::int c from public.style_events where course_id is null")).rows[0].c;
+    nulls === 1
+      ? ok("onboarding 事件的 course_id 为 null", "← 它们与任何课件无关（口径 F02），不是缺数据")
+      : bad("onboarding 事件的 course_id 不是 null", `${nulls} 行为 null`);
+
+    // **删课不带走事件。** 这一条是那两列「刻意不加外键」的全部理由：
+    // cascade 会让删课改掉上个月的指标，set null 会让历史分组静默消失。
+    await asUser(db, UID_A, () => db.query("delete from public.courses where id=$1", [cid]));
+    const after = (await db.query(
+      "select course_id, deck_id from public.style_events where event_type='explain_turn'")).rows;
+    after.length === 1 && after[0].course_id === cid && after[0].deck_id === did
+      ? ok("删掉那门课之后，事件与它的 course_id/deck_id 都还在",
+           "← 故意不加外键：cascade 会改掉历史指标，set null 会让分组静默消失")
+      : bad("删课改动了事件行", JSON.stringify(after));
+
+    // 允许控制：注销仍然清得掉（走的是 user_id 那条 cascade，与这两列无关）。
+    await db.query("delete from auth.users where id=$1", [UID_A]);
+    const left = (await db.query(
+      "select count(*)::int c from public.style_events where user_id=$1", [UID_A])).rows[0].c;
+    left === 0
+      ? ok("而注销仍然清得掉（允许控制）", "← 「注销即清空」走 user_id 的 cascade，不受上一条影响")
+      : bad("注销清不掉带 course_id 的事件", `剩 ${left} 条`);
+
+    await db.close();
+  }
+
+  // ---- R14 · 把 course_id 的外键加成 cascade（反向验证）
+  //
+  // 「删课不带走事件」若在**有 cascade** 的情况下也绿，说明它测的不是那件事。
+  console.log("\n  \x1b[1mR14 · 给 course_id 加上 on delete cascade\x1b[0m");
+  {
+    const db = await freshDb();
+    await db.exec(`alter table public.style_events
+                     add constraint style_events_course_fk
+                       foreign key (course_id) references public.courses (id) on delete cascade;`);
+    const cid = await mkCourse(db, UID_A, "22.081J");
+    await asUser(db, UID_A, () =>
+      db.query(
+        `insert into public.style_events (user_id, event_type, arm, session_id, payload, course_id)
+         values ($1, 'explain_turn', public.f1_assign_arm($1), $2, $3::jsonb, $4)`,
+        [UID_A, SESSION, JSON.stringify(EXPLAIN_PAYLOADS.explain_turn), cid]));
+    await asUser(db, UID_A, () => db.query("delete from public.courses where id=$1", [cid]));
+    const left = (await db.query("select count(*)::int c from public.style_events")).rows[0].c;
+    left === 0
+      ? ok("加上 cascade 后删课**真的**带走了事件", "← 所以「不加外键」是承重的，不是漏了")
+      : bad("加上 cascade 后事件仍在", `剩 ${left} 条 ← 上面那条断言测错了对象`);
+    await db.close();
+  }
+
   console.log(`\n\x1b[1m本地\x1b[0m  绿 ${passed} · 红 ${failed}`);
   console.log(
     `\x1b[1m待真库验证\x1b[0m  ${NOT_VERIFIABLE_LOCALLY.join(", ")} ` +

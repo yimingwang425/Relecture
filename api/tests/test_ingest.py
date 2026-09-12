@@ -73,7 +73,11 @@ class StoreSpy:
 @pytest.fixture
 def run():
     def _run(**over):
-        store, emb = StoreSpy(), FakeEmbedder()
+        # `embedder` 允许覆盖：TestProductionReturnType 要喂一个返回 ndarray 的
+        # （生产的返回类型），而默认那个返回 list。`pop` 而不是直接传，
+        # 否则 `embedder=emb, **over` 会 TypeError: got multiple values。
+        store = StoreSpy()
+        emb = over.pop("embedder", None) or FakeEmbedder()
         result = ingest_document(
             data=DECK.read_bytes(), filename=DECK.name, owner=USER_A,
             course_id=COURSE, token="tok", store=store, embedder=emb, **over,
@@ -171,6 +175,89 @@ class TestRestrictedPages:
         assert result.restricted_pages_excluded == 0
 
 
+class TestProductionReturnType:
+    """**假嵌入器必须照生产实现的返回类型写，不是照协议声明写。**
+
+    ## 这一组是被一个真 bug 逼出来的（2026-09-12，第一次真跑摄入）
+
+    `api.ingest.Embedder` 协议原本声明 `-> list[list[float]]`，本文件里所有假嵌入器
+    也都返回 `list`。而生产的 `retrieval.embed.OpenAIEmbedder.embed` 返回的是
+    **`np.ndarray`**，下游 `if vectors:` 对多元素 ndarray 抛
+    `ValueError: The truth value of an array with more than one element is ambiguous`。
+
+    **46 条 pytest 全绿，链路第一次碰到真嵌入器就 422。**
+
+    形态与 F16 的三次复发相同：协议声明、测试替身、下游代码**三端同源**——
+    都来自「我写下的那个类型」，没有一端来自生产实现真的返回什么。
+    写判据时要问的是「这两端会不会一起变」：会一起变，它就永远相等。
+    """
+
+    def test_production_embedder_really_returns_ndarray(self):
+        """**锚点：生产实现的返回类型。**
+
+        下面那个 ndarray 假嵌入器照着这个事实写。生产哪天改成返回 list，
+        这一条会红 —— 那时要去改假嵌入器，而不是让它静静地停在旧类型上
+        （同 F25：结论要锚定它所依据的那一版）。
+
+        断的是**真的调用一次**得到的对象类型，不是类型标注——
+        标注是写下来的，可以与实现漂开。
+        """
+        import numpy as np
+
+        from retrieval.embed import FakeEmbedder as RetrievalFake
+        from retrieval.embed import OpenAIEmbedder
+
+        # OpenAIEmbedder 要网络与钱，不在单测里调。取 `retrieval` 自己那个
+        # 假嵌入器作为该模块返回类型的代表：它与 OpenAIEmbedder 同在 embed.py，
+        # 同走 `_l2()` 归一化那条出口 —— 返回类型由那一行决定，不由哪个实现决定。
+        out = RetrievalFake(dimensions=1024).embed(["一段文本", "另一段"])
+        assert isinstance(out, np.ndarray), (
+            f"retrieval 侧嵌入器的返回类型变成了 {type(out).__name__}。"
+            "本文件的 NumpyEmbedder 是照 ndarray 写的，要一起改。"
+        )
+        # `_l2` 是两个实现共用的出口，OpenAIEmbedder 的最后一行就是 `return _l2(...)`。
+        import inspect
+
+        src = inspect.getsource(OpenAIEmbedder.embed)
+        assert "_l2(" in src, (
+            "OpenAIEmbedder.embed 不再走 _l2() 出口了，"
+            "上面那条『用 retrieval 的假嵌入器代表返回类型』的推理随之失效。"
+        )
+
+    def test_numpy_returning_embedder_goes_through(self, run):
+        """**生产形态的假嵌入器：返回 ndarray。** 这一条就是那个 bug 的复现。
+
+        修之前它抛 `ValueError: The truth value of an array ... is ambiguous`；
+        修之后整条链走通，且落库的 `embedding` 是 pgvector 的文本形式。
+        """
+        import numpy as np
+
+        class NumpyEmbedder(FakeEmbedder):
+            """与 `retrieval.embed.OpenAIEmbedder` **同一个返回类型**。"""
+
+            def embed(self, texts):
+                return np.asarray(super().embed(texts), dtype=np.float64)
+
+        result, store, _ = run(embedder=NumpyEmbedder())
+        assert result.embedded_count == result.slice_count > 0
+        assert len(store.embeddings) == result.slice_count
+        # 序列化不得因为来源是 np.float64 就变形（'np.float64(0.0)' 那种）
+        first = store.embeddings[0]["embedding"]
+        assert first.startswith("[") and first.endswith("]"), first[:60]
+        assert len(first.strip("[]").split(",")) == 1024
+        assert "np.float64" not in first, "np.float64 的 repr 漏进了 pgvector 的文本形式"
+
+    def test_list_returning_embedder_still_works(self, run):
+        """允许控制：返回 list 的嵌入器仍然要能跑。
+
+        少了它，一个「只接受 ndarray」的实现也会让上一条全绿，
+        而本仓库其余全部假嵌入器返回的都是 list。
+        """
+        result, store, _ = run()
+        assert result.embedded_count == result.slice_count > 0
+        assert len(store.embeddings[0]["embedding"].strip("[]").split(",")) == 1024
+
+
 class TestRefusesToGuess:
     def test_mis_declared_embedder_is_rejected(self, run):
         """嵌入器自称 512 维 → 拒。
@@ -222,32 +309,116 @@ class TestRefusesToGuess:
 
 
 class TestDuplicateIsTranslated:
-    """23505 必须翻译成人话 —— 数据库那条是硬失败不是提示。"""
+    """23505 必须翻译成人话 —— 数据库那条是硬失败不是提示。
 
-    def test_23505_becomes_a_409_with_chinese(self):
-        from api.supabase import DuplicateDocument, SupabaseClient
+    ## ⚠️ 这一组曾经全绿，而生产路径是坏的（2026-09-12 第一次真跑摄入抓出来）
 
-        class Rejecting:
-            def __call__(self, url, headers, body=None):
-                raise AssertionError("不该走到这里")
+    旧断言喂的假错误正文是**我手写的**，里面有一段
+    `"details":"Key (owner, course_id, content_sha256)=(...) already exists."`，
+    于是 `api/api/supabase.py` 里那条 `"23505" in body and "content_sha256" in body`
+    顺利命中。
 
+    **真库返回的正文里 `details` 是 `null`**，整份正文里没有 `content_sha256`
+    这个词。真实重传得到的是 `502 数据库返回 409：{"code":"23505",...}`——
+    正好是那条注释说要避免的「把数据库错误码丢给用户」。
+
+    形态与 F16 的三次复发相同：**判据的两端同源**——假正文与匹配条件
+    出自同一个人的同一个猜测，它们必然相等。
+
+    两处改动：
+      ① 匹配条件不再认正文里的任何字符串，只认**错误码 + 调用点**（见 supabase.py）；
+      ② 下面这份假正文是**真库上实际观测到的那一份，逐字抄录**，不是手写的。
+    """
+
+    #: 🔒 **真库观测原文**（2026-09-12，`POST /courses/{A}/documents` 重传同一份文件）。
+    #: 抄录，不重写。改它之前先去真库重现一次——手写一份「看起来像」的正文，
+    #: 就是这一组曾经全绿而生产是坏的那个原因。
+    REAL_23505_BODY = (
+        '{"code":"23505","details":null,"hint":null,'
+        '"message":"duplicate key value violates unique constraint '
+        '\\"documents_owner_course_sha_idx\\""}'
+    )
+
+    def _client_with_body(self, status: int, body: str):
         import httpx
+
+        from api.supabase import SupabaseClient
 
         def fake_post(url, headers=None, json=None, timeout=None):
             class R:
-                status_code = 409
-                text = '{"code":"23505","message":"duplicate key value violates unique constraint \\"documents_owner_course_sha_idx\\"","details":"Key (owner, course_id, content_sha256)=(...) already exists."}'
+                status_code = status
+                text = body
                 content = b"x"
             return R()
 
         client = SupabaseClient("https://x/rest/v1", "sb_publishable_x")
-        orig = httpx.post
-        httpx.post = fake_post
+        return client, fake_post
+
+    def test_real_prod_23505_body_becomes_a_409_with_chinese(self):
+        """**用真库那份正文**跑一遍。旧实现在这一条上是红的。"""
+        import httpx
+
+        from api.supabase import DuplicateDocument
+
+        client, fake_post = self._client_with_body(409, self.REAL_23505_BODY)
+        orig, httpx.post = httpx.post, fake_post
         try:
             with pytest.raises(DuplicateDocument) as e:
                 client.insert_document(token="t", row={"content_sha256": "x"})
             assert e.value.status == 409
             assert "同一份文件" in e.value.message
+            assert "23505" not in e.value.message, "数据库错误码漏给用户了"
+        finally:
+            httpx.post = orig
+
+    def test_real_body_does_not_contain_the_column_name(self):
+        """**钉住那个 bug 本身**：真正文里没有 `content_sha256`。
+
+        少了这一条，有人会把匹配条件改回「认列名」而上一条照样绿——
+        因为上一条只说「现在能翻译」，没说「靠什么翻译」。
+        """
+        assert "content_sha256" not in self.REAL_23505_BODY
+        assert "documents_owner_course_sha_idx" in self.REAL_23505_BODY
+
+    def test_other_errors_are_not_swallowed_as_duplicate(self):
+        """反向控制：**不是 23505 的失败不许被当成重复。**
+
+        少了它，一个「documents 上任何 4xx 都报重复」的实现会让上面两条全绿，
+        而 RLS 拦住（403）会被说成「已经有同一份文件了」——用户按这句话去删文件，
+        删完还是进不去。
+        """
+        import httpx
+
+        from api.supabase import DuplicateDocument, SupabaseError
+
+        client, fake_post = self._client_with_body(
+            403, '{"code":"42501","message":"new row violates row-level security policy"}')
+        orig, httpx.post = httpx.post, fake_post
+        try:
+            with pytest.raises(SupabaseError) as e:
+                client.insert_document(token="t", row={})
+            assert not isinstance(e.value, DuplicateDocument)
+            assert "42501" in e.value.message
+        finally:
+            httpx.post = orig
+
+    def test_non_document_inserts_never_translate(self):
+        """反向控制：`insert_slices` 上的 23505 **不**翻译成「重复文件」。
+
+        `duplicate_message` 只在 `insert_document` 那个调用点给。
+        切片主键冲突是另一件事，报成「这门课里已经有同一份文件了」
+        会把人指向一个完全不相干的操作。
+        """
+        import httpx
+
+        from api.supabase import DuplicateDocument, SupabaseError
+
+        client, fake_post = self._client_with_body(409, self.REAL_23505_BODY)
+        orig, httpx.post = httpx.post, fake_post
+        try:
+            with pytest.raises(SupabaseError) as e:
+                client.insert_slices(token="t", rows=[{"slice_id": "s001"}])
+            assert not isinstance(e.value, DuplicateDocument)
         finally:
             httpx.post = orig
 

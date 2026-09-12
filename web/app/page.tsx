@@ -78,6 +78,19 @@ export default async function HomePage() {
             />
           </dl>
 
+          <nav className="flex flex-col gap-2 rounded border border-neutral-200 bg-white p-4 text-sm">
+            <span className="text-xs text-neutral-500">主路径</span>
+            <a href="/courses" className="underline underline-offset-2" data-field="to-courses">
+              1 · 上传课件
+            </a>
+            <a href="/explain" className="underline underline-offset-2" data-field="to-explain">
+              2 · 问关于课件的问题
+            </a>
+            <a href="/settings/style" className="underline underline-offset-2">
+              调整讲解风格
+            </a>
+          </nav>
+
           <p className="text-xs leading-relaxed text-neutral-500">
             四条轴中只有<b>详细程度</b>被 A 类审查执行；举例 / 结构 / 深度仅进 prompt，
             <code>enforced=false</code>（PRD §8.5 未校准前不进判定）。

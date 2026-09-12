@@ -188,6 +188,21 @@ try {
   process.exit(1);
 }
 
+// `lib/explain/` 同理再编一次（rootDir 写死的代价）。
+const outExplain = mkdtempSync(join(WEB, "node_modules", ".f1-explain-"));
+try {
+  execFileSync(
+    "npx",
+    ["tsc", "lib/explain/turns.ts",
+     "--module", "commonjs", "--target", "es2020", "--strict", "--skipLibCheck",
+     "--rootDir", "lib/explain", "--outDir", outExplain],
+    { cwd: WEB, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
+  );
+} catch (e) {
+  console.error("编译失败（lib/explain）：\n" + (e.stdout ?? "") + (e.stderr ?? ""));
+  process.exit(1);
+}
+
 const require_ = createRequire(import.meta.url);
 const { AXES, DEFAULTS, DETAIL_LADDER, DEPTH_LADDER } = require_(join(out, "axes.js"));
 const { applyFeedback, FEEDBACK_KINDS } = require_(join(out, "feedback.js"));
@@ -1269,8 +1284,172 @@ console.log("\n\x1b[1m十一 · 上传页 · 接线（阶段 6 第一批）\x1b[
     "多份文件串行上传", "← 并行时「先查」两边都查不到，双双撞唯一索引");
 }
 
+// ================================================================ 十二 · 讲解页 · 轮次口径
+console.log("\n\x1b[1m十二 · 讲解页 · turn_index 口径（阶段 6 第二批）\x1b[0m");
+{
+  const T = require_(join(outExplain, "turns.js"));
+  const turn = (state, turnIndex = 1, over = {}) =>
+    ({ turnIndex, question: "Q", state, ...over });
+
+  // §13.0 原文：「**轮次口径：按用户可见的输出计，重生成不计入轮次**，
+  // 只计入成本与质量指标。」拆成两条可各自被断言的规则。
+
+  // -------- 12.1 失败不进轮次
+  //
+  // ⚠️ 这一条前端**很容易做错**：最自然的写法是「发一次请求就 +1」。
+  // 而一次 503（服务端没配 key）、404（课程不对）、或 CORS 被挡，
+  // **用户一个字都没看到** —— 那不是一轮讲解。
+  // 按请求计数会让「平均会话轮次」把失败算进分子，而那个数只会**偏高**，
+  // 看起来像产品更粘。
+  check(T.nextTurnIndex([]) === 1, "空会话的第一轮是 1");
+  check(T.nextTurnIndex([turn("answered")]) === 2, "答过一轮之后下一轮是 2");
+  check(
+    T.nextTurnIndex([turn("failed", 1)]) === 1,
+    "**失败之后下一轮仍然是 1**",
+    "← 它是「第几次让用户看到回答」的序号，不是「第几次发请求」",
+  );
+  check(
+    T.nextTurnIndex([turn("answered", 1), turn("failed", 2), turn("answered", 2)]) === 3,
+    "失败夹在中间时序号不跳号",
+    "← 两轮成功 → 下一轮 3；失败那次与它后面那次共用序号 2",
+  );
+  check(T.nextTurnIndex([turn("pending", 1)]) === 1,
+    "还在等的那一轮也不计入", "← 它还没产生输出");
+
+  // -------- 12.2 重生成不进轮次
+  //
+  // 前端天然做对了（重生成在服务端一次请求里面，前端看不见），
+  // **但它必须有断言**：否则哪天有人按 `regenerations` 去累加轮次，
+  // 没有任何东西会红。
+  const withRegen = [
+    turn("answered", 1, { answer: { regenerations: 2, backend: "supabase" } }),
+  ];
+  check(T.nextTurnIndex(withRegen) === 2,
+    "一轮里重生成两次，下一轮仍然是 2", "← 重生成只计入成本与质量指标（§13.0）");
+  check(
+    !/regenerations/.test(String(T.nextTurnIndex)) &&
+      !/regenerations/.test(String(T.answeredCount)),
+    "轮次函数的实现里不出现 regenerations",
+    "← 一个字段两种含义，两张报表永远对不上，而两边看起来都是对的",
+  );
+
+  // -------- 12.3 两个函数差 1 但语义不同，不许合并
+  check(T.answeredCount([turn("answered"), turn("failed", 2)]) === 1, "answeredCount 只数答过的");
+  check(
+    T.answeredCount([]) + 1 === T.nextTurnIndex([]),
+    "answeredCount + 1 === nextTurnIndex",
+    "← 合成一个会让调用方在某处忘记 ±1，而那种错在数据里是整体偏移一格",
+  );
+
+  // -------- 12.4 只允许一轮在飞
+  check(T.hasPending([turn("pending")]) === true, "hasPending 认得在飞的轮次");
+  check(T.hasPending([turn("answered"), turn("failed", 2)]) === false,
+    "没有在飞时 hasPending 为 false");
+
+  // -------- 12.5 出处按文件合并页号
+  const ans = T.answerFromResponse({
+    text: "一段讲解", accepted: true, regenerations: 0,
+    mean_paragraph_chars: 75.5, detail_level: "P0",
+    retrieval: {
+      meta: { backend: "supabase" },
+      slices: [
+        { source_file: "a.pdf", pages: [12, 3] },
+        { source_file: "a.pdf", pages: [3, 7] },
+        { source_file: "b.pdf", pages: [1] },
+      ],
+    },
+  });
+  check(ans.sources.length === 2, "同一份讲义的多片合并成一条出处", `${ans.sources.length} 条`);
+  const a = ans.sources.find((x) => x.sourceFile === "a.pdf");
+  check(eq(a.pages, [3, 7, 12]), "页号去重并升序", JSON.stringify(a.pages));
+  check(ans.backend === "supabase", "backend 从 meta 取出");
+  check(T.answerFromResponse({ text: "x", accepted: true, regenerations: 0,
+    mean_paragraph_chars: 1, detail_level: "P0" }).backend === "unknown",
+    "没有 meta 时 backend 是 unknown，不是 supabase",
+    "← 默认成 supabase 会把「不知道」说成「是你的课件」");
+
+  // -------- 12.6 用合成课件答的必须能被判出来
+  //
+  // 2026-09-12 真实发生：线上跑着旧构建，它静默丢掉 course_id 并用合成课件作答，
+  // 返回 200，正文在讲布隆过滤器（口径 F52）。那种回答**看起来完全正常**。
+  check(T.isFromRequestedCourse({ backend: "supabase" }) === true, "supabase → 来自这门课");
+  check(T.isFromRequestedCourse({ backend: "in_memory" }) === false,
+    "in_memory → **不是**来自这门课", "← 页面据此打一条醒目提示");
+  check(T.isFromRequestedCourse({ backend: "unknown" }) === false,
+    "unknown 也判成「不是」", "← 方向取严：不确定时不要声称是用户的课件");
+}
+
+// ================================================================ 十三 · 讲解页的接线
+console.log("\n\x1b[1m十三 · 讲解页 · 接线（阶段 6 第二批）\x1b[0m");
+{
+  const page = readFileSync(join(WEB, "app", "explain", "page.tsx"), "utf8");
+  const client = readFileSync(join(WEB, "app", "explain", "explain-client.tsx"), "utf8");
+  const pageCode = stripComments(page);
+  const clientCode = stripComments(client);
+
+  // session_id 在服务端抽（React #418）。这一页比别的页更在意：
+  // 它是「平均会话轮次」的分组键，两侧分叉会让同一次会话的轮次落到两个 session 上。
+  check(/newSessionId\(\)/.test(pageCode), "sessionId 在服务端页面里抽");
+  check(!/newSessionId/.test(clientCode), "客户端组件不调 newSessionId",
+    "← React #418：SSR 与 hydrate 两侧会分叉，而它是会话分组键");
+
+  // turn_index 走账本，**不是自己数请求**。
+  check(/nextTurnIndex\(turns\)/.test(clientCode), "turn_index 由 nextTurnIndex 算",
+    "← 自己数请求会把失败算进「平均会话轮次」的分子");
+  check(!/turnIndex:\s*turns\.length/.test(clientCode), "不按 turns.length 算 turn_index");
+  check(/turn_index: turnIndex/.test(clientCode), "请求体里带 turn_index");
+  check(/session_id: sessionId/.test(clientCode), "请求体里带 session_id");
+
+  // 口径 F51：这一页不构造那四个事件。
+  for (const bad of ["explain_turn", "style_review_result", "regeneration_triggered",
+                     "retrieval_executed", "complete_event"]) {
+    check(!new RegExp(bad).test(clientCode), `客户端不构造 ${bad}`,
+      "← 口径 F51：字段全部产生在服务端，浏览器一个都不知道");
+  }
+
+  // 只允许一轮在飞。不流式，第二次提交只会让两个几十秒的请求同时跑，
+  // 而先回来的先渲染 —— 轮次顺序会与提问顺序相反。
+  check(/if \(!q \|\| !courseId \|\| pending\) return/.test(clientCode),
+    "在飞时不接受新提问", "← 不流式，并发会让轮次顺序与提问顺序相反");
+  check(/disabled=\{[^}]*pending/.test(client), "在飞时按钮/输入被禁用");
+
+  // 等待可见：没有计时器的话，40 秒的等待与卡死的请求长得一样。
+  check(/data-field="elapsed"/.test(client), "有走着的等待计时器");
+  check(/别关页面/.test(client), "明说别关页面", "← 不流式，关了这一轮就没了");
+
+  // 用合成课件答的必须被看见（口径 F52 那次真实失败）。
+  check(/isFromRequestedCourse\(/.test(clientCode), "按 backend 判是不是用了这门课");
+  check(/data-field="wrong-backend"/.test(client), "后端不对时打一条醒目提示");
+  check(/role="alert"/.test(client), "那条提示是 alert");
+
+  // 出处点名到页。
+  check(/data-field="sources"/.test(client), "显示出处（文件 + 页号）");
+
+  // 失败不占轮次，要说清楚 —— 否则用户以为自己「用掉」了一轮。
+  check(/不计入会话轮次/.test(client), "失败那一轮说清它不计入轮次");
+
+  // 档位可见，但**不显示区间数字**（口径 F13）。
+  check(/data-field="detail-level"/.test(client), "显示当前讲解详略档位");
+  check(!/30\s*[–-]\s*120|15\s*[–-]\s*40|25\s*[–-]\s*55/.test(client),
+    "不显示档位的区间数字",
+    "← 那些数只存在于 scan/points.py 的 AXIS_POINTS，抄进 TS 就是 F13 那个坑");
+
+  // 直连产品服务端；缺 API base 在页面点名。
+  check(/fetch\(`\$\{apiBase\}\/explain`/.test(clientCode), "直连 apiBase/explain");
+  check(/no-api-base/.test(pageCode), "缺 NEXT_PUBLIC_API_BASE_URL 时点名说清");
+  check(/data-state=\{/.test(pageCode), "页面有终态标记 data-state");
+
+  // DOM 标记（回归工具不按中文文案定位）。
+  for (const m of ['data-field="turn"', "data-turn-index", "data-backend",
+                   'data-field="answer"', 'data-field="turn-failure"',
+                   'data-field="answered-count"']) {
+    check(client.includes(m), `DOM 上有 ${m}`);
+  }
+}
+
 rmSync(out, { recursive: true, force: true });
 rmSync(outUpload, { recursive: true, force: true });
+rmSync(outExplain, { recursive: true, force: true });
 
 console.log(`\n${failed === 0 ? "\x1b[32m" : "\x1b[31m"}${passed} 绿 / ${failed} 红\x1b[0m\n`);
 process.exit(failed === 0 ? 0 : 1);

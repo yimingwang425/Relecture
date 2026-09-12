@@ -18,6 +18,21 @@ export function AppNav({ email }: { email?: string | null }) {
         AI 课件讲解助手
       </Link>
 
+      {/* 主路径的两页。**上传在前、讲解在后**，那是使用顺序：
+          没有课件时讲解页会告诉你先去上传（而不是给一个空状态）。 */}
+      <Link
+        href="/courses"
+        className="shrink-0 text-sm text-white/70 no-underline hover:text-white"
+      >
+        课件
+      </Link>
+      <Link
+        href="/explain"
+        className="shrink-0 text-sm text-white/70 no-underline hover:text-white"
+      >
+        提问
+      </Link>
+
       <span className="ml-auto hidden truncate font-mono text-xs text-white/55 sm:block">
         {email ?? ""}
       </span>

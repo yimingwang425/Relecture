@@ -15,6 +15,7 @@
 | 当前在做什么、进度到哪 | [`docs/F1/F1进度.md`](docs/F1/F1进度.md)（F1 现状之源） |
 | F1 口径决策表（F01–F29，全项目唯一一份） | [`f1_samples/README.md`](f1_samples/README.md) §一 |
 | 已完成阶段怎么做的、哪些判断被推翻 | [`docs/F2/F2开发.md`](docs/F2/F2开发.md)、[`docs/F3/`](docs/F3/) |
+| **怎么提交、怎么部署**（只用 `main`，不开分支） | [`CLAUDE.md`](CLAUDE.md) —— 约定的唯一出处 |
 
 ---
 

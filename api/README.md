@@ -194,6 +194,25 @@ F1 阶段 1.5 论证过：F1 全部读写落在一张表上，多一跳 FastAPI 
 ⚠️ **异常原文不进事件**：`unparsable` 的原文来自解析器，而它谈论的是
 **用户上传的文件内容**（PRD §12.2 / 口径 F32 的同一条）。原文回给用户、留在日志里。
 
+### ⚠️ 字段落在哪（查错地方会得到一片 null，而那读起来像「功能没做」）
+
+| | |
+| --- | --- |
+| **表的列** | `event_type` · `arm` · `session_id` · `created_at` · `schema_version` · `course_id` · **`deck_id`** |
+| **`payload` 里** | 其余全部。失败分类叫 **`failure_kind`**（**不叫 `reason`**）；重复上传是哪一层拦下的叫 **`caught_by`**（`pre_check` / `unique_index`） |
+
+同一份说明也写在 `style_events` 的**表注释**里（`\d+ style_events` 看得到）——
+2026-09-13 的人工验收查了 `payload->>'deck_id'` 与 `payload->>'reason'`，
+两个都 null，读成「功能没做」。**猜字段名这件事可以被消除**（口径 F53）。
+
+两条配套的机制，都是那次验收逼出来的：
+
+- **上传的响应体带 `events`**（`emitted` / `failed` / `deck_id` / `course_id`）。
+  客户端对 `style_events` 只有 insert 权限，所以这是**从外面自证埋点落没落库
+  的唯一途径**。`/explain` 一直如此，上传这边上一批漏了。
+- **`style_events_deck_id_matches_type`**：`deck_uploaded` 必须有 `deck_id`、
+  `deck_upload_failed` 必须没有。于是**行存在本身就是 `deck_id` 非 null 的证据**。
+
 ### CORS
 
 上传页在浏览器里**直连本服务**（Vercel 的 serverless 请求体上限 4.5MB，

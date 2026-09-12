@@ -562,3 +562,125 @@ class TestErrorResponseShape:
         assert r.status_code == 409
         assert "23505" not in r.json()["detail"]
         assert r.json()["failure_kind"] == "duplicate_in_course"
+
+
+class TestEventResultIsVisibleFromOutside:
+    """**埋点结果进响应。** 2026-09-13 推翻了上一批自己的决定。
+
+    上一批写的是「日志够了，上传是低频动作」。代价当场兑现：人工验收想确认
+    `deck_uploaded` 的 `deck_id` 到底是不是 null，而**从外面无从确认**——
+    客户端对 `style_events` 只有 insert 权限（读事件走 service_role，
+    而验收脚本刻意不持有它）。于是只能去 SQL Editor 手查，
+    一次查错地方（`payload->>'deck_id'` —— 它其实是**列**）就读成了「功能没做」。
+
+    `/explain` 从一开始就把 `events` 放进响应，而那正是「四个讲解事件真的落库」
+    当初能被验证的唯一途径。**拿可验证性换页面简洁，是拿一个响亮的失败换一个安静的。**
+    """
+
+    def test_success_response_carries_the_deck_id_that_was_written(self, jwks, keypair):
+        rest = RecordingRest()
+        r = post_file(client(jwks, rest), keypair, name=DECK.name, data=DECK.read_bytes())
+        assert r.status_code == 201
+        ev = r.json()["events"]
+        assert ev["emitted"] == 1 and ev["failed"] == 0
+        assert ev["event_type"] == "deck_uploaded"
+        # **响应里那个 deck_id 必须等于真的写进去的那一个**，
+        # 而不是「我打算写的那一个」——两者相等是靠 only_event 那边比出来的。
+        assert ev["deck_id"] == r.json()["document_id"]
+        assert only_event(rest)["deck_id"] == ev["deck_id"]
+
+    def test_failure_response_carries_its_event_result(self, jwks, keypair):
+        rest = RecordingRest()
+        r = post_file(client(jwks, rest), keypair, name="讲义.txt", data=b"x")
+        ev = r.json()["events"]
+        assert ev["emitted"] == 1 and ev["failed"] == 0
+        assert ev["event_type"] == "deck_upload_failed"
+        # 失败时 deck_id 是 null，**而这是事实不是遗漏**：没有 document 行。
+        assert ev["deck_id"] is None
+
+    def test_skipped_reason_is_visible_too(self, jwks, keypair):
+        """没有 `session_id` 时，响应要说得出**为什么没发**。
+
+        少了它，「0 条事件」与「发了但写失败」在响应里长得一样。
+        """
+        rest = RecordingRest()
+        r = post_file(client(jwks, rest), keypair, name=DECK.name,
+                      data=DECK.read_bytes(), session=None)
+        assert r.status_code == 201
+        assert "session_id" in r.json()["events"]["skipped_reason"]
+
+    def test_write_failure_is_reported_in_the_response(self, jwks, keypair):
+        """埋点写失败时上传仍 201，**但响应里说得出它失败了**。"""
+        class Exploding(RecordingRest):
+            def __call__(self, url, headers, body=None):
+                if body is not None and "/style_events" in url:
+                    raise RuntimeError("数据库返回 503")
+                return super().__call__(url, headers, body)
+
+        rest = Exploding()
+        r = post_file(client(jwks, rest), keypair, name=DECK.name, data=DECK.read_bytes())
+        assert r.status_code == 201
+        ev = r.json()["events"]
+        assert ev["emitted"] == 0 and ev["failed"] == 1
+        assert "503" in str(ev.get("failures"))
+
+
+class TestFieldsAreWhereTheDocsSayTheyAre:
+    """**字段落在哪，要能被断言，不能靠猜。**
+
+    2026-09-13 人工验收查 `payload->>'deck_id'` 与 `payload->>'reason'`，
+    两个都 null，读成「功能没做」。真实情况：
+      · `deck_id` 是**表的一列**，不在 payload 里；
+      · `reason` **不是本项目任何事件的字段** —— 失败分类叫 `failure_kind`。
+
+    这一组把「在哪」钉成断言，于是下一次不必猜。
+    """
+
+    COLUMNS = {"user_id", "event_type", "arm", "session_id", "payload",
+               "course_id", "deck_id"}
+
+    def test_deck_id_is_a_column_not_a_payload_key(self, jwks, keypair):
+        rest = RecordingRest()
+        post_file(client(jwks, rest), keypair, name=DECK.name, data=DECK.read_bytes())
+        ev = only_event(rest)
+        assert "deck_id" in ev, "deck_id 不在列里"
+        assert "deck_id" not in ev["payload"], (
+            "deck_id 同时出现在 payload 里 —— 两处出处，迟早漂")
+
+    def test_failure_kind_is_a_payload_key_not_a_column(self, jwks, keypair):
+        rest = RecordingRest()
+        post_file(client(jwks, rest), keypair, name="讲义.txt", data=b"x")
+        ev = only_event(rest)
+        assert ev["payload"]["failure_kind"] == "unsupported_format"
+        assert "failure_kind" not in set(ev) - {"payload"}
+
+    def test_there_is_no_field_called_reason(self, jwks, keypair):
+        """**`reason` 不是字段名。** 这一条把那次误查钉下来。
+
+        它不是为了证明「我对」，是为了让下一个查的人在断言里看到真名。
+        """
+        rest = RecordingRest()
+        post_file(client(jwks, rest), keypair, name="讲义.txt", data=b"x")
+        ev = only_event(rest)
+        assert "reason" not in ev["payload"], "多了一个 reason —— 那就是两处出处"
+        assert "failure_kind" in ev["payload"], "分类字段的真名是 failure_kind"
+
+    def test_row_keys_are_exactly_the_columns(self, jwks, keypair):
+        """行上的键**恰好**是那几列。多一个 = 会被 PostgREST 以 PGRST204 拒掉。"""
+        rest = RecordingRest()
+        post_file(client(jwks, rest), keypair, name=DECK.name, data=DECK.read_bytes())
+        assert set(only_event(rest)) == self.COLUMNS
+
+    def test_table_comment_names_both_places(self):
+        """表注释里必须写清「哪些是列、哪些在 payload」+ 两个真名。
+
+        猜字段名这件事可以被消除，而消除它的地方就是表自己
+        （`\\d+ style_events` 看得到）。
+        """
+        from pathlib import Path
+
+        mig = (Path(__file__).resolve().parents[2] / "supabase" / "migrations"
+               / "20260913090000_f3_deck_id_invariant.sql").read_text(encoding="utf-8")
+        assert "comment on table public.style_events" in mig
+        for token in ("failure_kind", "caught_by", "deck_id", "不叫 reason"):
+            assert token in mig, token

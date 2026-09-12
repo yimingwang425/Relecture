@@ -37,9 +37,10 @@ const PY = join(API, ".venv", "bin", "python");
  *
  * 变更史：26（阶段 2/3）→ 46（阶段 4 摄入）→ 101（阶段 5 检索 + 阶段 6 埋点）
  * → 118（Render 首次部署后的补正：构建标识 + extra=forbid + hit_documents）
- * → 163（阶段 6 第一批：上传两个事件 + 失败分类闭集 + 先查后提示 + CORS）。
+ * → 163（阶段 6 第一批：上传两个事件 + 失败分类闭集 + 先查后提示 + CORS）
+ * → 172（人工验收补正：埋点结果进响应 + 字段落在哪的断言）。
  */
-const MIN_CASES = 163;
+const MIN_CASES = 172;
 
 let passed = 0;
 let failed = 0;

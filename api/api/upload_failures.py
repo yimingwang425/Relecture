@@ -115,6 +115,9 @@ class UploadFailure(Exception):
         self.detail = detail
         #: 进事件的**结构化**补充（页数、字节数这类），不含自由文本。
         self.extra = extra or {}
+        #: 那条 `deck_upload_failed` 的落库结果，由路由填、由响应体带出去。
+        #: 事件表从外面读不到（客户端只有 insert 权限），而验收要确认它落没落库。
+        self.events_result: dict[str, Any] | None = None
 
     @property
     def status(self) -> int:

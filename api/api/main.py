@@ -156,6 +156,8 @@ def create_app(
                 "detail": exc.detail,          # ← 人话，给这一次请求的用户
                 "failure_kind": exc.kind,      # ← 闭集，给前端分支与分析
                 "retryable": exc.retryable,
+                # 失败那条事件落没落库，同样要能从外面看见（见 _record_upload_event）。
+                "events": getattr(exc, "events_result", None),
             },
         )
 
@@ -440,7 +442,7 @@ def create_app(
             # ---- 失败事件。**分类进 payload，异常原文不进**（PRD §12.2 / 口径 F32）：
             # `unparsable` 的原文来自解析器，而它谈论的是用户上传的文件内容。
             # 原文回给这一次请求的用户（只有他看得到）并留在服务端日志里。
-            _record_upload_event(
+            fail.events_result = _record_upload_event(
                 db, p, session_id=session_id, course_id=course_id,
                 event_type="deck_upload_failed",
                 payload={
@@ -461,7 +463,7 @@ def create_app(
 
         # ---- 成功事件。**它是 `deck_id` 那一列第一个真正的填写者**
         # （`20260912120000` 里登记的「恒 NULL」由此解掉）。
-        _record_upload_event(
+        events_result = _record_upload_event(
             db, p, session_id=session_id, course_id=course_id,
             event_type="deck_uploaded",
             payload={
@@ -487,6 +489,10 @@ def create_app(
             "skipped_pages": result.skipped_pages,
             "restricted_pages_excluded": result.restricted_pages_excluded,
             "verdict": result.verdict,
+            # 埋点结果**进响应**（2026-09-13 改，见 `_record_upload_event` 的说明）：
+            # 事件表从外面读不到，而「deck_id 到底带没带」正是验收要确认的。
+            # 页面可以不读这个字段；没有它，任何人都无法自证埋点落没落库。
+            "events": events_result,
         }
 
     return app
@@ -495,7 +501,7 @@ def create_app(
 def _record_upload_event(
     db: Any, p: Any, *, session_id: str | None, course_id: str,
     event_type: str, payload: dict[str, Any], deck_id: str | None,
-) -> None:
+) -> dict[str, Any]:
     """发一条上传事件。**永不抛**——埋点失败不打断上传（口径 F42）。
 
     ## `arm` 在这里懒取，而不是把上传路由改成依赖 `style_row`
@@ -508,20 +514,37 @@ def _record_upload_event(
     一条埋点不该让用户传不上课件。所以这里自己去读，读不到就不发这条事件——
     与「没有 `session_id` 就不发」是同一条处置：**少发事件是可见的损失**。
 
-    ⚠️ 失败**不静默**：打一行结构化日志。这一条与 `events.record_events()` 把
-    结果放进响应不同——上传的响应体是给页面渲染用的，塞一个埋点结果进去
-    会让页面多一条与用户无关的分支。日志够了，因为上传是低频动作。
+    ⚠️ 失败**不静默**：打一行结构化日志，**并把结果返回给调用方放进响应**。
+
+    ## 🔁 这里推翻了上一批自己的一个决定（2026-09-13）
+
+    上一批写的是：「日志够了，因为上传是低频动作 —— 上传的响应体是给页面渲染用的，
+    塞一个埋点结果进去会让页面多一条与用户无关的分支。」
+
+    **那个取舍是错的**，而这一次的人工验收就是代价：验收的人想确认
+    `deck_uploaded` 的 `deck_id` 到底是不是 null，而**从外面无从确认**——
+    客户端对 `style_events` 只有 insert 权限（读事件走 service_role，
+    而验收脚本刻意不持有它）。于是只能去 SQL Editor 手查，
+    而一次查错地方（`payload->>'deck_id'`，它其实是列）就读成了「功能没做」。
+
+    `/explain` 从一开始就把 `events` 放进响应，而**那正是「四个讲解事件真的落库」
+    当初能被验证的唯一途径**。两条路径上同一个需求，我给了不同的答案，
+    理由是「页面简洁」——**拿可验证性换页面简洁，是拿一个响亮的失败换一个安静的**。
+
+    页面那条「与用户无关的分支」代价其实是零：页面可以不读这个字段。
+    而没有它，任何人都无法自证埋点有没有落库。
     """
     import json as _json
 
     from .events import complete_event, record_events
 
     if not session_id:
-        print(_json.dumps({
-            "event": "upload_event_skipped", "event_type": event_type,
-            "reason": "没有 session_id：一次页面加载 = 一个 session，服务端不现编",
-        }, ensure_ascii=False))
-        return
+        skipped = ("没有 session_id：一次页面加载 = 一个 session，服务端不现编"
+                   "（编了会把「平均会话轮次」这个北极星指标改成假数）")
+        print(_json.dumps({"event": "upload_event_skipped",
+                           "event_type": event_type, "reason": skipped},
+                          ensure_ascii=False))
+        return {"emitted": 0, "attempted": 0, "failed": 0, "skipped_reason": skipped}
     try:
         arm = db.style_row(p.user_id, p.token).f1_arm
         out = record_events(
@@ -535,9 +558,16 @@ def _record_upload_event(
             print(_json.dumps({"event": "upload_event_insert_failed",
                                "event_type": event_type, "result": out},
                               ensure_ascii=False))
+        # **把「这一行到底带没带 deck_id」也回传。** 验收要确认的正是它，
+        # 而从外面读不到事件表（客户端只有 insert 权限）。
+        return {**out, "event_type": event_type, "deck_id": deck_id,
+                "course_id": course_id}
     except Exception as exc:  # noqa: BLE001
+        err = f"{type(exc).__name__}: {exc}"
         print(_json.dumps({"event": "upload_event_failed", "event_type": event_type,
-                           "error": f"{type(exc).__name__}: {exc}"}, ensure_ascii=False))
+                           "error": err}, ensure_ascii=False))
+        return {"emitted": 0, "attempted": 0, "failed": 0, "error": err,
+                "event_type": event_type, "deck_id": deck_id}
 
 
 def _default_embedder() -> Any:

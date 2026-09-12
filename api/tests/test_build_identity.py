@@ -138,3 +138,100 @@ class TestUnknownFieldsAreRefused:
             json={"name": "22.081J", "owner": "想自己指定 owner"},
         )
         assert r.status_code == 422, r.text
+
+
+class TestCorsIsAnAllowlistNeverStar:
+    """上传页在浏览器里直连本服务，所以要 CORS。**默认是关，不是开。**
+
+    Vercel 的 serverless 请求体上限 4.5MB、本服务上限 50MB（测试集最大的一份
+    正好 4.5MB），所以不能走 Next 的 route handler 代理——代理会把大课件挡在
+    Vercel 那一层，而那个失败与「文件太大」长得一样却发生在别的地方。
+    """
+
+    def test_star_is_refused_at_startup(self):
+        """`*` 直接启动失败。
+
+        带凭据的跨源配 `*` 是经典的开门配置，而**它不会报错**。
+        所以把它变成一次启动失败（同 `web/lib/env.ts`「宁可起不来」）。
+        """
+        from api.settings import load_settings
+
+        with pytest.raises(RuntimeError, match=r"\*"):
+            load_settings({"SUPABASE_URL": "https://x.supabase.co",
+                           "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_x",
+                           "CORS_ALLOW_ORIGINS": "https://ok.example, *"})
+
+    def test_absent_means_empty_not_open(self):
+        """**不配 = 空清单 = 浏览器一律被挡住。**
+
+        「配错 → 上传页当场报 CORS 错误」一眼看得见；
+        「默认放开 → 一切正常」看不见。
+        """
+        from api.settings import load_settings
+
+        cfg = load_settings({"SUPABASE_URL": "https://x.supabase.co",
+                             "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_x"})
+        assert cfg.cors_allow_origins == ()
+
+    def test_list_is_parsed_and_trimmed(self):
+        from api.settings import load_settings
+
+        cfg = load_settings({"SUPABASE_URL": "https://x.supabase.co",
+                             "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_x",
+                             "CORS_ALLOW_ORIGINS": " https://a.example , https://b.example "})
+        assert cfg.cors_allow_origins == ("https://a.example", "https://b.example")
+
+    def test_no_cors_headers_when_unconfigured(self, jwks):
+        """空清单时**不挂中间件**：预检拿不到 `access-control-allow-origin`。"""
+        c = client(jwks)
+        r = c.options("/courses", headers={"Origin": "https://evil.example",
+                                          "Access-Control-Request-Method": "GET"})
+        assert "access-control-allow-origin" not in {k.lower() for k in r.headers}
+
+    def _client_with_origins(self, jwks, origins: tuple[str, ...]):
+        from api.auth import TokenVerifier
+        from api.supabase import SupabaseClient
+
+        st = Settings(supabase_url="https://example.supabase.co",
+                      supabase_publishable_key="sb_publishable_test",
+                      anthropic_api_key=None, cors_allow_origins=origins)
+        app = create_app(
+            settings=st,
+            verifier=TokenVerifier(jwks, issuer=ISSUER, audience=AUDIENCE),
+            supabase=SupabaseClient(st.rest_url, st.supabase_publishable_key,
+                                    transport=FakeRest({USER_A: [row(USER_A)]})),
+        )
+        return TestClient(app)
+
+    def test_allowed_origin_gets_through(self, jwks):
+        """允许控制：清单里的来源必须通。少了它，「挡住了」可能只是因为
+        中间件压根没工作。"""
+        c = self._client_with_origins(jwks, ("https://ok.example",))
+        r = c.options("/courses", headers={"Origin": "https://ok.example",
+                                          "Access-Control-Request-Method": "GET"})
+        assert r.headers.get("access-control-allow-origin") == "https://ok.example"
+
+    def test_other_origin_is_not_allowed(self, jwks):
+        c = self._client_with_origins(jwks, ("https://ok.example",))
+        r = c.options("/courses", headers={"Origin": "https://evil.example",
+                                          "Access-Control-Request-Method": "GET"})
+        assert r.headers.get("access-control-allow-origin") != "https://evil.example"
+
+    def test_credentials_are_not_allowed(self, jwks):
+        """**不开 credentials**：本服务不用 cookie，鉴权走 Authorization 头。
+
+        开了它会让 `allow_origins` 的错误配置后果更严重，而我们不需要它。
+        """
+        c = self._client_with_origins(jwks, ("https://ok.example",))
+        r = c.options("/courses", headers={"Origin": "https://ok.example",
+                                          "Access-Control-Request-Method": "GET"})
+        assert r.headers.get("access-control-allow-credentials") != "true"
+
+    def test_build_commit_header_is_exposed_cross_origin(self, jwks, monkeypatch):
+        """跨源时默认只暴露几个安全头，而 `x-build-commit` 要能被前端读到
+        —— 口径 F17 在浏览器侧的落地依赖它。"""
+        monkeypatch.setenv("BUILD_COMMIT", "deadbee")
+        c = self._client_with_origins(jwks, ("https://ok.example",))
+        r = c.get("/health", headers={"Origin": "https://ok.example"})
+        exposed = (r.headers.get("access-control-expose-headers") or "").lower()
+        assert "x-build-commit" in exposed

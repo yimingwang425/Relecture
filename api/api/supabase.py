@@ -42,10 +42,34 @@ class DuplicateDocument(SupabaseError):
 
     ⚠️ 数据库那条是**硬失败 23505，不是「提示」**。不翻译的话用户看到的是
     一个数据库错误码。翻译在这里做，而不是让每个调用方各写一遍。
+
+    ## 🔀 **本模块是这个异常唯一的定义处**（2026-09-12 合并）
+
+    此前 `api/api/ingest.py` 里还有一个**同名同义**的 `DuplicateDocument(Exception)`，
+    而 `main.py` 同时 import 两个（其中一个带着
+    `# noqa: F401 —— 保持符号可见` 这样的注释，说明当时就觉得别扭）。
+
+    两个类的代价在阶段 6 第一批当场兑现：「先查后提示」在 `ingest.py` 里抛的是
+    **它自己那个**，而路由 `except` 的是**本模块这个** —— 两者无继承关系，
+    于是那条重复提示会掉进兜底的 `except Exception`，被报成
+    **422「无法处理该 PDF」**。被 `test_pre_check_names_the_existing_document` 抓出来。
+
+    **同名同义的两个类，比两个不同名的类更危险**：读代码的人看到 `DuplicateDocument`
+    不会去确认它是哪一个，而 `except` 只认对象的真实类型。
+
+    ## `existing` 分开两条路
+
+    两条路都抛这个类，用 `existing` 分辨：
+      · **先查查到的** → `existing` 是已存在那一行，提示说得出是哪一份、什么时候传的；
+      · **唯一索引拦下的** → `existing is None`（先查后插之间的窗口，两个标签页同时传）。
+    两层都在，不是一层换一层。
     """
 
-    def __init__(self, message: str) -> None:
+    def __init__(self, message: str, *, existing: Any | None = None) -> None:
         super().__init__(message, status=409)
+        #: 已存在的那一行（`id` / `filename` / `created_at` / `page_count`）。
+        #: **只有「先查」那条路有**；被唯一索引拦下时是 None。
+        self.existing = existing
 
 
 @dataclass(frozen=True, slots=True)
@@ -210,6 +234,24 @@ class SupabaseClient:
     def insert_slices(self, *, token: str, rows: list[dict[str, Any]]) -> None:
         if rows:
             self._post("/slices", token, rows)
+
+    def find_document_by_sha(self, *, token: str, course_id: str,
+                             sha: str) -> dict[str, Any] | None:
+        """这门课里有没有同一份文件。**「先查后提示」的那一查。**
+
+        ⚠️ **它不替代唯一索引，是排在它前面的一层。**
+        `documents_owner_course_sha_idx` 仍然是权威：查完到插入之间有一个窗口，
+        同一份文件在两个标签页里同时上传就会撞上它，那时仍然是 23505 → 409。
+        两层，与迁移里 grant + policy 的两层是同一个做法。
+
+        为什么要这一查：唯一索引给的是一个**硬失败**，翻译过来只能说
+        「这门课里已经有同一份文件了」——说不出**是哪一份、什么时候传的**。
+        `20260911100000_f2_corpus.sql` 里那条登记的原话是「要『提示』得先查后提示」。
+        """
+        rows = self._get(
+            f"/documents?select=id,filename,created_at,page_count"
+            f"&course_id=eq.{course_id}&content_sha256=eq.{sha}", token)
+        return rows[0] if isinstance(rows, list) and rows else None
 
     def insert_events(self, *, token: str, rows: list[dict[str, Any]]) -> None:
         """写埋点事件。**带用户自己的 JWT**——`style_events` 的策略是

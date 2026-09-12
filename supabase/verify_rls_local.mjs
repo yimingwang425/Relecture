@@ -1201,7 +1201,19 @@ async function main() {
   {
     const db = await freshDb();
     const cid = await mkCourse(db, UID_A, "22.081J");
-    const did = await mkDoc(db, UID_A, cid, "sha-events");
+    // ⚠️ **`mkDoc` 返回错误对象（成功时 null），不是 id。**
+    // 第一版这里直接把它当 document_id 用，于是下面那条
+    // 「事件与它的 course_id/deck_id 都还在」里 `deck_id === did` 是
+    // **null === null**，那一半空转变绿。同一个错在下面「deck_id 不再恒 NULL」
+    // 那一节里犯了第二次，被那一节的第三条断言抓出来。
+    // 教训：**夹具的返回值也要先被断一次**，否则断言测的不是它声称的东西。
+    const mkErr0 = await mkDoc(db, UID_A, cid, "sha-events");
+    mkErr0 === null ? ok("建文档成功（夹具前提）") : bad("建文档失败", `${mkErr0.code}`);
+    const did = (await db.query(
+      "select id from public.documents where course_id=$1 and content_sha256='sha-events'",
+      [cid])).rows[0]?.id ?? null;
+    did ? ok("拿到真的 document_id（夹具分辨力）", `${did.slice(0, 8)}`)
+        : bad("没拿到 document_id", "← 下面 deck_id 那半条会空转");
 
     const withCourse = await errorOf(() =>
       asUser(db, UID_A, () =>
@@ -1235,9 +1247,11 @@ async function main() {
     const after = (await db.query(
       "select course_id, deck_id from public.style_events where event_type='explain_turn'")).rows;
     after.length === 1 && after[0].course_id === cid && after[0].deck_id === did
+      && did !== null    // ← 没有这一条，deck_id 那半边是 null === null，空转
       ? ok("删掉那门课之后，事件与它的 course_id/deck_id 都还在",
-           "← 故意不加外键：cascade 会改掉历史指标，set null 会让分组静默消失")
-      : bad("删课改动了事件行", JSON.stringify(after));
+           `course ${String(cid).slice(0, 8)} · deck ${String(did).slice(0, 8)} `
+           + "← 故意不加外键：cascade 会改掉历史指标，set null 会让分组静默消失")
+      : bad("删课改动了事件行", JSON.stringify(after) + ` did=${did}`);
 
     // 允许控制：注销仍然清得掉（走的是 user_id 那条 cascade，与这两列无关）。
     await db.query("delete from auth.users where id=$1", [UID_A]);
@@ -1270,6 +1284,186 @@ async function main() {
     left === 0
       ? ok("加上 cascade 后删课**真的**带走了事件", "← 所以「不加外键」是承重的，不是漏了")
       : bad("加上 cascade 后事件仍在", `剩 ${left} 条 ← 上面那条断言测错了对象`);
+    await db.close();
+  }
+
+  // ============================================================ 上传页两个事件（阶段 6 第一批）
+  //
+  // 迁移 20260912180000_f3_upload_events.sql。三组：
+  //   ① 允许控制 + 必需字段（与前两批同形）；
+  //   ② **闭集护栏**——这一批新增的那条。`f1_event_payload_ok` 只管「键在不在」，
+  //      挡不住**值写错**：一个拼错的 `unparseable`（多一个 e）键在、非空、类型对，
+  //      照样入库，然后在分析时变成一个新类别，而某一类的计数莫名其妙少了；
+  //   ③ **deck_id 不再恒 NULL**——`deck_uploaded` 填它，这是阶段 4 那条登记被解掉的证据。
+  console.log("\n\x1b[1mstyle_events · 上传页两个事件（阶段 6 第一批）\x1b[0m");
+
+  const UPLOAD_PAYLOADS = {
+    deck_uploaded: {
+      filename: "MIT22_081JF10_lec01b.pdf", source_format: "pdf",
+      page_count: 39, usable_page_count: 39, verdict: "usable",
+      slice_count: 39, embedded_count: 39,
+      // **0 不是「缺」。** 用真值判断的实现会把这两个当成缺字段。
+      skipped_pages: 0, restricted_pages_excluded: 0,
+      duration_ms: 8421.5,
+    },
+    deck_upload_failed: {
+      failure_kind: "unsupported_format",
+      filename: "讲义.txt",
+      bytes: 0,          // ← 0 也是一个值，所以它可以必需
+    },
+  };
+
+  {
+    const db = await freshDb();
+
+    // ---- ① 允许控制先跑
+    let allOk = true, firstErr = "";
+    for (const [type, payload] of Object.entries(UPLOAD_PAYLOADS)) {
+      const err = await putEvent(db, UID_A, { type, payload });
+      if (err) { allOk = false; firstErr = `${type}: ${err.code} ${err.message}`; }
+    }
+    const n = (await db.query("select count(*)::int c from public.style_events")).rows[0].c;
+    allOk && n === 2
+      ? ok("上传页两个事件都能写进去", `${n} 行 ← 下面每一条「被拒」的允许控制`)
+      : bad("齐全的上传事件写不进去", firstErr || `行数 ${n}`);
+
+    // ---- 必需字段：清单从**数据库那个函数**读回来，不在这里抄第二份
+    for (const type of Object.keys(UPLOAD_PAYLOADS)) {
+      const required = (await db.query(
+        "select public.f1_event_required_keys($1) k", [type])).rows[0].k;
+      const missed = [];
+      for (const k of required) {
+        const partial = { ...UPLOAD_PAYLOADS[type] };
+        delete partial[k];
+        const err = await putEvent(db, UID_A, { type, payload: partial });
+        if (err?.code !== "23514") missed.push(`${k}(${err?.code ?? "未报错"})`);
+      }
+      missed.length === 0
+        ? ok(`${type} 缺任一必需字段都判红`, `${required.length}/${required.length} 个字段`)
+        : bad(`${type} 有字段缺了也放行`, missed.join(" "));
+    }
+
+    // ---- **0 不能被当成「缺」**（口径 F50 的邻居）
+    for (const k of ["skipped_pages", "restricted_pages_excluded"]) {
+      const err = await putEvent(db, UID_A, {
+        type: "deck_uploaded", payload: { ...UPLOAD_PAYLOADS.deck_uploaded, [k]: 0 },
+      });
+      err === null
+        ? ok(`deck_uploaded.${k} = 0 写得进去`, "← 0 是一个值，不是「没有」")
+        : bad(`deck_uploaded.${k} = 0 被拒`, `${err.code} ← 护栏把 0 当成缺字段了`);
+    }
+
+    // ---- ② **闭集护栏**（本批新增的那条 CHECK）
+    const badKind = await putEvent(db, UID_A, {
+      type: "deck_upload_failed",
+      payload: { ...UPLOAD_PAYLOADS.deck_upload_failed, failure_kind: "unparseable" },
+    });
+    badKind?.code === "23514"
+      ? ok("拼错的 failure_kind 被拒", "`unparseable`（多一个 e）← 键在、非空、类型对，"
+           + "只有取值域能拦它")
+      : bad("拼错的 failure_kind 被放行", `${badKind?.code ?? "未报错"} ← 它会在分析时变成一个新类别`);
+
+    // 允许控制：**闭集里的每一个值都必须写得进去**。
+    // 少了它，一条「任何 failure_kind 都拒」的 CHECK 也能让上一条全绿，
+    // 而那会让上传失败事件全部进不了库。
+    const kinds = (await db.query(
+      "select public.f3_deck_upload_failure_kinds() k")).rows[0].k;
+    const rejected = [];
+    for (const kind of kinds) {
+      const err = await putEvent(db, UID_A, {
+        type: "deck_upload_failed",
+        payload: { ...UPLOAD_PAYLOADS.deck_upload_failed, failure_kind: kind },
+      });
+      if (err) rejected.push(`${kind}(${err.code})`);
+    }
+    rejected.length === 0
+      ? ok("闭集里的 8 个值全部写得进去（允许控制）", `${kinds.length} 个 ← 少了它，`
+           + "「任何值都拒」的 CHECK 也会让上一条全绿")
+      : bad("闭集里有值被拒", rejected.join(" "));
+
+    // 闭集护栏**只管 deck_upload_failed**，不该误伤别的类型。
+    const otherOk = await putEvent(db, UID_A, {
+      type: "deck_uploaded",
+      payload: { ...UPLOAD_PAYLOADS.deck_uploaded, failure_kind: "乱写的" },
+    });
+    otherOk === null
+      ? ok("别的事件类型带一个 failure_kind 不受闭集护栏影响", "← 它只管 deck_upload_failed")
+      : bad("闭集护栏误伤了别的类型", `${otherOk.code}`);
+
+    await db.close();
+  }
+
+  // ---- R15 · 闭集护栏的反向验证
+  console.log("\n  \x1b[1mR15 · 去掉闭集 CHECK\x1b[0m");
+  {
+    const db = await freshDb();
+    await db.exec("alter table public.style_events drop constraint style_events_enum_check;");
+    const err = await putEvent(db, UID_A, {
+      type: "deck_upload_failed",
+      payload: { ...UPLOAD_PAYLOADS.deck_upload_failed, failure_kind: "unparseable" },
+    });
+    err === null
+      ? ok("去掉 CHECK 后拼错的 failure_kind 写得进去", "← 拒它的确实是那条 CHECK，不是别的东西")
+      : bad("去掉 CHECK 后仍被拒", `${err.code} ← 上面那条断言测错了对象`);
+    await db.close();
+  }
+
+  // ---- ③ deck_id 不再恒 NULL
+  console.log("\n  \x1b[1mdeck_id 不再恒 NULL（阶段 4 那条登记被解掉）\x1b[0m");
+  {
+    const db = await freshDb();
+    const cid = await mkCourse(db, UID_A, "22.081J");
+    // ⚠️ **`mkDoc` 返回的是错误对象（成功时 null），不是 id。**
+    // 第一版直接把它当 document_id 用，于是 deck_id 插进去的是 null，
+    // 而「带 deck_id 写得进去」那条**空转变绿**——是下面第三条
+    // （「这一列真的有非 null 的行」）把它抓出来的。
+    // 所以这里另查一次 id，并**先断它确实是个 uuid**：夹具没有分辨力的话，
+    // 后面那两条断言测的就不是自己声称的东西（同 F11）。
+    const mkErr = await mkDoc(db, UID_A, cid, "sha-upload");
+    mkErr === null ? ok("建文档成功（夹具前提）") : bad("建文档失败", `${mkErr.code} ${mkErr.message}`);
+    const did = (await db.query(
+      "select id from public.documents where course_id=$1 and content_sha256='sha-upload'",
+      [cid])).rows[0]?.id ?? null;
+    did && /^[0-9a-f-]{36}$/.test(did)
+      ? ok("拿到真的 document_id（夹具分辨力）", `${did.slice(0, 8)} ← 它是 null 的话，下面两条会空转变绿`)
+      : bad("没拿到 document_id", `${did} ← 下面两条会空转`);
+
+    const errUp = await errorOf(() =>
+      asUser(db, UID_A, () =>
+        db.query(
+          `insert into public.style_events
+             (user_id, event_type, arm, session_id, payload, course_id, deck_id)
+           values ($1, 'deck_uploaded', public.f1_assign_arm($1), $2, $3::jsonb, $4, $5)`,
+          [UID_A, SESSION, JSON.stringify(UPLOAD_PAYLOADS.deck_uploaded), cid, did])));
+    const stored = errUp === null ? (await db.query(
+      "select deck_id from public.style_events where event_type='deck_uploaded'"
+    )).rows[0]?.deck_id : null;
+    errUp === null && stored === did
+      ? ok("deck_uploaded 带 deck_id 写得进去，且存的就是那个 id",
+           `${String(stored).slice(0, 8)} ← 它是这一列第一个真正的填写者。`
+           + "**断的是存进去的值，不是「插入没报错」**")
+      : bad("deck_uploaded 的 deck_id 不对", errUp ? `${errUp.code} ${errUp.message}`
+            : `存的是 ${stored}，期望 ${did}`);
+
+    // **失败事件的 deck_id 是 null，而这是事实不是遗漏**：没有 document 行。
+    const errFail = await errorOf(() =>
+      asUser(db, UID_A, () =>
+        db.query(
+          `insert into public.style_events
+             (user_id, event_type, arm, session_id, payload, course_id, deck_id)
+           values ($1, 'deck_upload_failed', public.f1_assign_arm($1), $2, $3::jsonb, $4, null)`,
+          [UID_A, SESSION, JSON.stringify(UPLOAD_PAYLOADS.deck_upload_failed), cid])));
+    errFail === null
+      ? ok("deck_upload_failed 的 deck_id 为 null 也写得进去",
+           "← 失败时没有 document 行，null 是事实；编一个会让「按 deck 看失败率」把不同文件算成同一份")
+      : bad("失败事件写不进去", `${errFail.code} ${errFail.message}`);
+
+    const filled = (await db.query(
+      "select count(*)::int c from public.style_events where deck_id is not null")).rows[0].c;
+    filled === 1
+      ? ok("这一列现在真的有非 null 的行", `${filled} 行 ← 「恒 NULL 的列会让人以为可以按它分组」那条登记可以收了`)
+      : bad("deck_id 仍然恒 NULL", `${filled} 行非 null`);
+
     await db.close();
   }
 

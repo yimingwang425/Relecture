@@ -47,6 +47,12 @@
 | `SUPABASE_PUBLISHABLE_KEY` | **publishable key**，与前端同一个 |
 | `ANTHROPIC_API_KEY` | 缺它 `/explain` 返回 503 并点名是服务端未配置，不静默失败 |
 | `OPENAI_API_KEY` | 摄入那一步要（`retrieval.embed.OpenAIEmbedder` 从环境读） |
+| `CORS_ALLOW_ORIGINS` | **上传页要它。** 逗号分隔的前端来源（Vercel 域名 + `http://localhost:3000`）。⚠️ **不配 = 空清单 = 浏览器一律被挡**，不是默认放开；写 `*` **服务启动就失败**。前端在浏览器里直连本服务，因为 Vercel 的 serverless 请求体上限 4.5MB 而上传上限 50MB |
+| `RENDER_GIT_COMMIT` | **不用配**，平台自动注入。它就是 `/health` 的 `build_commit`（口径 F17） |
+
+前端那一侧配套要配 `NEXT_PUBLIC_API_BASE_URL`（指向本服务），见 `web/.env.example`。
+**两边都配好之前，`/courses` 那一页会点名说缺哪一个**，而本站其余页面不受影响
+（它们直连 Supabase）。
 
 ⚠️ **`SUPABASE_SECRET_KEY` 不在这张表里，也不该被加进去**（口径 F40）。
 `load_settings()` 见到 `sb_secret_` / `service_role` 形态的 key **启动就失败**——

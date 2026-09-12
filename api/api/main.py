@@ -31,6 +31,7 @@ from pydantic import BaseModel, Field
 
 from .auth import AuthError, HttpJwks, Principal, TokenVerifier, bearer_token
 from .build import build_commit
+from .upload_failures import UploadFailure as _UploadFailure
 from .settings import Settings, load_settings
 from .supabase import StyleRow, SupabaseClient, SupabaseError
 
@@ -135,6 +136,55 @@ def create_app(
             return p, db.style_row(p.user_id, p.token)
         except SupabaseError as exc:
             raise HTTPException(status_code=exc.status, detail=exc.message) from exc
+
+    # ---------------------------------------------------------------- 上传失败的响应形状
+    #
+    # `HTTPException` 只产出 `{"detail": ...}`，而前端要按**分类**分支
+    # （八类各有自己的文案与「要不要给重试按钮」）。从状态码反推会丢信息：
+    # 415 与 501 都是「格式家族」，能分开它们正是因为服务端一个类一个码。
+    #
+    # ⚠️ **`detail` 保持字符串**，`failure_kind` 作为**同级字段**加上去。
+    # 把 detail 换成对象会让既有的读取方（`ingest_real.py` 那条
+    # 「409 且是人话，不是 23505」）当场变红，而那条断言仍然要成立。
+    @app.exception_handler(_UploadFailure)
+    async def _upload_failure_handler(request: Any, exc: _UploadFailure) -> Any:
+        from fastapi.responses import JSONResponse
+
+        return JSONResponse(
+            status_code=exc.status,
+            content={
+                "detail": exc.detail,          # ← 人话，给这一次请求的用户
+                "failure_kind": exc.kind,      # ← 闭集，给前端分支与分析
+                "retryable": exc.retryable,
+            },
+        )
+
+    # ---------------------------------------------------------------- CORS
+    #
+    # 上传页在浏览器里**直连本服务**（Vercel 的 serverless 请求体上限 4.5MB，
+    # 而本服务上限 50MB —— 代理一跳会把大课件挡在 Vercel 那一层，
+    # 且那个失败与「文件太大」长得一样却发生在别的地方）。所以要 CORS。
+    #
+    # ⚠️ **清单为空时不挂中间件**，于是浏览器一律被挡住。
+    # 「配错 → 上传页当场报 CORS 错误」是一眼看得见的；
+    # 「默认放开 → 一切正常」是看不见的，直到有人发现任意站点都能拿着
+    # 用户的 token 打这个服务。`load_settings()` 另外拒绝 `*`。
+    if cfg.cors_allow_origins:
+        from fastapi.middleware.cors import CORSMiddleware
+
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=list(cfg.cors_allow_origins),
+            # 只放开实际用到的：上传是 POST，读课程是 GET，预检是 OPTIONS。
+            allow_methods=["GET", "POST", "OPTIONS"],
+            # Authorization 必须在，它是这一跳的鉴权方式。
+            allow_headers=["Authorization", "Content-Type"],
+            # **不开 credentials**：本服务不用 cookie，鉴权走 Authorization 头。
+            # 开了它会让 `allow_origins` 的错误配置后果更严重，而我们不需要它。
+            allow_credentials=False,
+            # 让前端读得到构建标识（口径 F17）——跨源时默认只暴露几个安全头。
+            expose_headers=["x-build-commit"],
+        )
 
     # ---------------------------------------------------------------- 构建标识
     #
@@ -312,51 +362,182 @@ def create_app(
     async def upload(
         course_id: str,
         file: UploadFile = File(...),
+        #: 一次页面加载 = 一个 session（占位口径，同 `/explain`）。
+        #: **缺了就不发事件，不现编**——理由见 `events.py` 模块说明。
+        session_id: str | None = None,
         p: Principal = Depends(principal),
     ) -> dict[str, Any]:
-        """上传一份课件。**一次事务性的动作**（见 `ingest.py` 的模块说明）。"""
-        from .ingest import DuplicateDocument as _Dup  # noqa: F401  —— 保持符号可见
+        """上传一份课件。**一次事务性的动作**（见 `ingest.py` 的模块说明）。
+
+        阶段 6 第一批加了两件事：
+          · **先查后提示**——建行之前问一次这门课有没有同一份文件，提示说得出
+            是哪一份、什么时候传的（唯一索引仍然是权威，两层）。
+          · **两个事件**：`deck_uploaded` / `deck_upload_failed`（PRD §13.1 第一行）。
+            失败**按分类发**，不压成「上传失败」——每一类用户该做的事都不同
+            （见 `upload_failures.py` 那张表）。
+        """
+        import time
+
         from .ingest import ingest_document
+        # 唯一定义处是 supabase.py（两个同名类已于 2026-09-12 合并，见那里的 docstring）。
         from .supabase import DuplicateDocument
-
+        t0 = time.monotonic()
         name = file.filename or "upload"
-        if not name.lower().endswith(".pdf"):
-            # 区分「不支持」与「还没做」——PPTX 的 schema 已定，解析器未交付。
-            # 压成一句「不支持」会让人以为是永久不支持而去做别的兜底。
-            if name.lower().endswith(".pptx"):
-                raise HTTPException(501, "PPTX 解析尚未实现（schema 已定义，解析器为下一次交付）")
-            raise HTTPException(415, f"仅支持 .pdf，收到 {name}")
 
-        data = await file.read()
-        if not data:
-            raise HTTPException(400, "文件为空")
-        limit = _max_upload_bytes()
-        if len(data) > limit:
-            raise HTTPException(413, f"文件超过 {limit // 1024 // 1024} MB 上限")
+        def ms() -> float:
+            return round((time.monotonic() - t0) * 1000, 1)
 
-        make_embedder = embedder_factory or _default_embedder
+        # ⚠️ **失败也要发事件，所以整段包在一个 try 里。**
+        # 各个 raise 点抛的是 `UploadFailure`（带分类），不是裸 HTTPException——
+        # 裸抛的话分类就只存在于状态码里，而 415 / 501 那一对**必须分得开**
+        # （「不支持」与「还没做」对用户是两件完全不同的事）。
         try:
-            result = ingest_document(
-                data=data, filename=name, owner=p.user_id, course_id=course_id,
-                token=p.token, store=db, embedder=make_embedder(),
+            if not name.lower().endswith(".pdf"):
+                if name.lower().endswith(".pptx"):
+                    # 区分「不支持」与「还没做」——PPTX 的 schema 已定，解析器未交付。
+                    # 压成一句「不支持」会让人以为是永久不支持而去做别的兜底。
+                    raise _UploadFailure(
+                        "pptx_not_implemented",
+                        "PPTX 解析尚未实现（schema 已定义，解析器为下一次交付）")
+                raise _UploadFailure("unsupported_format", f"仅支持 .pdf，收到 {name}")
+
+            data = await file.read()
+            if not data:
+                raise _UploadFailure("empty_file", "文件为空", extra={"bytes": 0})
+            limit = _max_upload_bytes()
+            if len(data) > limit:
+                raise _UploadFailure(
+                    "too_large", f"文件超过 {limit // 1024 // 1024} MB 上限",
+                    extra={"bytes": len(data), "limit_bytes": limit})
+
+            make_embedder = embedder_factory or _default_embedder
+            try:
+                result = ingest_document(
+                    data=data, filename=name, owner=p.user_id, course_id=course_id,
+                    token=p.token, store=db, embedder=make_embedder(),
+                    find_existing=lambda sha: db.find_document_by_sha(
+                        token=p.token, course_id=course_id, sha=sha),
+                )
+            except DuplicateDocument as exc:
+                # 两条路都到这里：**先查查到的**（exc.existing 非空，说得出是哪一份）
+                # 与**唯一索引拦下的**（exc.existing 为空，先查后插之间的窗口）。
+                # 数据库那条是硬失败 23505，不是「提示」。
+                raise _UploadFailure(
+                    "duplicate_in_course", exc.message,
+                    extra={"bytes": len(data),
+                           "existing_document_id": (exc.existing or {}).get("id"),
+                           # **哪一层拦下的**要记：如果 `by_unique_index` 长期占多数，
+                           # 说明「先查」这一层没在起作用（而它的绿是看不见的）。
+                           "caught_by": "pre_check" if exc.existing else "unique_index"}) from exc
+            except SupabaseError as exc:
+                raise _UploadFailure("db_error", exc.message,
+                                    extra={"bytes": len(data)}) from exc
+            except Exception as exc:  # 解析器对损坏文件抛的异常类型不统一
+                raise _UploadFailure("unparsable", f"无法处理该 PDF：{exc}",
+                                    extra={"bytes": len(data)}) from exc
+
+        except _UploadFailure as fail:
+            # ---- 失败事件。**分类进 payload，异常原文不进**（PRD §12.2 / 口径 F32）：
+            # `unparsable` 的原文来自解析器，而它谈论的是用户上传的文件内容。
+            # 原文回给这一次请求的用户（只有他看得到）并留在服务端日志里。
+            _record_upload_event(
+                db, p, session_id=session_id, course_id=course_id,
+                event_type="deck_upload_failed",
+                payload={
+                    "failure_kind": fail.kind,
+                    "filename": name,
+                    # 0 也是一个值，所以它可以必需（见迁移里那段）。
+                    "bytes": fail.extra.get("bytes", 0),
+                    "duration_ms": ms(),
+                    "retryable": fail.retryable,
+                    "http_status": fail.status,
+                    **{k: v for k, v in fail.extra.items() if k != "bytes"},
+                },
+                deck_id=None,   # 失败时**没有** document 行，null 在这里是事实
             )
-        except DuplicateDocument as exc:
-            # 数据库那条唯一索引是**硬失败 23505**，不是「提示」。翻译成人话。
-            raise HTTPException(status_code=409, detail=exc.message) from exc
-        except SupabaseError as exc:
-            raise HTTPException(status_code=exc.status, detail=exc.message) from exc
-        except Exception as exc:  # 解析器对损坏文件抛的异常类型不统一
-            raise HTTPException(422, f"无法处理该 PDF：{exc}") from exc
+            # **原样抛**，由上面那个处理器决定响应形状
+            # （它多带一个 `failure_kind`，而 `detail` 仍是人话）。
+            raise
+
+        # ---- 成功事件。**它是 `deck_id` 那一列第一个真正的填写者**
+        # （`20260912120000` 里登记的「恒 NULL」由此解掉）。
+        _record_upload_event(
+            db, p, session_id=session_id, course_id=course_id,
+            event_type="deck_uploaded",
+            payload={
+                "filename": name,
+                "source_format": result.source_format,
+                "page_count": result.page_count,
+                "usable_page_count": result.usable_page_count,
+                "verdict": result.verdict,
+                "slice_count": result.slice_count,
+                "embedded_count": result.embedded_count,
+                "skipped_pages": result.skipped_pages,
+                "restricted_pages_excluded": result.restricted_pages_excluded,
+                "bytes": len(data),
+                "duration_ms": ms(),
+            },
+            deck_id=result.document_id,
+        )
 
         return {
             "document_id": result.document_id,
             "slice_count": result.slice_count,
             "embedded_count": result.embedded_count,
             "skipped_pages": result.skipped_pages,
+            "restricted_pages_excluded": result.restricted_pages_excluded,
             "verdict": result.verdict,
         }
 
     return app
+
+
+def _record_upload_event(
+    db: Any, p: Any, *, session_id: str | None, course_id: str,
+    event_type: str, payload: dict[str, Any], deck_id: str | None,
+) -> None:
+    """发一条上传事件。**永不抛**——埋点失败不打断上传（口径 F42）。
+
+    ## `arm` 在这里懒取，而不是把上传路由改成依赖 `style_row`
+
+    表上有 `check (arm = f1_assign_arm(user_id))`，所以必须知道这个用户的臂。
+    最省事的写法是让上传路由也 `Depends(style_row)`，**但那会把一次埋点的前置
+    变成上传本身的前置**：`style_config` 读不到（0 行是坏状态，口径 F09）时
+    上传会直接 500，而**上传压根不需要风格配置**。
+
+    一条埋点不该让用户传不上课件。所以这里自己去读，读不到就不发这条事件——
+    与「没有 `session_id` 就不发」是同一条处置：**少发事件是可见的损失**。
+
+    ⚠️ 失败**不静默**：打一行结构化日志。这一条与 `events.record_events()` 把
+    结果放进响应不同——上传的响应体是给页面渲染用的，塞一个埋点结果进去
+    会让页面多一条与用户无关的分支。日志够了，因为上传是低频动作。
+    """
+    import json as _json
+
+    from .events import complete_event, record_events
+
+    if not session_id:
+        print(_json.dumps({
+            "event": "upload_event_skipped", "event_type": event_type,
+            "reason": "没有 session_id：一次页面加载 = 一个 session，服务端不现编",
+        }, ensure_ascii=False))
+        return
+    try:
+        arm = db.style_row(p.user_id, p.token).f1_arm
+        out = record_events(
+            db, token=p.token, user_id=p.user_id, arm=arm, session_id=session_id,
+            # **走 complete_event，不直接拼 dict**：缺必需字段要在构造时抛，
+            # 不能交给数据库去 23514 —— 被拒的事件是静默消失的。
+            events=[complete_event(event_type, payload)],
+            course_id=course_id, deck_id=deck_id,
+        )
+        if out.get("failed"):
+            print(_json.dumps({"event": "upload_event_insert_failed",
+                               "event_type": event_type, "result": out},
+                              ensure_ascii=False))
+    except Exception as exc:  # noqa: BLE001
+        print(_json.dumps({"event": "upload_event_failed", "event_type": event_type,
+                           "error": f"{type(exc).__name__}: {exc}"}, ensure_ascii=False))
 
 
 def _default_embedder() -> Any:

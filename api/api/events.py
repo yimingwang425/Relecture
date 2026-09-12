@@ -45,8 +45,9 @@ from __future__ import annotations
 import time
 from typing import Any
 
-__all__ = ["EXPLAIN_EVENT_TYPES", "REQUIRED_KEYS", "build_explain_events",
-           "record_events", "SERVER_RETRY_DELAYS_MS"]
+__all__ = ["EXPLAIN_EVENT_TYPES", "UPLOAD_EVENT_TYPES", "REQUIRED_KEYS",
+           "build_explain_events", "complete_event", "record_events",
+           "SERVER_RETRY_DELAYS_MS"]
 
 EXPLAIN_EVENT_TYPES = (
     "explain_turn",
@@ -54,6 +55,11 @@ EXPLAIN_EVENT_TYPES = (
     "regeneration_triggered",
     "retrieval_executed",
 )
+
+#: 阶段 6 第一批（上传页）。PRD §13.1 第一行：文件类型、页数、处理耗时、成功/失败。
+#: 「成功/失败」由 **event_type 本身**承担，不另立布尔字段——立了就有两处出处，
+#: 而它们漂开的表现是「一条 deck_uploaded 里写着 ok=false」。
+UPLOAD_EVENT_TYPES = ("deck_uploaded", "deck_upload_failed")
 
 #: 必需字段清单的**镜像**。唯一出处是迁移里的 `f1_event_required_keys`
 #: （`20260912120000_f3_explain_events.sql`），`verify_rls_local.mjs` 从 SQL 原文
@@ -74,6 +80,15 @@ REQUIRED_KEYS: dict[str, tuple[str, ...]] = {
     "regeneration_triggered": ("attempt_index", "failed_dimensions", "final_accepted"),
     "retrieval_executed": ("top_k_scores", "slice_ids", "pages", "latency_ms",
                            "embed_model", "dimensions", "ruleset_versions", "backend"),
+    # ---- 上传页两个（阶段 6 第一批）----
+    "deck_uploaded": ("filename", "source_format", "page_count", "usable_page_count",
+                      "verdict", "slice_count", "embedded_count", "skipped_pages",
+                      "restricted_pages_excluded", "duration_ms"),
+    # ⚠️ **只有三个**，刻意的（口径 F50）。失败可能发生在任何一步之前：
+    # 格式不对时连文件都没读，`page_count` / `source_format` 全是 null。
+    # 把它们列成必需 = **最该被采集的那一类失败进不了库**
+    # （用户第一次上传就撞上格式错误）。
+    "deck_upload_failed": ("failure_kind", "filename", "bytes"),
 }
 
 #: 服务端的退避阶梯。**比浏览器那份短**——用户正在等这一屏
@@ -81,15 +96,30 @@ REQUIRED_KEYS: dict[str, tuple[str, ...]] = {
 SERVER_RETRY_DELAYS_MS = (200, 700)
 
 
-def _complete(event_type: str, payload: dict[str, Any]) -> dict[str, Any]:
+def complete_event(event_type: str, payload: dict[str, Any]) -> dict[str, Any]:
     """构造时就检查必需字段。缺了直接抛，**不交给数据库去拒**：
-    数据库拒掉的表现是「这条事件没了」，而没了的事件在任何报表里都不出现。
+    数据库拒掉的表现是「这条事件没了」，而没了的事件在任何报表里都不出现，
+    也没有任何东西会红（漏采集是最安静的一类 bug）。
+
+    ⚠️ **0 与 False 不算缺。** `payload.get(k) is None or == ""` 这个写法
+    在 Python 里对 `0` 和 `False` 是安全的（它们既不是 None 也不等于 ""），
+    但 `restricted_pages_excluded` 恒为 0、`retryable` 可能是 False，
+    所以这一点必须是刻意的而不是巧合 —— `tests/test_upload_events.py` 钉着它。
     """
-    missing = [k for k in REQUIRED_KEYS[event_type]
+    known = REQUIRED_KEYS.get(event_type)
+    if known is None:
+        # 未知类型在这里就拦。交给数据库的话是 23514，
+        # 而那时错误信息说的是「payload 不合格」，不是「这个类型不存在」。
+        raise ValueError(f"未知 event_type {event_type!r}；取值域见 REQUIRED_KEYS 与迁移")
+    missing = [k for k in known
                if payload.get(k) is None or payload.get(k) == ""]
     if missing:
         raise ValueError(f"{event_type} 的 payload 缺必需字段：{', '.join(missing)}")
     return {"event_type": event_type, "payload": payload}
+
+
+#: 旧名字保留：`test_events.py` 与 `build_explain_events` 用的是它。
+_complete = complete_event
 
 
 def build_explain_events(

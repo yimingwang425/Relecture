@@ -61,14 +61,11 @@ class Embedder(Protocol):
     def embed(self, texts: list[str]) -> Sequence[Sequence[float]]: ...
 
 
-class DuplicateDocument(Exception):
-    """同一用户、同一课程、同一份文件。
-
-    ⚠️ 数据库那条唯一索引是**硬失败（23505）不是提示**。摄入路径必须把它翻译成人话，
-    否则用户看到的是一个数据库错误码——这一条登记在
-    `f1_samples/README.md` §二，阶段 6 做「先查后提示」。
-    """
-
+# ⚠️ **`DuplicateDocument` 不在本模块定义。** 唯一定义处是 `api/api/supabase.py`
+# （2026-09-12 合并，理由见那里的 docstring）：此前两个模块各有一个**同名同义**的类，
+# 而路由 `except` 的是其中一个、「先查后提示」抛的是另一个 —— 那条重复提示因此
+# 掉进兜底的 `except Exception`，被报成 422「无法处理该 PDF」。
+from .supabase import DuplicateDocument  # noqa: E402  —— 放在这里是为了紧挨上面那段说明
 
 @dataclass(frozen=True, slots=True)
 class IngestResult:
@@ -78,6 +75,12 @@ class IngestResult:
     skipped_pages: int
     restricted_pages_excluded: int
     verdict: str
+    # ---- PRD §13.1 第一行要的「文件类型、页数」。**从 parse 的产出带上来，
+    # 不让调用方再解析一次**：路由要发 `deck_uploaded` 事件，而它手里只有字节。
+    # 调用方自己去读一遍 PDF 就是第二处出处（F13），且那份可能与落库的不一致。
+    source_format: str = ""
+    page_count: int = 0
+    usable_page_count: int = 0
 
 
 #: 写进 `slice_embeddings.model` 的字符串。**从 `retrieval.selection` 读，不写字面量**——
@@ -99,6 +102,7 @@ def ingest_document(
     embedder: Embedder,
     restricted_pages: frozenset[int] = frozenset(),
     split_threshold_chars: int | None = None,
+    find_existing: Any | None = None,
 ) -> IngestResult:
     """跑完整条链，返回落库结果。
 
@@ -114,6 +118,24 @@ def ingest_document(
     parsed = parse_pdf(data, filename)
     sliceset = slice_document(parsed, split_threshold_chars)
     manifest = sliceset.manifest
+
+    # ---- 「先查后提示」：建行之前问一次这门课里有没有同一份文件。
+    #
+    # ⚠️ **这一层不替代唯一索引。** 查完到插入之间有个窗口，两个标签页同时传
+    # 同一份文件仍然会撞上 23505 → 409（`insert_document` 那条翻译还在）。
+    # 两层，任一层被误改另一层还在。
+    #
+    # ⚠️ **在 parse 之后查，不在之前。** 之前查需要我们自己算一次 sha，
+    # 而 `content_sha256` 的出处是 `parse_pdf`——自己再算一份就是第二处出处
+    # （F13），而它漂开的表现是「重复检测永远查不到」，没有任何东西会红。
+    # 代价是白解析一次（本地 CPU，**不花钱**：嵌入在这之后）。
+    # **触发条件**：解析耗时成为上传体验的抱怨点时，再考虑自己算 sha + 配一条
+    # 「两份 sha 必须相等」的断言把两处出处变成一对可验的。
+    if find_existing is not None:
+        existing = find_existing(parsed.document.content_sha256)
+        if existing is not None:
+            raise DuplicateDocument(
+                "这门课里已经有同一份文件了", existing=existing)
 
     # 受限页不入索引（见模块 docstring 的登记）。
     kept = [s for s in sliceset.slices if not any(p in restricted_pages for p in s.page_indices)]
@@ -221,4 +243,7 @@ def ingest_document(
         skipped_pages=len(manifest.skipped_pages),
         restricted_pages_excluded=excluded,
         verdict=parsed.document.verdict,
+        source_format=parsed.document.source_format,
+        page_count=parsed.document.page_count,
+        usable_page_count=parsed.document.usable_page_count,
     )

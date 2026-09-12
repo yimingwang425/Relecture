@@ -34,6 +34,24 @@ export const SUPABASE_PUBLISHABLE_KEY = required(
   KEY_,
 );
 
+/**
+ * 产品服务端（`api/` · Render）的地址。**上传页与讲解页在浏览器里直连它。**
+ *
+ * 为什么不走 route handler 代理：Vercel 的 serverless 请求体上限 **4.5MB**，
+ * 而上传上限是 50MB（测试集里最大的一份正好 4.5MB）。代理会把大课件挡在
+ * Vercel 那一层，而那个失败与「文件太大」长得一样却发生在别的地方。
+ *
+ * ⚠️ **它不是必需变量。** 缺它时只有上传页/讲解页不可用，而
+ * `/`、`/onboarding/*`、`/settings/*` 全部照常——那几页直连 Supabase，
+ * 与这个服务无关。用 `required()` 会让**整站因为一个还没部署的服务起不来**，
+ * 那是把「一个功能不可用」放大成「全站不可用」。
+ *
+ * 所以缺失在**页面上**被点名（见 `app/courses/page.tsx`），不在这里抛。
+ * 这与 `ANTHROPIC_API_KEY` 缺失时 `/api/style/from-text` 返回 503 并说明
+ * 「是服务端未配置」是同一条处置：**说清楚缺的是什么，不静默失败、也不牵连别人。**
+ */
+export const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "").replace(/\/+$/, "");
+
 /** 调试路由的构建期开关。Vercel 上不配即为关，生产构建里那个路由不存在。 */
 export const DEBUG_ROUTES_ENABLED =
   process.env.NEXT_PUBLIC_ENABLE_DEBUG_ROUTES === "1";

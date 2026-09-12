@@ -25,6 +25,19 @@ class Settings:
     supabase_publishable_key: str
     #: 模型 key。缺它时 `/explain` 报 503 并点名是服务端未配置，不静默失败。
     anthropic_api_key: str | None
+    #: 允许跨源调用本服务的前端来源清单（`CORS_ALLOW_ORIGINS`，逗号分隔）。
+    #:
+    #: ⚠️ **不配就是空清单，即浏览器一律被挡住** —— 不是「默认放开」。
+    #: 配错的表现因此是**上传页当场报 CORS 错误**，一眼看得见；
+    #: 而默认 `*` 的表现是「一切正常」，直到有人发现任意站点都能拿着用户的 token
+    #: 打这个服务。同 `web/lib/env.ts`「宁可起不来」那条：
+    #: **在「静默放开」与「响亮失败」之间选后者。**
+    #:
+    #: 为什么前端必须直连本服务、不走 Next 的 route handler 代理：
+    #: Vercel 的 serverless 请求体上限是 **4.5MB**，而本服务的上传上限是 50MB
+    #: （测试集里最大的一份就是 4.5MB）。代理一跳会把大课件挡在 Vercel 那一层，
+    #: 而那个失败与「文件太大」长得一样，却发生在完全不同的地方。
+    cors_allow_origins: tuple[str, ...] = ()
 
     @property
     def jwks_url(self) -> str:
@@ -56,8 +69,19 @@ def load_settings(env: dict[str, str] | None = None) -> Settings:
             "本服务以用户身份走 RLS，拿 service_role 等于把 RLS 整个绕过（口径 F40）。"
         )
 
+    origins = tuple(
+        o.strip() for o in (e.get("CORS_ALLOW_ORIGINS") or "").split(",") if o.strip())
+    # `*` 拒绝接受。带凭据的跨源请求配 `*` 是一个经典的开门配置，
+    # 而它不会报错——所以在这里把它变成一个启动失败。
+    if "*" in origins:
+        raise RuntimeError(
+            "CORS_ALLOW_ORIGINS 里出现了 `*`。本服务的每个请求都带用户自己的 JWT，"
+            "放开任意来源等于让任何站点拿着它打这个服务。请逐个列出前端来源。"
+        )
+
     return Settings(
         supabase_url=url,
         supabase_publishable_key=key,
         anthropic_api_key=(e.get("ANTHROPIC_API_KEY") or "").strip() or None,
+        cors_allow_origins=origins,
     )

@@ -172,6 +172,22 @@ try {
   process.exit(1);
 }
 
+// `lib/upload/` 单独编一次：上面那次写死了 `--rootDir lib/style`，
+// 换成 `lib` 会让所有 require 路径多一层，改动面比再编一次大得多。
+const outUpload = mkdtempSync(join(WEB, "node_modules", ".f1-upload-"));
+try {
+  execFileSync(
+    "npx",
+    ["tsc", "lib/upload/failures.ts",
+     "--module", "commonjs", "--target", "es2020", "--strict", "--skipLibCheck",
+     "--rootDir", "lib/upload", "--outDir", outUpload],
+    { cwd: WEB, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
+  );
+} catch (e) {
+  console.error("编译失败（lib/upload）：\n" + (e.stdout ?? "") + (e.stderr ?? ""));
+  process.exit(1);
+}
+
 const require_ = createRequire(import.meta.url);
 const { AXES, DEFAULTS, DETAIL_LADDER, DEPTH_LADDER } = require_(join(out, "axes.js"));
 const { applyFeedback, FEEDBACK_KINDS } = require_(join(out, "feedback.js"));
@@ -571,12 +587,27 @@ console.log("\n\x1b[1m七 · 埋点五事件（阶段 4）\x1b[0m");
     .map((f) => readFileSync(join(migDir, f), "utf8"))
     .join("\n");
 
-  /** 纯函数，好让下面的反向控制直接喂一段改过的 SQL。 */
+  /**
+   * 纯函数，好让下面的反向控制直接喂一段改过的 SQL。
+   *
+   * ⚠️ **取最后一个定义，不是第一个。** `f1_event_required_keys` 被
+   * `create or replace` 过三次（阶段 4 五个类型 → 阶段 6 九个 → 上传批十一个），
+   * 而迁移是按序执行的，**生效的是最后那一份**。
+   *
+   * 第一版用 `.exec()` 取的是**第一个**匹配，也就是阶段 4 那份（只有 5 个类型）。
+   * 它当时是绿的，而且会一直绿——**绿的理由是它在跟一份已经不生效的定义比**。
+   * 2026-09-12 加上传两个事件时发现：那条 `=== 5` 的分辨力断言正是靠读到
+   * 旧定义才通过的。这是 F16 的又一个形态：判据在它要区分的两种情况下取值相同
+   * （旧定义与新定义里那 5 个 style_* 恰好一样），所以它分不出「TS 与生效定义漂了」。
+   */
   function parseSqlRequiredKeys(sql) {
-    const block = /create or replace function public\.f1_event_required_keys[\s\S]*?\$\$;/.exec(sql)?.[0];
-    if (!block) return null;
+    const blocks = [
+      ...sql.matchAll(/create or replace function public\.f1_event_required_keys[\s\S]*?\$\$;/g),
+    ];
+    if (blocks.length === 0) return null;
+    const block = blocks[blocks.length - 1][0];   // ← **最后一个 = 生效的那一份**
     const out = {};
-    for (const m of block.matchAll(/when\s+'(\w+)'\s*then\s*array\[([^\]]*)\]/g)) {
+    for (const m of block.matchAll(/when\s+'(\w+)'\s*\n?\s*then\s*array\[([^\]]*)\]/g)) {
       out[m[1]] = [...m[2].matchAll(/'(\w+)'/g)].map((k) => k[1]);
     }
     return out;
@@ -585,16 +616,51 @@ console.log("\n\x1b[1m七 · 埋点五事件（阶段 4）\x1b[0m");
   const sqlKeys = parseSqlRequiredKeys(migSrc);
   // 判据自身的分辨力：解析失败会得到 null 或空对象，而空对象之间的比对必然相等。
   check(sqlKeys !== null, "迁移里找到 f1_event_required_keys");
-  check(Object.keys(sqlKeys ?? {}).length === 5, "SQL 解析出 5 个 event_type", `实得 ${Object.keys(sqlKeys ?? {}).length}`);
+  // **生效那一份有十一个类型**：F1 五个 + 讲解四个 + 上传两个。
+  // 这个数是「解析器读到的是最新定义」的证据——读到旧定义会得到 5。
+  check(
+    Object.keys(sqlKeys ?? {}).length === 11,
+    "SQL 生效定义解析出 11 个 event_type",
+    `实得 ${Object.keys(sqlKeys ?? {}).length} ← 得到 5 说明解析器读的是阶段 4 那份旧定义`,
+  );
+  // 反向控制：只取第一个定义时**必须**得到 5，否则上一条的分辨力是空的。
+  {
+    const firstOnly = /create or replace function public\.f1_event_required_keys[\s\S]*?\$\$;/.exec(migSrc)?.[0] ?? "";
+    const n = [...firstOnly.matchAll(/when\s+'(\w+)'/g)].length;
+    check(n === 5, "反向控制：第一个定义确实只有 5 个类型", `${n} 个 ← 上一条的分辨力靠它`);
+  }
   check(ev.EVENT_TYPES.length === 5, "TS 的 EVENT_TYPES 是 5 个", ev.EVENT_TYPES.join(" · "));
+  // **TS 只镜像 F1 那五个**，这是口径 F51 的结果：讲解与上传的事件由 Python 侧
+  // 构造（它们的字段全部产生在服务端），镜像在 `api/api/events.py`，
+  // 那边有自己的一条从 SQL 原文读回来的比对。
+  check(
+    ev.EVENT_TYPES.every((t) => t.startsWith("style_")),
+    "TS 镜像的五个都是 style_* 家族",
+    "← 讲解/上传的事件在 Python 侧构造（口径 F51），不在这份镜像里",
+  );
 
-  /** 返回不一致的说明。空数组 = 两份相同。 */
+  /**
+   * 返回不一致的说明。空数组 = 两份相同。
+   *
+   * **TS 那份是 SQL 的子集**（只镜像 F1 那五个，口径 F51），所以比的是：
+   * ① TS 的每个类型都必须在 SQL 里（不在 = TS 有个数据库不认识的类型，
+   *    那种事件一律 23514 被拒，而被拒的事件静默消失）；
+   * ② 两边共有的类型，字段逐项相同。
+   *
+   * ⚠️ **不比「SQL 里有 TS 没有的」** —— 那是常态（讲解与上传六个类型
+   * 在 Python 侧）。比了的话这一条会永远红，然后被人放宽成永远绿。
+   */
   function compareKeys(tsKeys, sql) {
     const problems = [];
     const tsTypes = sorted_(Object.keys(tsKeys));
-    const sqlTypes = sorted_(Object.keys(sql ?? {}));
-    if (!eq(tsTypes, sqlTypes)) problems.push(`event_type 集合：TS ${JSON.stringify(tsTypes)} ≠ SQL ${JSON.stringify(sqlTypes)}`);
+    const sqlTypes = Object.keys(sql ?? {});
+    const orphan = tsTypes.filter((t) => !sqlTypes.includes(t));
+    if (orphan.length) {
+      problems.push(`TS 有而 SQL 没有的 event_type：${JSON.stringify(orphan)}`
+        + "（这种事件会被数据库 23514 拒掉，而被拒的事件静默消失）");
+    }
     for (const t of tsTypes) {
+      if (!sqlTypes.includes(t)) continue;
       if (!eq(sorted_(tsKeys[t] ?? []), sorted_(sql?.[t] ?? []))) {
         problems.push(`${t}：TS ${JSON.stringify(tsKeys[t])} ≠ SQL ${JSON.stringify(sql?.[t])}`);
       }
@@ -605,8 +671,11 @@ console.log("\n\x1b[1m七 · 埋点五事件（阶段 4）\x1b[0m");
   const keyProblems = compareKeys(ev.REQUIRED_PAYLOAD_KEYS, sqlKeys);
   check(keyProblems.length === 0, "TS 与 SQL 的必需字段表逐项一致", keyProblems.join("；"));
 
-  // 反向控制：从 SQL 那份里拿掉 left_variant，比对**必须**报出来。
-  const tamperedSql = migSrc.replace(
+  // 反向控制：从 SQL **生效那一份**里拿掉 left_variant，比对**必须**报出来。
+  //
+  // ⚠️ 用 `replaceAll`：那一行在三个迁移里各出现一次，只改第一处的话
+  // 生效定义没变，而解析器读的是生效那一份 —— 这条反向控制就会空转。
+  const tamperedSql = migSrc.replaceAll(
     "then array['step', 'axis', 'pair_id', 'left_variant']",
     "then array['step', 'axis', 'pair_id']",
   );
@@ -1035,7 +1104,173 @@ console.log("\n\x1b[1m八 · 事件写入失败之后（2026-09-11 人工验收�
   }
 }
 
+// ================================================================ 十 · 上传页（阶段 6 第一批）
+console.log("\n\x1b[1m十 · 上传页 · 失败分类（阶段 6 第一批）\x1b[0m");
+{
+  const f = require_(join(outUpload, "failures.js"));
+  const migDir2 = join(WEB, "..", "supabase", "migrations");
+  const migAll = readdirSync(migDir2)
+    .filter((x) => x.endsWith(".sql")).sort()
+    .map((x) => readFileSync(join(migDir2, x), "utf8")).join("\n");
+  const pySrc = readFileSync(join(WEB, "..", "api", "api", "upload_failures.py"), "utf8");
+
+  // -------- 10.1 三处落地的闭集：SQL（唯一出处）· Python（分类+状态码）· TS（文案）
+  //
+  // 三处存在 ≠ 三处一致（口径 F33）。少了这一节，后端加一类而前端没加的表现是
+  // **用户看到一句兜底文案**，而那句兜底会把一个本来能说清的失败说成
+  // 「请重试」—— 正是 PRD §10 明确禁止的那种无信息量提示。
+  function parseSqlKinds(sql) {
+    const blocks = [...sql.matchAll(
+      /create or replace function public\.f3_deck_upload_failure_kinds[\s\S]*?\$\$;/g)];
+    if (!blocks.length) return null;
+    const block = blocks[blocks.length - 1][0];   // ← 生效的那一份（同 7.1 的教训）
+    const arr = /select array\[([\s\S]*?)\]/.exec(block)?.[1] ?? "";
+    return [...arr.matchAll(/'(\w+)'/g)].map((m) => m[1]);
+  }
+  const sqlKinds = parseSqlKinds(migAll);
+  check(sqlKinds !== null, "迁移里找到 f3_deck_upload_failure_kinds");
+  check(sqlKinds?.length === 8, "SQL 解析出 8 类", `实得 ${sqlKinds?.length}`);
+  check(eq(sorted_(f.FAILURE_KINDS), sorted_(sqlKinds ?? [])),
+    "TS 的 FAILURE_KINDS 与 SQL 逐项一致",
+    `TS ${JSON.stringify(sorted_(f.FAILURE_KINDS))} vs SQL ${JSON.stringify(sorted_(sqlKinds ?? []))}`);
+
+  // 反向控制：SQL 少一类时比对必须变红。
+  check(
+    !eq(sorted_(f.FAILURE_KINDS),
+        sorted_(parseSqlKinds(migAll.replace("    'unparsable',\n", "")) ?? [])),
+    "反向控制：SQL 少一类时比对变红",
+    "← 少了它，两个空数组之间的相等也会被读成一致",
+  );
+
+  // Python 侧那份（分类的服务端出处）。**从源文件解析**，不在这里抄第三份。
+  const pyKinds = [...(/FAILURE_KINDS: tuple\[str, \.\.\.\] = \(([\s\S]*?)\)/.exec(pySrc)?.[1] ?? "")
+    .matchAll(/"(\w+)"/g)].map((m) => m[1]);
+  check(pyKinds.length === 8, "Python 侧解析出 8 类", `实得 ${pyKinds.length}`);
+  check(eq(sorted_(f.FAILURE_KINDS), sorted_(pyKinds)), "TS 与 Python 的闭集逐项一致");
+
+  // -------- 10.2 `retryable` 与 Python 的 RETRYABLE_KINDS 同源
+  //
+  // 方向是刻意取小的：把可重试判成不可重试，用户少点一次按钮；
+  // **反过来他会一直重试一个永不成功的上传**。
+  const pyRetryable = [...(/RETRYABLE_KINDS: frozenset\[str\] = frozenset\(\{([\s\S]*?)\}\)/
+    .exec(pySrc)?.[1] ?? "").matchAll(/"(\w+)"/g)].map((m) => m[1]);
+  check(pyRetryable.length === 2, "Python 侧解析出 2 类可重试", pyRetryable.join(" · "));
+  const tsRetryable = f.FAILURE_KINDS.filter((k) => f.FAILURE_COPY[k].retryable);
+  check(eq(sorted_(tsRetryable), sorted_(pyRetryable)),
+    "TS 的 retryable 与 Python 的 RETRYABLE_KINDS 一致",
+    `TS ${JSON.stringify(sorted_(tsRetryable))} vs Py ${JSON.stringify(sorted_(pyRetryable))}`);
+  check(!tsRetryable.includes("duplicate_in_course"),
+    "「已经有这份文件了」不给重试按钮", "← 重试会再失败一次，而事实是什么都不用做");
+  check(!tsRetryable.includes("unparsable"),
+    "「读不出文字」不给重试按钮", "← 重试一个永远不会成功的上传");
+
+  // -------- 10.3 每一类都有自己的文案，且不含无信息量的措辞（PRD §10）
+  const emptyCopy = f.FAILURE_KINDS.filter(
+    (k) => !f.FAILURE_COPY[k]?.title?.trim() || !f.FAILURE_COPY[k]?.action?.trim());
+  check(emptyCopy.length === 0, "八类各有 title 与 action", emptyCopy.join(" "));
+
+  const titles = f.FAILURE_KINDS.map((k) => f.FAILURE_COPY[k].title);
+  check(new Set(titles).size === titles.length,
+    "八条 title 互不相同", "← 相同就等于压成了「上传失败」");
+
+  // 「请稍后重试」这类无信息量提示：PRD §10 明确禁止。
+  const vacuous = f.FAILURE_KINDS.filter((k) =>
+    /请稍后(再)?重试|稍后再试|未知错误，请重试/.test(
+      f.FAILURE_COPY[k].title + f.FAILURE_COPY[k].action));
+  check(vacuous.length === 0, "没有「请稍后重试」这类无信息量文案", vacuous.join(" "));
+
+  // PPTX 那一类**不许**说成「不支持」——会让用户以为永远不支持而去手动转格式。
+  const pptx = f.FAILURE_COPY.pptx_not_implemented;
+  check(/还没做|尚未|在做/.test(pptx.title + pptx.action),
+    "PPTX 那一类说的是「还没做」", pptx.title);
+  check(!/^不支持/.test(pptx.title), "PPTX 那一类不以「不支持」开头");
+  // 允许控制：真正不支持的那一类**要**说「只能读 .pdf」。
+  check(/\.pdf/.test(f.FAILURE_COPY.unsupported_format.action),
+    "「不是 PDF」那一类点名只能读 .pdf");
+
+  // 「已经有这份文件了」要说清**不用重新上传**。
+  check(/不用(重新)?(再)?上传|已经可以/.test(f.FAILURE_COPY.duplicate_in_course.action),
+    "重复那一类说清不用重新上传", f.FAILURE_COPY.duplicate_in_course.action);
+
+  // -------- 10.4 状态码兜底表与 Python 的 HTTP_STATUS_BY_KIND 同源
+  const pyStatus = Object.fromEntries(
+    [...pySrc.matchAll(/"(\w+)": (\d{3}),/g)].map((m) => [m[1], Number(m[2])]));
+  check(Object.keys(pyStatus).length === 8, "Python 侧解析出 8 个状态码映射",
+    `实得 ${Object.keys(pyStatus).length}`);
+  const statusProblems = f.FAILURE_KINDS.filter(
+    (k) => f.KIND_BY_STATUS[pyStatus[k]] !== k);
+  check(statusProblems.length === 0, "TS 的状态码兜底表与 Python 互为反函数",
+    statusProblems.join(" "));
+  check(new Set(Object.values(pyStatus)).size === 8,
+    "八类各有不同的状态码", "← 复用会让前端按状态码分支时把两类并成一类");
+
+  // -------- 10.5 认不出来的分类：回落 unknown，但 `matched` 为 false
+  check(f.copyFor("unsupported_format").matched === true, "认得的分类 matched=true");
+  const unmatched = f.copyFor("brand_new_kind_from_the_future");
+  check(unmatched.matched === false, "认不出的分类 matched=false",
+    "← 页面据此显示「后端可能加了一类而前端没跟上」");
+  check(unmatched.title === f.FAILURE_COPY.unknown.title, "认不出的分类回落 unknown 文案");
+  check(f.copyFor(undefined).matched === false, "没有分类时也回落 unknown");
+  check(f.kindFromStatus(501) === "pptx_not_implemented", "kindFromStatus 认得 501");
+  check(f.kindFromStatus(418) === "unknown", "kindFromStatus 兜底 unknown");
+}
+
+// ================================================================ 十一 · 上传页的接线
+console.log("\n\x1b[1m十一 · 上传页 · 接线（阶段 6 第一批）\x1b[0m");
+{
+  const page = readFileSync(join(WEB, "app", "courses", "page.tsx"), "utf8");
+  const client = readFileSync(join(WEB, "app", "courses", "upload-client.tsx"), "utf8");
+  const clientCode = stripComments(client);
+  const pageCode = stripComments(page);
+
+  // `session_id` 是这一页唯一的埋点责任。不带的话服务端一条事件都不发
+  // （它不现编一个——编了会把「平均会话轮次」这个北极星指标改成假数）。
+  check(/session_id=\$\{encodeURIComponent\(sessionId\)\}/.test(clientCode),
+    "上传请求带 session_id", "← 不带则服务端一条事件都不发，且它不现编");
+
+  // `sessionId` 必须在**服务端**抽（React #418：客户端组件 SSR 与 hydrate
+  // 各渲染一次，渲染期取随机数两侧会分叉）。
+  check(/newSessionId\(\)/.test(pageCode), "sessionId 在服务端页面里抽");
+  check(!/newSessionId/.test(clientCode), "客户端组件不调 newSessionId",
+    "← React #418：SSR 与 hydrate 两侧会分叉");
+
+  // 口径 F51：这一页**不构造**那两个事件（它们的字段全在服务端产生）。
+  for (const bad of ["deck_uploaded", "complete_event", "REQUIRED_PAYLOAD_KEYS"]) {
+    check(!new RegExp(bad).test(clientCode), `客户端不构造 ${bad}`,
+      "← 口径 F51：字段全部产生在服务端，浏览器一个都不知道");
+  }
+
+  // 直连产品服务端，**不走 route handler 代理**（Vercel 请求体上限 4.5MB，
+  // 而上传上限 50MB —— 代理会把大课件挡在 Vercel 那一层）。
+  check(/fetch\(`\$\{apiBase\}/.test(clientCode), "直连 apiBase，不走本站代理",
+    "← Vercel serverless 请求体上限 4.5MB，上传上限 50MB");
+  check(!/fetch\(["'`]\/api\//.test(clientCode), "没有指向本站 /api/ 的上传路径");
+
+  // 失败按分类显示。
+  check(/copyFor\(/.test(clientCode), "失败走 copyFor 的分类文案");
+  check(/failure_kind/.test(clientCode), "优先读响应体里的 failure_kind",
+    "← 从状态码反推会丢信息（415 与 501 都是格式家族）");
+  check(/kindFromStatus\(/.test(clientCode), "状态码只作兜底");
+
+  // 状态挂在 DOM 上，回归工具不按中文文案定位（改文案不该让断言静默变绿）。
+  for (const marker of ["data-state", "data-failure-kind", 'data-field="upload-failure"',
+                        'data-field="upload-ok"', 'data-field="retry"',
+                        'data-field="unknown-kind"']) {
+    check(client.includes(marker), `DOM 上有 ${marker}`);
+  }
+  check(/data-state=\{/.test(pageCode), "页面有终态标记 data-state",
+    "← 三个分支各恰好一个，供回归工具等待与断言");
+  check(/no-api-base/.test(pageCode), "缺 NEXT_PUBLIC_API_BASE_URL 时点名说清",
+    "← 不在 lib/env.ts 抛：那会让整站因为一个没部署的服务起不来");
+
+  // 串行上传：并行会让同一门课的两份同名文件同时撞唯一索引，
+  // 而那时「先查后提示」查不到任何一份（两边都还没插进去）。
+  check(/for \(const it of added\) await uploadOne\(it\)/.test(clientCode),
+    "多份文件串行上传", "← 并行时「先查」两边都查不到，双双撞唯一索引");
+}
+
 rmSync(out, { recursive: true, force: true });
+rmSync(outUpload, { recursive: true, force: true });
 
 console.log(`\n${failed === 0 ? "\x1b[32m" : "\x1b[31m"}${passed} 绿 / ${failed} 红\x1b[0m\n`);
 process.exit(failed === 0 ? 0 : 1);

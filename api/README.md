@@ -8,12 +8,39 @@
 python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"
 cp .env.example .env && $EDITOR .env
 
-.venv/bin/python -m pytest                    # 26 条，零 API 成本
+.venv/bin/python -m pytest                    # 118 条，零 API 成本
 .venv/bin/uvicorn api.main:app_from_env --factory --reload
 ```
 
 护栏跑在 web 那条链里：`cd ../web && npm run verify:api`。
 **没有 `.venv` 它判红，不跳过** —— 理由见 `web/scripts/verify_api.mjs` 文件头。
+
+### ⚠️ macOS + python.org 的 Python：先装一次根证书
+
+**python.org 装的 CPython（本项目用 3.13）默认不带 CA 根证书**，它不读系统钥匙串。
+于是任何走 HTTPS 的脚本（`ingest_real.py` / `verify_retrieval_prod.py` /
+`verify_corpus_prod.py` / `acceptance_p0_p3.py`）第一发就抛：
+
+```
+ssl.SSLCertVerificationError: [SSL: CERTIFICATE_VERIFY_FAILED]
+unable to get local issuer certificate
+```
+
+跑一次就好：
+
+```bash
+/Applications/Python\ 3.13/Install\ Certificates.command
+# 或者：.venv/bin/pip install -U certifi && export SSL_CERT_FILE=$(.venv/bin/python -m certifi)
+```
+
+**它不是脚本的 bug，是解释器装出来就少一样东西**——而报错那句话
+（「unable to get local issuer certificate」）读起来像是对方的证书有问题，
+很容易往错的方向查。
+
+⚠️ **不要用关掉校验来绕过它。** `scripts/prod_verify.py` 的 `ssl_context()`
+找不到根证书时**直接退出**，不降级成不校验：关掉校验的脚本仍然会全绿，
+而它验的东西已经不是「与真库的 TLS 连接」了——**一个永远通过的检查不是检查**
+（口径 F16）。`supabase/verify_rls_prod.py` 与 `verify_corpus_prod.py` 里是同一份处置。
 
 ---
 
@@ -133,6 +160,51 @@ F1 阶段 1.5 论证过：F1 全部读写落在一张表上，多一跳 FastAPI 
 | **`session_id` 缺了就不发**，不现编 | 现编的话每一轮变成一个独立会话，而「平均会话轮次」是北极星指标——那个数会静静变成 1.0 附近。少发事件是可见的损失，编一个 session 是不可见的错数 |
 | **null 有含义的字段不进必需清单**（口径 **F50**） | `f1_event_payload_ok` 把 JSON null 判成「没有」。`all_activated_passed`（D42）与 `first_token_latency_ms`（§9.2 不塞假数）进了清单会让**一条完全正确的事件被静默拒掉** |
 | **失败不打断讲解，但也不静默**（F42） | 本次请求内重试（阶梯 200/700ms，比浏览器那份短——用户正在等这一屏），结果进响应的 `events` 字段 |
+
+## 七之二、上传（阶段 6 第一批）
+
+`POST /courses/{id}/documents?session_id=...` 现在多做两件事：
+
+**① 先查后提示。** 建行之前查一次这门课有没有同一份文件，提示说得出
+**是哪一份、什么时候传的**。⚠️ **它不替代唯一索引，是加在它前面的一层**——
+先查后插之间有窗口（两个标签页同时传），那时仍然是 23505 → 409。
+事件里记 `caught_by`（`pre_check` / `unique_index`）：**如果后者长期占多数，
+说明「先查」这一层没在起作用**，而它的绿是看不见的。
+
+**② 两个事件**（PRD §13.1 第一行）：`deck_uploaded` / `deck_upload_failed`。
+`deck_uploaded` 是 `style_events.deck_id` 那一列**第一个真正的填写者**
+（阶段 4 登记的「恒 NULL」由此解掉）；失败时 `deck_id` 为 null，
+**那是事实不是遗漏**——没有 document 行。
+
+### 失败分八类，**不压成「上传失败」**
+
+取值域的唯一出处是 `api/api/upload_failures.py` 的 `FAILURE_KINDS`
+（另两处落地：迁移里的 `f3_deck_upload_failure_kinds()` 做数据库护栏、
+`web/lib/upload/failures.ts` 做文案，各有一条从源文件解析回来的比对）。
+
+一个类一个 HTTP 状态码，**不复用**：复用会让前端按状态码分支时把两类并成一类。
+最容易被合掉的一对是 `pptx_not_implemented`（我们没做，**会随交付消失**）
+与 `unparsable`（这份文件读不了，**不会消失**）——合了之后 §3.2 的
+「课件支持率」变化说不清是哪一边动了。
+
+响应体形状：**`detail` 保持字符串**（人话，给这一次请求的用户），
+`failure_kind` 与 `retryable` 是**同级字段**。把 `detail` 换成对象会让
+`scripts/ingest_real.py` 里那条「409 且是人话，不是 23505」当场变红。
+
+⚠️ **异常原文不进事件**：`unparsable` 的原文来自解析器，而它谈论的是
+**用户上传的文件内容**（PRD §12.2 / 口径 F32 的同一条）。原文回给用户、留在日志里。
+
+### CORS
+
+上传页在浏览器里**直连本服务**（Vercel 的 serverless 请求体上限 4.5MB，
+本服务上限 50MB），所以要 `CORS_ALLOW_ORIGINS`。
+
+| | |
+| --- | --- |
+| **不配 = 空清单 = 浏览器一律被挡** | 不是默认放开。配错 → 上传页当场报错（看得见）；默认放开 → 一切正常，直到有人发现任意站点都能拿着用户 token 打它 |
+| `*` **启动就失败** | `load_settings()` 直接拒。带凭据的跨源配 `*` 是经典开门配置，而它不报错 |
+| **不开 `allow_credentials`** | 鉴权走 `Authorization` 头，不用 cookie |
+| `x-build-commit` 进 `expose_headers` | 跨源默认读不到自定义头，而口径 F17 在浏览器侧要靠它 |
 
 ## 八、部署
 

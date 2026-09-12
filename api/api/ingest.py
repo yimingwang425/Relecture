@@ -28,6 +28,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any, Protocol
 
@@ -35,12 +36,29 @@ __all__ = ["Embedder", "IngestResult", "DuplicateDocument", "ingest_document", "
 
 
 class Embedder(Protocol):
-    """把一批文本变成一批向量。维度必须等于 `slice_embeddings.embedding` 的 1024。"""
+    """把一批文本变成一批向量。维度必须等于 `slice_embeddings.embedding` 的 1024。
+
+    ⚠️ **返回类型写的是 `Sequence[Sequence[float]]`，不是 `list[list[float]]`。**
+    生产的那个实现（`retrieval.embed.OpenAIEmbedder`）返回的是 **`np.ndarray`**。
+    写成 `list[list[float]]` 的后果不是类型标注不准，是**下游真的会炸**：
+    `if vectors:` 对一个多元素 ndarray 抛
+    `ValueError: The truth value of an array with more than one element is ambiguous`。
+
+    这一条是第一次真跑摄入时抓出来的（2026-09-12），
+    **与 F16 是同一个形态**：协议声明、所有测试替身、以及依赖它的下游代码
+    三者都来自「我写下的那个类型」，**没有一端来自生产实现真的返回什么**。
+    于是 46 条 pytest 全绿，而这条链第一次碰到真嵌入器就 422。
+
+    处置有两层：① 本模块在边界上**归一化成纯 Python list**（见 `ingest_document`），
+    下游从此与类型无关；② `tests/test_ingest.py` 里有一个**返回 ndarray** 的假嵌入器，
+    它照着生产实现的返回类型写，并有一条断言钉着「生产实现确实返回 ndarray」——
+    生产哪天改了返回类型，那条会红，而不是让假货静静地停在旧类型上。
+    """
 
     name: str
     dimensions: int
 
-    def embed(self, texts: list[str]) -> list[list[float]]: ...
+    def embed(self, texts: list[str]) -> Sequence[Sequence[float]]: ...
 
 
 class DuplicateDocument(Exception):
@@ -153,7 +171,12 @@ def ingest_document(
         # ⚠️ compose 要**整份** sliceset —— boilerplate 检测是文档范围的。
         texts = compose(sliceset, SELECTED_VARIANT)
         ordered = [texts[s.slice_id] for s in kept]
-        vectors = embedder.embed(ordered)
+
+        # ⚠️ **在边界上归一化成纯 Python list。** 生产的嵌入器返回 np.ndarray，
+        # 而下游的 `if vectors:` 对多元素 ndarray 抛 ValueError（见 Embedder 的 docstring）。
+        # 归一化放在这里而不是每个用到的地方各判一次：类型只在这一行被关心，
+        # 后面的代码从此与「嵌入器返回什么容器」无关。
+        vectors = [[float(x) for x in row] for row in embedder.embed(ordered)]
         if len(vectors) != len(kept):
             raise ValueError(f"嵌入返回 {len(vectors)} 条，切片有 {len(kept)} 条")
 
@@ -169,7 +192,7 @@ def ingest_document(
                 f"嵌入器声称 {embedder.dimensions} 维，而 slice_embeddings.embedding "
                 f"是 vector({SELECTED_DIMENSIONS})（retrieval.selection 是唯一出处）"
             )
-        if vectors and len(vectors[0]) != SELECTED_DIMENSIONS:
+        if len(vectors) > 0 and len(vectors[0]) != SELECTED_DIMENSIONS:
             raise ValueError(
                 f"向量维度 {len(vectors[0])} ≠ vector({SELECTED_DIMENSIONS})"
             )

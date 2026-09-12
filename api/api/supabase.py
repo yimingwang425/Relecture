@@ -137,7 +137,14 @@ class SupabaseClient:
     #
     # 全部带**用户自己的 JWT**，RLS 由数据库执行（与读取同一条路径）。
 
-    def _post(self, path: str, token: str, rows: Any, *, prefer: str | None = None) -> Any:
+    def _post(self, path: str, token: str, rows: Any, *, prefer: str | None = None,
+              duplicate_message: str | None = None) -> Any:
+        """POST 一批行。
+
+        `duplicate_message` 给了就表示**这个调用点上的 23505 有确定含义**，
+        由调用点翻译成人话。⚠️ 见下面 `insert_document` 那条注释：
+        这个参数的形状是被一个真 bug 逼出来的。
+        """
         headers = {
             "apikey": self._apikey,
             "Authorization": f"Bearer {token}",
@@ -159,13 +166,43 @@ class SupabaseClient:
         if resp.status_code >= 400:
             body = resp.text[:400]
             # 23505 = 唯一索引。翻译成人话，**不把数据库错误码丢给用户**。
-            if "23505" in body and "content_sha256" in body:
-                raise DuplicateDocument("这门课里已经有同一份文件了")
+            #
+            # 判的是**错误码本身 + 调用点**，不去匹配错误正文里的列名或索引名：
+            # 那两样是数据库写的，而我们没有权威的副本可比（见 insert_document）。
+            if duplicate_message is not None and ("23505" in body or resp.status_code == 409):
+                raise DuplicateDocument(duplicate_message)
             raise SupabaseError(f"数据库返回 {resp.status_code}：{body}", status=502)
         return resp.json() if resp.content else None
 
     def insert_document(self, *, token: str, row: dict[str, Any]) -> dict[str, Any]:
-        out = self._post("/documents", token, row, prefer="return=representation")
+        """建一行 `documents`。
+
+        ## ⚠️ 这里的重复翻译修过一次（2026-09-12，第一次真跑摄入抓出来的）
+
+        原本的判断是 `if "23505" in body and "content_sha256" in body`，
+        **在真库上从来不成立**：PostgREST 的正文写的是索引名
+
+            {"code":"23505", ... "message":"duplicate key value violates unique
+             constraint \"documents_owner_course_sha_idx\""}
+
+        里面**没有 `content_sha256` 这个词**。于是重传同一份文件返回的是
+        `502 数据库返回 409：{"code":"23505",...}` —— 正是那条注释说要避免的
+        「把数据库错误码丢给用户」。
+
+        它为什么没被单测抓到：单测喂的假错误正文是**我自己写的**，
+        而我按列名写了它。**判据的两端同源**（F16 的同一形态）——
+        假正文与匹配条件都出自同一个人的同一个猜测，它们必然相等。
+
+        现在判的是**错误码 + 调用点**：`documents` 上只有一条唯一索引
+        （`documents_owner_course_sha_idx`，见 `20260911100000_f2_corpus.sql`），
+        所以这个调用点上的 23505 含义唯一，不需要去认正文里的任何字符串。
+        **不认字符串，就没有「认错字符串」这种失败。**
+
+        配套：`tests/test_ingest.py` 里那条断言喂的假正文改成了
+        **真库上实际观测到的那一份**（2026-09-12 抄录），不是手写的。
+        """
+        out = self._post("/documents", token, row, prefer="return=representation",
+                         duplicate_message="这门课里已经有同一份文件了")
         if not isinstance(out, list) or len(out) != 1:
             raise SupabaseError(f"建文档返回 {out!r}，应为 1 行")
         return out[0]
@@ -173,6 +210,16 @@ class SupabaseClient:
     def insert_slices(self, *, token: str, rows: list[dict[str, Any]]) -> None:
         if rows:
             self._post("/slices", token, rows)
+
+    def insert_events(self, *, token: str, rows: list[dict[str, Any]]) -> None:
+        """写埋点事件。**带用户自己的 JWT**——`style_events` 的策略是
+        `with check (user_id = auth.uid())`，服务端替用户写也得是用户的身份。
+
+        不加 `Prefer: return=representation`：客户端与本服务对这张表
+        **只有 insert 权限**，带 select 的返回会直接 42501。
+        """
+        if rows:
+            self._post("/style_events", token, rows)
 
     def insert_embeddings(self, *, token: str, rows: list[dict[str, Any]]) -> None:
         if rows:
@@ -187,4 +234,63 @@ class SupabaseClient:
 
     def courses(self, token: str) -> list[dict[str, Any]]:
         out = self._get("/courses?select=id,name,created_at&order=created_at.desc", token)
+        return out if isinstance(out, list) else []
+
+    def course(self, token: str, course_id: str) -> dict[str, Any] | None:
+        """一门课。读不到返回 None —— **可能是不存在，也可能是别人的**，
+        而这两件事在 RLS 下本来就该长得一样（否则课程 id 的存在性会泄露）。"""
+        out = self._get(f"/courses?select=id,name&id=eq.{course_id}", token)
+        return out[0] if isinstance(out, list) and len(out) == 1 else None
+
+    # ---------------------------------------------------------------- 检索（阶段 5）
+
+    #: `documents` 上检索要用到的列。**`unusable_pages` 在里面**：口径 X07 要求
+    #: 「哪些页读不出来」一路带到检索层，少了它，模型面对一个内容在图里的提问
+    #: 最可能的行为是基于标题编一段像样的讲解（PRD §6.2：更高危险——它看起来成功了）。
+    DOCUMENT_COLUMNS = "id,filename,verdict,unusable_pages,page_count"
+
+    def documents_in_course(self, token: str, course_id: str) -> list[dict[str, Any]]:
+        """一门课的全部文档。**整门课，不是「与问题相关的那几份」**——
+        `_render_manifest` 写的是「当前课程材料」，它列的就是这门课有什么。"""
+        out = self._get(
+            f"/documents?select={self.DOCUMENT_COLUMNS}&course_id=eq.{course_id}"
+            "&order=created_at.asc", token)
+        return out if isinstance(out, list) else []
+
+    def match_slices(self, *, token: str, course_id: str, query: list[float],
+                     model: str, ruleset: str, limit: int) -> list[dict[str, Any]]:
+        """调 `match_slices` RPC。返回 `[{document_id, slice_id, similarity}]`，**已按相似度降序**。
+
+        ⚠️ **`p_query` 直接传 JSON 数组。** 这不是推断：
+        `supabase/verify_corpus_prod.py` 第 1 步对真库观测过，
+        JSON 数组与 pgvector 文本 `'[...]'` 两种形状**都被接受**（2026-09-12）。
+
+        作用域是**一门课**（口径 F47），且函数体里另有 `owner = auth.uid()` 过滤——
+        与 RLS 两层，任一层被误改另一层还在。
+        """
+        out = self._post("/rpc/match_slices", token, {
+            "p_course_id": course_id, "p_query": query,
+            "p_model": model, "p_ruleset": ruleset, "p_limit": limit,
+        })
+        return out if isinstance(out, list) else []
+
+    #: 讲解需要的切片列。`text` 是 `IndexedSlice` 刻意不带的那一样
+    #: （它只需要排序所需字段），在这里补上。
+    SLICE_COLUMNS = "document_id,slice_id,ordinal,page_indices,title,text,char_count"
+
+    def slices_in_documents(self, token: str, document_ids: list[str]) -> list[dict[str, Any]]:
+        """按 `document_id` 批量取切片。
+
+        **一发请求取回全部命中文档的切片，再在内存里按 `(document_id, slice_id)`
+        配对**，而不是每个命中发一次请求：命中是 5 个，五次串行往返会直接加到
+        用户等待的延迟上，而这一步在生成之前。
+
+        取回的比需要的多（一份文档的全部切片），代价是几十 KB 文本；
+        换掉的是 N 次往返。这门课最大的一份实测 39 片。
+        """
+        if not document_ids:
+            return []
+        joined = ",".join(sorted(set(document_ids)))
+        out = self._get(
+            f"/slices?select={self.SLICE_COLUMNS}&document_id=in.({joined})", token)
         return out if isinstance(out, list) else []

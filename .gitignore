@@ -42,3 +42,7 @@ __pycache__/
 
 # api 的本地 venv 与 .env（根 .gitignore 已覆盖 .venv/ 与 .env*，这里只是显式化）
 api/.venv/
+
+# 真摄入验收的交接状态（含真库里的 course_id / document_id）。
+# 不入库：它指向一份具体的、临时的真库数据，换个人跑出来就是另一组 id。
+api/scripts/.ingest_real_state.json

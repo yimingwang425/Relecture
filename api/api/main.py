@@ -30,6 +30,7 @@ from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
 from .auth import AuthError, HttpJwks, Principal, TokenVerifier, bearer_token
+from .build import build_commit
 from .settings import Settings, load_settings
 from .supabase import StyleRow, SupabaseClient, SupabaseError
 
@@ -50,10 +51,44 @@ class StyleResponse(BaseModel):
 
 
 class ExplainRequest(BaseModel):
+    # ⚠️ **未知字段一律拒，不静默丢掉。** pydantic 的默认是 `extra="ignore"`，
+    # 而那个默认在 2026-09-12 真的咬了一次：Render 上跑的是阶段 4 的旧构建，
+    # 它的 `ExplainRequest` 没有 `course_id`，于是客户端发过去的 `course_id`
+    # **被静默丢掉**，检索走了替身，而响应是 **200**，正文在讲布隆过滤器
+    # （合成课件）。看起来一切正常。
+    #
+    # 收紧成 `forbid` 之后，同一形态的下一次会是 **422 并点名那个字段**——
+    # 「服务端比客户端旧」从一个静默的错答变成一条响亮的失败。
+    # 这是 `web/lib/env.ts`「宁可起不来」那条纪律在请求体上的同一件事。
+    model_config = {"extra": "forbid"}
+
     question: str = Field(min_length=1, max_length=500)
+    #: 检索作用域（口径 F47：课程是实体，作用域是一门课，不是一份文档）。
+    #:
+    #: **可选**，而且两条路的语义完全不同，不许混：
+    #:   · 给了 → 走 `SupabaseRetriever`，真检索这门课的语料；
+    #:   · 不给 → 走阶段 3 那个**替身**（固定合成课件）。
+    #:
+    #: 留着替身那条路不是为了兼容，是因为**验收纪律 1（P0 vs P3 真调模型）
+    #: 的判据不能依赖检索**：它比的是同一份材料在两个档位下的段落长度，
+    #: 材料一变那个比较就不成立了。风格断言走替身是合法的
+    #: （`InMemoryRetriever` 的原话：用它做召回断言不合法，风格断言合法）。
+    course_id: str | None = None
+    #: 一次页面加载 = 一个 session（**占位口径**，PRD §3.4.5 的切分规则至今未定）。
+    #:
+    #: ⚠️ **缺了它就一条事件都不发，服务端不现编一个。** 现编的后果是每一轮
+    #: 都变成一个独立会话，而「平均会话轮次」是北极星指标（PRD §3.1）——
+    #: 那个数会静静地变成 1.0 附近，看起来像一个真实的产品结论。
+    #: 少发事件是可见的损失，编一个 session 是不可见的错数。
+    session_id: str | None = None
+    #: 会话内第几轮。**按用户可见的输出计，重生成不计入轮次**（PRD §13.0）。
+    #: 由调用方给：只有它知道这是第几轮（本服务不持有会话状态）。
+    turn_index: int = 1
 
 
 class CourseRequest(BaseModel):
+    model_config = {"extra": "forbid"}   # 同上
+
     name: str = Field(min_length=1, max_length=200)
 
 
@@ -101,10 +136,35 @@ def create_app(
         except SupabaseError as exc:
             raise HTTPException(status_code=exc.status, detail=exc.message) from exc
 
+    # ---------------------------------------------------------------- 构建标识
+    #
+    # 口径 F17：「验收前先核对读的是哪个构建」。web 侧靠响应头 `x-build-commit`，
+    # **这个服务此前一个标识都没有** —— 2026-09-12 因此有 8 条断言在一个
+    # 阶段 4 的旧构建上通过了（详见 `api/api/build.py` 的模块说明）。
+    # 同名同义的头，加在**每个**响应上，包括错误响应。
+    @app.middleware("http")
+    async def add_build_header(request: Any, call_next: Any) -> Any:
+        response = await call_next(request)
+        commit = build_commit()
+        # 取不到就**不加这个头**，不加一个 'unknown'。
+        # 「答不出自己是谁」与「答了，内容是 unknown」在验收里含义相反。
+        if commit:
+            response.headers["x-build-commit"] = commit
+        return response
+
     @app.get("/health")
     def health() -> dict[str, Any]:
         # **不报凭据有没有配好之外的任何东西**，也不报版本以外的项目信息。
-        return {"status": "ok", "model_key_configured": cfg.anthropic_api_key is not None}
+        #
+        # `build_commit` 是例外，且它不是项目信息而是**构建标识**：
+        # 一个 private 仓库的 git sha 说不出仓库里有什么，而没有它，
+        # 「我在跟哪个构建说话」这个问题就答不出来（口径 F17）。
+        # 取不到时是 **null**，不是 'unknown' —— 见 `build.py`。
+        return {
+            "status": "ok",
+            "model_key_configured": cfg.anthropic_api_key is not None,
+            "build_commit": build_commit(),
+        }
 
     @app.get("/me/style", response_model=StyleResponse)
     def me_style(both: tuple[Principal, StyleRow] = Depends(style_row)) -> StyleResponse:
@@ -123,13 +183,17 @@ def create_app(
 
     @app.post("/explain")
     def explain(req: ExplainRequest, both: tuple[Principal, StyleRow] = Depends(style_row)) -> dict[str, Any]:
-        """一轮讲解。**这是 `style_config` 那一行第一次影响模型输出。**"""
+        """一轮讲解。**这是 `style_config` 那一行第一次影响模型输出。**
+
+        阶段 5 起 `course_id` 可选：给了就真检索那门课的语料
+        （`SupabaseRetriever`，RLS 由数据库执行），不给走阶段 3 的替身。
+        """
         from explain.pipeline import Trajectory, run_round
         from explain.review import RuleReviewer
         from explain.style_axes import style_config_for
         from explain.style_prompt import render_all_style_rules
 
-        _, row = both
+        p, row = both
 
         if cfg.anthropic_api_key is None and model_factory is None:
             # 缺 key 是部署配置问题，不是用户输入问题——点名说清，不写「请重试」。
@@ -142,25 +206,78 @@ def create_app(
             # 「用户选了 P3」与「库里有个我们不认识的值」在输出里长得一模一样。
             raise HTTPException(status_code=500, detail=str(exc)) from exc
 
+        # ---- 检索后端：给了 course_id 就是真的，没给就是阶段 3 那个替身。
+        #
+        # ⚠️ **两条路必须在返回里能被分辨**（口径 F34 的同一条）：压成一句
+        # 「检索完成」的话，一次走替身的调用和一次真检索在响应里长得一模一样，
+        # 而「用合成课件答的」与「用你的课件答的」是两件完全不同的事。
+        # 所以下面 `retrieval.meta.backend` 原样回传。
+        if retriever is not None:
+            active = retriever
+            label = _COURSE_LABEL
+        elif req.course_id:
+            course = db.course(p.token, req.course_id)
+            if course is None:
+                # **不区分「不存在」与「是别人的」**：区分了就等于用 404/403
+                # 泄露课程 id 的存在性，而 RLS 的整个意思就是让别人的行不可见。
+                raise HTTPException(404, "找不到这门课（可能不存在，也可能不是你的）")
+            active = _course_retriever(db, p.token, req.course_id,
+                                       embedder_factory or _default_embedder)
+            label = course["name"]
+        else:
+            active = _default_retriever()
+            label = _COURSE_LABEL
+
         make_model = model_factory or _default_model
         result = run_round(
             round_index=1,
             question=req.question,
             trajectory=Trajectory(),
-            retriever=retriever or _default_retriever(),
+            retriever=active,
             model=make_model(),
             reviewer=RuleReviewer(style),
             # ← A 类 + B 类，拼法与 pairs.json 里 16 个样例逐字节同形（口径 F19/F45）
             style_rules=render_all_style_rules(style, row.b_class),
-            course_label=_COURSE_LABEL,
+            course_label=label,
             review_enabled=True,
         )
 
+        # ---- §13.0 的四个事件。**在返回之前发**，且失败不打断这次讲解。
+        #
+        # 在 Python 侧发而不是让前端发：这四个事件的全部字段都产生在
+        # 刚刚那次 `run_round()` 里（token 四类分列、成本与价目、逐维得分、
+        # 检索分数分布），**浏览器一个都不知道**。理由详见 `api/api/events.py`。
+        from .events import build_explain_events, record_events
+
+        events_result: dict[str, Any]
+        try:
+            built = build_explain_events(
+                result, config=style, question=req.question,
+                course_id=req.course_id, turn_index=req.turn_index,
+            )
+            events_result = record_events(
+                db, token=p.token, user_id=p.user_id, arm=row.f1_arm,
+                session_id=req.session_id, events=built, course_id=req.course_id,
+            )
+        except Exception as exc:  # noqa: BLE001
+            # 构造失败（缺必需字段）是我们自己的 bug，**不该让用户丢掉这段讲解**。
+            # 但也不静默：原样进响应，调用方能显示出来（同口径 F42）。
+            events_result = {"emitted": 0, "attempted": 0, "failed": 0,
+                             "build_error": f"{type(exc).__name__}: {exc}"}
+
         ev = result.final_review.evaluation
+        ctx = result.context
         return {
+            # 埋点的结果**进响应**。写不进去不打断讲解，但也不许静默（口径 F42）。
+            "events": events_result,
             "text": result.final_text,
             "accepted": result.accepted,
             "regenerations": result.regenerations,
+            # ---- 检索（阶段 5）。**原样回传 backend**，让「真检索」与「替身」
+            # 在响应里分得开；`slices` 里带 document_id 之外的全部身份信息，
+            # §13.0 的 `retrieval_executed` 就从这里取。
+            "course_id": req.course_id,
+            "retrieval": ctx.to_dict(),
             # 这三个是验收要读的：配置真的进了 prompt 吗、真的改变了输出吗。
             "detail_level": row.detail_level,
             "config_fingerprint": style.fingerprint(),
@@ -253,7 +370,19 @@ def _default_embedder() -> Any:
     return OpenAIEmbedder(SELECTED_MODEL, SELECTED_DIMENSIONS)
 
 
-_COURSE_LABEL = "合成课件（阶段 3：检索尚未接库）"
+_COURSE_LABEL = "合成课件（未指定课程：检索走阶段 3 的替身）"
+
+
+def _course_retriever(db: Any, token: str, course_id: str, make_embedder: Any) -> Any:
+    """真检索后端。**每次请求新建，绝不缓存**——它持有某一个用户的 JWT。
+
+    与下面 `_default_retriever()` 的 `@lru_cache` 对照着看：那个缓存的是替身，
+    替身不持有任何人的东西。
+    """
+    from .retriever import SupabaseRetriever
+
+    return SupabaseRetriever(store=db, embedder=make_embedder(),
+                             token=token, course_id=course_id)
 
 
 def _default_model() -> Any:

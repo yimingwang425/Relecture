@@ -45,9 +45,9 @@ from __future__ import annotations
 import time
 from typing import Any
 
-__all__ = ["EXPLAIN_EVENT_TYPES", "UPLOAD_EVENT_TYPES", "REQUIRED_KEYS",
-           "build_explain_events", "complete_event", "record_events",
-           "SERVER_RETRY_DELAYS_MS"]
+__all__ = ["EXPLAIN_EVENT_TYPES", "UPLOAD_EVENT_TYPES", "MARK_EVENT_TYPES",
+           "REQUIRED_KEYS", "build_explain_events", "build_mark_event",
+           "complete_event", "record_events", "SERVER_RETRY_DELAYS_MS"]
 
 EXPLAIN_EVENT_TYPES = (
     "explain_turn",
@@ -60,6 +60,14 @@ EXPLAIN_EVENT_TYPES = (
 #: 「成功/失败」由 **event_type 本身**承担，不另立布尔字段——立了就有两处出处，
 #: 而它们漂开的表现是「一条 deck_uploaded 里写着 ok=false」。
 UPLOAD_EVENT_TYPES = ("deck_uploaded", "deck_upload_failed")
+
+#: F4（F4 方案 §3.4）。一条 mark 一条事件。
+#:
+#: **在 Python 侧构造，不让前端发**，判据仍是口径 F51「数据在哪」：
+#: `mark_count_after` 产生在服务端（它是 mark 落库之后的一次计数），
+#: 浏览器不知道这个数。让前端发就得先把它序列化过去再发回来，
+#: 多一份可以漂的副本，而且**前端能改这个数**。
+MARK_EVENT_TYPES = ("confusion_mark_created",)
 
 #: 必需字段清单的**镜像**。唯一出处是迁移里的 `f1_event_required_keys`
 #: （`20260912120000_f3_explain_events.sql`），`verify_rls_local.mjs` 从 SQL 原文
@@ -89,6 +97,9 @@ REQUIRED_KEYS: dict[str, tuple[str, ...]] = {
     # 把它们列成必需 = **最该被采集的那一类失败进不了库**
     # （用户第一次上传就撞上格式错误）。
     "deck_upload_failed": ("failure_kind", "filename", "bytes"),
+    # ---- F4 ----
+    # 三个都不可能是 null：这条事件在 mark 已经落库之后才发。
+    "confusion_mark_created": ("round_id", "slice_ids", "mark_count_after"),
 }
 
 #: 服务端的退避阶梯。**比浏览器那份短**——用户正在等这一屏
@@ -115,7 +126,50 @@ def complete_event(event_type: str, payload: dict[str, Any]) -> dict[str, Any]:
                if payload.get(k) is None or payload.get(k) == ""]
     if missing:
         raise ValueError(f"{event_type} 的 payload 缺必需字段：{', '.join(missing)}")
+    bad = _slice_ids_problem(event_type, payload)
+    if bad:
+        raise ValueError(f"{event_type} 的 payload {bad}")
     return {"event_type": event_type, "payload": payload}
+
+
+def _slice_ids_problem(event_type: str, payload: dict[str, Any]) -> str:
+    """`slice_ids` 非空护栏。空则返回一句人话，没问题返回空串。
+
+    ## 为什么「键在」还不够
+
+    `slice_ids` 早就在 `REQUIRED_KEYS` 与数据库的必需字段清单里，
+    但那两处判的都是**键在不在**——`[]` 完全通过（它不是 None、不是 `""`）。
+    于是「检索命中了 5 片，而事件里的 slice_ids 是空的」在此之前
+    **没有任何东西会红**。
+
+    这不是一条洁癖：`retrieval_executed.slice_ids` 是护栏指标「重复提问率」
+    的**唯一**数据来源（口径 F62），漏了就再也补不回来。
+
+    ## 空检索是例外，且只对 `retrieval_executed` 成立
+
+    一片都没检索到是**合法状态**（`build_user_turn` 里那句
+    「【本轮没有检索到任何课件片段】」），而且它更该被采集到——
+    一并拒掉就是 F50 那条教训的复发。所以 `slice_count == 0` 时放行。
+    `confusion_mark_created` 没有这个例外：写入侧就拒绝空 mark。
+
+    ⚠️ **这份判据是数据库那条 `f4_event_slice_ids_ok` 的镜像**
+    （`20260913150000_f4_confusion_marks.sql`）。两份存在 ≠ 两份一致，
+    所以 `tests/test_marks.py` 里有一条把两边喂同一组 payload 逐个比对的断言。
+    """
+    if event_type not in ("retrieval_executed", "confusion_mark_created"):
+        return ""
+    ids = payload.get("slice_ids")
+    if ids is None:
+        return ""       # 缺键是上面那条的活，不在这里重复判
+    if not isinstance(ids, list):
+        return f"的 slice_ids 不是数组（{type(ids).__name__}）——构造处写错了形状"
+    if ids:
+        return ""
+    if event_type == "retrieval_executed" and payload.get("slice_count") == 0:
+        return ""       # 空检索：合法状态，而且更该被采集到
+    return ("的 slice_ids 是空的，而本轮并非空检索"
+            f"（slice_count={payload.get('slice_count')!r}）。"
+            "它是护栏指标「重复提问率」的唯一来源，漏了就再也补不回来")
 
 
 #: 旧名字保留：`test_events.py` 与 `build_explain_events` 用的是它。
@@ -257,6 +311,29 @@ def build_explain_events(
         "course_id": course_id,
     }))
     return out
+
+
+def build_mark_event(*, round_id: str, slice_keys: list[str], mark_count_after: int,
+                     created: bool) -> dict[str, Any]:
+    """F4 · `confusion_mark_created`。**纯函数，不碰网络。**
+
+    `created=False` 表示这一次是幂等重复（同一 `round_id` 点了第二次）。
+    **仍然发事件**，只是带上 `created: false`：
+
+      「同一轮被点了两次」是一个真实的用户行为信号（点了没反应就再点一次），
+      不发的话它在数据里与「只点了一次」完全一样。而 `mark_count_after`
+      在这两种情况下都是对的（重复时它不涨），所以两者不会把计数搅乱。
+    """
+    return complete_event("confusion_mark_created", {
+        "round_id": round_id,
+        # 与 `confusion_marks.slice_ids` 里存的是**同一份**（同一个 `slice_key()`）。
+        "slice_ids": list(slice_keys),
+        "mark_count_after": mark_count_after,
+        "slice_count": len(slice_keys),
+        # 幂等重复也发。见 docstring。
+        "created": created,
+        "prompt_template_version": _prompt_template_version(),
+    })
 
 
 def _slice_identities(ctx: Any) -> list[dict[str, Any]]:

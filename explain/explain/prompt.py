@@ -164,19 +164,36 @@ def render_gap_note(gap: Any) -> str:
     return "\n".join(lines)
 
 
-def build_user_turn(context: ContextPack, question: str, gap: Any = None) -> str:
-    """一轮用户消息 = 本轮检索片 + 提问。
+def build_user_turn(context: ContextPack, question: str, gap: Any = None,
+                    prefix: str = "") -> str:
+    """一轮用户消息 = `prefix` + 本轮检索片 + 提问。
 
     片段带页号，因为讲解要能溯源到页；带标题，因为脱离标题的 bullet
     往往不可讲解（slicer S01 的切片单位就是按这个定的）。
+
+    ## `prefix` 是什么，为什么在这里而不在 system（口径 F57）
+
+    F4 的「这部分没看懂」：本轮命中的切片与该用户历史标记有交集时，
+    调用方（`api/api/main.py`）在这里塞一句限定语。
+
+    **它必须在本轮消息里，不能进 system。** system 段是按「会话内不变」
+    设计的（见上面 `build_system` 的 docstring），而 marks 逐轮变化——
+    放进去会让一个按「不变」设计的位置每轮都不同。
+    当前 system 约 406 token、缓存断点本来就未生效，所以这不是性能考量。
+
+    ⚠️ **本模块不知道那句话说什么**，也不该知道：措辞是 F4 的口径
+    （`api/api/marks.py` 的 `CONFUSION_NOTE`，口径 F58），
+    在这里放一份副本就是同一句话的第二处出处。
     """
     note = render_gap_note(gap)
     if context.is_empty:
         # 空检索是显式失败，比「答非所问」安全（PRD §6.2）。如实告诉模型。
         head = "【本轮没有检索到任何课件片段】"
-        return "\n\n".join(x for x in (head, note, f"学生的问题：{question}") if x)
+        return "\n\n".join(
+            x for x in (prefix, head, note, f"学生的问题：{question}") if x)
 
-    parts = ["【课件片段】"]
+    parts = [x for x in (prefix,) if x]
+    parts.append("【课件片段】")
     for s in context.slices:
         pages = "、".join(str(p) for p in s.page_indices)
         h = f"— {s.source_file} 第 {pages} 页"

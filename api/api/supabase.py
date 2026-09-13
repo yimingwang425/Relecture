@@ -25,9 +25,24 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-__all__ = ["StyleRow", "SupabaseError", "DuplicateDocument", "SupabaseClient"]
+__all__ = ["StyleRow", "SupabaseError", "DuplicateDocument", "DuplicateMark",
+           "SupabaseClient"]
 
 STYLE_COLUMNS = "user_id,detail_level,use_examples,structure,depth,f1_arm,onboarded_at"
+
+
+def _pg_array_literal(values: list[str]) -> str:
+    """`['a:b', 'c:d']` → `{"a:b","c:d"}`（PostgREST 查询参数里的数组字面量）。
+
+    **每一项都加双引号**，即使当前的键里不含逗号或花括号：
+    「现在的取值恰好安全」不是一条能长期成立的性质，而它失效时的表现是
+    一个被切成两半的键——那个键与任何东西都不相交，于是注入静默不触发。
+    """
+    out = []
+    for v in values:
+        s = str(v).replace("\\", "\\\\").replace('"', '\\"')
+        out.append(f'"{s}"')
+    return "{" + ",".join(out) + "}"
 
 
 class SupabaseError(Exception):
@@ -70,6 +85,25 @@ class DuplicateDocument(SupabaseError):
         #: 已存在的那一行（`id` / `filename` / `created_at` / `page_count`）。
         #: **只有「先查」那条路有**；被唯一索引拦下时是 None。
         self.existing = existing
+
+
+class DuplicateMark(SupabaseError):
+    """同一用户、同一 `round_id`（`confusion_marks_user_round_uniq`）。
+
+    ⚠️ **它不是一个错误，是幂等**。同一轮点两次是完全正常的用户行为
+    （点了没反应就再点一次），路由把它变成 **200**，不是 409——
+    前端不需要区分首次与重复，而**要它区分等于要它维护一个它不关心的分支**。
+
+    ## 为什么单独一个类，而不复用 `DuplicateDocument`
+
+    同名同义的两个类比两个不同名的类更危险，这条教训是 2026-09-12 的
+    真 bug（见上面那个类的 docstring）。这里的反面同样要守：
+    **一个名叫 `DuplicateDocument` 的异常从 marks 那条路抛出来**，
+    读代码的人会去查上传逻辑。名字必须说得出它谈的是什么。
+    """
+
+    def __init__(self, message: str = "同一 round_id 已经标记过") -> None:
+        super().__init__(message, status=409)
 
 
 @dataclass(frozen=True, slots=True)
@@ -162,12 +196,17 @@ class SupabaseClient:
     # 全部带**用户自己的 JWT**，RLS 由数据库执行（与读取同一条路径）。
 
     def _post(self, path: str, token: str, rows: Any, *, prefer: str | None = None,
-              duplicate_message: str | None = None) -> Any:
+              duplicate_message: str | None = None,
+              duplicate_exc: type[SupabaseError] = DuplicateDocument) -> Any:
         """POST 一批行。
 
         `duplicate_message` 给了就表示**这个调用点上的 23505 有确定含义**，
         由调用点翻译成人话。⚠️ 见下面 `insert_document` 那条注释：
         这个参数的形状是被一个真 bug 逼出来的。
+
+        `duplicate_exc` 是抛哪个类。默认 `DuplicateDocument`（既有调用点不变），
+        marks 那条路传 `DuplicateMark`——**异常的名字必须说得出它谈的是什么**，
+        见那个类的 docstring。
         """
         headers = {
             "apikey": self._apikey,
@@ -194,7 +233,7 @@ class SupabaseClient:
             # 判的是**错误码本身 + 调用点**，不去匹配错误正文里的列名或索引名：
             # 那两样是数据库写的，而我们没有权威的副本可比（见 insert_document）。
             if duplicate_message is not None and ("23505" in body or resp.status_code == 409):
-                raise DuplicateDocument(duplicate_message)
+                raise duplicate_exc(duplicate_message)
             raise SupabaseError(f"数据库返回 {resp.status_code}：{body}", status=502)
         return resp.json() if resp.content else None
 
@@ -283,6 +322,73 @@ class SupabaseClient:
         而这两件事在 RLS 下本来就该长得一样（否则课程 id 的存在性会泄露）。"""
         out = self._get(f"/courses?select=id,name&id=eq.{course_id}", token)
         return out[0] if isinstance(out, list) and len(out) == 1 else None
+
+    # ---------------------------------------------------------------- F4 · confusion_marks
+    #
+    # 三个方法都带**用户自己的 JWT**，RLS 由数据库执行。
+    #
+    # ⚠️ **刻意不在 URL 上加 `user_id=eq.<自己>`。** 加了之后「策略被误删」
+    # 这件事看起来仍然一切正常——服务端自己过滤掉了别人的行，而 RLS 已经不在。
+    # 边界只有一处，就是数据库里那两条策略；跨用户隔离由
+    # `verify_f4_marks.py` 在真库上用两个账号验（本地那条在 verify_rls_local.mjs）。
+    #
+    # 对照：`style_row()` 确实带了 `user_id=eq.`，那是因为它要判「恰好 1 行」
+    # （口径 F09），不是为了过滤。
+
+    #: 注入判定与计数要用到的列。`question` **不读**（口径 F59：v1 不注入它）——
+    #: 不读就不会有人「顺手」把它拼进 prompt。
+    MARK_COLUMNS = "id,round_id,slice_ids,created_at"
+
+    def marks_overlapping(self, token: str, slice_keys: list[str]) -> list[dict[str, Any]]:
+        """本人 marks 里与本轮切片**有交集**的行。一次 `&&`，零模型调用。
+
+        PostgREST 的 `ov.` 就是 `&&`，走 `confusion_marks_slice_ids_gin`。
+
+        ⚠️ **本地断言证明不了这个操作符名是对的**（假 transport 是我写的，
+        它按我以为的语义实现）。写错的表现是永远 0 行 = 功能像没生效，
+        而没有任何东西会红。真正的判据在 `api/scripts/verify_f4_marks.py`：
+        它在真库上插一条 mark，用**有交集**与**无交集**两组键各查一次，
+        要求前者 1 行、后者 0 行——两条一起才排除「恒空」与「恒满」。
+        """
+        if not slice_keys:
+            # 空集与任何集合的交集都是空。**不发这个请求**：`ov.{}` 在
+            # PostgREST 上的行为不是我们观测过的东西，而答案是确定的。
+            return []
+        from urllib.parse import quote
+
+        lit = _pg_array_literal(slice_keys)
+        out = self._get(
+            f"/confusion_marks?select={self.MARK_COLUMNS}"
+            f"&slice_ids=ov.{quote(lit, safe='')}", token)
+        return out if isinstance(out, list) else []
+
+    def insert_mark(self, *, token: str, row: dict[str, Any]) -> bool:
+        """写一条 mark。返回**这次是不是真的新插了一行**。
+
+        同一 `round_id` 第二次提交撞唯一索引 → 23505 → `DuplicateMark`，
+        由路由翻成 200（幂等，不是错误）。判的是**错误码 + 调用点**，
+        不去认正文里的列名或索引名——`confusion_marks` 上只有这一条唯一约束，
+        所以这个调用点上的 23505 含义唯一（同 `insert_document` 那条教训：
+        不认字符串，就没有「认错字符串」这种失败）。
+        """
+        try:
+            self._post("/confusion_marks", token, row,
+                       duplicate_message="同一 round_id 已经标记过（幂等，不是错误）",
+                       duplicate_exc=DuplicateMark)
+        except DuplicateMark:
+            return False
+        return True
+
+    def count_marks(self, token: str) -> int:
+        """这个用户至此累计多少条 mark（`mark_count_after` 的来源）。
+
+        ⚠️ 读的是**行本身**再数长度，不是 `Prefer: count=exact`：
+        那个数在响应头里，而 `_get` 只把 body 交出来。改 `_get` 的返回形状
+        会波及每一个既有调用点，为一个 v1 里最多几十行的计数不值。
+        **触发条件**：内测里有账号的 marks 上到几百条时，那时改成 count 头。
+        """
+        out = self._get("/confusion_marks?select=id", token)
+        return len(out) if isinstance(out, list) else 0
 
     # ---------------------------------------------------------------- 检索（阶段 5）
 

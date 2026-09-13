@@ -29,6 +29,7 @@ from typing import Any
 from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
+from . import marks as _marks
 from .auth import AuthError, HttpJwks, Principal, TokenVerifier, bearer_token
 from .build import build_commit
 from .upload_failures import UploadFailure as _UploadFailure
@@ -91,6 +92,37 @@ class CourseRequest(BaseModel):
     model_config = {"extra": "forbid"}   # 同上
 
     name: str = Field(min_length=1, max_length=200)
+
+
+class MarkRequest(BaseModel):
+    """F4 · 「这部分没看懂」。**入参三个必需 + 两个埋点用的可选**。"""
+
+    model_config = {"extra": "forbid"}   # 同上
+
+    #: 哪一轮。取 `/explain` 响应里的 `round_id`，原样带回来（口径 F65）。
+    #: 它同时是幂等键：同一轮点两次，表里仍然一行，两次都返回 200。
+    round_id: str
+    #: 本轮命中的全部切片，取 `/explain` 响应里的 `slice_keys`，原样带回来。
+    #:
+    #: ⚠️ **空列表一律 422，不静默收下。** 一条空的 mark 与任何一轮都不会有
+    #: 交集——它是一行死数据，而死数据与「标记没生效」在库里长得一模一样。
+    #: 走替身检索那条路（不传 `course_id`）拿到的 `slice_keys` 就是空的，
+    #: 那时前端不该显示这个按钮（见 `marks.py` 模块说明）。
+    #:
+    #: 上限 64 是一条**净空**，不是口径：检索预算 B=5
+    #: （`SupabaseRetriever.budget`），所以正常情况下这里是 5 个左右。
+    #: 它挡的是「有人拿这个接口往库里灌一个巨大的数组」，不是业务规则。
+    slice_ids: list[str] = Field(min_length=1, max_length=64)
+    #: 本轮提问原文。**存下来，v1 不注入**（口径 F59）。
+    question: str = Field(min_length=1, max_length=500)
+    #: 一次页面加载 = 一个 session（占位口径，同 `/explain`）。
+    #: **缺了就不发事件，服务端不现编**——理由见 `events.py` 模块说明。
+    session_id: str | None = None
+    #: 只进**事件**那一行的 `course_id` 列，供按课分组。
+    #: ⚠️ `confusion_marks` 表里**没有**这一列（口径 F63）：切片经 `documents`
+    #: 可 join 出课程，而检索本就按课隔离。这两件事不矛盾——
+    #: 一个是分析维度，一个是业务字段。
+    course_id: str | None = None
 
 
 #: 上传体积上限。沿用 `parse_service.app.MAX_UPLOAD_BYTES` 的那个数与它的来源说明
@@ -280,18 +312,38 @@ def create_app(
             active = _default_retriever()
             label = _COURSE_LABEL
 
+        # ---- F4 · 检索**提到这里做**，因为注入要在生成之前拿到本轮的 slice_ids。
+        #
+        # `run_round(context=...)` 是既有参数（口径 X02：两组对照共用同一份
+        # ContextPack），不是为本轮新开的口子。检索仍然只发生一次。
+        import uuid as _uuid
+
+        ctx = active.fetch(req.question)
+        #: 讲解轮标识（口径 F65）。**服务端生成**——响应里此前没有任何稳定的轮
+        #: 标识（`retrieval.signature` 只认提问与命中切片，同一个人把同一个问题
+        #: 问两遍会得到同一个值，拿它当幂等键会让第二轮的标记覆盖第一轮）。
+        #: 一次 `/explain` = 一轮；轮内的重生成不新开一个（重生成不计入轮次，
+        #: 轮的定义是「用户可见的一次输出」，PRD §13.0）。
+        round_id = str(_uuid.uuid4())
+        slice_keys = _marks.slice_keys_of(ctx)
+        confusion = _confusion_for_round(db, p, slice_keys)
+
         make_model = model_factory or _default_model
         result = run_round(
             round_index=1,
             question=req.question,
             trajectory=Trajectory(),
             retriever=active,
+            context=ctx,
             model=make_model(),
             reviewer=RuleReviewer(style),
             # ← A 类 + B 类，拼法与 pairs.json 里 16 个样例逐字节同形（口径 F19/F45）
             style_rules=render_all_style_rules(style, row.b_class),
             course_label=label,
             review_enabled=True,
+            # F4 的限定语进**本轮用户消息**，不进 system（口径 F57）：
+            # marks 逐轮变化，而 system 是按「会话内不变」设计的。
+            turn_prefix=confusion["note"] or "",
         )
 
         # ---- §13.0 的四个事件。**在返回之前发**，且失败不打断这次讲解。
@@ -322,6 +374,14 @@ def create_app(
         return {
             # 埋点的结果**进响应**。写不进去不打断讲解，但也不许静默（口径 F42）。
             "events": events_result,
+            # ---- F4（口径 F65）。这两个是 `POST /api/v1/marks` 的入参来源：
+            # 前端**原样带回来**，不自己拼、不自己编。
+            "round_id": round_id,
+            "slice_keys": slice_keys,
+            # 注入到底触发没触发，**从外面看得见**（口径 F53：验收要确认的东西，
+            # 系统必须能自己答出来）。§九的判据「注入组的 messages 里必须含限定语」
+            # 靠它机械可查，不靠人去读那段讲解。
+            "confusion": confusion,
             "text": result.final_text,
             "accepted": result.accepted,
             "regenerations": result.regenerations,
@@ -337,6 +397,61 @@ def create_app(
             "mean_paragraph_chars": ev.by_name("paragraph_length").raw,
             "all_activated_passed": ev.all_activated_passed,
             "style_rules": result.system_text.split("## 材料范围")[0].strip(),
+        }
+
+    # ---------------------------------------------------------------- F4 · 「这部分没看懂」
+    #
+    # ⚠️ **路径带 `/api/v1` 前缀，而本服务其余路由都不带**（`/explain`、
+    # `/courses`、`/me/style`）。这是 F4-P1 任务书写死的路径，照做；
+    # 登记为一处**已知的不一致**，不在本轮顺手统一——统一要动前端已经在调的
+    # 三条路由，那是一次与 F4 无关的改动，而它失败的样子是「页面白屏」。
+    # 触发条件：真要加版本前缀时一次性全改，那时 v1 的路由表还只有五条。
+    @app.post("/api/v1/marks")
+    def create_mark(req: MarkRequest, p: Principal = Depends(principal)) -> dict[str, Any]:
+        """记一次「这部分没看懂」。**幂等**：同一 `round_id` 提交两次都返回 200。
+
+        不做 GET、不做 DELETE（口径 F60）：v1 不回显已标记状态，也不做取消。
+        误标的代价是「多换一次讲法」，方向单向可解释。
+        """
+        import uuid as _uuid
+
+        try:
+            round_id = str(_uuid.UUID(req.round_id))
+        except (ValueError, AttributeError, TypeError):
+            # **在这里拒，不让数据库去 22P02。** 那个错会被包成 502，
+            # 而 502 读起来是「服务端坏了」，实际是客户端发了个不是 uuid 的东西。
+            raise HTTPException(
+                422, f"round_id 不是一个 uuid：{req.round_id!r}。"
+                     "它要取 /explain 响应里的那一个，不要自己编") from None
+
+        try:
+            created = db.insert_mark(token=p.token, row={
+                "user_id": p.user_id,
+                "round_id": round_id,
+                "slice_ids": req.slice_ids,
+                "question": req.question,
+            })
+            # **插完再数**，不是插之前的数 + 1：幂等重复时那个 +1 会多算一个。
+            # 名字叫 `mark_count_after` 说的就是「之后」。
+            count = db.count_marks(p.token)
+        except SupabaseError as exc:
+            raise HTTPException(status_code=exc.status, detail=exc.message) from exc
+
+        events_result = _record_mark_event(
+            db, p, session_id=req.session_id, course_id=req.course_id,
+            round_id=round_id, slice_keys=req.slice_ids,
+            mark_count_after=count, created=created)
+
+        return {
+            "round_id": round_id,
+            # False = 这一轮之前已经标记过（幂等重复）。**不是错误**，
+            # 前端不需要分支；给出来是为了埋点分析分得开。
+            "created": created,
+            "mark_count_after": count,
+            "slice_count": len(req.slice_ids),
+            # 埋点结果进响应（同 `/explain` 与上传）：事件表从外面读不到，
+            # 没有它任何人都无法自证这条事件落没落库。
+            "events": events_result,
         }
 
     # ---------------------------------------------------------------- 摄入
@@ -496,6 +611,86 @@ def create_app(
         }
 
     return app
+
+
+def _confusion_for_round(db: Any, p: Any, slice_keys: list[str]) -> dict[str, Any]:
+    """本轮要不要注入那句限定语。**永不抛**。
+
+    ## 查不到 marks 时**不打断讲解，但也不静默**
+
+    这一跳是一个增强，不是主链路：数据库抖一下就让用户丢掉整段讲解，
+    换来的只是「这一轮没换切入点」。所以失败时照常生成，
+    并把错误原样放进响应的 `confusion.error` —— 与埋点那条同一处置（口径 F42）。
+
+    静默咽下的后果是：功能上线之后**永远不注入**，而输出看起来完全正常。
+    那正是这个字段存在的理由。
+
+    ## 返回里为什么带 `matched_slice_keys`
+
+    「有没有交集」由数据库的 `&&` 决定，「是哪几片」由 `matched_keys()` 在
+    Python 里算。两者打架（`injected` 为真而 `matched_slice_keys` 为空）
+    意味着数据库那侧的键与这里的拼法不同源 —— 那时这一对数字自己会把它说出来。
+    """
+    if not slice_keys:
+        return {"injected": False, "note": None, "marked_rounds": 0,
+                "matched_slice_keys": [],
+                # 空不是错误：替身检索没有 document_id，产不出键（见 marks.py）。
+                "skipped_reason": "本轮没有可标记的切片身份（检索走替身，没有 document_id）"}
+    try:
+        rows = db.marks_overlapping(p.token, slice_keys)
+    except Exception as exc:  # noqa: BLE001
+        return {"injected": False, "note": None, "marked_rounds": 0,
+                "matched_slice_keys": [],
+                "error": f"{type(exc).__name__}: {exc}"}
+
+    note = _marks.confusion_prefix(rows)
+    return {
+        "injected": bool(note),
+        "note": note or None,
+        "marked_rounds": len(rows),
+        "matched_slice_keys": _marks.matched_keys(rows, slice_keys),
+    }
+
+
+def _record_mark_event(
+    db: Any, p: Any, *, session_id: str | None, course_id: str | None,
+    round_id: str, slice_keys: list[str], mark_count_after: int, created: bool,
+) -> dict[str, Any]:
+    """发一条 `confusion_mark_created`。**永不抛**——埋点失败不打断标记（口径 F42）。
+
+    `arm` 在这里懒取，理由与 `_record_upload_event` 那段一字不差：
+    让这条路由 `Depends(style_row)` 会把一次埋点的前置变成标记本身的前置，
+    而**标记压根不需要风格配置**。一条埋点不该让用户标记不了。
+    """
+    import json as _json
+
+    from .events import build_mark_event, record_events
+
+    if not session_id:
+        skipped = ("没有 session_id：一次页面加载 = 一个 session，服务端不现编"
+                   "（编了会把「平均会话轮次」这个北极星指标改成假数）")
+        print(_json.dumps({"event": "mark_event_skipped", "reason": skipped},
+                          ensure_ascii=False))
+        return {"emitted": 0, "attempted": 0, "failed": 0, "skipped_reason": skipped}
+    try:
+        arm = db.style_row(p.user_id, p.token).f1_arm
+        out = record_events(
+            db, token=p.token, user_id=p.user_id, arm=arm, session_id=session_id,
+            events=[build_mark_event(round_id=round_id, slice_keys=slice_keys,
+                                     mark_count_after=mark_count_after,
+                                     created=created)],
+            course_id=course_id,
+        )
+        if out.get("failed"):
+            print(_json.dumps({"event": "mark_event_insert_failed", "result": out},
+                              ensure_ascii=False))
+        return {**out, "event_type": "confusion_mark_created", "course_id": course_id}
+    except Exception as exc:  # noqa: BLE001
+        err = f"{type(exc).__name__}: {exc}"
+        print(_json.dumps({"event": "mark_event_failed", "error": err},
+                          ensure_ascii=False))
+        return {"emitted": 0, "attempted": 0, "failed": 0, "error": err,
+                "event_type": "confusion_mark_created"}
 
 
 def _record_upload_event(

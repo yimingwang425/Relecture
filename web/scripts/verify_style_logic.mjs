@@ -631,12 +631,14 @@ console.log("\n\x1b[1m七 · 埋点五事件（阶段 4）\x1b[0m");
   const sqlKeys = parseSqlRequiredKeys(migSrc);
   // 判据自身的分辨力：解析失败会得到 null 或空对象，而空对象之间的比对必然相等。
   check(sqlKeys !== null, "迁移里找到 f1_event_required_keys");
-  // **生效那一份有十一个类型**：F1 五个 + 讲解四个 + 上传两个。
-  // 这个数是「解析器读到的是最新定义」的证据——读到旧定义会得到 5。
+  // **生效那一份有十二个类型**：F1 五个 + 讲解四个 + 上传两个 + F4 一个
+  // （`confusion_mark_created`，2026-09-13）。
+  // 这个数是「解析器读到的是最新定义」的证据——读到旧定义会得到 5 或 11。
   check(
-    Object.keys(sqlKeys ?? {}).length === 11,
-    "SQL 生效定义解析出 11 个 event_type",
-    `实得 ${Object.keys(sqlKeys ?? {}).length} ← 得到 5 说明解析器读的是阶段 4 那份旧定义`,
+    Object.keys(sqlKeys ?? {}).length === 12,
+    "SQL 生效定义解析出 12 个 event_type",
+    `实得 ${Object.keys(sqlKeys ?? {}).length} ← 得到 5 说明解析器读的是阶段 4 那份旧定义；`
+      + `得到 11 说明 F4 那次 create or replace 漏了 confusion_mark_created`,
   );
   // 反向控制：只取第一个定义时**必须**得到 5，否则上一条的分辨力是空的。
   {

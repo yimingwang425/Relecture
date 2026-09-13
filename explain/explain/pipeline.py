@@ -142,6 +142,7 @@ def run_round(
     max_regenerations: int = 2,
     gap_checker: GapChecker | None = None,
     context: ContextPack | None = None,
+    turn_prefix: str = "",
     on_attempt: Callable[[Attempt], None] | None = None,
 ) -> RoundResult:
     """跑一轮。
@@ -149,6 +150,9 @@ def run_round(
     `context` 可由调用方预先取好并在两组间共用（口径 X02）；不传则本函数自取。
     `review_enabled=False` 时**仍然完整计算审查结果**，只是不据此重生成——
     不算就没有对照（口径 2）。
+
+    `turn_prefix` 原样塞在**本轮用户消息**最前面（口径 F57）。F4 的「没看懂」
+    限定语走这里；措辞与触发条件都由调用方决定，本函数不认识它。
     """
     ctx = context if context is not None else retriever.fetch(question)
     trajectory.remember(ctx)
@@ -156,10 +160,14 @@ def run_round(
     gap = (gap_checker or NullGapChecker()).check(question, ctx)
 
     system = build_system(style_rules, ctx, course_label)
-    # 判断结果进本轮 user turn（每轮不同，不进 system——那会让缓存每轮失效）
-    turn = trajectory.history + [
-        {"role": "user", "content": build_user_turn(ctx, question, gap)}
-    ]
+    # 判断结果进本轮 user turn（每轮不同，不进 system——那会让缓存每轮失效）。
+    #
+    # ⚠️ **只拼一次，两处共用。** 下面 `trajectory.commit()` 记进历史的必须与
+    # 真正发出去的**是同一个字符串**。原先那里重新调了一遍 `build_user_turn`，
+    # 两次调用恰好等值所以看不出问题——而 `turn_prefix` 一进来它们就不再等值：
+    # 历史里会缺那句限定语，于是下一轮的模型看到的历史与它上一轮真收到的不同。
+    user_turn = build_user_turn(ctx, question, gap, prefix=turn_prefix)
+    turn = trajectory.history + [{"role": "user", "content": user_turn}]
     request_signature = model.request_signature(system, turn)
 
     attempts: list[Attempt] = []
@@ -188,7 +196,7 @@ def run_round(
             {"role": "user", "content": review.feedback},
         ]
 
-    trajectory.commit(build_user_turn(ctx, question, gap), final_text)
+    trajectory.commit(user_turn, final_text)
 
     return RoundResult(
         round_index=round_index,

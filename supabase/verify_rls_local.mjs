@@ -1590,6 +1590,268 @@ async function main() {
     await db.close();
   }
 
+  // ============================================================ confusion_marks（F4）
+  //
+  // 迁移 20260913150000_f4_confusion_marks.sql。
+  //
+  // 这一节把 F4 那张表的**全部机制**在真 Postgres 上跑一遍：RLS 两个方向、
+  // 幂等、cascade、`&&` 的集合语义、以及「不授 delete」到底是不是真的。
+  // 反向控制在下面 R17 / R18 / R19。
+  console.log("\n\x1b[1mconfusion_marks · F4「这部分没看懂」\x1b[0m");
+
+  /** 键的拼法与 `api/api/marks.py` 的 `slice_key()` 同形：document_id:slice_id。 */
+  const K = (doc, s) => `${doc}:${s}`;
+  const DOC_1 = "11111111-d001-4001-8001-111111111111";
+  const DOC_2 = "22222222-d002-4002-8002-222222222222";
+  const ROUND_A = "aaaaaaaa-0001-4001-8001-aaaaaaaaaaaa";
+  const ROUND_B = "bbbbbbbb-0002-4002-8002-bbbbbbbbbbbb";
+
+  /** 以 uid 身份写一条 mark。返回错误对象（成功则 null）。 */
+  async function putMark(db, uid, roundId, keys, { asUid = uid } = {}) {
+    return await errorOf(() =>
+      asUser(db, asUid, () =>
+        db.query(
+          `insert into public.confusion_marks (user_id, round_id, slice_ids, question)
+           values ($1, $2, $3, '为什么误判率是这个式子')`,
+          [uid, roundId, keys])));
+  }
+
+  {
+    const db = await freshDb();
+
+    // ---- ① 允许控制先跑。少了它，下面所有「被拒」在整张表写不进去时也全绿。
+    const ownA = await putMark(db, UID_A, ROUND_A, [K(DOC_1, "s001"), K(DOC_1, "s002")]);
+    ownA === null
+      ? ok("A 写自己的 mark（允许控制）", "← 少了它，下面每一条「被拒」都可能是平凡通过")
+      : bad("A 写不进自己的 mark", `${ownA.code} ${ownA.message}`);
+
+    const ownB = await putMark(db, UID_B, ROUND_B, [K(DOC_2, "s001")]);
+    ownB === null ? ok("B 写自己的 mark（允许控制）")
+                  : bad("B 写不进自己的 mark", `${ownB.code}`);
+
+    // ---- ② 冒名写入 → 被 with check 拒。
+    const impersonate = await putMark(db, UID_B, ROUND_A, [K(DOC_1, "s001")], { asUid: UID_A });
+    impersonate?.code === "42501"
+      ? ok("A 以 B 的名义写 mark → 42501", "← with check (user_id = auth.uid())")
+      : bad("A 冒名写 mark 竟成功", `${impersonate?.code ?? "未报错"}`);
+
+    // ---- ③ 跨用户读 → 0 行；读自己 → 有行（成对，缺一不可）。
+    const aSeesB = await asUser(db, UID_A, async () =>
+      (await db.query("select 1 from public.confusion_marks where user_id=$1", [UID_B])).rows.length);
+    aSeesB === 0
+      ? ok("A 读不到 B 的 marks", "0 行")
+      : bad("A 读到了 B 的 marks", `${aSeesB} 行`);
+
+    const aSeesOwn = await asUser(db, UID_A, async () =>
+      (await db.query("select 1 from public.confusion_marks")).rows.length);
+    aSeesOwn === 1
+      ? ok("A 读得到自己的 mark（允许控制）", "1 行 ← 少了它，「0 行」也可能是整张表读不了")
+      : bad("A 读不到自己的 mark", `${aSeesOwn} 行`);
+
+    // ---- ④ 幂等：同一 (user_id, round_id) 第二次 → 23505，表里仍一行。
+    const again = await putMark(db, UID_A, ROUND_A, [K(DOC_1, "s001")]);
+    again?.code === "23505"
+      ? ok("同一 round_id 第二次 → 23505", "← 服务端把它翻成 200，前端不需要分辨")
+      : bad("同一 round_id 竟能插两行", `${again?.code ?? "未报错"}`);
+    const rowsA = (await db.query(
+      "select count(*)::int c from public.confusion_marks where user_id=$1", [UID_A])).rows[0].c;
+    rowsA === 1 ? ok("幂等之后表里仍是一行", `${rowsA} 行`)
+                : bad("幂等失败", `${rowsA} 行`);
+
+    // 允许控制：**不同**的 round 必须各存一行。
+    const other = await putMark(db, UID_A, ROUND_B, [K(DOC_1, "s003")]);
+    const rowsA2 = (await db.query(
+      "select count(*)::int c from public.confusion_marks where user_id=$1", [UID_A])).rows[0].c;
+    other === null && rowsA2 === 2
+      ? ok("不同 round_id 各存一行（允许控制）", `${rowsA2} 行 ← 少了它，「一律吞掉第二次」也全绿`)
+      : bad("不同 round_id 没能各存一行", `${rowsA2} 行 ${other?.code ?? ""}`);
+
+    // ---- ⑤ 空 slice_ids → 被拒。一条空 mark 与任何一轮都不相交，是一行死数据。
+    const empty = await errorOf(() =>
+      asUser(db, UID_A, () =>
+        db.query(
+          `insert into public.confusion_marks (user_id, round_id, slice_ids, question)
+           values ($1, gen_random_uuid(), '{}'::text[], 'q')`, [UID_A])));
+    empty?.code === "23514"
+      ? ok("空 slice_ids 的 mark → 被拒", "← 死数据与「标记没生效」在库里长得一样")
+      : bad("空 slice_ids 的 mark 竟写得进去", `${empty?.code ?? "未报错"}`);
+
+    // ---- ⑥ `&&` 的集合语义：有交集 1 行、无交集 0 行。**两条一起才排除恒空/恒满。**
+    const overlap = await asUser(db, UID_A, async () =>
+      (await db.query(
+        "select round_id from public.confusion_marks where slice_ids && $1", [[K(DOC_1, "s002")]])).rows);
+    overlap.length === 1 && overlap[0].round_id === ROUND_A
+      ? ok("交集查询命中（&&）", `命中 ${overlap.length} 行`)
+      : bad("交集查询没命中", JSON.stringify(overlap));
+
+    // **同一个 slice_id、不同的 document** —— 这正是 2026-09-12 真库上的形态。
+    // 只拿 slice_id 当键的话这一条会命中，而那就是误触发（口径 F66）。
+    const noOverlap = await asUser(db, UID_A, async () =>
+      (await db.query(
+        "select 1 from public.confusion_marks where slice_ids && $1", [[K(DOC_2, "s001")]])).rows.length);
+    noOverlap === 0
+      ? ok("另一份讲义的同名 s001 不命中", "← 键是两段：document_id:slice_id（口径 F66）")
+      : bad("同名 slice_id 跨讲义误命中", `${noOverlap} 行 ← 恒触发的注入就是这么来的`);
+
+    // 跨用户的交集也必须是 0 行 —— 交集查询走的是同一套 RLS。
+    const crossUser = await asUser(db, UID_B, async () =>
+      (await db.query(
+        "select 1 from public.confusion_marks where slice_ids && $1", [[K(DOC_1, "s001")]])).rows.length);
+    crossUser === 0
+      ? ok("B 的交集查询看不见 A 的 mark")
+      : bad("交集查询绕过了 RLS", `${crossUser} 行`);
+
+    // ---- ⑦ 不授 delete / update（口径 F60：v1 不做取消标记）。
+    const del = await errorOf(() =>
+      asUser(db, UID_A, () => db.query("delete from public.confusion_marks")));
+    del?.code === "42501"
+      ? ok("A 删不掉自己的 mark → 42501", "← 口径 F60：v1 不做取消标记")
+      : bad("A 竟能删自己的 mark", `${del?.code ?? "未报错"}`);
+    const upd = await errorOf(() =>
+      asUser(db, UID_A, () =>
+        db.query("update public.confusion_marks set question = 'x'")));
+    upd?.code === "42501"
+      ? ok("A 改不了自己的 mark → 42501", "← 改一次点击等于改历史")
+      : bad("A 竟能改自己的 mark", `${upd?.code ?? "未报错"}`);
+
+    // ---- ⑧ 自述函数：真库验收脚本靠它答「迁移应用了没有」（口径 F53）。
+    //
+    // ⚠️ **在这里验它，因为真库那边没有第二个来源可比。** 脚本读到
+    // `user_fk_delete_rule = 'c'` 时，它凭什么相信这个函数没在撒谎？
+    // 凭这一节：同一份迁移原文在 PGlite 上跑出来的自述，与**同一个数据库里
+    // 真实发生的行为**（上面那十几条）对得上。
+    const shape = (await asUser(db, UID_A, async () =>
+      (await db.query("select public.f4_confusion_marks_shape() s")).rows[0].s));
+    shape?.table_exists === true && shape?.rls_enabled === true
+      ? ok("自述函数：表在、RLS 开着")
+      : bad("自述函数报的表状态不对", JSON.stringify(shape));
+    shape?.indexes?.confusion_marks_slice_ids_gin === "gin"
+      ? ok("自述函数：GIN 索引在", "confusion_marks_slice_ids_gin")
+      : bad("自述函数报不出 GIN 索引", JSON.stringify(shape?.indexes));
+    shape?.user_fk_delete_rule === "c"
+      ? ok("自述函数：user_id 外键是 cascade", "'c' ← 与上面「1 → 0」那条行为对得上")
+      : bad("自述函数报的外键规则不是 cascade", `${shape?.user_fk_delete_rule}`);
+    JSON.stringify(Object.values(shape?.grants ?? []).sort()) === '["INSERT","SELECT"]'
+      ? ok("自述函数：authenticated 只有 SELECT + INSERT", "← 口径 F60，与上面那两条 42501 对得上")
+      : bad("授权不是只有 select/insert", JSON.stringify(shape?.grants));
+    shape?.event_types_known === 12 && shape?.slice_ids_check === 1
+      ? ok("自述函数：12 个 event_type + slice_ids 护栏在位")
+      : bad("事件那一侧的自述不对",
+            `types=${shape?.event_types_known} check=${shape?.slice_ids_check}`);
+
+    await db.close();
+  }
+
+  // ---- cascade（PRD §12.1「注销即清空」在 F4 这张表上的那一半）
+  console.log("\n  \x1b[1mconfusion_marks · 注销即清空（on delete cascade）\x1b[0m");
+  {
+    const db = await freshDb();
+    await putMark(db, UID_B, ROUND_B, [K(DOC_2, "s001")]);
+    // ⚠️ **删之前先记数。** 不先记的话「删完 0 条」分不清是 cascade 生效
+    // 还是本来就没有 —— 那两件事在删完之后长得一模一样。
+    const before = (await db.query(
+      "select count(*)::int c from public.confusion_marks where user_id=$1", [UID_B])).rows[0].c;
+    before === 1 ? ok("删号之前 B 确实有 1 条 mark", "← 这是下一条的前提")
+                 : bad("前提不成立", `${before} 条`);
+
+    await db.query("delete from auth.users where id = $1", [UID_B]);
+    const after = (await db.query(
+      "select count(*)::int c from public.confusion_marks where user_id=$1", [UID_B])).rows[0].c;
+    after === 0 ? ok("删掉 auth.users 的行 → marks 跟着没了", "1 → 0")
+                : bad("注销之后 marks 还在", `${after} 条`);
+    await db.close();
+  }
+
+  // ---- R17 · cascade 是承重的吗
+  console.log("\n  \x1b[1mR17 · 把 user_id 的外键改成 no action\x1b[0m");
+  {
+    const db = await freshDb();
+    await db.exec(`
+      alter table public.confusion_marks drop constraint confusion_marks_user_id_fkey;
+      alter table public.confusion_marks
+        add constraint confusion_marks_user_id_fkey
+        foreign key (user_id) references auth.users (id);
+    `);
+    await putMark(db, UID_B, ROUND_B, [K(DOC_2, "s001")]);
+    const err = await errorOf(() =>
+      db.query("delete from auth.users where id = $1", [UID_B]));
+    err?.code === "23503"
+      ? ok("改成 no action 后，删号直接被外键挡住（23503）",
+           "← 上一条的「1 → 0」确实是 cascade 干的，不是别的东西")
+      : bad("改成 no action 后删号仍然成功", `${err?.code ?? "未报错"} ← 上一条测错了对象`);
+    await db.close();
+  }
+
+  // ---- R18 · slice_ids 非空护栏是承重的吗
+  //
+  // 被测的是 `style_events` 上那条 `f4_event_slice_ids_ok`，
+  // 它补的是 `f1_event_payload_ok` 管不到的地方：**空数组通过那一条**
+  // （不是 SQL NULL、不是 JSON null、不是空字符串）。
+  console.log("\n  \x1b[1mR18 · slice_ids 置空 / 去掉那条 CHECK\x1b[0m");
+  {
+    const db = await freshDb();
+    const emptied = { ...EXPLAIN_PAYLOADS.retrieval_executed, slice_ids: [], slice_count: 3 };
+
+    async function putRetrieval(payload) {
+      return await errorOf(() =>
+        asUser(db, UID_A, () =>
+          db.query(
+            `insert into public.style_events (user_id, event_type, arm, session_id, payload)
+             values ($1, 'retrieval_executed', public.f1_assign_arm($1), $2, $3::jsonb)`,
+            [UID_A, SESSION, JSON.stringify(payload)])));
+    }
+
+    // 正向：命中非空时置空 slice_ids → 必须被拒。
+    const blocked = await putRetrieval(emptied);
+    blocked?.code === "23514"
+      ? ok("命中非空而 slice_ids 为 [] → 被拒",
+           "← 护栏指标「重复提问率」的唯一来源，漏了就再也补不回来")
+      : bad("空 slice_ids 竟写得进去", `${blocked?.code ?? "未报错"}`);
+
+    // 允许控制之一：原样那份必须写得进去。
+    const okRow = await putRetrieval(EXPLAIN_PAYLOADS.retrieval_executed);
+    okRow === null ? ok("带真 slice_ids 的 retrieval_executed 写得进去（允许控制）")
+                   : bad("带真 slice_ids 也被拒", `${okRow.code} ${okRow.message}`);
+
+    // 允许控制之二：**空检索是合法状态，不许被一并拒掉**（口径 F50 的同一条）。
+    // 一片都没检索到是显式失败（PRD §6.2），它更该被采集到。
+    const emptyRetrieval = await putRetrieval({
+      ...EXPLAIN_PAYLOADS.retrieval_executed, slice_ids: [], slice_count: 0 });
+    emptyRetrieval === null
+      ? ok("空检索（slice_count = 0）仍然写得进去", "← 拒掉它就是「最该采到的那类进不了库」")
+      : bad("空检索被误伤", `${emptyRetrieval.code} ← 这条护栏拒错了对象`);
+
+    // 反向：拿掉那条 CHECK，被拒的那一行必须写得进去。
+    await db.exec(
+      "alter table public.style_events drop constraint style_events_slice_ids_ok;");
+    const afterDrop = await putRetrieval(emptied);
+    afterDrop === null
+      ? ok("去掉 CHECK 后，空 slice_ids 写得进去",
+           "← 拒它的确实是那条 CHECK。**这也正是本轮之前的真实状态**")
+      : bad("去掉之后仍被拒", `${afterDrop.code} ← 上面那条断言测错了对象`);
+    await db.close();
+  }
+
+  // ---- R19 · 「删不掉」是策略决定的吗
+  console.log("\n  \x1b[1mR19 · 把 delete 的授权与策略加回来\x1b[0m");
+  {
+    const db = await freshDb();
+    await putMark(db, UID_A, ROUND_A, [K(DOC_1, "s001")]);
+    await db.exec(`
+      grant delete on public.confusion_marks to authenticated;
+      create policy confusion_marks_delete_own on public.confusion_marks
+        for delete to authenticated using (user_id = auth.uid());
+    `);
+    const del = await errorOf(() =>
+      asUser(db, UID_A, () => db.query("delete from public.confusion_marks")));
+    const left = (await db.query("select count(*)::int c from public.confusion_marks")).rows[0].c;
+    del === null && left === 0
+      ? ok("加回 delete 授权 + 策略之后真的删得掉",
+           "← 上面那条 42501 确实是「没授权 + 没策略」造成的，不是别的东西")
+      : bad("加回来之后仍然删不掉", `${del?.code ?? "无错"} / 剩 ${left} 行`);
+    await db.close();
+  }
+
   console.log(`\n\x1b[1m本地\x1b[0m  绿 ${passed} · 红 ${failed}`);
   console.log(
     `\x1b[1m待真库验证\x1b[0m  ${NOT_VERIFIABLE_LOCALLY.join(", ")} ` +

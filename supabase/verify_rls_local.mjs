@@ -1821,6 +1821,28 @@ async function main() {
       ? ok("空检索（slice_count = 0）仍然写得进去", "← 拒掉它就是「最该采到的那类进不了库」")
       : bad("空检索被误伤", `${emptyRetrieval.code} ← 这条护栏拒错了对象`);
 
+    // ---- 那个例外的两条边界。**都要**，它们各挡一个真的洞：
+    //
+    //  ① `slice_count` 这个键**缺失**时，例外不成立 → 必须拒。
+    //     ⚠️ 这一条是被一次写法失误逼出来的：`payload->'slice_count' = '0'`
+    //     在键缺失时求值为 **NULL**，而**结果为 NULL 的 CHECK 是通过的** ——
+    //     那一行会悄悄写进去。现在用的是 `is not distinct from`。
+    const noCount = await putRetrieval({
+      ...EXPLAIN_PAYLOADS.retrieval_executed, slice_ids: [] });
+    noCount?.code === "23514"
+      ? ok("空 slice_ids 且没有 slice_count → 被拒",
+           "← `= '0'` 在这里返回 NULL，而 NULL 的 CHECK 是通过的")
+      : bad("空 slice_ids 且没有 slice_count 竟写得进去", `${noCount?.code ?? "未报错"}`);
+
+    //  ② JSON 字符串 `"0"` **不算** 0。Python 侧那份镜像
+    //     （`payload.get("slice_count") == 0`）也不认字符串，两份必须同答案。
+    const strCount = await putRetrieval({
+      ...EXPLAIN_PAYLOADS.retrieval_executed, slice_ids: [], slice_count: "0" });
+    strCount?.code === "23514"
+      ? ok('slice_count 是字符串 "0" 时例外不成立 → 被拒',
+           "← 与 Python 侧那份镜像同答案（口径 F33）")
+      : bad('字符串 "0" 竟被当成 0', `${strCount?.code ?? "未报错"}`);
+
     // 反向：拿掉那条 CHECK，被拒的那一行必须写得进去。
     await db.exec(
       "alter table public.style_events drop constraint style_events_slice_ids_ok;");

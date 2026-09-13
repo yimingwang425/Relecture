@@ -177,11 +177,82 @@ def mark(client, keypair, out: dict[str, Any], *, sub: str = USER_A,
         payload["session_id"] = session_id
     if course_id is not None:
         payload["course_id"] = course_id
-    return client.post("/api/v1/marks", json=payload,
+    return client.post("/marks", json=payload,
                        headers={"Authorization": f"Bearer {keypair.sign(sub=sub)}"})
 
 
 # ---------------------------------------------------------------- 键：两段
+
+
+class TestBothEndsOfTheKey:
+    """**这条守卫的两端各自从哪来。**
+
+    交集恒空是本功能最可能的死法，而它的表现是：接口 200、表里有行、
+    什么都不注入 —— **没有任何东西会红**。所以「两端从哪来」必须问清楚。
+
+    | | 单测层（本文件） | 真库层（`verify_f4_marks.py` §7） |
+    | --- | --- | --- |
+    | 写入侧 | `/explain` 响应的 `slice_keys` → 真的 marks API → 假 PostgREST 的行 | 同左，但落的是**真表**，再读回来 |
+    | 读取侧 | 下一轮 `slice_keys_of(ctx)` → `marks_overlapping` | `/explain` 响应里的 `retrieval.meta.hit_documents`，即 **`match_slices` 的原始返回** |
+    | 交集由谁算 | 我写的 Python | **Postgres 的 `&&`（经 PostgREST 的 `ov.`）** |
+
+    ⚠️ **单测层这一对同源于 `slice_key()`** —— 分隔符一改两端一起改，
+    所以「两端拼法一致」这件事在这里**证明不了**（它是构造保证的，无从证伪）。
+    这一层能钉住的只有两样，下面两条各管一样：
+
+      1. **格式**：落进表里的那一段，与「两段用冒号连起来」这句话对得上
+         —— 这句话在下面**刻意不调 `slice_key()`**，手写一次。
+         改了 `KEY_SEPARATOR` 就会红，而那一改会让线上已有的 marks 全部变成孤儿。
+      2. **敏感性**：写入侧的键被改了一个字符，下一轮就**必须不注入** ——
+         这条把「恒空」那个失败形态本身钉在这里，连同它的三个症状一起。
+
+    DB 往返（JSON → `text[]` → 读回来）与 `ov.` 到底是不是 `&&`，
+    **这一层一条都验不了**，那是真库层的活（口径 F34：两种证据不互相顶替）。
+    """
+
+    def test_the_stored_key_format_is_pinned_without_calling_slice_key(
+            self, keypair, jwks, rest):
+        """落进表里的那一段 = 检索返回的两段用**冒号**连起来。
+
+        ⚠️ 右边刻意**不调 `slice_key()`**：调了两端就同源，
+        这条断言在分隔符被改成任何东西时都会绿。
+        `DOC_A1` / `"s001"` 取自 `matches` 夹具，也就是 `match_slices` 的替身 ——
+        它们是**值**的来源，与格式是两件事。
+        """
+        c = build(jwks, rest)
+        first = explain(c, keypair, COURSE_A)
+        assert mark(c, keypair, first).status_code == 200
+        assert rest.marks[0]["slice_ids"] == [f"{DOC_A1}:s001"], (
+            "落库的键与「两段用冒号连起来」对不上 —— 改了 KEY_SEPARATOR 的话，"
+            "线上已有的 marks 会全部变成永远不再命中的孤儿")
+        # 写入侧与读取侧确实是同一份（这一条是**记录事实**，不是判据：
+        # 两端同源于 slice_key()，它无从证伪）。
+        assert first["slice_keys"] == rest.marks[0]["slice_ids"]
+
+    def test_reverse_control_one_character_on_the_write_side_kills_it_silently(
+            self, keypair, jwks, rest):
+        """**反向控制**：写入侧把分隔符换成 `/`，读取侧不变 → 必须不注入。
+
+        这条同时把那个失败形态的**三个症状**一起钉住：
+        接口 **200**、表里**有行**、而**什么都不注入**。
+        少了它，「交集恒空」在任何一层的断言里都长得像「功能正常，只是这轮没标记过」。
+        """
+        model = RecordingModel()
+        c = build(jwks, rest, model=model)
+        first = explain(c, keypair, COURSE_A)
+
+        mangled = [k.replace(":", "/") for k in first["slice_keys"]]
+        assert mangled != first["slice_keys"], "夹具里的键压根没有分隔符，这条反向控制是空的"
+        r = c.post("/marks",
+                   json={"round_id": first["round_id"], "slice_ids": mangled,
+                         "question": QUESTION, "session_id": SESSION},
+                   headers={"Authorization": f"Bearer {keypair.sign()}"})
+
+        assert r.status_code == 200, "症状一：接口照常 200"
+        assert len(rest.marks) == 1, "症状二：表里真的有行"
+        second = explain(c, keypair, COURSE_A)
+        assert second["confusion"]["injected"] is False, "症状三：什么都不注入"
+        assert CONFUSION_NOTE not in model.last_user_turn
 
 
 class TestSliceKeyIsTwoParts:
@@ -437,7 +508,7 @@ class TestIdempotent:
     def test_non_uuid_round_id_is_422_not_502(self, keypair, jwks, rest):
         """客户端发了个不是 uuid 的东西 → 422 点名，不是 502「服务端坏了」。"""
         c = build(jwks, rest)
-        r = c.post("/api/v1/marks",
+        r = c.post("/marks",
                    json={"round_id": "not-a-uuid", "slice_ids": ["a:b"], "question": "q"},
                    headers={"Authorization": f"Bearer {keypair.sign()}"})
         assert r.status_code == 422 and "round_id" in r.json()["detail"]
@@ -448,7 +519,7 @@ class TestRejectsEmptyMarks:
         """空 mark 与任何一轮都不会有交集——它是一行死数据，
         而死数据与「标记没生效」在库里长得一模一样。"""
         c = build(jwks, rest)
-        r = c.post("/api/v1/marks",
+        r = c.post("/marks",
                    json={"round_id": str(uuid.uuid4()), "slice_ids": [], "question": "q"},
                    headers={"Authorization": f"Bearer {keypair.sign()}"})
         assert r.status_code == 422
@@ -457,7 +528,7 @@ class TestRejectsEmptyMarks:
     def test_unknown_field_is_422_not_silently_dropped(self, keypair, jwks, rest):
         """`extra="forbid"`：多发一个字段要**响亮地失败**（口径 F52）。"""
         c = build(jwks, rest)
-        r = c.post("/api/v1/marks",
+        r = c.post("/marks",
                    json={"round_id": str(uuid.uuid4()), "slice_ids": ["a:b"],
                          "question": "q", "concept": "布隆过滤器"},
                    headers={"Authorization": f"Bearer {keypair.sign()}"})
@@ -465,7 +536,7 @@ class TestRejectsEmptyMarks:
 
     def test_marks_needs_auth(self, jwks, rest):
         assert build(jwks, rest).post(
-            "/api/v1/marks",
+            "/marks",
             json={"round_id": str(uuid.uuid4()), "slice_ids": ["a:b"],
                   "question": "q"}).status_code == 401
 
@@ -656,7 +727,11 @@ class TestMirrorsTheSql:
             ("retrieval_executed", {"slice_ids": [{"x": 1}], "slice_count": 1}, True),
             ("retrieval_executed", {"slice_ids": [], "slice_count": 0}, True),
             ("retrieval_executed", {"slice_ids": [], "slice_count": 3}, False),
+            # ⚠️ 下面两条是那个例外的边界，SQL 侧曾经在这里错过一次：
+            # `payload->'slice_count' = '0'` 在键缺失时返回 NULL，
+            # 而**结果为 NULL 的 CHECK 是通过的**。现在两边都判假。
             ("retrieval_executed", {"slice_ids": []}, False),          # slice_count 缺
+            ("retrieval_executed", {"slice_ids": [], "slice_count": "0"}, False),  # 字符串不算
             ("retrieval_executed", {}, True),                          # 缺键：另一条 CHECK 的活
             ("confusion_mark_created", {"slice_ids": ["a:b"]}, True),
             ("confusion_mark_created", {"slice_ids": [], "slice_count": 0}, False),

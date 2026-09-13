@@ -374,7 +374,7 @@ def create_app(
         return {
             # 埋点的结果**进响应**。写不进去不打断讲解，但也不许静默（口径 F42）。
             "events": events_result,
-            # ---- F4（口径 F65）。这两个是 `POST /api/v1/marks` 的入参来源：
+            # ---- F4（口径 F65）。这两个是 `POST /marks` 的入参来源：
             # 前端**原样带回来**，不自己拼、不自己编。
             "round_id": round_id,
             "slice_keys": slice_keys,
@@ -401,12 +401,12 @@ def create_app(
 
     # ---------------------------------------------------------------- F4 · 「这部分没看懂」
     #
-    # ⚠️ **路径带 `/api/v1` 前缀，而本服务其余路由都不带**（`/explain`、
-    # `/courses`、`/me/style`）。这是 F4-P1 任务书写死的路径，照做；
-    # 登记为一处**已知的不一致**，不在本轮顺手统一——统一要动前端已经在调的
-    # 三条路由，那是一次与 F4 无关的改动，而它失败的样子是「页面白屏」。
-    # 触发条件：真要加版本前缀时一次性全改，那时 v1 的路由表还只有五条。
-    @app.post("/api/v1/marks")
+    # 路径与其余五条对齐（`/explain`、`/courses`、`/courses/{id}/documents`、
+    # `/me/style`、`/health`），**不带 `/api/v1` 前缀**。任务书上写的是
+    # `/api/v1/marks`，2026-09-13 改齐：那时前端还没调它，改只动这一处；
+    # 留着的话，要么日后统一时动三条前端已经在调的路由（失败的样子是页面白屏），
+    # 要么它永远是路由表里唯一一条长得不一样的。
+    @app.post("/marks")
     def create_mark(req: MarkRequest, p: Principal = Depends(principal)) -> dict[str, Any]:
         """记一次「这部分没看懂」。**幂等**：同一 `round_id` 提交两次都返回 200。
 

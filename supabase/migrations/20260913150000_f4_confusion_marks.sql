@@ -50,7 +50,7 @@ create table if not exists public.confusion_marks (
 
   -- 本轮检索命中的**全部**切片，一段字符串键（见上面那节）。
   -- **不许为空**：一条空的 mark 与任何一轮都不会有交集，它是一行死数据，
-  -- 而死数据与「标记没生效」在库里长得一模一样。写入侧（`POST /api/v1/marks`）
+  -- 而死数据与「标记没生效」在库里长得一模一样。写入侧（`POST /marks`）
   -- 也拒空，两层。
   slice_ids  text[] not null,
 
@@ -265,8 +265,25 @@ begin
 
   -- 空数组：只有「本轮真的一片都没检索到」时才合法。
   -- confusion_mark_created 没有这个例外 —— 写入侧拒空 mark（见上面那条 CHECK）。
+  --
+  -- ⚠️ **用 jsonb 相等比，不用 `(payload ->> 'slice_count')::int`。** 两个理由：
+  --   · 那个转换在 slice_count 不是数字时抛 **22P02** —— 一条 CHECK 应当
+  --     判假，而不是让 insert 以一个「数据库坏了」的错误码失败；
+  --     `add constraint` 校验存量时它甚至会让整条迁移以 22P02 而不是 23514 失败，
+  --     而那两个错误码指向完全不同的排查路径。
+  --   · 转换会让 JSON 字符串 `"0"` 也算数，而 Python 侧那份镜像
+  --     （`events._slice_ids_problem` 的 `payload.get("slice_count") == 0`）
+  --     不认字符串。**两份镜像在同一组输入上必须给同一个答案**（口径 F33），
+  --     `tests/test_marks.py::test_python_and_sql_agree_on_the_non_empty_rule`
+  --     逐条比对的就是这个。
+  --
+  -- ⚠️ **`is not distinct from`，不是 `=`。** `slice_count` 这个键缺失时
+  -- `payload -> 'slice_count'` 是 SQL NULL，而 `NULL = '0'` 求值为 **NULL**，
+  -- 函数于是返回 NULL —— 而**结果为 NULL 的 CHECK 是通过的**。
+  -- 那会让「空 slice_ids 且没有 slice_count」这一行悄悄写进去，
+  -- 正是本条护栏要挡的东西。`is not distinct from` 只出 true/false。
   return event_type = 'retrieval_executed'
-     and coalesce((payload ->> 'slice_count')::int, -1) = 0;
+     and payload -> 'slice_count' is not distinct from '0'::jsonb;
 end;
 $$;
 
@@ -367,13 +384,18 @@ alter table public.style_events alter column schema_version set default 'f1-even
 --     select event_id, created_at, payload->'slice_count', payload->'slice_ids'
 --     from public.style_events
 --     where event_type = 'retrieval_executed'
+--       and jsonb_typeof(payload->'slice_ids') = 'array'
 --       and jsonb_array_length(payload->'slice_ids') = 0
---       and coalesce((payload->>'slice_count')::int, -1) <> 0;
+--       and payload->'slice_count' is distinct from '0'::jsonb;
+--
+-- **跑迁移之前先记数**（同 cascade 那条「删之前先记数」）：不先记的话，
+-- 迁移成功之后「没有坏行」与「本来就一行都没有」分不开。两句 SQL 在
+-- `docs/F4/F4-P1执行记录.md` §六 ① 里，逐字可粘。
 --
 -- ⚠️ **部署顺序：本迁移先于那个构建**（仓库根 CLAUDE.md 那条）。
 -- 反了的话 `confusion_mark_created` 会因为 `f1_event_required_keys` 还不认识它
 -- 而 **23514 全部被拒**（未知 event_type → 返回 NULL → payload_ok 判 false），
--- 而 `POST /api/v1/marks` **照常返回 200**（埋点失败不打断主链路，口径 F42）。
+-- 而 `POST /marks` **照常返回 200**（埋点失败不打断主链路，口径 F42）。
 -- 更糟的一半：`confusion_marks` 表还不存在时，标记本身也写不进去，
 -- 而前端看到的是一个 502 —— 两种失败混在一起，先跑迁移就都没有。
 --

@@ -583,6 +583,32 @@ console.log("\n\x1b[1m六 · 16 个样例都渲染得出来\x1b[0m");
 
 // ---------------------------------------------------------------- 埋点五事件
 
+/**
+ * 纯函数，好让下面的反向控制直接喂一段改过的 SQL。七与十四两节共用。
+ *
+ * ⚠️ **取最后一个定义，不是第一个。** `f1_event_required_keys` 被
+ * `create or replace` 过多次（阶段 4 五个类型 → 阶段 6 九个 → 上传批十一个 → F4 十二个），
+ * 而迁移是按序执行的，**生效的是最后那一份**。
+ *
+ * 第一版用 `.exec()` 取的是**第一个**匹配，也就是阶段 4 那份（只有 5 个类型）。
+ * 它当时是绿的，而且会一直绿——**绿的理由是它在跟一份已经不生效的定义比**。
+ * 2026-09-12 加上传两个事件时发现：那条 `=== 5` 的分辨力断言正是靠读到
+ * 旧定义才通过的。这是 F16 的又一个形态：判据在它要区分的两种情况下取值相同
+ * （旧定义与新定义里那 5 个 style_* 恰好一样），所以它分不出「TS 与生效定义漂了」。
+ */
+function parseSqlRequiredKeys(sql) {
+  const blocks = [
+    ...sql.matchAll(/create or replace function public\.f1_event_required_keys[\s\S]*?\$\$;/g),
+  ];
+  if (blocks.length === 0) return null;
+  const block = blocks[blocks.length - 1][0];   // ← **最后一个 = 生效的那一份**
+  const out = {};
+  for (const m of block.matchAll(/when\s+'(\w+)'\s*\n?\s*then\s*array\[([^\]]*)\]/g)) {
+    out[m[1]] = [...m[2].matchAll(/'(\w+)'/g)].map((k) => k[1]);
+  }
+  return out;
+}
+
 console.log("\n\x1b[1m七 · 埋点五事件（阶段 4）\x1b[0m");
 {
   const ev = require_(join(out, "events.js"));
@@ -601,32 +627,6 @@ console.log("\n\x1b[1m七 · 埋点五事件（阶段 4）\x1b[0m");
     .sort()
     .map((f) => readFileSync(join(migDir, f), "utf8"))
     .join("\n");
-
-  /**
-   * 纯函数，好让下面的反向控制直接喂一段改过的 SQL。
-   *
-   * ⚠️ **取最后一个定义，不是第一个。** `f1_event_required_keys` 被
-   * `create or replace` 过三次（阶段 4 五个类型 → 阶段 6 九个 → 上传批十一个），
-   * 而迁移是按序执行的，**生效的是最后那一份**。
-   *
-   * 第一版用 `.exec()` 取的是**第一个**匹配，也就是阶段 4 那份（只有 5 个类型）。
-   * 它当时是绿的，而且会一直绿——**绿的理由是它在跟一份已经不生效的定义比**。
-   * 2026-09-12 加上传两个事件时发现：那条 `=== 5` 的分辨力断言正是靠读到
-   * 旧定义才通过的。这是 F16 的又一个形态：判据在它要区分的两种情况下取值相同
-   * （旧定义与新定义里那 5 个 style_* 恰好一样），所以它分不出「TS 与生效定义漂了」。
-   */
-  function parseSqlRequiredKeys(sql) {
-    const blocks = [
-      ...sql.matchAll(/create or replace function public\.f1_event_required_keys[\s\S]*?\$\$;/g),
-    ];
-    if (blocks.length === 0) return null;
-    const block = blocks[blocks.length - 1][0];   // ← **最后一个 = 生效的那一份**
-    const out = {};
-    for (const m of block.matchAll(/when\s+'(\w+)'\s*\n?\s*then\s*array\[([^\]]*)\]/g)) {
-      out[m[1]] = [...m[2].matchAll(/'(\w+)'/g)].map((k) => k[1]);
-    }
-    return out;
-  }
 
   const sqlKeys = parseSqlRequiredKeys(migSrc);
   // 判据自身的分辨力：解析失败会得到 null 或空对象，而空对象之间的比对必然相等。
@@ -1448,6 +1448,173 @@ console.log("\n\x1b[1m十三 · 讲解页 · 接线（阶段 6 第二批）\x1b[
     check(client.includes(m), `DOM 上有 ${m}`);
   }
 }
+
+// ================================================================ 十四 · 讲解页 · 这部分没看懂（F4-P2）
+console.log("\n\x1b[1m十四 · 讲解页 · 「这部分没看懂」（F4-P2）\x1b[0m");
+await (async () => {
+  const T = require_(join(outExplain, "turns.js"));
+  const client = readFileSync(join(WEB, "app", "explain", "explain-client.tsx"), "utf8");
+  const clientCode = stripComments(client);
+  const API = join(WEB, "..", "api", "api");
+
+  const KEYS = ["d1:s001", "d2:s001"];
+  const answered = (over = {}) => ({
+    turnIndex: 1, question: "能源问题有哪些", courseId: "c1", state: "answered",
+    answer: T.answerFromResponse({
+      text: "x", accepted: true, regenerations: 0, mean_paragraph_chars: 1, detail_level: "P0",
+      retrieval: { meta: { backend: "supabase" }, slices: [] },
+      round_id: "11111111-1111-4111-8111-111111111111",
+      slice_keys: KEYS,
+      confusion: { injected: false, note: null, marked_rounds: 0, matched_slice_keys: [] },
+      ...over,
+    }),
+  });
+
+  /** 假 fetch：记下每一次调用，按给定的响应回。`throws` 模拟网络层失败。 */
+  function fakeFetch(res) {
+    const calls = [];
+    const fn = async (url, init) => {
+      calls.push({ url, init });
+      if (res === "throws") throw new TypeError("Failed to fetch");
+      return { ok: res.status < 300, status: res.status,
+               json: async () => res.body, text: async () => JSON.stringify(res.body ?? "") };
+    };
+    return { fn, calls };
+  }
+  const OK = (created) => ({ status: 200, body: {
+    round_id: "11111111-1111-4111-8111-111111111111", created, mark_count_after: 1, slice_count: 2,
+    events: { emitted: 1, attempted: 1, failed: 0, event_type: "confusion_mark_created" } } });
+  const submit = (fetch, turn = answered()) =>
+    T.submitMark({ fetch, apiBase: "https://api.test", jwt: "jwt", turn, sessionId: "sess-1" });
+
+  // -------- 14.1 响应里取出 round_id / slice_keys / confusion
+  const a = answered().answer;
+  check(a.roundId === "11111111-1111-4111-8111-111111111111", "round_id 从 /explain 响应取出");
+  check(eq(a.sliceKeys, KEYS), "slice_keys 原样取出，不重拼", "← 唯一拼法在服务端 slice_key()（F66）");
+  check(a.confusion?.injected === false && a.confusion?.markedRounds === 0, "confusion 字段取出");
+
+  // -------- 14.2 空检索轮不渲染；服务端旧时说出来
+  check(T.markUnavailable(a) === null, "有 round_id 与切片 → 可标记");
+  check(T.markUnavailable(answered({ slice_keys: [],
+    confusion: { injected: false, skipped_reason: "本轮没有可标记的切片身份" } }).answer) === "empty-retrieval",
+    "slice_keys 为空 → empty-retrieval", "← POST /marks 对空 slice_ids 回 422");
+  check(T.markUnavailable(answered({ round_id: undefined, slice_keys: undefined }).answer) === "old-server",
+    "响应里没有 round_id → old-server", "← 服务端比客户端旧，要响亮，不能与空检索一样静默");
+  check(/markUnavailable\(t\.answer\) === null && \(\s*<div[^>]*data-field="mark"/.test(clientCode),
+    "按钮只在 markUnavailable === null 时渲染");
+  check(/markUnavailable\(t\.answer\) === "old-server"/.test(clientCode) && /data-field="mark-old-server"/.test(client),
+    "服务端旧时页面上有一句话");
+
+  // -------- 14.3 请求体：字段必须是服务端 MarkRequest 认得的（extra="forbid"）
+  const mainPy = readFileSync(join(API, "main.py"), "utf8");
+  function parseMarkRequest(src) {
+    const block = /class MarkRequest\(BaseModel\):[\s\S]*?(?=\n\S)/.exec(src)?.[0] ?? "";
+    const fields = {};
+    for (const m of block.matchAll(/^ {4}(\w+):[^\n]*$/gm)) fields[m[1]] = !/=\s*None\s*$/.test(m[0]);
+    return fields;   // name → required
+  }
+  function markBodyProblems(body, fields) {
+    const p = [];
+    const extra = Object.keys(body).filter((k) => !(k in fields));
+    if (extra.length) p.push(`服务端不认得的字段 ${JSON.stringify(extra)}（extra=forbid → 422）`);
+    for (const [k, req] of Object.entries(fields)) if (req && !(k in body)) p.push(`缺必需字段 ${k}`);
+    if (!Array.isArray(body.slice_ids) || body.slice_ids.length === 0) p.push("slice_ids 为空（422）");
+    if (!body.session_id) p.push("缺 session_id → 服务端跳过 confusion_mark_created");
+    return p;
+  }
+  const fields = parseMarkRequest(mainPy);
+  check(eq(sorted_(Object.keys(fields).filter((k) => fields[k])), ["question", "round_id", "slice_ids"]),
+    "从 main.py 读出 MarkRequest 的必需字段是三个", JSON.stringify(fields));
+  const body = T.markRequestBody(answered(), "sess-1");
+  const bodyProblems = markBodyProblems(body, fields);
+  check(bodyProblems.length === 0, "请求体字段全部是 MarkRequest 认得的，且带 session_id", bodyProblems.join("；"));
+  check(eq(body.slice_ids, KEYS) && body.round_id === a.roundId && body.course_id === "c1",
+    "round_id / slice_ids 取自本轮响应，course_id 取自本轮发出时的课");
+  // 反向控制 ×2：多一个字段 / 缺 session_id，判据必须报出来。
+  check(markBodyProblems({ ...body, deck_id: "x" }, fields).length > 0,
+    "反向控制：多塞一个字段 → 判据报 422 风险");
+  {
+    const { session_id: _drop, ...noSession } = body;
+    check(markBodyProblems(noSession, fields).some((s) => s.includes("session_id")),
+      "反向控制：去掉 session_id → 判据报「服务端跳过事件」");
+  }
+
+  // -------- 14.4 点击 → 发出请求 → 成功后 disabled
+  {
+    const f = fakeFetch(OK(true));
+    const s = await submit(f.fn);
+    check(f.calls.length === 1, "点一次发一个请求", `${f.calls.length} 次`);
+    check(f.calls[0]?.url === "https://api.test/marks", "路径是 /marks（无 /api/v1）", f.calls[0]?.url);
+    check(f.calls[0]?.init.method === "POST", "方法是 POST");
+    check(eq(JSON.parse(f.calls[0]?.init.body ?? "{}"), body), "发出去的请求体就是 markRequestBody");
+    check(s.status === "marked" && T.markButtonDisabled(s) === true, "成功 → marked 且 disabled");
+    check(T.markButtonDisabled({ status: "sending" }) === true, "在飞时 disabled");
+    check(T.markButtonDisabled(undefined) === false, "未点过 → 可点");
+    check(/onClick=\{\(\) => void markConfused\(turns\.length - 1 - i\)\}/.test(clientCode),
+      "按钮点击接到 markConfused（按原始下标，不是最后一轮）");
+    check(/submitMark\(\{/.test(clientCode) && /disabled=\{markButtonDisabled\(t\.mark\)\}/.test(clientCode),
+      "页面走 submitMark，disabled 由 markButtonDisabled 决定");
+    check(/"已记下"/.test(clientCode), "成功后按钮文案是「已记下」");
+  }
+
+  // -------- 14.5 失败 → 恢复可点，不静默
+  for (const [label, res] of [["HTTP 502", { status: 502, body: { detail: "db down" } }],
+                              ["HTTP 422", { status: 422, body: { detail: "slice_ids" } }],
+                              ["网络层失败", "throws"]]) {
+    const s = await submit(fakeFetch(res).fn);
+    check(s.status === "failed" && T.markButtonDisabled(s) === false && !!s.message,
+      `${label} → failed、可再点、带原因`, s.message);
+  }
+  check(/data-field="mark-failure"/.test(client) && /t\.mark\.message/.test(clientCode),
+    "失败原因显示在页面上");
+
+  // -------- 14.6 重复提交 created:false —— UI 与首次成功一致，不许多一个分支
+  {
+    const first = await submit(fakeFetch(OK(true)).fn);
+    const again = await submit(fakeFetch(OK(false)).fn);
+    check(eq(first, again), "created:false 与 created:true 得到完全相同的状态", JSON.stringify(again));
+    check(!/created/.test(String(T.submitMark)) && !/\.created\b/.test(clientCode),
+      "submitMark 与页面都不读 created", "← 服务端刻意不返回 409，就是为了前端少这个分支");
+  }
+
+  // -------- 14.7 埋点 confusion_mark_created：一个发送方，三个必需字段
+  //
+  // ⚠️ 与任务书的偏离（见 F4-P2 人工验收清单 §〇）：这条事件 P1 已在服务端
+  // `POST /marks` 里发（`_record_mark_event`，带 created 与 course_id 列、带重试）。
+  // 前端再经 createEventQueue 发一条 = 每次点击两行。所以这里断的是
+  // 「前端**不**另发」+「服务端发事件的前提（session_id）前端给齐了」。
+  const REQUIRED = ["mark_count_after", "round_id", "slice_ids"];
+  const migDir3 = join(WEB, "..", "supabase", "migrations");
+  const sqlKeys3 = parseSqlRequiredKeys(readdirSync(migDir3).filter((f) => f.endsWith(".sql")).sort()
+    .map((f) => readFileSync(join(migDir3, f), "utf8")).join("\n"));
+  check(eq(sorted_(sqlKeys3?.confusion_mark_created ?? []), REQUIRED),
+    "SQL 生效定义里 confusion_mark_created 的必需字段是那三个", JSON.stringify(sqlKeys3?.confusion_mark_created));
+  const pyKeys = /"confusion_mark_created":\s*\(([^)]*)\)/.exec(readFileSync(join(API, "events.py"), "utf8"))?.[1] ?? "";
+  check(eq(sorted_([...pyKeys.matchAll(/"(\w+)"/g)].map((m) => m[1])), REQUIRED),
+    "Python REQUIRED_KEYS 里是同样三个", pyKeys.trim());
+  check(/round_id=round_id, slice_keys=req\.slice_ids/.test(mainPy) && /mark_count_after=count/.test(mainPy),
+    "服务端事件的三个字段分别来自本轮 round_id / slice_ids / 插完再数的 count");
+  check(/session_id=req\.session_id, course_id=req\.course_id/.test(mainPy),
+    "服务端事件读的 session_id / course_id 就是请求体里前端带的那两个");
+
+  function extraEmitterProblems(code) {
+    return ["confusion_mark_created", "createEventQueue", "recordEvent", "\\.enqueue\\(", "style_events"]
+      .filter((pat) => new RegExp(pat).test(code));
+  }
+  check(extraEmitterProblems(clientCode).length === 0, "讲解页不另发这条事件（不入队、不裸插）",
+    extraEmitterProblems(clientCode).join(", "));
+  check(extraEmitterProblems(clientCode + '\nqueue.enqueue({ event_type: "confusion_mark_created" });').length > 0,
+    "反向控制：往页面里加一次 enqueue → 判据必须红");
+  check(!/\/api\/v1\/marks/.test(clientCode), "页面不调 /api/v1/marks");
+
+  // -------- 14.8 文案（口径 F56）：两个按钮的说明放在一起
+  const scope = /data-field="mark-scope"[\s\S]*?<\/ul>/.exec(client)?.[0] ?? "";
+  check(/这部分没看懂/.test(scope) && /讲太深/.test(scope), "「这部分没看懂」与「讲太深」的说明在同一块里");
+  check(/这次/.test(scope) && /以后所有讲解/.test(scope) && /不改/.test(scope),
+    "说明里把「这次这几页 / 不改配置」与「以后所有讲解」说开");
+  const btn = /<button\s+data-field="mark-confused"[\s\S]*?<\/button>/.exec(client)?.[0] ?? "";
+  check(btn !== "" && !/title=/.test(btn), "按钮上没有 tooltip（说明不拆到 tooltip 里）");
+})();
 
 rmSync(out, { recursive: true, force: true });
 rmSync(outUpload, { recursive: true, force: true });

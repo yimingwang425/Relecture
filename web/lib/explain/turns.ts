@@ -59,6 +59,31 @@ export type TurnAnswer = {
   sources: { sourceFile: string; pages: number[] }[];
   /** 服务端报的埋点结果（口径 F53：从外面要能自证落没落库）。 */
   events?: unknown;
+  /** 这一轮的标识（口径 F65，服务端生成）。`null` = 服务端构建比这一页旧。 */
+  roundId: string | null;
+  /** 本轮命中切片的身份键 `document_id:slice_id`（口径 F66）。**原样带回，前端不拼。** */
+  sliceKeys: string[];
+  /** 本轮有没有因为历史「没看懂」标记而注入限定语。`null` = 服务端没给。 */
+  confusion: Confusion | null;
+};
+
+export type Confusion = {
+  injected: boolean;
+  note: string | null;
+  markedRounds: number;
+  matchedSliceKeys: string[];
+  skippedReason: string | null;
+};
+
+/**
+ * 「这部分没看懂」按钮的状态。**没有 `created` 这一维**：重复提交返回
+ * `created: false`，而服务端刻意不返回 409，就是为了前端少一个它不关心的分支。
+ */
+export type MarkState = {
+  status: "sending" | "marked" | "failed";
+  message?: string;
+  /** `POST /marks` 响应里的埋点结果（事件由服务端发，见 `submitMark`）。 */
+  events?: unknown;
 };
 
 export type TurnFailure = {
@@ -72,9 +97,13 @@ export type Turn = {
   /** 发这一轮时用的 `turn_index`。**failed 的轮次也留着它**，见下。 */
   turnIndex: number;
   question: string;
+  /** 这一轮**发出时**问的哪门课。标记时带它，而不是下拉框此刻选着的那门。 */
+  courseId?: string;
   state: TurnState;
   answer?: TurnAnswer;
   failure?: TurnFailure;
+  /** 「这部分没看懂」。**只活在本次页面加载里**：不做跨刷新回显（口径 F60）。 */
+  mark?: MarkState;
 };
 
 /**
@@ -132,7 +161,17 @@ export function answerFromResponse(body: {
     slices?: { source_file: string; pages: number[] }[];
   };
   events?: unknown;
+  round_id?: string;
+  slice_keys?: string[];
+  confusion?: {
+    injected?: boolean;
+    note?: string | null;
+    marked_rounds?: number;
+    matched_slice_keys?: string[];
+    skipped_reason?: string | null;
+  };
 }): TurnAnswer {
+  const c = body.confusion;
   const byFile = new Map<string, Set<number>>();
   for (const s of body.retrieval?.slices ?? []) {
     const set = byFile.get(s.source_file) ?? new Set<number>();
@@ -151,6 +190,19 @@ export function answerFromResponse(body: {
       pages: [...pages].sort((a, b) => a - b),
     })),
     events: body.events,
+    // **缺了就是 null / 空，不编**：编一个 round_id 会被服务端 422，
+    // 而编出来的 slice_keys 会写进一条永远不相交的死 mark。
+    roundId: body.round_id ?? null,
+    sliceKeys: body.slice_keys ?? [],
+    confusion: c
+      ? {
+          injected: c.injected === true,
+          note: c.note ?? null,
+          markedRounds: c.marked_rounds ?? 0,
+          matchedSliceKeys: c.matched_slice_keys ?? [],
+          skippedReason: c.skipped_reason ?? null,
+        }
+      : null,
   };
 }
 
@@ -167,4 +219,85 @@ export function answerFromResponse(body: {
  */
 export function isFromRequestedCourse(answer: TurnAnswer): boolean {
   return answer.backend === "supabase";
+}
+
+// ---------------------------------------------------------------- F4 · 这部分没看懂
+
+/**
+ * 这一轮能不能标记。三种结果，页面各自处置：
+ *
+ * - `null`：能。
+ * - `"empty-retrieval"`：本轮没有切片身份（空检索 / 走替身检索）。**不渲染按钮**——
+ *   `POST /marks` 对空 `slice_ids` 回 422，一条空 mark 是死数据。
+ *   ⚠️ 代价：用户想标却没得标，而这不单独埋点（`retrieval_executed` 的
+ *   `slice_count` 已经算得出空检索轮占比，见 F4-P2 人工验收清单的观察项）。
+ * - `"old-server"`：响应里没有 `round_id`。**服务端比这一页旧**，要响亮地说出来，
+ *   不能与「空检索」一样静默不显示——那样它长得和「这一轮本来就不能标」一模一样。
+ */
+export function markUnavailable(answer: TurnAnswer): null | "empty-retrieval" | "old-server" {
+  if (!answer.roundId) return "old-server";
+  if (answer.sliceKeys.length === 0) return "empty-retrieval";
+  return null;
+}
+
+/**
+ * `POST /marks` 的请求体。字段必须是服务端 `MarkRequest` 认得的
+ * （`extra="forbid"`，多一个就 422 —— `verify:logic` 从 `api/api/main.py` 原文读回来比对）。
+ *
+ * **`session_id` 与 `course_id` 必须带。** `confusion_mark_created` 由服务端在
+ * 同一次请求里发（`_record_mark_event`），**缺 `session_id` 它就跳过不发**
+ * （服务端不现编 session）；`course_id` 进事件那一行的列，供按课分组。
+ * 前端不自己再发一条：发了就是每次点击两行。
+ */
+export function markRequestBody(turn: Turn, sessionId: string) {
+  return {
+    round_id: turn.answer?.roundId ?? "",
+    // 原样带回 `/explain` 给的那一份，**不在前端重拼**（口径 F66：唯一拼法在服务端）。
+    slice_ids: turn.answer?.sliceKeys ?? [],
+    question: turn.question,
+    session_id: sessionId,
+    course_id: turn.courseId ?? null,
+  };
+}
+
+/** `fetch` 的最小面。抽成类型是为了能在断言里喂一个假的。 */
+export type FetchLike = (
+  url: string,
+  init: { method: string; headers: Record<string, string>; body: string },
+) => Promise<{ ok: boolean; status: number; json(): Promise<unknown>; text(): Promise<string> }>;
+
+/**
+ * 点一次「这部分没看懂」。**永不抛**，返回按钮的下一个状态。
+ *
+ * - 2xx → `marked`。**不读 `created`**：重复提交（`created: false`）与首次成功
+ *   在 UI 上必须一模一样，幂等是服务端的事。
+ * - 非 2xx / 网络层失败 → `failed`，带一句原因，按钮恢复可点。**不静默吞掉。**
+ */
+export async function submitMark(args: {
+  fetch: FetchLike;
+  apiBase: string;
+  jwt: string;
+  turn: Turn;
+  sessionId: string;
+}): Promise<MarkState> {
+  try {
+    const r = await args.fetch(`${args.apiBase}/marks`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${args.jwt}`, "Content-Type": "application/json" },
+      body: JSON.stringify(markRequestBody(args.turn, args.sessionId)),
+    });
+    if (!r.ok) {
+      const detail = await r.text().catch(() => "");
+      return { status: "failed", message: `没记上（HTTP ${r.status}）。${detail}`.trim() };
+    }
+    const body = (await r.json()) as { events?: unknown };
+    return { status: "marked", events: body.events };
+  } catch (e) {
+    return { status: "failed", message: `没记上：连不上产品服务端。原始错误：${String(e)}` };
+  }
+}
+
+/** 成功之后本轮内不可再点；在飞时也不可再点。失败 → 可点。 */
+export function markButtonDisabled(mark: MarkState | undefined): boolean {
+  return mark?.status === "sending" || mark?.status === "marked";
 }

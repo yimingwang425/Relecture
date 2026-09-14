@@ -276,7 +276,7 @@ export function StyleSettings({
       <section className="mt-10">
         <h2 className="t-title">读完一段讲解之后</h2>
         <p className="t-body mt-2 max-w-[62ch]">
-          这几个按钮和讲解页面里的是同一套：点一下就按下面的规则调整配置。
+          点一下就按下面的规则调整配置 —— 除「例子没懂」外，改的都是<b>以后所有讲解</b>。
         </p>
 
         <div className="mt-4 flex flex-wrap gap-2">
@@ -312,6 +312,10 @@ export function StyleSettings({
             <b>例子没懂</b>：<b>不改配置</b>，只把这一段按当前配置重新讲一遍。
           </li>
           <li>已经在最边上那一格时，配置保持不变，并会告诉你为什么没变。</li>
+          <li>
+            只是<b>某一段的这几页</b>没看懂、不想以后都讲浅？别点「讲太深」——
+            去讲解页那一轮下面点<b>「这部分没看懂」</b>：不改配置，只在下次讲到这几页时换个切入点（口径 F56）。
+          </li>
         </ul>
       </section>
 

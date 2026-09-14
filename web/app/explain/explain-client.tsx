@@ -8,7 +8,10 @@ import {
   answeredCount,
   hasPending,
   isFromRequestedCourse,
+  markButtonDisabled,
+  markUnavailable,
   nextTurnIndex,
+  submitMark,
   type Turn,
 } from "@/lib/explain/turns";
 
@@ -25,6 +28,10 @@ import {
  *
  * 本组件的埋点责任只有两样，且都只是**转述**：
  * `session_id`（服务端页面给的）与 `turn_index`（口径在 `lib/explain/turns.ts`）。
+ *
+ * F4 的「这部分没看懂」同理：`confusion_mark_created` 由 `POST /marks` 在**服务端**
+ * 同一次请求里发（`mark_count_after` 本来就只有服务端知道）。前端只转述
+ * `session_id` / `course_id`，**不入队、不另发**——另发就是每次点击两行。
  *
  * ## 等待态是这一页最要紧的交互
  *
@@ -124,7 +131,7 @@ export function ExplainClient({
     // （用户一个字都没看到，那不是一轮讲解），重生成也不计入（它在服务端一次
     // 请求里面）。口径与理由在 lib/explain/turns.ts。
     const turnIndex = nextTurnIndex(turns);
-    setTurns((prev) => [...prev, { turnIndex, question: q, state: "pending" }]);
+    setTurns((prev) => [...prev, { turnIndex, question: q, courseId, state: "pending" }]);
     setQuestion("");
 
     const finish = (patch: Partial<Turn>) =>
@@ -187,6 +194,23 @@ export function ExplainClient({
         },
       });
     }
+  }
+
+  /**
+   * 「这部分没看懂」（F4）。按**下标**改那一轮，不是「最后一轮」：
+   * 用户完全可能在下一轮还在飞时回头标记上一轮。
+   */
+  async function markConfused(index: number) {
+    const t = turns[index];
+    if (!t?.answer || markUnavailable(t.answer) !== null || markButtonDisabled(t.mark)) return;
+
+    const patchMark = (mark: Turn["mark"]) =>
+      setTurns((prev) => prev.map((x, i) => (i === index ? { ...x, mark } : x)));
+
+    patchMark({ status: "sending" });
+    const jwt = await token();
+    if (!jwt) return patchMark({ status: "failed", message: "登录状态已过期，请重新登录。" });
+    patchMark(await submitMark({ fetch: (u, init) => fetch(u, init), apiBase, jwt, turn: t, sessionId }));
   }
 
   return (
@@ -293,6 +317,8 @@ export function ExplainClient({
               data-state={t.state}
               data-turn-index={t.turnIndex}
               data-backend={t.answer?.backend ?? ""}
+              data-round-id={t.answer?.roundId ?? ""}
+              data-confusion-injected={String(t.answer?.confusion?.injected ?? "")}
               className="rounded border border-neutral-200 bg-white p-4 text-sm"
             >
               <p className="font-medium text-neutral-800">
@@ -391,7 +417,61 @@ export function ExplainClient({
                         </span>
                       </>
                     )}
+                    {t.answer.confusion?.injected && (
+                      <>
+                        {" · "}
+                        <span data-field="confusion-injected">
+                          你之前标过这几页没看懂，这次换了个切入点讲
+                        </span>
+                      </>
+                    )}
                   </p>
+
+                  {/* ---- F4 · 这部分没看懂 ----
+                      空检索轮不渲染（POST /marks 对空 slice_ids 回 422）；
+                      服务端旧到没有 round_id 时**说出来**，不与空检索一样静默。 */}
+                  {markUnavailable(t.answer) === "old-server" && (
+                    <p className="mt-3 text-[11px] text-amber-700" data-field="mark-old-server">
+                      服务端没有返回 round_id（构建比这一页旧），这一轮暂时标记不了。
+                    </p>
+                  )}
+                  {markUnavailable(t.answer) === null && (
+                    <div className="mt-3 border-t border-neutral-100 pt-3" data-field="mark">
+                      <button
+                        data-field="mark-confused"
+                        data-mark-state={t.mark?.status ?? "idle"}
+                        onClick={() => void markConfused(turns.length - 1 - i)}
+                        disabled={markButtonDisabled(t.mark)}
+                        className="rounded border border-neutral-300 px-3 py-1 text-xs disabled:opacity-50"
+                      >
+                        {t.mark?.status === "marked"
+                          ? "已记下"
+                          : t.mark?.status === "sending"
+                            ? "记下中…"
+                            : "这部分没看懂"}
+                      </button>
+                      {t.mark?.status === "failed" && (
+                        <p role="alert" data-field="mark-failure"
+                           className="mt-1 font-mono text-[11px] text-red-700">
+                          {t.mark.message}
+                        </p>
+                      )}
+                      {/* 口径 F56：两个按钮的说明**放在一起**，把「这次这里」与「以后都」说开。
+                          用户点错不会有任何指标变红 —— 配置会被一路改深，而没人知道。 */}
+                      <ul data-field="mark-scope"
+                          className="mt-2 list-disc space-y-0.5 pl-5 text-[11px] leading-relaxed text-neutral-500">
+                        <li>
+                          <b>这部分没看懂</b>：只管<b>这次命中的这几页</b>。不改你的风格配置；
+                          以后再讲到这几页时，换一个切入点重讲。
+                        </li>
+                        <li>
+                          <b>讲太深</b>（在
+                          <a href="/settings/style" className="underline underline-offset-2">风格设置</a>
+                          里）：<b>以后所有讲解</b>都往浅讲一格，改的是配置。
+                        </li>
+                      </ul>
+                    </div>
+                  )}
                 </div>
               )}
             </li>

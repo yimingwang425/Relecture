@@ -148,10 +148,15 @@ class FakeAttempt:
 
 class FakeResult:
     def __init__(self, *, attempts, context, accepted=True):
+        from explain.gap import GapResult
+
         self.attempts = tuple(attempts)
         self.context = context
         self.accepted = accepted
         self.round_index = 1
+        #: 内测前-P1：`explain_turn` 要读 `result.gap`。用**生产的** `GapResult`，
+        #: 不另造一个假的（口径 F49）——默认值就是 `NullGapChecker` 给的那一份。
+        self.gap = GapResult(verdict=None)
 
     @property
     def regenerations(self):

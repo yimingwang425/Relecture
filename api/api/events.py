@@ -89,9 +89,12 @@ REQUIRED_KEYS: dict[str, tuple[str, ...]] = {
     "retrieval_executed": ("top_k_scores", "slice_ids", "pages", "latency_ms",
                            "embed_model", "dimensions", "ruleset_versions", "backend"),
     # ---- 上传页两个（阶段 6 第一批）----
+    # ⚠️ `restricted_pages_excluded` **不在这里**（内测前-P1，口径 F69）：它现在写 null，
+    # 意思是「未检查」。null 有含义的字段不进必需清单（口径 F50）——进了，
+    # 每一次成功上传的事件都会被判成缺字段而静默丢掉。
     "deck_uploaded": ("filename", "source_format", "page_count", "usable_page_count",
                       "verdict", "slice_count", "embedded_count", "skipped_pages",
-                      "restricted_pages_excluded", "duration_ms"),
+                      "duration_ms"),
     # ⚠️ **只有三个**，刻意的（口径 F50）。失败可能发生在任何一步之前：
     # 格式不对时连文件都没读，`page_count` / `source_format` 全是 null。
     # 把它们列成必需 = **最该被采集的那一类失败进不了库**
@@ -114,7 +117,7 @@ def complete_event(event_type: str, payload: dict[str, Any]) -> dict[str, Any]:
 
     ⚠️ **0 与 False 不算缺。** `payload.get(k) is None or == ""` 这个写法
     在 Python 里对 `0` 和 `False` 是安全的（它们既不是 None 也不等于 ""），
-    但 `restricted_pages_excluded` 恒为 0、`retryable` 可能是 False，
+    但 `skipped_pages` 常为 0、`retryable` 可能是 False，
     所以这一点必须是刻意的而不是巧合 —— `tests/test_upload_events.py` 钉着它。
     """
     known = REQUIRED_KEYS.get(event_type)
@@ -229,6 +232,8 @@ def build_explain_events(
         "metric_set_id": config.metric_set_id(),
         "prompt_template_version": _prompt_template_version(),
         "context_signature": ctx.signature(),
+        # 兜底判断：**单独记账，但已计入上面的 `cost_usd` / `latency_ms`**（口径 F71 / G08）。
+        **_gap_fields(result.gap),
     }))
 
     # ---------------------------------------------------------------- style_review_result
@@ -357,6 +362,44 @@ def _slice_identities(ctx: Any) -> list[dict[str, Any]]:
         }
         for i, s in enumerate(ctx.slices)
     ]
+
+
+def _gap_fields(gap: Any) -> dict[str, Any]:
+    """`explain_turn` 里兜底判断那几列（口径 F71：G08 的生产版）。
+
+    它是**每轮固定开销，不是异常路径**，分开记才能回答「这一跳值不值」。
+    `RoundResult.cost_usd` / `latency_ms` 本来就含它（`pipeline.py`），
+    这里是把它**从总数里拆出来单独落一份**，不是重复计入。
+
+    `gap_model` 要记：讲解的 `pricing_rates` 是讲解模型的价，判断走 Haiku，
+    不记模型名的话这笔成本事后无法按价目重算。
+
+    ## 三个字段为什么都不进必需清单
+
+    - `gap_verdict`：判断无效或失败时是 null，而那个 null 有含义（口径 F50）。
+    - `gap_cost_usd`：**判断失败时写 null，不写 0**。请求可能已经计费，
+      我们不知道花了多少——写 0 是一条「没花钱」的假证据（同口径 F69）。
+    - 全部：部署顺序是迁移先于构建（CLAUDE.md），迁移跑完到新构建上线之间
+      **旧构建的 `explain_turn` 没有这几个键**。进了必需清单，那段窗口里的讲解事件
+      会被 23514 全部静默拒掉。
+
+    代价如实登记：这几列**没有数据库护栏**，护栏在 `tests/test_gap_wiring.py`
+    （断的是表里那一行的值，不是函数被调用）。
+    """
+    d = gap.to_dict()
+    failed = d["gap_implementation"] == "error"
+    return {
+        "gap_verdict": d["gap_verdict"],
+        "gap_reason": d["gap_reason"],
+        "gap_cost_usd": None if failed else d["gap_cost_usd"],
+        "gap_latency_ms": d["gap_latency_ms"],
+        # "model" / "null" / "error"。上线后它应当恒为 "model"——
+        # 出现 "null" 说明构建里没接上，出现 "error" 看 `gap_error`。
+        "gap_implementation": d["gap_implementation"],
+        "gap_model": d["gap_model"],
+        "gap_error": d["gap_error"],
+        "gap_skipped_hint_pages": d["gap_skipped_hint_pages"],
+    }
 
 
 def _model_name_of(result: Any) -> str:

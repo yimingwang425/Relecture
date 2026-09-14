@@ -78,6 +78,19 @@ class StaticJwks:
         return self._set
 
 
+@pytest.fixture(autouse=True)
+def _no_real_model_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    """**测试里任何一次真模型调用都必须失败，而且是离线失败。**
+
+    内测前-P1 起 `/explain` 默认就接真的兜底判断（口径 F70，不加开关）。
+    没注入 `gap_checker_factory` 的测试会走到 `build_model_gap_checker()` ——
+    本机环境里若恰好有 `ANTHROPIC_API_KEY`，那就是一次真的 Haiku 调用、真的钱，
+    而且测试结果取决于网络。拿掉它之后 `AnthropicModel._ensure_client` 当场抛，
+    被 `GuardedGapChecker` 接住成 `implementation="error"`：离线、确定、不花钱。
+    """
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+
+
 @pytest.fixture
 def keypair() -> KeyPair:
     return KeyPair("test-kid-1")

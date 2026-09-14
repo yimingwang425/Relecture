@@ -141,6 +141,7 @@ def create_app(
     retriever: Any | None = None,
     model_factory: Any | None = None,
     embedder_factory: Any | None = None,
+    gap_checker_factory: Any | None = None,
 ) -> FastAPI:
     """组装。每个依赖都可注入，**为的是断言能喂真东西**。
 
@@ -328,6 +329,19 @@ def create_app(
         slice_keys = _marks.slice_keys_of(ctx)
         confusion = _confusion_for_round(db, p, slice_keys)
 
+        # ---- 兜底判断（F3b / PRD §10.1）。**接进生产，不加开关**（口径 F70）。
+        #
+        # 此前这里不传 `gap_checker`，`run_round` 回落到 `NullGapChecker`，
+        # `gap_verdict` 恒 null——F3b 的实测数全部来自实验侧，而没有任何东西在核对
+        # 「线上到底接没接」。再加一个开关就是再造一个同样的分叉；要停用就 revert。
+        #
+        # `GuardedGapChecker`：判断抛异常时讲解照常返回，`gap_verdict=null` 并带原因。
+        # 注入的 factory 也套它——测试走的就是生产这一层包装。
+        from explain.gap import GuardedGapChecker
+
+        make_gap = gap_checker_factory or _default_gap_checker
+        gap_checker = GuardedGapChecker(make_gap())
+
         make_model = model_factory or _default_model
         result = run_round(
             round_index=1,
@@ -344,6 +358,9 @@ def create_app(
             # F4 的限定语进**本轮用户消息**，不进 system（口径 F57）：
             # marks 逐轮变化，而 system 是按「会话内不变」设计的。
             turn_prefix=confusion["note"] or "",
+            # G03a 的限定语（非 `covered` 且该课件跳过页非空）由它产出、
+            # 由 `build_user_turn` 渲染进本轮消息。**跳过页不给判断模型**（G01 末条）。
+            gap_checker=gap_checker,
         )
 
         # ---- §13.0 的四个事件。**在返回之前发**，且失败不打断这次讲解。
@@ -382,6 +399,9 @@ def create_app(
             # 系统必须能自己答出来）。§九的判据「注入组的 messages 里必须含限定语」
             # 靠它机械可查，不靠人去读那段讲解。
             "confusion": confusion,
+            # 兜底判断的结果**从外面看得见**（口径 F53）。部署后验收第 4 步读的就是它：
+            # `gap_implementation` 是 "model" 而 `gap_verdict` 不是 null，才算线上真的接上了。
+            "gap": result.gap.to_dict(),
             "text": result.final_text,
             "accepted": result.accepted,
             "regenerations": result.regenerations,
@@ -590,7 +610,11 @@ def create_app(
                 "slice_count": result.slice_count,
                 "embedded_count": result.embedded_count,
                 "skipped_pages": result.skipped_pages,
-                "restricted_pages_excluded": result.restricted_pages_excluded,
+                # **null = 未检查**（口径 F68 / F69）。用户上传不做受限页排除，
+                # `ingest_document` 从来没收到过受限页清单，于是它返回的 0
+                # 说的是「清单为空」，不是「检查过、没有受限页」。写 0 就是主动产生假证据。
+                # 将来真有排除机制，这里才可能出现整数。
+                "restricted_pages_excluded": None,
                 "bytes": len(data),
                 "duration_ms": ms(),
             },
@@ -602,7 +626,7 @@ def create_app(
             "slice_count": result.slice_count,
             "embedded_count": result.embedded_count,
             "skipped_pages": result.skipped_pages,
-            "restricted_pages_excluded": result.restricted_pages_excluded,
+            "restricted_pages_excluded": None,   # 同上：未检查，不是 0
             "verdict": result.verdict,
             # 埋点结果**进响应**（2026-09-13 改，见 `_record_upload_event` 的说明）：
             # 事件表从外面读不到，而「deck_id 到底带没带」正是验收要确认的。
@@ -795,6 +819,14 @@ def _default_model() -> Any:
     from explain.llm import AnthropicModel
 
     return AnthropicModel()
+
+
+def _default_gap_checker() -> Any:
+    """生产的兜底判断器。**构造处只有 `explain.gap.build_model_gap_checker` 一个**，
+    实验侧也调它（口径 F70）——这里不写模型 id、不写任何参数。"""
+    from explain.gap import build_model_gap_checker
+
+    return build_model_gap_checker()
 
 
 @lru_cache(maxsize=1)

@@ -156,26 +156,18 @@ def build_corpus_retriever(budget: int = 5):
 
 
 def build_gap_checker(enabled: bool):
-    """兜底判断器。分层调用（PRD §7.3）：低成本模型、输出极短、关 thinking。
+    """兜底判断器。`enabled=False` 是 G13 的无判断基线组。
 
-    **Haiku 4.5 不支持 `effort`**（实测 2026-09-05，传了返回 400），
-    故 `effort=None` —— `AnthropicModel` 会因此不发 `output_config`。
+    ⚠️ **Haiku 那份配置已搬到 `explain.gap.build_model_gap_checker`**（内测前-P1，
+    口径 F70）：生产 `/explain` 也调同一个函数，**不在这里留第二份**。
+    参数逐项未改（模型 id、`effort=None`、关 thinking、`max_tokens=300`、两个缓存关），
+    F3b 的数仍然对应现在这份代码。
     """
-    from explain.gap import ModelGapChecker, NullGapChecker
-    from explain.llm import AnthropicModel
+    from explain.gap import NullGapChecker, build_model_gap_checker
 
     if not enabled:
         return NullGapChecker()
-    return ModelGapChecker(
-        AnthropicModel(
-            name="claude-haiku-4-5-20251001",
-            effort=None,
-            thinking="disabled",
-            max_tokens=300,
-            cache_system=False,   # 系统提示远低于最小可缓存长度，开了也不生效
-            cache_conversation=False,  # 单轮调用，没有历史可缓存
-        )
-    )
+    return build_model_gap_checker()
 
 
 def f3b_config(course: str, gap_enabled: bool, points: tuple[str, ...],

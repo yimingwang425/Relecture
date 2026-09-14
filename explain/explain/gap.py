@@ -74,6 +74,8 @@ from __future__ import annotations
 
 import json
 import re
+import threading
+import time
 from dataclasses import dataclass
 from typing import Any, Literal, Protocol
 
@@ -86,8 +88,12 @@ __all__ = [
     "GapChecker",
     "NullGapChecker",
     "ModelGapChecker",
+    "GuardedGapChecker",
+    "GAP_MODEL_NAME",
+    "GAP_TIMEOUT_S",
     "GAP_SYSTEM_PROMPT",
     "VERDICTS",
+    "build_model_gap_checker",
     "skipped_pages_hint",
 ]
 
@@ -141,10 +147,13 @@ class GapResult:
     skipped_hint: tuple[SkippedPageRef, ...] = ()
     #: 输出不合法时保留原文取证；合法时为 None。
     invalid_raw: str | None = None
+    #: 判断**根本没跑完**（调用抛异常）时的原因，`implementation="error"`。
+    #: 与 `invalid_raw` 是两件事：那个是模型答了但答得不合法。
+    error: str | None = None
 
     @property
     def is_invalid(self) -> bool:
-        return self.implementation != "null" and self.verdict is None
+        return self.implementation not in ("null", "error") and self.verdict is None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -155,6 +164,7 @@ class GapResult:
             "gap_implementation": self.implementation,
             "gap_model": self.model,
             "gap_invalid_output": self.invalid_raw,
+            "gap_error": self.error,
             "gap_skipped_hint_pages": [p.index for p in self.skipped_hint],
         }
 
@@ -250,4 +260,111 @@ class ModelGapChecker:
             model=completion.model,
             skipped_hint=skipped_pages_hint(context, verdict),  # type: ignore[arg-type]
             invalid_raw=None if verdict else completion.text[:200],
+        )
+
+
+#: 兜底判断的模型。**F3b 校准与跑批用的就是这一个 id**（2026-09-05），
+#: 召回 10/10、$0.00126/轮、1,406 ms 都是它的数——换 id 就是换了被测对象。
+GAP_MODEL_NAME = "claude-haiku-4-5-20251001"
+
+
+def build_model_gap_checker(model: Model | None = None) -> ModelGapChecker:
+    """兜底判断器的**唯一构造处**。实验侧（`scan/live.py`）与生产侧（`api/main.py`）都调它。
+
+    ## 为什么住在这里（内测前-P1，口径 F70）
+
+    原先这份配置住在 `实验脚本/配置扫描实验/scan/live.py::build_gap_checker`，
+    生产一行都不 import 它。于是 F3b 的实测数（+4.8%、1.4 s、召回 10/10）
+    **全部来自实验侧，生产链路一次没跑过**，而没有任何东西在核对这件事。
+    在 `api/` 下再抄一份 = 两份 Haiku 配置，改一份另一份不跟（G06 那条教训：
+    受限页号抄一份就多一个会漂的副本）。所以搬到两边都已依赖的 `explain`，
+    方向同口径 F46「生产拥有，实验再导出」。
+
+    分层调用（PRD §7.3）：低成本模型、输出极短、关 thinking（G01）。
+    **Haiku 4.5 不支持 `effort`**（实测 2026-09-05，传了返回 400），故 `effort=None`。
+
+    `model` 只给测试注入假模型用；不传就是真的那一个。
+    """
+    if model is None:
+        from .llm import AnthropicModel
+
+        model = AnthropicModel(
+            name=GAP_MODEL_NAME,
+            effort=None,
+            thinking="disabled",
+            max_tokens=300,
+            cache_system=False,        # 系统提示远低于最小可缓存长度，开了也不生效
+            cache_conversation=False,  # 单轮调用，没有历史可缓存
+        )
+    return ModelGapChecker(model)
+
+
+#: 兜底判断的超时（秒）。**锚在实测上，不是占位阈值**：F3b 实测判断延迟
+#: 均值 1,406 ms、**P90 1,595 ms**（2026-09-05），5 s ≈ 3× P90。
+#: 改它之前先有新的实测分布——拍一个数与随手写的没有区别（PRD §3.2 阈值来源规则）。
+GAP_TIMEOUT_S = 5.0
+
+
+@dataclass(frozen=True, slots=True)
+class GuardedGapChecker:
+    """**判断失败或超时都不打断讲解。** 生产用；实验侧不套它（实验里调用失败就该响亮地停）。
+
+    这一跳是串行插在生成之前的（`ModelGapChecker` 的 docstring）。它抛异常的话，
+    `run_round` 连生成都走不到，用户等来的是一个 500——**为一条标注丢掉整段讲解**，
+    与「埋点失败不打断主链路」（口径 F42）是同一条处置。
+
+    ## 超时（内测前-P1 追加）
+
+    **只接异常不够。** 接进生产之前这里是 `NullGapChecker`，零延迟，没有东西可以挂住；
+    接进之后它是主链路上的一次外部 API 调用——Haiku 挂住，整轮讲解跟着挂住，
+    用户看到的是转圈，**而挂住不是异常，上面那层兜底根本不会触发**。
+    所以调用放进一个线程，`join(GAP_TIMEOUT_S)` 到点不回就按判断失败处理，
+    走同一条 `implementation="error"` 路径。
+
+    ⚠️ **代价如实登记**：Python 杀不掉一个正在跑的线程。超时之后那次调用
+    **仍在后台跑完**（守护线程，不挡进程退出），可能照样计费。
+    讲解不再等它，但它占着的连接要等 SDK 自己的超时才释放。
+
+    ⚠️ 失败**不伪装成任何一个判断**：`verdict=None` + `implementation="error"` +
+    `error` 带原因。尤其不返回 `covered`（那等于断言「片够回答」，而我们没判）。
+    **成本在这里记 0.0，但它的真实含义是「未知」**——请求可能已经计费。
+    事件那一侧把它写成 `null` 而不是 0（`api/events.py` 的 `_gap_fields`），
+    理由同口径 F69：写 0 就是一条看起来「检查过、没花钱」的假证据。
+    """
+
+    inner: Any
+    #: `None` = 调用时读模块常量 `GAP_TIMEOUT_S`（不在构造时绑定，便于它是唯一出处）。
+    timeout_s: float | None = None
+
+    def check(self, question: str, context: ContextPack) -> GapResult:
+        timeout = GAP_TIMEOUT_S if self.timeout_s is None else self.timeout_s
+        started = time.perf_counter()
+        box: dict[str, Any] = {}
+
+        def call() -> None:
+            try:
+                box["result"] = self.inner.check(question, context)
+            except Exception as exc:  # noqa: BLE001 —— 任何失败都不该让用户丢掉这一轮
+                box["error"] = exc
+
+        worker = threading.Thread(target=call, name="gap-check", daemon=True)
+        worker.start()
+        worker.join(timeout)
+
+        if worker.is_alive():
+            return self._failed(started, f"TimeoutError: 判断超过 {timeout:g} 秒未返回，按判断失败处理")
+        if "error" in box:
+            exc = box["error"]
+            return self._failed(started, f"{type(exc).__name__}: {str(exc)[:200]}")
+        if "result" not in box:
+            return self._failed(started, "判断线程结束但没有给出结果")
+        return box["result"]
+
+    def _failed(self, started: float, reason: str) -> GapResult:
+        return GapResult(
+            verdict=None,
+            latency_ms=(time.perf_counter() - started) * 1000,
+            implementation="error",
+            model=getattr(getattr(self.inner, "model", None), "name", None),
+            error=reason,
         )

@@ -1319,8 +1319,11 @@ async function main() {
       filename: "MIT22_081JF10_lec01b.pdf", source_format: "pdf",
       page_count: 39, usable_page_count: 39, verdict: "usable",
       slice_count: 39, embedded_count: 39,
-      // **0 不是「缺」。** 用真值判断的实现会把这两个当成缺字段。
-      skipped_pages: 0, restricted_pages_excluded: 0,
+      // **0 不是「缺」。** 用真值判断的实现会把它当成缺字段。
+      skipped_pages: 0,
+      // 内测前-P1：**null = 未检查**（口径 F69），且不在必需清单里。
+      // 原先这里是 0 —— 那个 0 是假证据（「检查过、没有受限页」），见迁移 20260915120000。
+      restricted_pages_excluded: null,
       duration_ms: 8421.5,
     },
     deck_upload_failed: {
@@ -1375,11 +1378,32 @@ async function main() {
     }
 
     // ---- **0 不能被当成「缺」**（口径 F50 的邻居）
-    for (const k of ["skipped_pages", "restricted_pages_excluded"]) {
+    // 🔁 内测前-P1：原先这里也断「restricted_pages_excluded = 0 写得进去」——
+    // 钉的正是要被推翻的行为。那个字段现在是 null，断言在下面那一小节。
+    for (const k of ["skipped_pages"]) {
       const err = await putUp("deck_uploaded", { ...UPLOAD_PAYLOADS.deck_uploaded, [k]: 0 });
       err === null
         ? ok(`deck_uploaded.${k} = 0 写得进去`, "← 0 是一个值，不是「没有」")
         : bad(`deck_uploaded.${k} = 0 被拒`, `${err.code} ← 护栏把 0 当成缺字段了`);
+    }
+
+    // ---- 内测前-P1 · `restricted_pages_excluded` 是 null（口径 F68 / F69）
+    //
+    // 两条都要：「不在清单里」直接问数据库（给出下一条为什么绿的原因，
+    // 而不是靠绿色推断）；「null 写得进去」是那个原因的后果。反向控制在 R20。
+    {
+      const required = (await db.query(
+        "select public.f1_event_required_keys('deck_uploaded') k")).rows[0].k;
+      !required.includes("restricted_pages_excluded") && required.length === 9
+        ? ok("restricted_pages_excluded 不在 deck_uploaded 的必需清单里",
+             `清单 ${required.length} 个 ← null 有含义的字段不进清单（F50）`)
+        : bad("restricted_pages_excluded 仍在清单里，或清单长度不是 9", JSON.stringify(required));
+      const nullErr = await putUp("deck_uploaded",
+        { ...UPLOAD_PAYLOADS.deck_uploaded, restricted_pages_excluded: null });
+      nullErr === null
+        ? ok("restricted_pages_excluded = null 的 deck_uploaded 写得进去",
+             "← null = 未检查。被拒的话每一次成功上传的事件都会静默消失")
+        : bad("restricted_pages_excluded = null 被拒", `${nullErr.code} ${nullErr.constraint ?? ""}`);
     }
 
     // ---- ② **闭集护栏**（本批新增的那条 CHECK）
@@ -1428,6 +1452,53 @@ async function main() {
     err === null
       ? ok("去掉 CHECK 后拼错的 failure_kind 写得进去", "← 拒它的确实是那条 CHECK，不是别的东西")
       : bad("去掉 CHECK 后仍被拒", `${err.code} ← 上面那条断言测错了对象`);
+    await db.close();
+  }
+
+  // ---- R20 · 把 restricted_pages_excluded 加回必需清单（内测前-P1 的反向验证）
+  //
+  // 被测的是「它不在清单里」这件事**是承重的**：加回去，一条 null 的正常事件
+  // 必须被 **payload CHECK**（不是别的约束）拒掉。这正是迁移先于构建的理由——
+  // 反了的话，新构建写的 null 就会以这个样子被旧清单静默拒掉。
+  //
+  // 加回去的那份定义**取自迁移原文的生效定义**，只在 `skipped_pages` 后面插回一个键，
+  // 不在这里手抄一份函数（手抄的会漂，然后这条反向验证测的就不是生产那一份）。
+  console.log("\n  \x1b[1mR20 · 把 restricted_pages_excluded 加回必需清单\x1b[0m");
+  {
+    const db = await freshDb();
+    const cid = await mkCourse(db, UID_A, "22.081J");
+    await mkDoc(db, UID_A, cid, "sha-r20");
+    const did = (await db.query(
+      "select id from public.documents where content_sha256='sha-r20'")).rows[0]?.id ?? null;
+    const put = () => putEvent(db, UID_A, {
+      type: "deck_uploaded", courseId: cid, deckId: did,
+      payload: { ...UPLOAD_PAYLOADS.deck_uploaded, restricted_pages_excluded: null },
+    });
+
+    // 允许控制：改之前同一条写得进去。少了它，「改之后被拒」可能是夹具本身就坏了。
+    const before = await put();
+    before === null
+      ? ok("R20 夹具：改清单之前，null 的 deck_uploaded 写得进去")
+      : bad("R20 夹具本身就写不进去", `${before.code} ${before.constraint ?? ""} ← 下面那条没有分辨力`);
+
+    const src = migrationFiles()
+      .map((f) => readFileSync(join(MIGRATIONS, f), "utf8"))
+      .flatMap((s) => [...s.matchAll(/create or replace function public\.f1_event_required_keys[\s\S]*?\$\$;/g)]
+        .map((m) => m[0]))
+      .at(-1) ?? "";
+    const restored = src.replace(/('skipped_pages',)(\s*)('duration_ms')/,
+                                 "$1$2'restricted_pages_excluded', $3");
+    if (restored === src) {
+      bad("R20 没能把键插回生效定义", "← 迁移原文的写法变了，这条反向验证没有执行");
+    } else {
+      await db.exec(restored);
+      const after = await put();
+      rejectedByPayloadCheck(after)
+        ? ok("加回清单后，null 的 deck_uploaded 被 payload CHECK 拒",
+             "← 「不在清单里」是承重的。**这也正是迁移晚于构建时会发生的事**")
+        : bad("加回清单后 null 仍写得进去（或被别的约束拒）",
+              `${after?.code ?? "未报错"} / ${after?.constraint ?? "-"}`);
+    }
     await db.close();
   }
 

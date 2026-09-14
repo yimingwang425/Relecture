@@ -85,7 +85,15 @@ class TestMirrorsTheSql:
         assert len(parse_failure_kinds_from_sql()) == 8
 
     def test_required_keys_for_both_upload_types_mirror_the_sql(self):
-        parsed = parse_required_keys_from_sql()
+        """与**生效定义**比，不与本批那个迁移比。
+
+        🔁 内测前-P1 改：原来比的是 `20260912180000` 里那份。`deck_uploaded` 的清单
+        在 `20260915120000` 里少了一个键之后，那份已不生效——跟它比，
+        Python 侧改对了会红、改错了（保持旧清单）反而绿。
+        """
+        from test_marks import _effective_required_keys
+
+        parsed = _effective_required_keys()
         for t in UPLOAD_EVENT_TYPES:
             assert set(REQUIRED_KEYS[t]) == set(parsed[t]), (
                 f"{t}：Python {sorted(REQUIRED_KEYS[t])} ≠ SQL {sorted(parsed[t])}")
@@ -157,19 +165,24 @@ class TestTheTaxonomyIsUsable:
 
 class TestCompleteEventTreatsZeroAsPresent:
     def test_zero_and_false_are_not_missing(self):
-        """`restricted_pages_excluded` 恒为 0、`retryable` 可能是 False。
+        """`skipped_pages` 常为 0、`retryable` 可能是 False。
 
         用真值判断（`if not payload.get(k)`）会把它们当成「缺字段」并抛，
         于是**一次完全正常的上传发不出事件**。这一条钉着那不是巧合。
+
+        🔁 内测前-P1 改：原先这里用 `restricted_pages_excluded: 0` 做样本，
+        钉的正是要被推翻的行为（那个 0 是假证据，口径 F69）。
+        「0 不算缺」这条性质本身没变，换成仍必需且常为 0 的 `skipped_pages` 来钉。
         """
         ev = complete_event("deck_uploaded", {
             "filename": "a.pdf", "source_format": "pdf", "page_count": 3,
             "usable_page_count": 3, "verdict": "usable", "slice_count": 3,
             "embedded_count": 3, "skipped_pages": 0,
-            "restricted_pages_excluded": 0, "duration_ms": 12.5,
+            "restricted_pages_excluded": None, "duration_ms": 12.5,
         })
-        assert ev["payload"]["restricted_pages_excluded"] == 0
         assert ev["payload"]["skipped_pages"] == 0
+        assert "skipped_pages" in REQUIRED_KEYS["deck_uploaded"], (
+            "样本字段不在必需清单里了——这条就不再测「0 不算缺」")
 
     def test_missing_required_still_raises(self):
         """允许控制：真缺字段仍然要抛。少了它，上一条在一个「什么都不检查」的
@@ -684,3 +697,84 @@ class TestFieldsAreWhereTheDocsSayTheyAre:
         assert "comment on table public.style_events" in mig
         for token in ("failure_kind", "caught_by", "deck_id", "不叫 reason"):
             assert token in mig, token
+
+
+class TestRestrictedPagesExcludedIsNull:
+    """内测前-P1 · `restricted_pages_excluded` **停止说谎**（口径 F68 / F69）。
+
+    此前每次成功上传都写 0。那个 0 看起来是「检查过，没有受限页」，
+    实际是「从来没检查过」——`/upload` 从没给 `ingest_document` 传过受限页清单。
+    而表里分不出这两者。**null 的语义正是「未检查」。**
+
+    三条守卫，各配一次「改回去就红」（执行记录里逐条记了怎么让它红的）：
+    ① 写入侧是 null；② 它不在必需清单里（加回去 → 一条 null 的正常事件被拒）；
+    ③ 其余必需字段照旧（去掉任一 → 红）。
+    `test_ingest.py::TestRestrictedPages` **不动**：它测函数本身，函数没坏，
+    坏的是没人给它传参。
+    """
+
+    def test_upload_writes_null_not_zero(self, jwks, keypair):
+        """守卫 ① · **断的是写进表里的那一行**，不是函数返回值。"""
+        rest = RecordingRest()
+        r = post_file(client(jwks, rest), keypair, name=DECK.name, data=DECK.read_bytes())
+        assert r.status_code == 201, r.text
+        pl = only_event(rest)["payload"]
+        # 键**在**、值是 null。键不在的话「未检查」与「字段漏采」又分不开了。
+        assert "restricted_pages_excluded" in pl
+        assert pl["restricted_pages_excluded"] is None, (
+            f"写成了 {pl['restricted_pages_excluded']!r} —— 一个看起来「检查过」的假证据")
+        # 响应里也不许是 0：上传页读的是响应，同一个谎不能换个地方说。
+        assert "restricted_pages_excluded" in r.json()
+        assert r.json()["restricted_pages_excluded"] is None
+
+    def test_it_is_not_in_the_required_list(self):
+        """守卫 ② · Python 镜像与 SQL 生效定义**都**不含它（口径 F50）。"""
+        from test_marks import _effective_required_keys
+
+        assert "restricted_pages_excluded" not in REQUIRED_KEYS["deck_uploaded"]
+        assert "restricted_pages_excluded" not in _effective_required_keys()["deck_uploaded"]
+
+    def test_a_null_event_is_accepted(self):
+        """允许控制：值为 null 的正常事件构造得出来（不抛）。"""
+        ev = complete_event("deck_uploaded", {
+            "filename": "a.pdf", "source_format": "pdf", "page_count": 3,
+            "usable_page_count": 3, "verdict": "usable", "slice_count": 3,
+            "embedded_count": 3, "skipped_pages": 0,
+            "restricted_pages_excluded": None, "duration_ms": 12.5,
+        })
+        assert ev["payload"]["restricted_pages_excluded"] is None
+
+    def test_reverse_control_putting_it_back_rejects_the_null_event(self, monkeypatch):
+        """**常驻反向控制**：把它加回清单 → 上面那条 null 的正常事件必须被拒。
+
+        少了这一条，「不在清单里」那条的绿可能只是因为清单检查本身失效了。
+        数据库那一层的同一件事是 `verify_rls_local.mjs` 的 R20。
+        """
+        import api.events as events
+
+        patched = dict(events.REQUIRED_KEYS)
+        patched["deck_uploaded"] = (*events.REQUIRED_KEYS["deck_uploaded"],
+                                    "restricted_pages_excluded")
+        monkeypatch.setattr(events, "REQUIRED_KEYS", patched)
+        with pytest.raises(ValueError, match="restricted_pages_excluded"):
+            events.complete_event("deck_uploaded", {
+                "filename": "a.pdf", "source_format": "pdf", "page_count": 3,
+                "usable_page_count": 3, "verdict": "usable", "slice_count": 3,
+                "embedded_count": 3, "skipped_pages": 0,
+                "restricted_pages_excluded": None, "duration_ms": 12.5,
+            })
+
+    def test_every_other_required_field_is_still_required(self):
+        """守卫 ③ · 其余九个各缺一次都必须抛。先立分辨力：恰好九个。"""
+        full = {
+            "filename": "a.pdf", "source_format": "pdf", "page_count": 3,
+            "usable_page_count": 3, "verdict": "usable", "slice_count": 3,
+            "embedded_count": 3, "skipped_pages": 0, "duration_ms": 12.5,
+            "restricted_pages_excluded": None,
+        }
+        keys = REQUIRED_KEYS["deck_uploaded"]
+        assert len(keys) == 9, keys
+        for k in keys:
+            partial = {kk: v for kk, v in full.items() if kk != k}
+            with pytest.raises(ValueError, match=k):
+                complete_event("deck_uploaded", partial)

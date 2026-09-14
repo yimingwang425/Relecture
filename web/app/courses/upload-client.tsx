@@ -55,7 +55,8 @@ type Item = {
     slice_count: number;
     embedded_count: number;
     skipped_pages: number;
-    restricted_pages_excluded: number;
+    /** **null = 未检查**（口径 F69）：用户上传不做受限页排除。不要把 null 渲染成 0。 */
+    restricted_pages_excluded: number | null;
     verdict: string;
   };
   /** 失败时的分类与服务端原文。 */

@@ -56,7 +56,7 @@ export function AppNav({ email }: { email?: string | null }) {
       <nav ref={navRef} className="pill-nav" aria-label="主导航">
         <Link href="/" className="wordmark" aria-current={pathname === "/" ? "page" : undefined}>
           <BrandMark />
-          <span>课件讲解助手</span>
+          <span className="text-[18px] tracking-[-0.035em]">Relecture</span>
         </Link>
 
         <div className="nav-desktop">

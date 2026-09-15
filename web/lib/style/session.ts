@@ -23,12 +23,12 @@ export type StyleRowResult =
   | { state: "error"; email: string | null; userId: string; message: string; code?: string }
   | { state: "bad-row-count"; email: string | null; userId: string; rows: number };
 
-/** 未登录直接跳 `/login`；其余状态原样返回，由页面渲染。 */
+/** 未登录直接跳 `/welcome`（欢迎页，登录入口在那里）；其余状态原样返回，由页面渲染。 */
 export async function loadStyleRow(): Promise<StyleRowResult> {
   const supabase = await createClient();
 
   const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) redirect("/login");
+  if (!auth.user) redirect("/welcome");
 
   const email = auth.user.email ?? null;
   const userId = auth.user.id;

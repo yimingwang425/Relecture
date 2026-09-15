@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Diagnostics } from "@/app/components/diagnostics";
+import { LoadingQuotes } from "@/app/components/loading-quotes";
 import { StatusDot } from "@/app/components/status-dot";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -159,6 +160,15 @@ export function ExplainClient({
   }, [pending]);
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const turnsRef = useRef<HTMLOListElement>(null);
+
+  // 窄屏上提问卡在上、轮次在下：发出之后把轮次列表滚进视野，
+  // 否则等待动画与计时都在首屏以下，用户看到的只是一个变灰的按钮。
+  // 桌面两栏时两边都在视野里，不滚。
+  useEffect(() => {
+    if (!pending || !window.matchMedia("(max-width: 1023.98px)").matches) return;
+    turnsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [pending]);
 
   async function ask() {
     const q = question.trim();
@@ -412,7 +422,7 @@ export function ExplainClient({
         )}
 
         {turns.length > 0 && (
-          <ol className="flex flex-col gap-6" data-field="turns">
+          <ol ref={turnsRef} className="flex scroll-mt-[84px] flex-col gap-6" data-field="turns">
             {[...turns].reverse().map((t, i) => {
               const index = turns.length - 1 - i;
               const tab = tabs[index] ?? "answer";
@@ -436,7 +446,8 @@ export function ExplainClient({
 
                   {t.state === "pending" && (
                     <div className="panel p-5 sm:p-6" aria-live="polite">
-                      <p className="t-meta flex items-center gap-2">
+                      <LoadingQuotes className="t-title text-[var(--c-ink-soft)]" />
+                      <p className="t-meta mt-4 flex items-center gap-2">
                         <span aria-hidden className="spinner" />
                         正在检索你的课件片段并生成讲解…
                       </p>

@@ -11,7 +11,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = { title: { absolute: "AI 课件讲解助手" } };
+export const metadata: Metadata = { title: { absolute: "Relecture" } };
 
 const RAW_FIELDS = ["detail_level", "use_examples", "structure", "depth"] as const;
 
@@ -19,7 +19,7 @@ export default async function HomePage() {
   const supabase = await createClient();
 
   const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) redirect("/login");
+  if (!auth.user) redirect("/welcome");
 
   const { data: rows, error } = await supabase
     .from("style_config")

@@ -24,7 +24,7 @@ export function LogoutButton({
       onClick={async () => {
         setBusy(true);
         await createClient().auth.signOut();
-        router.replace("/login");
+        router.replace("/welcome");
         router.refresh();
       }}
       className={className}

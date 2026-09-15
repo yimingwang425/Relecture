@@ -156,7 +156,8 @@ async function main() {
     const ctx = await browser.newContext();
     const page = await ctx.newPage();
     const r = await page.goto(`${BASE}/`, { waitUntil: "networkidle" });
-    check(page.url().endsWith("/login"), "访问 / 被弹到 /login", page.url(), `停在 ${page.url()}（HTTP ${r?.status()}）`);
+    // 2026-09-15 起未登录的入口是欢迎页（/welcome），登录表单在 /login。
+    check(page.url().endsWith("/welcome"), "访问 / 被弹到 /welcome", page.url(), `停在 ${page.url()}（HTTP ${r?.status()}）`);
     await ctx.close();
   }
 
@@ -168,7 +169,7 @@ async function main() {
     const r = await page.goto(`${BASE}/debug/rls`, { waitUntil: "domcontentloaded" });
     const status = r?.status();
     if (EXPECT_DEBUG) {
-      // 未登录会被 redirect 到 /login（页面存在），或直接 200。404 才是失败。
+      // 未登录会被 redirect 到 /welcome（页面存在），或直接 200。404 才是失败。
       check(status !== 404, "路由存在", `HTTP ${status}`, "404 —— 开关没生效，或这页编译不过");
     } else {
       check(status === 404, "生产域名上返回 404", `HTTP ${status}`, `HTTP ${status} —— 路由被打进了生产产物`);

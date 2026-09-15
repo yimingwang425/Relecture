@@ -1,16 +1,19 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { BrandMark } from "@/app/components/brand-mark";
 import { createClient } from "@/lib/supabase/client";
 
 /**
- * 登录。**没有注册入口**：账号目前是邀请制，自助注册是内测前的另一件事
- * （进度总结 §七 第 2 项）。页面上说出来，免得用户找注册按钮。
+ * 登录。入口在欢迎页（`/welcome`）；这一页只放登录卡片。
  *
- * 构图取参考稿：胶囊标志 → 居中两行标题 → 一句说明 → 卡片坐在青色色带上。
+ * **打开就能看全整张卡片**：卡片在视口里垂直居中，上面只有一个小号字标，
+ * 不再有标题区把它挤到首屏以下（2026-09-15 用户反馈：要下滑才看全，视觉阻力大）。
+ *
+ * 没有注册入口：账号目前是邀请制，自助注册是进度总结 §七 第 2 项。
+ *
  * `input[type=email]` / `input[type=password]` / `button[type=submit]` 是回归工具
  * （`scripts/verify_browser.mjs`）的定位点，改样式不改它们。
  */
@@ -40,37 +43,20 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col overflow-hidden">
-      <div className="px-[var(--page-margin)] pt-4">
-        <div className="pill-nav enter-drop">
-          <span className="wordmark">
-            <BrandMark />
-            <span>课件讲解助手</span>
-          </span>
-        </div>
-      </div>
+    <main className="relative flex min-h-dvh flex-col overflow-hidden">
+      <div aria-hidden className="band absolute inset-x-0 bottom-0 h-[44dvh]" />
 
-      <section className="mx-auto mt-[clamp(40px,9vh,104px)] w-full max-w-[760px] px-[var(--page-margin)] text-center">
-        <h1 className="t-display enter-wipe">
-          把课件讲成
-          <br />
-          你读得进去的样子
-        </h1>
-        <p className="t-body enter-late mx-auto mt-4 max-w-[46ch] text-balance">
-          上传自己的课件，按你偏好的讲法提问。讲解只用你给的材料，读不到的地方会直说。
-        </p>
-      </section>
+      <header className="relative z-10 flex justify-center px-[var(--page-margin)] pt-6 sm:pt-8">
+        <Link href="/welcome" className="wordmark-sm enter-drop" aria-label="Relecture，回到欢迎页">
+          Relecture
+        </Link>
+      </header>
 
-      <div className="relative mt-[clamp(28px,6vh,60px)] flex flex-1 flex-col">
-        <div aria-hidden className="band absolute inset-x-0 top-[112px] bottom-0" />
-
-        <form
-          onSubmit={submit}
-          className="card card--raised enter-later relative z-10 mx-auto mb-16 w-[min(420px,calc(100%-2*var(--page-margin)))] p-2"
-        >
+      <div className="relative z-10 flex flex-1 items-center justify-center px-[var(--page-margin)] py-6">
+        <form onSubmit={submit} className="card card--raised enter w-full max-w-[400px] p-2">
           <div className="px-3 pt-3 pb-4">
             <p className="t-eyebrow"># 登录</p>
-            <p className="t-title mt-1">用受邀账号登录</p>
+            <p className="t-title mt-1">欢迎回来</p>
           </div>
 
           <div className="panel flex flex-col gap-4 p-4">
@@ -108,7 +94,12 @@ export default function LoginPage() {
               {busy ? "登录中…" : "登录"}
             </button>
 
-            <p className="t-caption text-center">目前是邀请制，还不能自助注册。</p>
+            <p className="t-caption text-center">
+              目前是邀请制，注册即将开放 ·{" "}
+              <Link href="/welcome" className="link">
+                返回
+              </Link>
+            </p>
           </div>
         </form>
       </div>

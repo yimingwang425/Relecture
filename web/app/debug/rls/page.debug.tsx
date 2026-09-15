@@ -28,7 +28,7 @@ export default async function DebugRlsPage({
   const supabase = await createClient();
 
   const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) redirect("/login");
+  if (!auth.user) redirect("/welcome");
 
   const self = await supabase.from("style_config").select("*").eq("user_id", auth.user.id);
   const other = probe

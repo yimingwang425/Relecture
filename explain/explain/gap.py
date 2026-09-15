@@ -156,10 +156,17 @@ class GapResult:
         return self.implementation not in ("null", "error") and self.verdict is None
 
     def to_dict(self) -> dict[str, Any]:
+        """`gap_cost_usd` 在 `implementation="error"` 时是 **null**，不是 `cost_usd` 里的 0.0。
+
+        `cost_usd` 属性保持 0.0：它要被加进单轮总成本（`pipeline.py`），None 加不进去。
+        但对外的那一格，失败时的含义是「未知」——请求可能已计费（口径 F73 / F75）。
+        **只在这里转一次**：`/explain` 响应、`explain_turn` 事件、`log.py` 都从这里取，
+        此前事件侧单独转、响应侧没转，生产上同一轮一处 null 一处 0.0。
+        """
         return {
             "gap_verdict": self.verdict,
             "gap_reason": self.reason,
-            "gap_cost_usd": self.cost_usd,
+            "gap_cost_usd": None if self.implementation == "error" else self.cost_usd,
             "gap_latency_ms": round(self.latency_ms, 1),
             "gap_implementation": self.implementation,
             "gap_model": self.model,
@@ -328,7 +335,7 @@ class GuardedGapChecker:
     ⚠️ 失败**不伪装成任何一个判断**：`verdict=None` + `implementation="error"` +
     `error` 带原因。尤其不返回 `covered`（那等于断言「片够回答」，而我们没判）。
     **成本在这里记 0.0，但它的真实含义是「未知」**——请求可能已经计费。
-    事件那一侧把它写成 `null` 而不是 0（`api/events.py` 的 `_gap_fields`），
+    对外（`GapResult.to_dict()`，响应与事件都从它取）写成 `null` 而不是 0，
     理由同口径 F69：写 0 就是一条看起来「检查过、没花钱」的假证据。
     """
 

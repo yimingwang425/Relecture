@@ -332,6 +332,8 @@ class TestJudgeFailureDoesNotBreakTheRound:
         assert body["gap"]["gap_verdict"] is None
         assert body["gap"]["gap_implementation"] == "error"
         assert "529" in body["gap"]["gap_error"]
+        # **响应与事件同一格同一个值**：此前响应是 0.0、事件是 null（生产观测 2026-09-14）。
+        assert body["gap"]["gap_cost_usd"] is None, "响应侧写 0.0 会被读成「这一跳没花钱」"
         # 事件照发，**失败时成本写 null 不写 0**（请求可能已计费，金额未知）。
         p = turn_row(rest)
         assert p["gap_verdict"] is None and p["gap_implementation"] == "error"
@@ -401,6 +403,7 @@ class TestJudgeTimeout:
         assert body["gap"]["gap_verdict"] is None
         assert body["gap"]["gap_implementation"] == "error"
         assert "TimeoutError" in body["gap"]["gap_error"]
+        assert body["gap"]["gap_cost_usd"] is None, "超时那轮响应侧也是金额未知"
         p = turn_row(rest)
         assert p["gap_verdict"] is None and p["gap_implementation"] == "error"
         assert "TimeoutError" in p["gap_error"]

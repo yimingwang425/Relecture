@@ -112,9 +112,10 @@ export function ExplainClient({
     })();
   }, [apiBase, token]);
 
-  // 等待计时器。只在有一轮在飞时走。
+  // 等待计时器。只在有一轮在飞时走。归零放在 `ask()` 里发起那一刻，
+  // 不在 effect 里同步 setState（react-hooks/set-state-in-effect）。
   useEffect(() => {
-    if (!pending) return setElapsed(0);
+    if (!pending) return;
     const t0 = Date.now();
     const id = setInterval(() => setElapsed(Math.round((Date.now() - t0) / 1000)), 1000);
     return () => clearInterval(id);
@@ -132,6 +133,7 @@ export function ExplainClient({
     // 请求里面）。口径与理由在 lib/explain/turns.ts。
     const turnIndex = nextTurnIndex(turns);
     setTurns((prev) => [...prev, { turnIndex, question: q, courseId, state: "pending" }]);
+    setElapsed(0);
     setQuestion("");
 
     const finish = (patch: Partial<Turn>) =>

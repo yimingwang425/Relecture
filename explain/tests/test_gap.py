@@ -193,6 +193,18 @@ class TestCostAndLatencyAccounting:
         assert d["gap_latency_ms"] == 900.0 and d["gap_model"] == "fake:claude-haiku-4-5"
         assert d["gap_cost_usd"] > 0  # 假模型也走通成本核算链路
 
+    def test_failed_judgement_cost_is_unknown_not_zero(self):
+        """口径 F73 / F75：判断没跑完时 `gap_cost_usd` 是 **null**。
+
+        `cost_usd` 属性仍是 0.0（要被加进单轮总数），对外那一格不是。
+        判据两端不同源：期望值是字面量 None，不是从 `cost_usd` 推出来的。
+        """
+        failed = GapResult(verdict=None, implementation="error", error="TimeoutError: x")
+        assert failed.cost_usd == 0.0
+        assert failed.to_dict()["gap_cost_usd"] is None
+        # 反方向：NullGapChecker 那条（没做判断）确实没花钱，仍是 0.0，不被一起改成 null。
+        assert NullGapChecker().check("q", _ctx()).to_dict()["gap_cost_usd"] == 0.0
+
     def test_round_latency_includes_the_extra_hop(self):
         """**这一跳是串行的**：既不能与检索并行，也不能与生成并行。
 

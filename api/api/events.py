@@ -379,6 +379,7 @@ def _gap_fields(gap: Any) -> dict[str, Any]:
     - `gap_verdict`：判断无效或失败时是 null，而那个 null 有含义（口径 F50）。
     - `gap_cost_usd`：**判断失败时写 null，不写 0**。请求可能已经计费，
       我们不知道花了多少——写 0 是一条「没花钱」的假证据（同口径 F69）。
+      转换在 `GapResult.to_dict()`，与 `/explain` 响应同一处，这里不再转第二次。
     - 全部：部署顺序是迁移先于构建（CLAUDE.md），迁移跑完到新构建上线之间
       **旧构建的 `explain_turn` 没有这几个键**。进了必需清单，那段窗口里的讲解事件
       会被 23514 全部静默拒掉。
@@ -387,11 +388,10 @@ def _gap_fields(gap: Any) -> dict[str, Any]:
     （断的是表里那一行的值，不是函数被调用）。
     """
     d = gap.to_dict()
-    failed = d["gap_implementation"] == "error"
     return {
         "gap_verdict": d["gap_verdict"],
         "gap_reason": d["gap_reason"],
-        "gap_cost_usd": None if failed else d["gap_cost_usd"],
+        "gap_cost_usd": d["gap_cost_usd"],
         "gap_latency_ms": d["gap_latency_ms"],
         # "model" / "null" / "error"。上线后它应当恒为 "model"——
         # 出现 "null" 说明构建里没接上，出现 "error" 看 `gap_error`。

@@ -1616,6 +1616,71 @@ await (async () => {
   check(btn !== "" && !/title=/.test(btn), "按钮上没有 tooltip（说明不拆到 tooltip 里）");
 })();
 
+// ================================================================ 十五 · 讲解页 · 兜底判断提示与出处（UI 重做）
+console.log("\n\x1b[1m十五 · 讲解页 · 兜底判断提示与出处（UI 重做）\x1b[0m");
+{
+  const T = require_(join(outExplain, "turns.js"));
+  const client = readFileSync(join(WEB, "app", "explain", "explain-client.tsx"), "utf8");
+  const clientCode = stripComments(client);
+  const base = {
+    text: "x", accepted: true, regenerations: 0, mean_paragraph_chars: 1, detail_level: "P0",
+    round_id: "r", slice_keys: ["d1:s001"],
+    retrieval: {
+      meta: { backend: "supabase" },
+      slices: [
+        { source_file: "a.pdf", pages: [3], title: "能源问题", score: 0.61 },
+        { source_file: "a.pdf", pages: [7, 3], title: null, score: 0.52 },
+      ],
+      skipped_pages_in_scope: [{ source_file: "a.pdf", index: 33, kind: "image_only", reason: "r" }],
+    },
+  };
+  const withGap = (gap) => T.answerFromResponse({ ...base, gap });
+
+  // -------- 15.1 出处面板：逐片保留 title / score；按文件合并的 sources 不变
+  const a = withGap(undefined);
+  check(a.slices.length === 2 && a.slices[0].title === "能源问题" && a.slices[0].score === 0.61
+        && a.slices[1].title === null,
+    "slices 逐片保留 title / score（缺了是 null，不编）", JSON.stringify(a.slices));
+  check(eq(a.sources, [{ sourceFile: "a.pdf", pages: [3, 7] }]), "sources 仍按文件合并页号");
+  check(a.skippedPages.length === 1 && a.skippedPages[0].index === 33, "读不了的页原样取出");
+
+  // -------- 15.2 gap：服务端没给就是 null，不编成 covered
+  check(a.gap === null, "响应里没有 gap → null", "← 编成 covered 等于替一个没跑的判断背书");
+  const g = withGap({ gap_verdict: "partial", gap_implementation: "model", gap_reason: "只讲了成本",
+                      gap_error: null, gap_skipped_hint_pages: [33] });
+  check(g.gap?.verdict === "partial" && eq(g.gap?.hintPages, [33]) && g.gap?.implementation === "model",
+    "gap 取出 verdict / implementation / 限定语页号");
+  check(withGap({ gap_verdict: "covered 大概", gap_implementation: "model" }).gap?.verdict === null,
+    "认不出的 verdict → null，不就近解释", "← 同 G01");
+
+  // -------- 15.3 提示的判据：只在「判了，且不是 covered」时出现。**两个方向都要能变红**
+  function gapNoticeProblems(fn) {
+    const p = [];
+    const at = (gap) => fn(withGap(gap));
+    if (at({ gap_verdict: "covered", gap_implementation: "model" }) !== null) p.push("covered 也提示（恒触发）");
+    if (at({ gap_verdict: null, gap_implementation: "error", gap_error: "TimeoutError" }) !== null)
+      p.push("判断失败也提示（没判断就没有依据）");
+    if (at(undefined) !== null) p.push("服务端没给 gap 也提示");
+    for (const v of ["partial", "insufficient"]) {
+      const n = at({ gap_verdict: v, gap_implementation: "model", gap_skipped_hint_pages: [33, 34] });
+      if (!n || n.verdict !== v || !eq(n.pages, [33, 34])) p.push(`${v} 没提示或页号不对（恒不触发）`);
+    }
+    return p;
+  }
+  const real = gapNoticeProblems(T.gapNotice);
+  check(real.length === 0, "gapNotice：covered / 失败 / 缺失不提示；partial / insufficient 提示且带页号",
+    real.join("；"));
+  check(gapNoticeProblems(() => ({ verdict: "partial", pages: [] })).length > 0,
+    "反向控制：恒触发的实现 → 判据红", "← 最难发现的那种：每轮多挂一条，用户学会无视");
+  check(gapNoticeProblems(() => null).length > 0, "反向控制：恒不触发的实现 → 判据红");
+
+  // -------- 15.4 接线：页面真的按它渲染
+  check(/gapNotice\(t\.answer\)/.test(clientCode) && /data-field="gap-notice"/.test(client),
+    "讲解页按 gapNotice 渲染提示");
+  check(/data-field="slices"/.test(client) && /data-field="turn-diagnostics"/.test(client),
+    "出处面板与诊断面板在页面上", "← 诊断字段折叠不删（进度总结 §八 第 7 条）");
+}
+
 rmSync(out, { recursive: true, force: true });
 rmSync(outUpload, { recursive: true, force: true });
 rmSync(outExplain, { recursive: true, force: true });

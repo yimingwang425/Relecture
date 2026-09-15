@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+
 import { AppNav } from "@/app/components/app-nav";
 import { RowStateNotice } from "@/app/components/row-state";
 import { newSessionId } from "@/lib/style/events";
@@ -6,6 +8,8 @@ import { configOf, loadStyleRow } from "@/lib/style/session";
 import { StyleSettings } from "./settings-client";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = { title: "讲解风格" };
 
 /**
  * 展示并修改已有风格配置，外加反馈按钮（口径 F05–F07）。
@@ -19,14 +23,11 @@ export default async function StyleSettingsPage() {
   const result = await loadStyleRow();
 
   return (
-    <main
-      data-state={result.state}
-      className="mx-auto w-full max-w-[880px] px-5 py-8"
-    >
+    <main data-state={result.state} className="shell">
       <AppNav email={result.email} />
 
       {result.state !== "ok" ? (
-        <div className="mt-10">
+        <div className="mt-12">
           <RowStateNotice result={result} />
         </div>
       ) : (

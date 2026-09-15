@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+
 import { AppNav } from "@/app/components/app-nav";
 import { RowStateNotice } from "@/app/components/row-state";
 import { API_BASE_URL } from "@/lib/env";
@@ -7,6 +9,8 @@ import { configOf, loadStyleRow } from "@/lib/style/session";
 import { ExplainClient } from "./explain-client";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = { title: "提问" };
 
 /**
  * 讲解页（阶段 6 第二批）。**这是用户第一次能用自己的课件问问题。**
@@ -40,20 +44,16 @@ export default async function ExplainPage() {
     <main
       // 终态标记。回归工具按它等待与断言，不按中文文案。
       data-state={result.state === "ok" && !API_BASE_URL ? "no-api-base" : result.state}
-      className="mx-auto w-full max-w-[880px] px-5 py-8"
+      className="shell"
     >
       <AppNav email={result.email} />
 
       {result.state !== "ok" ? (
-        <div className="mt-10">
+        <div className="mt-12">
           <RowStateNotice result={result} />
         </div>
       ) : !API_BASE_URL ? (
-        <p
-          role="alert"
-          data-field="no-api-base"
-          className="mt-10 rounded border border-amber-200 bg-amber-50 p-4 text-sm leading-relaxed text-amber-900"
-        >
+        <p role="alert" data-field="no-api-base" className="notice notice--warn mt-12">
           <b>还没配 <code>NEXT_PUBLIC_API_BASE_URL</code>。</b>
           讲解要用产品服务端（<code>api/</code>，部署在 Render），这一页在浏览器里直连它。
           配好之后刷新即可 —— 本站其余页面不受影响，它们直连 Supabase。

@@ -291,18 +291,22 @@ export function PairwiseOnboarding({
 
   return (
     <div
-      className="enter mt-10"
+      className="enter"
       data-events-pending={eventState.pending}
       data-events-dropped={eventState.dropped}
     >
-      <header className="mb-6">
-        <p className="t-meta mb-2" data-step={stepIndex}>
-          第 {stepIndex} / {TOTAL_STEPS} 步
-          {stepIndex < TOTAL_STEPS ? `（选完还剩 ${TOTAL_STEPS - stepIndex} 步）` : "（最后一步）"}
-          {" · 这一步在比较"}
-          <b>{AXIS_LABEL[step.axis]}</b>
+      <header className="mt-10 mb-6 sm:mt-14">
+        <p className="t-eyebrow mb-3 flex flex-wrap items-center gap-2" data-step={stepIndex}>
+          <span className="chip kbd-count">
+            第 {stepIndex} / {TOTAL_STEPS} 步
+          </span>
+          <span>
+            {stepIndex < TOTAL_STEPS ? `选完还剩 ${TOTAL_STEPS - stepIndex} 步` : "最后一步"}
+            {" · 这一步在比较"}
+            <b className="text-[var(--c-ink-soft)]">{AXIS_LABEL[step.axis]}</b>
+          </span>
         </p>
-        <h1 className="t-display">哪一段讲解你更想读？</h1>
+        <h1 className="t-display enter-wipe">哪一段讲解你更想读？</h1>
         <p className="t-body mt-3 max-w-[62ch]">
           两段回答的是同一个提问：「{question}」。它们的差别只在一个维度上，其余都一样。
           <b>只按读起来的感觉选</b>，不用去猜差在哪。
@@ -310,9 +314,9 @@ export function PairwiseOnboarding({
       </header>
 
       {alreadyOnboarded && (
-        <p className="panel mb-6 bg-[var(--c-accent-wash)] p-3 text-sm text-[var(--c-accent-ink)]">
+        <p className="notice notice--info mb-6">
           你之前已经完成过一次。走完这 6 步会<b>覆盖</b>现在的配置；只想改一两条的话，
-          去 <Link href="/settings/style" className="underline underline-offset-4">风格设置</Link> 更省事。
+          去 <Link href="/settings/style" className="link font-[var(--fw-medium)]">风格设置</Link> 更省事。
         </p>
       )}
 
@@ -386,7 +390,7 @@ export function PairwiseOnboarding({
       {error && (
         <p
           role="alert"
-          className="panel mt-5 border-[color:var(--c-danger)]/30 bg-[var(--c-danger-wash)] p-3 text-sm text-[var(--c-danger)]"
+          className="notice notice--danger mt-5"
         >
           {error}
         </p>
@@ -398,17 +402,23 @@ export function PairwiseOnboarding({
           `dropped` **永久失败已放弃**（只可能是内容或权限问题，是真 bug）。 */}
       <EventNotice state={eventState} />
 
-      <div className="mt-6 flex items-center gap-4">
-        <button
-          type="button"
-          className="btn btn--primary"
-          disabled={selected === null || busy}
-          onClick={next}
-          data-action={isLast ? "finish" : "next"}
-        >
-          {busy ? "保存中…" : isLast ? "完成，保存配置" : "下一步"}
-        </button>
-        <span className="t-meta">{selected === null ? "先选一段" : "可以改选，选定后继续"}</span>
+      {/* 操作条吸底：两栏各一两千字，读完一栏再滚到页底找按钮是这一页最累的一步。 */}
+      <div className="sticky bottom-4 z-20 mt-8">
+        <div className="panel card--raised flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
+          <button
+            type="button"
+            className="btn btn--primary"
+            disabled={selected === null || busy}
+            onClick={next}
+            data-action={isLast ? "finish" : "next"}
+          >
+            {busy ? "保存中…" : isLast ? "完成，保存配置" : "下一步"}
+          </button>
+          <span className="t-meta">{selected === null ? "先选一段" : "可以改选，选定后继续"}</span>
+          <span className="t-caption kbd-count ml-auto hidden sm:inline">
+            {stepIndex} / {TOTAL_STEPS}
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -444,21 +454,34 @@ function DoneScreen({
       data-left-variants={log.map((l) => l.leftVariant).join(",")}
       data-events-pending={eventState.pending}
       data-events-dropped={eventState.dropped}
-      className="enter mt-10"
+      className="enter mx-auto max-w-[720px]"
     >
-      <h1 className="t-display">配置好了</h1>
-      <p className="t-body mt-3 max-w-[62ch]">
-        下面是这 6 次选择得到的风格。之后每次讲解都会按它来，随时可以改。
-      </p>
+      <header className="mt-10 mb-6 sm:mt-14">
+        <p className="t-eyebrow mb-3">
+          {TOTAL_STEPS} / {TOTAL_STEPS} 步 · 完成
+        </p>
+        <h1 className="t-display enter-wipe">配置好了</h1>
+        <p className="t-body mt-3 max-w-[62ch]">
+          下面是这 6 次选择得到的风格。之后每次讲解都会按它来，随时可以改。
+        </p>
+      </header>
 
-      <div className="mt-6">
-        <ConfigSummary config={config} />
+      <div className="card p-2">
+        <div className="px-3 pt-3 pb-4">
+          <p className="t-eyebrow"># 我的讲解风格</p>
+        </div>
+        <div className="tabpanel rounded-[10px] p-3">
+          <ConfigSummary config={config} />
+        </div>
       </div>
 
       <EventNotice state={eventState} className="mt-6" />
 
       <div className="mt-6 flex flex-wrap gap-3">
-        <Link href="/" className="btn btn--primary no-underline">
+        <Link href="/explain" className="btn btn--primary no-underline">
+          去提问
+        </Link>
+        <Link href="/" className="btn btn--ghost no-underline">
           回到首页
         </Link>
         <Link href="/settings/style" className="btn btn--ghost no-underline">
@@ -483,7 +506,7 @@ function EventNotice({ state, className = "mt-5" }: { state: EventQueueState; cl
     <p
       role="status"
       data-event-error
-      className={`panel ${className} bg-[var(--c-accent-wash)] p-3 text-sm text-[var(--c-accent-ink)]`}
+      className={`notice notice--info ${className}`}
     >
       {state.dropped > 0 && (
         <b>有 {state.dropped} 条埋点被永久拒绝（不是网络问题，请把这句话报给开发）。</b>

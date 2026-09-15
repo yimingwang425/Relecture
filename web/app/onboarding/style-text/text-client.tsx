@@ -201,20 +201,28 @@ export function TextOnboarding({
         data-call-effort={savedCall?.effort}
         data-events-pending={eventState.pending}
         data-events-dropped={eventState.dropped}
-        className="enter mt-10"
+        className="enter"
       >
-        <h1 className="t-display">配置好了</h1>
-        <p className="t-body mt-3 max-w-[62ch]">
-          之后每次讲解都会按它来，随时可以改。
-        </p>
-        <div className="mt-6">
-          <ConfigSummary config={saved} />
+        <header className="mt-10 mb-6 sm:mt-14">
+          <p className="t-eyebrow mb-3">风格引导 · 完成</p>
+          <h1 className="t-display enter-wipe">配置好了</h1>
+          <p className="t-body mt-3 max-w-[62ch]">
+            之后每次讲解都会按它来，随时可以改。
+          </p>
+        </header>
+        <div className="card p-2">
+          <div className="px-3 pt-3 pb-4">
+            <p className="t-eyebrow"># 我的讲解风格</p>
+          </div>
+          <div className="tabpanel rounded-[10px] p-3">
+            <ConfigSummary config={saved} />
+          </div>
         </div>
         {(eventState.pending > 0 || eventState.dropped > 0) && (
           <p
             role="status"
             data-event-error
-            className="panel mt-6 bg-[var(--c-accent-wash)] p-3 text-sm text-[var(--c-accent-ink)]"
+            className="notice notice--info mt-6"
           >
             {eventState.dropped > 0 && (
               <b>有 {eventState.dropped} 条埋点被永久拒绝（请把这句话报给开发）。</b>
@@ -228,7 +236,10 @@ export function TextOnboarding({
           </p>
         )}
         <div className="mt-6 flex flex-wrap gap-3">
-          <Link href="/" className="btn btn--primary no-underline">
+          <Link href="/explain" className="btn btn--primary no-underline">
+            去提问
+          </Link>
+          <Link href="/" className="btn btn--ghost no-underline">
             回到首页
           </Link>
           <Link href="/settings/style" className="btn btn--ghost no-underline">
@@ -245,20 +256,23 @@ export function TextOnboarding({
         data-state="confirm"
         data-call-model={mapped.call?.model}
         data-call-effort={mapped.call?.effort}
-        className="enter mt-10"
+        className="enter"
       >
-        <h1 className="t-display">我们把你的描述理解成了这样</h1>
-        <p className="t-body mt-3 max-w-[62ch]">
-          确认之后就按它来。<b>这一屏只读</b>——想单独调某一条，点下面的「就按这个来」之后，
-          在「风格设置」里改，那里每条轴都能单独选。
-        </p>
+        <header className="mt-10 mb-6 sm:mt-14">
+          <p className="t-eyebrow mb-3">风格引导 · 确认</p>
+          <h1 className="t-display enter-wipe">我们把你的描述理解成了这样</h1>
+          <p className="t-body mt-3 max-w-[62ch]">
+            确认之后就按它来。<b>这一屏只读</b>——想单独调某一条，点下面的「就按这个来」之后，
+            在「风格设置」里改，那里每条轴都能单独选。
+          </p>
+        </header>
 
-        <dl className="card mt-6 divide-y divide-[var(--c-border-row)] p-2">
+        <dl className="card flex flex-col gap-2 p-2">
           {AXIS_IDS.map((axis) => {
             const outcome = mapped.axes[axis];
             const fromDefault = outcome?.source === "default";
             return (
-              <div key={axis} data-axis={axis} data-source={outcome?.source} className="p-4">
+              <div key={axis} data-axis={axis} data-source={outcome?.source} className="panel p-4">
                 <div className="flex items-baseline justify-between gap-4">
                   <dt className="t-heading shrink-0">{AXIS_LABEL[axis]}</dt>
                   <dd className="t-ui text-right" data-value={mapped.config[axis]}>
@@ -283,7 +297,7 @@ export function TextOnboarding({
         {error && (
           <p
             role="alert"
-            className="panel mt-5 border-[color:var(--c-danger)]/30 bg-[var(--c-danger-wash)] p-3 text-sm text-[var(--c-danger)]"
+            className="notice notice--danger mt-5"
           >
             {error}
           </p>
@@ -317,21 +331,27 @@ export function TextOnboarding({
   }
 
   return (
-    <div data-state="input" className="enter mt-10">
-      <h1 className="t-display">你希望它怎么给你讲？</h1>
-      <p className="t-body mt-3 max-w-[62ch]">
-        用自己的话写几句就行。比如「讲细一点，多举例子，先说结论」，
-        或者「我赶时间，讲要点就够了，别推导」。
-      </p>
+    <div data-state="input" className="enter">
+      <header className="mt-10 mb-6 sm:mt-14">
+        <p className="t-eyebrow mb-3">风格引导 · 用一段话描述</p>
+        <h1 className="t-display enter-wipe">你希望它怎么给你讲？</h1>
+        <p className="t-body mt-3 max-w-[62ch]">
+          用自己的话写几句就行。比如「讲细一点，多举例子，先说结论」，
+          或者「我赶时间，讲要点就够了，别推导」。
+        </p>
+      </header>
 
       {alreadyOnboarded && (
-        <p className="panel mt-5 bg-[var(--c-accent-wash)] p-3 text-sm text-[var(--c-accent-ink)]">
+        <p className="notice notice--info mb-6">
           你之前已经设置过一次。重新描述会<b>覆盖</b>现在的配置；只想改一两条的话，
-          去 <Link href="/settings/style" className="underline underline-offset-4">风格设置</Link> 更省事。
+          去 <Link href="/settings/style" className="link font-[var(--fw-medium)]">风格设置</Link> 更省事。
         </p>
       )}
 
-      <form onSubmit={submit} className="mt-6">
+      <form onSubmit={submit} className="card p-2">
+        <div className="px-3 pt-3 pb-4">
+          <p className="t-eyebrow"># 描述</p>
+        </div>
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -340,9 +360,10 @@ export function TextOnboarding({
           required
           data-field="description"
           placeholder="例如：讲得细一些，每个概念配个例子；先给结论再解释；能推导的地方把步骤写出来。"
-          className="panel w-full resize-y p-4 text-[15px] leading-[1.8] outline-none"
+          aria-label="描述你希望的讲解风格"
+          className="input min-h-[200px] p-4 leading-[1.8]"
         />
-        <div className="mt-2 flex items-center justify-between">
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2 px-2">
           <span className="t-meta">
             {text.length} / {MAX_CHARS} 字
           </span>
@@ -352,7 +373,7 @@ export function TextOnboarding({
         {error && (
           <p
             role="alert"
-            className="panel mt-5 border-[color:var(--c-danger)]/30 bg-[var(--c-danger-wash)] p-3 text-sm text-[var(--c-danger)]"
+            className="notice notice--danger mt-5"
           >
             {error}
           </p>
@@ -360,7 +381,7 @@ export function TextOnboarding({
 
         <button
           type="submit"
-          className="btn btn--primary mt-5"
+          className="btn btn--primary m-2 mt-4"
           disabled={busy || text.trim().length === 0}
           data-action="map"
         >

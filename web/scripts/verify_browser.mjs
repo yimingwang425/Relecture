@@ -191,7 +191,9 @@ async function main() {
     check(state === "ok", "页面进入 ok 终态", state ?? "",
           `data-state=${state} —— error 是查询失败，bad-row-count 是 F09 的触发器没建行`);
 
-    const body = await page.locator("body").innerText();
+    // `textContent` 而不是 `innerText`：UI 重做后 user_id 收在默认折叠的诊断区里
+    // （`app/components/diagnostics.tsx`），`innerText` 不含未渲染的文字，会假红。
+    const body = (await page.locator("body").textContent()) ?? "";
     uidA = body.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/)?.[0] ?? null;
     check(!!uidA, "页面显示了 user_id", uidA ?? "", "没找到 uuid");
     check(body.includes(ACCOUNTS.A.email), "显示的账号是 A", ACCOUNTS.A.email);
@@ -244,7 +246,7 @@ async function main() {
     const ctxB = await browser.newContext();
     const pageB = await ctxB.newPage();
     await login(pageB, "B");
-    const bodyB = await pageB.locator("body").innerText();
+    const bodyB = (await pageB.locator("body").textContent()) ?? "";
     const uidB = bodyB.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/)?.[0];
     check(!!uidB && uidB !== uidA, "拿到 B 的 user_id 且与 A 不同", uidB ?? "",
           "A 和 B 是同一个用户，整条验收会平凡通过");

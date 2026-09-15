@@ -3,11 +3,16 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { BrandMark } from "@/app/components/brand-mark";
 import { createClient } from "@/lib/supabase/client";
 
 /**
- * 只有登录，**没有注册**（阶段 1.5 的范围）。验收账号由
- * `supabase/verify_rls_prod.py` 建，注册入口是阶段 3 的事。
+ * 登录。**没有注册入口**：账号目前是邀请制，自助注册是内测前的另一件事
+ * （进度总结 §七 第 2 项）。页面上说出来，免得用户找注册按钮。
+ *
+ * 构图取参考稿：胶囊标志 → 居中两行标题 → 一句说明 → 卡片坐在青色色带上。
+ * `input[type=email]` / `input[type=password]` / `button[type=submit]` 是回归工具
+ * （`scripts/verify_browser.mjs`）的定位点，改样式不改它们。
  */
 export default function LoginPage() {
   const router = useRouter();
@@ -35,45 +40,78 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-6 p-6">
-      <div>
-        <h1 className="text-lg font-medium">AI 课件讲解助手</h1>
-        <p className="mt-1 text-sm text-neutral-500">阶段 1.5 · 部署链冒烟</p>
+    <main className="flex min-h-screen flex-col overflow-hidden">
+      <div className="px-[var(--page-margin)] pt-4">
+        <div className="pill-nav enter-drop">
+          <span className="wordmark">
+            <BrandMark />
+            <span>课件讲解助手</span>
+          </span>
+        </div>
       </div>
 
-      <form onSubmit={submit} className="flex flex-col gap-3">
-        <input
-          type="email"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="邮箱"
-          autoComplete="username"
-          className="rounded border border-neutral-300 bg-white px-3 py-2 text-sm"
-        />
-        <input
-          type="password"
-          required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="密码"
-          autoComplete="current-password"
-          className="rounded border border-neutral-300 bg-white px-3 py-2 text-sm"
-        />
-        <button
-          type="submit"
-          disabled={busy}
-          className="rounded bg-neutral-900 px-3 py-2 text-sm text-white disabled:opacity-50"
-        >
-          {busy ? "登录中…" : "登录"}
-        </button>
-      </form>
-
-      {error && (
-        <p role="alert" className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-          {error}
+      <section className="mx-auto mt-[clamp(40px,9vh,104px)] w-full max-w-[760px] px-[var(--page-margin)] text-center">
+        <h1 className="t-display enter-wipe">
+          把课件讲成
+          <br />
+          你读得进去的样子
+        </h1>
+        <p className="t-body enter-late mx-auto mt-4 max-w-[46ch] text-balance">
+          上传自己的课件，按你偏好的讲法提问。讲解只用你给的材料，读不到的地方会直说。
         </p>
-      )}
+      </section>
+
+      <div className="relative mt-[clamp(28px,6vh,60px)] flex flex-1 flex-col">
+        <div aria-hidden className="band absolute inset-x-0 top-[112px] bottom-0" />
+
+        <form
+          onSubmit={submit}
+          className="card card--raised enter-later relative z-10 mx-auto mb-16 w-[min(420px,calc(100%-2*var(--page-margin)))] p-2"
+        >
+          <div className="px-3 pt-3 pb-4">
+            <p className="t-eyebrow"># 登录</p>
+            <p className="t-title mt-1">用受邀账号登录</p>
+          </div>
+
+          <div className="panel flex flex-col gap-4 p-4">
+            <label>
+              <span className="field-label">邮箱</span>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                autoComplete="username"
+                className="input"
+              />
+            </label>
+            <label>
+              <span className="field-label">密码</span>
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+                className="input"
+              />
+            </label>
+
+            {error && (
+              <p role="alert" className="notice notice--danger">
+                {error}
+              </p>
+            )}
+
+            <button type="submit" disabled={busy} className="btn btn--primary btn--lg w-full">
+              {busy ? "登录中…" : "登录"}
+            </button>
+
+            <p className="t-caption text-center">目前是邀请制，还不能自助注册。</p>
+          </div>
+        </form>
+      </div>
     </main>
   );
 }

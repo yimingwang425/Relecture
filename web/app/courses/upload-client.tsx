@@ -2,6 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { Diagnostics } from "@/app/components/diagnostics";
+import { PageHeader } from "@/app/components/page-header";
+import { StatusDot, type DotKind } from "@/app/components/status-dot";
 import { createClient } from "@/lib/supabase/client";
 import { copyFor, kindFromStatus, type FailureKind } from "@/lib/upload/failures";
 
@@ -40,6 +43,11 @@ import { copyFor, kindFromStatus, type FailureKind } from "@/lib/upload/failures
  *
  * 人工验收要能当场看见，回归工具要能不按中文文案定位（改文案不该让断言
  * 静默变绿）。同阶段 3 把事件队列的 `pending` / `dropped` 暴露在 DOM 上那条。
+ *
+ * ## 布局（2026-09-15 UI 重做）
+ *
+ * 左卡选课 / 建课，右卡拖放上传 + 逐份状态行（圆点字形区分排队 / 进行 / 完成 / 失败）。
+ * 构建号、`user_id`、臂、`session` 收进页面底部的诊断折叠区。
  */
 
 type Course = { id: string; name: string; created_at: string };
@@ -63,6 +71,13 @@ type Item = {
   failure?: { kind: FailureKind; detail: string; matched: boolean; retryable: boolean };
 };
 
+function dotFor(it: Item): DotKind {
+  if (it.state === "queued") return "idle";
+  if (it.state === "uploading") return "busy";
+  if (it.state === "failed") return "bad";
+  return it.result?.verdict === "unusable" || (it.result?.skipped_pages ?? 0) > 0 ? "warn" : "ok";
+}
+
 export function CourseUpload({
   apiBase,
   userId,
@@ -82,6 +97,8 @@ export function CourseUpload({
   const [listError, setListError] = useState<string | null>(null);
   /** 线上那个服务在跑哪个构建（口径 F17）。跨源要靠 expose-headers 才读得到。 */
   const [buildCommit, setBuildCommit] = useState<string | null>(null);
+  /** 拖着文件悬在上传区上方。只影响样式。 */
+  const [dragging, setDragging] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
 
   /** 拿用户自己的 JWT。RLS 由数据库执行，这一跳只是把它转过去。 */
@@ -254,179 +271,259 @@ export function CourseUpload({
   }
 
   const busy = items.some((x) => x.state === "uploading");
+  const canUpload = !!courseId && !busy;
+  const courseName = courses?.find((c) => c.id === courseId)?.name;
 
   return (
-    <section className="mt-8 flex flex-col gap-6" data-testid="course-upload">
-      {/* ---------------- 构建标识（口径 F17）---------------- */}
-      <p className="font-mono text-[11px] text-neutral-400" data-field="api-build">
-        服务端 {apiBase}
-        {buildCommit ? ` · 构建 ${buildCommit.slice(0, 7)}` : " · 构建标识读不到"}
-      </p>
+    <section className="flex flex-col" data-testid="course-upload">
+      <PageHeader
+        eyebrow="课件"
+        title="我的课程与课件"
+        lead="先建一门课，再把这门课的 PDF 讲义传上来。之后在「提问」里选这门课，讲解就只用这些材料。"
+      />
 
       {listError && (
-        <p role="alert" data-field="list-error"
-           className="rounded border border-red-200 bg-red-50 p-3 text-sm leading-relaxed text-red-700">
+        <p role="alert" data-field="list-error" className="notice notice--danger mb-6">
           {listError}
         </p>
       )}
 
-      {/* ---------------- 课程 ---------------- */}
-      <div className="flex flex-col gap-3">
-        <h1 className="text-lg font-medium">我的课程</h1>
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)]">
+        {/* ================================================================ 课程 */}
+        <div className="card enter p-2">
+          <div className="px-3 pt-3 pb-4">
+            <p className="t-eyebrow"># 课程</p>
+            <h2 className="t-title mt-1">上传到哪门课</h2>
+          </div>
 
-        {courses === null ? (
-          <p className="text-sm text-neutral-500">读取中…</p>
-        ) : courses.length === 0 ? (
-          <p className="text-sm text-neutral-500" data-field="no-courses">
-            还没有课程。先建一门，再往里上传课件。
-          </p>
-        ) : (
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="text-neutral-500">上传到哪门课</span>
-            <select
-              data-field="course-select"
-              value={courseId}
-              onChange={(e) => setCourseId(e.target.value)}
-              className="rounded border border-neutral-300 bg-white px-3 py-2"
+          <div className="panel flex flex-col gap-4 p-3">
+            {courses === null ? (
+              !listError && (
+                <div className="flex flex-col gap-2" aria-label="读取中">
+                  <div className="skeleton h-12" />
+                  <div className="skeleton h-12" />
+                </div>
+              )
+            ) : courses.length === 0 ? (
+              <p className="t-meta px-1" data-field="no-courses">
+                还没有课程。先建一门，再往里上传课件。
+              </p>
+            ) : (
+              <div
+                role="radiogroup"
+                aria-label="上传到哪门课"
+                data-field="course-select"
+                className="flex max-h-[360px] flex-col gap-2 overflow-y-auto p-0.5"
+              >
+                {courses.map((c) => {
+                  const active = c.id === courseId;
+                  return (
+                    <label
+                      key={c.id}
+                      data-selected={active}
+                      data-course-id={c.id}
+                      className="choice flex cursor-pointer items-start gap-3 px-3 py-2.5"
+                    >
+                      <input
+                        type="radio"
+                        name="course"
+                        className="sr-only"
+                        checked={active}
+                        onChange={() => setCourseId(c.id)}
+                      />
+                      <StatusDot kind={active ? "ok" : "idle"} />
+                      <span className="min-w-0 flex-1">
+                        <span className="row__title block truncate">{c.name}</span>
+                        <span className="row__sub block">
+                          建于 {new Date(c.created_at).toLocaleDateString("zh-CN")}
+                        </span>
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+
+            <form
+              className="flex gap-2 border-t border-[var(--c-border-row)] pt-4"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void createCourse();
+              }}
             >
-              {courses.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
+              <input
+                data-field="new-course-name"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder="新课程名，例如 22.081J 可持续能源"
+                aria-label="新课程名"
+                className="input flex-1"
+              />
+              <button
+                type="submit"
+                data-field="create-course"
+                disabled={!newName.trim()}
+                className="btn btn--primary shrink-0"
+              >
+                建课
+              </button>
+            </form>
+          </div>
+        </div>
 
-        <div className="flex gap-2">
-          <input
-            data-field="new-course-name"
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            placeholder="新课程名，例如 22.081J 可持续能源"
-            className="flex-1 rounded border border-neutral-300 px-3 py-2 text-sm"
-          />
-          <button
-            data-field="create-course"
-            onClick={() => void createCourse()}
-            disabled={!newName.trim()}
-            className="rounded bg-neutral-900 px-4 py-2 text-sm text-white disabled:opacity-40"
-          >
-            建课
-          </button>
+        {/* ================================================================ 上传 */}
+        <div className="card enter-late p-2">
+          <div className="flex flex-wrap items-end justify-between gap-3 px-3 pt-3 pb-4">
+            <div>
+              <p className="t-eyebrow"># 上传</p>
+              <h2 className="t-title mt-1">上传课件</h2>
+            </div>
+            {courseName && <span className="chip chip--accent max-w-full truncate">传到：{courseName}</span>}
+          </div>
+
+          <div className="panel flex flex-col gap-4 p-4">
+            <label
+              data-dragging={dragging}
+              onDragOver={(e) => {
+                e.preventDefault();
+                if (canUpload) setDragging(true);
+              }}
+              onDragLeave={() => setDragging(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragging(false);
+                if (canUpload) enqueue(e.dataTransfer.files);
+              }}
+              className={`flex flex-col items-center justify-center gap-2 rounded-[12px] border-[1.5px] border-dashed px-6 py-10 text-center transition-colors ${
+                !canUpload
+                  ? "cursor-not-allowed border-[var(--c-border-strong)] bg-[#fafafa] opacity-70"
+                  : dragging
+                    ? "cursor-copy border-[var(--c-accent)] bg-[var(--c-accent-wash)]"
+                    : "cursor-pointer border-[var(--c-border-strong)] hover:border-[var(--c-accent)] hover:bg-[#fcfeff]"
+              }`}
+            >
+              <input
+                ref={fileInput}
+                data-field="file-input"
+                type="file"
+                accept=".pdf"
+                multiple
+                disabled={!courseId || busy}
+                onChange={(e) => {
+                  enqueue(e.target.files);
+                  // 清空，否则同一个文件连传两次不会触发 change。
+                  if (fileInput.current) fileInput.current.value = "";
+                }}
+                className="sr-only"
+              />
+              <svg aria-hidden width="36" height="36" viewBox="0 0 36 36" fill="none">
+                <rect x="7" y="4" width="22" height="28" rx="4" fill="#f2f2f2" stroke="#d8d8d8" />
+                <path d="M18 23V13m0 0-4 4m4-4 4 4" stroke="var(--c-accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <span className="t-ui">
+                {!courseId ? "先在左边选一门课" : busy ? "正在处理上一份…" : "把 PDF 拖到这里，或点击选择"}
+              </span>
+              <span className="t-caption">可以一次选多份，会一份一份处理</span>
+            </label>
+
+            <p className="t-caption">
+              只能读 .pdf。<b>PPTX 还不能读 —— 那是我们还没做，不是不支持</b>
+              （schema 已经定了）。一份课件要先解析、切片，再逐片算向量，
+              几十页的讲义通常要几十秒。
+            </p>
+
+            {/* ---------------- 每一份的状态 ---------------- */}
+            {items.length > 0 && (
+              <ul className="flex flex-col gap-2" data-field="upload-items">
+                {items.map((it) => (
+                  <li
+                    key={it.key}
+                    data-field="upload-item"
+                    data-state={it.state}
+                    data-failure-kind={it.failure?.kind ?? ""}
+                    className="row"
+                  >
+                    <StatusDot kind={dotFor(it)} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-baseline justify-between gap-3">
+                        <span className="row__title truncate">{it.file.name}</span>
+                        <span className="t-caption mono shrink-0">{Math.round(it.file.size / 1024)} KB</span>
+                      </div>
+
+                      {it.state === "queued" && <p className="row__sub">排队中…</p>}
+                      {it.state === "uploading" && (
+                        <p className="row__sub">正在解析、切片、算向量…（几十秒，别关页面）</p>
+                      )}
+
+                      {it.state === "done" && it.result && (
+                        <p className="row__sub text-[var(--c-ok)]" data-field="upload-ok">
+                          已入库：{it.result.slice_count} 个切片 · {it.result.embedded_count} 条向量
+                          {it.result.skipped_pages > 0 && (
+                            <>
+                              {" · "}
+                              <span className="text-[var(--c-warn)]">{it.result.skipped_pages} 页读不出文字</span>
+                            </>
+                          )}
+                          {it.result.verdict === "unusable" && (
+                            <>
+                              {" · "}
+                              <span className="text-[var(--c-warn)]">整份判为不可用（可能是扫描件）</span>
+                            </>
+                          )}
+                        </p>
+                      )}
+
+                      {it.state === "failed" && it.failure && (
+                        <div className="mt-1" data-field="upload-failure">
+                          {/* 分类文案：说清发生了什么 + 该做什么。**不写「请重试」这类
+                              无信息量的提示**（PRD §10）。 */}
+                          <p className="text-[14px] font-[var(--fw-medium)] text-[var(--c-danger)]">
+                            {copyFor(it.failure.kind).title}
+                          </p>
+                          <p className="row__sub">{copyFor(it.failure.kind).action}</p>
+                          {it.failure.detail && (
+                            // 服务端原文只给这一次请求的用户看。**它不进事件**
+                            // （解析器谈论的是用户上传的文件内容，PRD §12.2 / 口径 F32）。
+                            <p className="mono mt-1 text-[11px] leading-relaxed break-all text-[#9a9a9a]">
+                              {it.failure.detail}
+                            </p>
+                          )}
+                          {!it.failure.matched && (
+                            <p className="mt-1 text-[11.5px] text-[var(--c-warn)]" data-field="unknown-kind">
+                              ⚠️ 这个失败分类前端不认识（<code>{it.failure.kind}</code>）——
+                              后端可能加了一类而前端没跟上。
+                            </p>
+                          )}
+                          {it.failure.retryable && (
+                            <button
+                              data-field="retry"
+                              onClick={() => void uploadOne({ ...it, state: "queued" })}
+                              className="btn btn--ghost btn--sm mt-2"
+                            >
+                              重试
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* ---------------- 上传 ---------------- */}
-      <div className="flex flex-col gap-2">
-        <h2 className="text-base font-medium">上传课件</h2>
-        <input
-          ref={fileInput}
-          data-field="file-input"
-          type="file"
-          accept=".pdf"
-          multiple
-          disabled={!courseId || busy}
-          onChange={(e) => {
-            enqueue(e.target.files);
-            // 清空，否则同一个文件连传两次不会触发 change。
-            if (fileInput.current) fileInput.current.value = "";
-          }}
-          className="text-sm"
-        />
-        <p className="text-xs leading-relaxed text-neutral-500">
-          只能读 .pdf。<b>PPTX 还不能读 —— 那是我们还没做，不是不支持</b>
-          （schema 已经定了）。一份课件要先解析、切片，再逐片算向量，
-          几十页的讲义通常要几十秒。
-        </p>
-      </div>
-
-      {/* ---------------- 每一份的状态 ---------------- */}
-      {items.length > 0 && (
-        <ul className="flex flex-col gap-2" data-field="upload-items">
-          {items.map((it) => (
-            <li
-              key={it.key}
-              data-field="upload-item"
-              data-state={it.state}
-              data-failure-kind={it.failure?.kind ?? ""}
-              className="rounded border border-neutral-200 bg-white p-3 text-sm"
-            >
-              <div className="flex items-baseline justify-between gap-3">
-                <span className="truncate font-medium">{it.file.name}</span>
-                <span className="shrink-0 font-mono text-xs text-neutral-400">
-                  {Math.round(it.file.size / 1024)} KB
-                </span>
-              </div>
-
-              {it.state === "queued" && <p className="mt-1 text-neutral-500">排队中…</p>}
-              {it.state === "uploading" && (
-                <p className="mt-1 text-neutral-500">
-                  正在解析、切片、算向量…（几十秒，别关页面）
-                </p>
-              )}
-
-              {it.state === "done" && it.result && (
-                <p className="mt-1 text-emerald-700" data-field="upload-ok">
-                  已入库：{it.result.slice_count} 个切片 ·{" "}
-                  {it.result.embedded_count} 条向量
-                  {it.result.skipped_pages > 0 && (
-                    <>
-                      {" · "}
-                      <span className="text-amber-700">
-                        {it.result.skipped_pages} 页读不出文字
-                      </span>
-                    </>
-                  )}
-                  {it.result.verdict === "unusable" && (
-                    <>
-                      {" · "}
-                      <span className="text-amber-700">整份判为不可用（可能是扫描件）</span>
-                    </>
-                  )}
-                </p>
-              )}
-
-              {it.state === "failed" && it.failure && (
-                <div className="mt-1" data-field="upload-failure">
-                  {/* 分类文案：说清发生了什么 + 该做什么。**不写「请重试」这类
-                      无信息量的提示**（PRD §10）。 */}
-                  <p className="text-red-700">{copyFor(it.failure.kind).title}</p>
-                  <p className="mt-0.5 text-neutral-600">{copyFor(it.failure.kind).action}</p>
-                  {it.failure.detail && (
-                    // 服务端原文只给这一次请求的用户看。**它不进事件**
-                    // （解析器谈论的是用户上传的文件内容，PRD §12.2 / 口径 F32）。
-                    <p className="mt-1 font-mono text-[11px] leading-relaxed text-neutral-400">
-                      {it.failure.detail}
-                    </p>
-                  )}
-                  {!it.failure.matched && (
-                    <p className="mt-1 text-[11px] text-amber-700" data-field="unknown-kind">
-                      ⚠️ 这个失败分类前端不认识（<code>{it.failure.kind}</code>）——
-                      后端可能加了一类而前端没跟上。
-                    </p>
-                  )}
-                  {it.failure.retryable && (
-                    <button
-                      data-field="retry"
-                      onClick={() => void uploadOne({ ...it, state: "queued" })}
-                      className="mt-2 rounded border border-neutral-300 px-3 py-1 text-xs"
-                    >
-                      重试
-                    </button>
-                  )}
-                </div>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <p className="text-[11px] text-neutral-400">
-        user_id <span className="font-mono">{userId}</span> · arm{" "}
-        <span className="font-mono">{arm}</span> · session{" "}
-        <span className="font-mono">{sessionId.slice(0, 8)}</span>
-      </p>
+      <Diagnostics
+        className="mt-10"
+        items={[
+          ["服务端", apiBase],
+          ["构建", buildCommit ? buildCommit.slice(0, 7) : "读不到构建标识", "api-build"],
+          ["user_id", userId],
+          ["arm", arm],
+          ["session", sessionId.slice(0, 8)],
+        ]}
+      />
     </section>
   );
 }

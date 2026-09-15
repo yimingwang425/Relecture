@@ -323,6 +323,11 @@ console.log("\n\x1b[1m三 · 构建产物里有没有真实凭据（口径 F16�
     }
   } finally {
     rmSync(canaryDir, { recursive: true, force: true });
+    // 连 canary 那次的**构建产物**一起删。只删源码不够，两样东西会留在 `.next` 里：
+    // ① `.next/types` 里对 `app/scan-canary-tmp/page.js` 的类型引用——之后每次
+    //    `tsc --noEmit` 都报 TS2307（2026-09-15 查实：每跑一次本脚本它就回来一次）；
+    // ② 产物里那串 `sb_secret_` 形态的 canary 值——下一次有人扫 `.next` 会命中一个假泄露。
+    rmSync(join(WEB, ".next"), { recursive: true, force: true });
   }
 
   // canary 已删干净：留在源码里会让下一次「0 命中」永远红。

@@ -1,17 +1,19 @@
+import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { LogoutButton } from "@/app/components/logout-button";
+import { AppNav } from "@/app/components/app-nav";
+import { ConfigSummary } from "@/app/components/config-summary";
+import { Diagnostics } from "@/app/components/diagnostics";
 import { DEBUG_ROUTES_ENABLED } from "@/lib/env";
+import { configOf, type StyleRow } from "@/lib/style/session";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-const FIELDS = [
-  ["detail_level", "详细程度"],
-  ["use_examples", "举例"],
-  ["structure", "结构"],
-  ["depth", "深度"],
-] as const;
+export const metadata: Metadata = { title: { absolute: "AI 课件讲解助手" } };
+
+const RAW_FIELDS = ["detail_level", "use_examples", "structure", "depth"] as const;
 
 export default async function HomePage() {
   const supabase = await createClient();
@@ -36,95 +38,106 @@ export default async function HomePage() {
   const state = error ? "error" : rows?.length !== 1 ? "bad-row-count" : "ok";
 
   return (
-    <main
-      data-state={state}
-      className="mx-auto flex min-h-screen max-w-lg flex-col gap-6 p-6 pt-16"
-    >
-      <header className="flex items-baseline justify-between">
-        <h1 className="text-lg font-medium">我的风格配置</h1>
-        <LogoutButton />
-      </header>
+    <main data-state={state} className="flex min-h-screen flex-col">
+      <div className="px-[var(--page-margin)] pt-4">
+        <AppNav email={auth.user.email} />
+      </div>
 
-      <dl className="rounded border border-neutral-200 bg-white text-sm">
-        <Row label="账号" value={auth.user.email ?? "—"} />
-        <Row label="user_id" value={auth.user.id} mono />
-      </dl>
-
-      {error ? (
-        <p role="alert" className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-          读取失败：{error.message}（{error.code}）
+      <section className="mx-auto w-full max-w-[880px] px-[var(--page-margin)] pt-[clamp(48px,10vh,112px)] text-center">
+        <h1 className="t-display enter-wipe">
+          今天想弄懂
+          <br />
+          课件里的哪一部分？
+        </h1>
+        <p className="t-body enter-late mx-auto mt-4 max-w-[48ch] text-balance">
+          选一门课，直接问。讲解按你偏好的讲法来，只用你上传的材料，出处标到页。
         </p>
-      ) : rows?.length !== 1 ? (
-        // 0 行不是「还没配置」，是坏状态：F09 的触发器保证每个用户都有且只有一行。
-        // 显示成空白会让这个坏状态看起来像正常的初始态。
-        <p role="alert" className="rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-          读到 {rows?.length ?? 0} 行，应为 1 行。每个用户注册时由触发器建行（口径 F09），
-          读到 0 行说明触发器没跑或被 RLS 挡住，不是「尚未配置」。
-        </p>
-      ) : (
-        <>
-          <dl className="rounded border border-neutral-200 bg-white text-sm">
-            {FIELDS.map(([key, label]) => (
-              <Row key={key} field={key} label={label} value={String(rows[0][key])} mono />
-            ))}
-          </dl>
+        <div className="enter-late mt-7 flex flex-wrap justify-center gap-3">
+          <Link href="/explain" className="btn btn--primary btn--lg" data-field="to-explain">
+            开始提问
+          </Link>
+          <Link href="/courses" className="btn btn--ghost btn--lg" data-field="to-courses">
+            上传课件
+          </Link>
+        </div>
+      </section>
 
-          <dl className="rounded border border-neutral-200 bg-white text-sm">
-            <Row field="f1_arm" label="f1_arm（AB 分组）" value={String(rows[0].f1_arm)} mono />
-            <Row
-              label="onboarded_at"
-              value={rows[0].onboarded_at ? String(rows[0].onboarded_at) : "null（未完成 onboarding）"}
-              mono
-            />
-          </dl>
+      <section className="relative mt-[clamp(40px,7vh,72px)] flex-1">
+        <div aria-hidden className="band absolute inset-x-0 top-[88px] bottom-0" />
 
-          <nav className="flex flex-col gap-2 rounded border border-neutral-200 bg-white p-4 text-sm">
-            <span className="text-xs text-neutral-500">主路径</span>
-            <a href="/courses" className="underline underline-offset-2" data-field="to-courses">
-              1 · 上传课件
-            </a>
-            <a href="/explain" className="underline underline-offset-2" data-field="to-explain">
-              2 · 问关于课件的问题
-            </a>
-            <a href="/settings/style" className="underline underline-offset-2">
-              调整讲解风格
-            </a>
-          </nav>
+        <div className="relative z-10 mx-auto w-[min(640px,calc(100%-2*var(--page-margin)))] pb-[clamp(40px,8vh,88px)]">
+          {error ? (
+            <p role="alert" className="notice notice--danger card--raised">
+              读取失败：{error.message}（{error.code}）
+            </p>
+          ) : rows?.length !== 1 ? (
+            // 0 行不是「还没配置」，是坏状态：F09 的触发器保证每个用户都有且只有一行。
+            // 显示成空白会让这个坏状态看起来像正常的初始态。
+            <p role="alert" className="notice notice--warn card--raised bg-white">
+              读到 {rows?.length ?? 0} 行，应为 1 行。每个用户注册时由触发器建行（口径 F09），
+              读到 0 行说明触发器没跑或被 RLS 挡住，不是「尚未配置」。
+            </p>
+          ) : (
+            <div className="card card--raised enter-later p-2">
+              <div className="flex items-start justify-between gap-4 px-3 pt-3 pb-4">
+                <div className="min-w-0">
+                  <p className="t-eyebrow"># 我的讲解风格</p>
+                  <p className="t-title mt-1">
+                    {rows[0].onboarded_at ? "按这四条给你讲" : "还没按你的偏好设置过"}
+                  </p>
+                  <p className="t-meta mt-1">
+                    {rows[0].onboarded_at
+                      ? "每次讲解都按它来；读完觉得不对，随时可以调。"
+                      : "现在用的是默认配置。走一遍 6 步的风格引导，会更贴合你。"}
+                  </p>
+                </div>
+                <Link href="/settings/style" className="btn btn--ghost btn--sm shrink-0">
+                  调整
+                </Link>
+              </div>
 
-          <p className="text-xs leading-relaxed text-neutral-500">
-            四条轴中只有<b>详细程度</b>被 A 类审查执行；举例 / 结构 / 深度仅进 prompt，
-            <code>enforced=false</code>（PRD §8.5 未校准前不进判定）。
-          </p>
-        </>
-      )}
+              <div className="tabs" aria-hidden>
+                <span className="tab" data-active="true">
+                  四条轴
+                </span>
+              </div>
+              <div className="tabpanel p-3">
+                <ConfigSummary config={configOf(rows[0] as StyleRow)} showEnforcedNote={false} />
+                {!rows[0].onboarded_at && (
+                  <div className="notice notice--info mt-3 flex flex-wrap items-center justify-between gap-3">
+                    <span>让它先认识一下你想怎么被讲解。</span>
+                    <Link href="/onboarding" className="btn btn--primary btn--sm">
+                      开始风格引导
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
 
-      {DEBUG_ROUTES_ENABLED && (
-        <p className="text-xs text-neutral-400">
-          调试路由已启用：<code>/debug/rls?probe=&lt;uuid&gt;</code>
-        </p>
-      )}
+      <div className="mx-auto w-full max-w-[880px] px-[var(--page-margin)] py-6">
+        <Diagnostics
+          items={[
+            ["账号", auth.user.email ?? "—"],
+            ["user_id", auth.user.id, "user-id"],
+            ...(rows?.length === 1
+              ? ([
+                  ...RAW_FIELDS.map((key) => [key, String(rows[0][key]), key] as [string, string, string]),
+                  ["f1_arm", String(rows[0].f1_arm), "f1_arm"],
+                  [
+                    "onboarded_at",
+                    rows[0].onboarded_at ? String(rows[0].onboarded_at) : "null（未完成 onboarding）",
+                  ],
+                ] as [string, string, string?][])
+              : []),
+            ...(DEBUG_ROUTES_ENABLED
+              ? ([["调试路由", "/debug/rls?probe=<uuid>"]] as [string, string][])
+              : []),
+          ]}
+        />
+      </div>
     </main>
-  );
-}
-
-function Row({
-  label,
-  value,
-  mono,
-  field,
-}: {
-  label: string;
-  value: string;
-  mono?: boolean;
-  /** 回归工具按它定位，不按中文标签——改文案不该让断言静默变绿。 */
-  field?: string;
-}) {
-  return (
-    <div className="flex justify-between gap-4 border-b border-neutral-100 px-4 py-2.5 last:border-0">
-      <dt className="shrink-0 text-neutral-500">{label}</dt>
-      <dd data-field={field} className={`text-right ${mono ? "font-mono text-xs" : ""}`}>
-        {value}
-      </dd>
-    </div>
   );
 }

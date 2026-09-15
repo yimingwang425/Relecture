@@ -65,6 +65,28 @@ export type TurnAnswer = {
   sliceKeys: string[];
   /** 本轮有没有因为历史「没看懂」标记而注入限定语。`null` = 服务端没给。 */
   confusion: Confusion | null;
+  /**
+   * 逐片的出处（出处面板用）。与 `sources` 同源：`sources` 是按文件合并页号后的版本，
+   * 这里保留每一片的标题与检索分数。**缺了就是 null，不编**。
+   */
+  slices: { sourceFile: string; pages: number[]; title: string | null; score: number | null }[];
+  /** 本轮涉及的文档里读不了的页（`retrieval.skipped_pages_in_scope`）。 */
+  skippedPages: { sourceFile: string; index: number; kind: string }[];
+  /** 兜底判断（F3b，内测前-P1 接进生产）。`null` = 服务端没给（构建旧于 `84b5624`）。 */
+  gap: GapInfo | null;
+};
+
+export type GapVerdict = "covered" | "partial" | "insufficient";
+
+export type GapInfo = {
+  /** `null` = 没判出结果（失败 / 超时 / 输出不合法）。**不等于 covered。** */
+  verdict: GapVerdict | null;
+  /** `"model"` / `"error"` / `"null"`。读 verdict 之前先读它（口径 F73 同一条纪律）。 */
+  implementation: string;
+  reason: string | null;
+  error: string | null;
+  /** G03a 规则通道点名的跳过页（页号）。 */
+  hintPages: number[];
 };
 
 export type Confusion = {
@@ -158,7 +180,8 @@ export function answerFromResponse(body: {
   detail_level: string;
   retrieval?: {
     meta?: { backend?: string };
-    slices?: { source_file: string; pages: number[] }[];
+    slices?: { source_file: string; pages: number[]; title?: string | null; score?: number | null }[];
+    skipped_pages_in_scope?: { source_file: string; index: number; kind: string }[];
   };
   events?: unknown;
   round_id?: string;
@@ -169,6 +192,13 @@ export function answerFromResponse(body: {
     marked_rounds?: number;
     matched_slice_keys?: string[];
     skipped_reason?: string | null;
+  };
+  gap?: {
+    gap_verdict?: string | null;
+    gap_implementation?: string;
+    gap_reason?: string | null;
+    gap_error?: string | null;
+    gap_skipped_hint_pages?: number[];
   };
 }): TurnAnswer {
   const c = body.confusion;
@@ -203,7 +233,51 @@ export function answerFromResponse(body: {
           skippedReason: c.skipped_reason ?? null,
         }
       : null,
+    slices: (body.retrieval?.slices ?? []).map((s) => ({
+      sourceFile: s.source_file,
+      pages: [...(s.pages ?? [])].sort((a, b) => a - b),
+      title: s.title ?? null,
+      score: typeof s.score === "number" ? s.score : null,
+    })),
+    skippedPages: (body.retrieval?.skipped_pages_in_scope ?? []).map((p) => ({
+      sourceFile: p.source_file,
+      index: p.index,
+      kind: p.kind,
+    })),
+    gap: body.gap
+      ? {
+          // 认不出的取值当 null，**不就近解释**（G01 同一条：猜错比不显示更危险）。
+          verdict: (["covered", "partial", "insufficient"] as const).find((v) => v === body.gap?.gap_verdict) ?? null,
+          implementation: body.gap.gap_implementation ?? "unknown",
+          reason: body.gap.gap_reason ?? null,
+          error: body.gap.gap_error ?? null,
+          hintPages: body.gap.gap_skipped_hint_pages ?? [],
+        }
+      : null,
   };
+}
+
+// ---------------------------------------------------------------- F3b · 兜底判断的提示
+
+export type GapNotice = { verdict: "partial" | "insufficient"; pages: number[] };
+
+/**
+ * 这一轮要不要在讲解上方挂一条「片段可能不够」的提示。
+ *
+ * **只在「判了，且判的不是 covered」时出现**，两个方向都是真实的失败形态：
+ *
+ * - **恒触发**：每轮都挂一条提示，页面看起来完全正常，只是每轮多一句——
+ *   用户很快学会无视它，真正不够的那一轮反而没人看（进度总结 §五「最难发现」）。
+ * - **判断失败时也提示**：失败（`verdict = null`，`implementation = "error"`）不是
+ *   「片段不够」，是「没判」。没有判断就没有依据，与讲解侧不注入限定语是同一处置
+ *   （`api/tests/test_gap_wiring.py` 守卫 4）。
+ *
+ * 措辞由页面给，但必须守 G02：能说「**片段里**没有」，不能说「课件里没有」。
+ */
+export function gapNotice(answer: TurnAnswer): GapNotice | null {
+  const verdict = answer.gap?.verdict;
+  if (verdict !== "partial" && verdict !== "insufficient") return null;
+  return { verdict, pages: answer.gap?.hintPages ?? [] };
 }
 
 /**

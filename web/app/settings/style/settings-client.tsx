@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
+import { PageHeader } from "@/app/components/page-header";
 import {
   AXES,
   AXIS_IDS,
@@ -51,6 +52,12 @@ import { createClient } from "@/lib/supabase/client";
  * 反馈按钮作用在**已保存的配置**上并立即写库。若此时手工草稿还没保存，
  * 两者会互相覆盖——要么静默丢掉用户的手工改动，要么把没打算保存的改动一起写进去。
  * 两种都是静默改写（F10 反对的那件事），所以这里选择**禁用并说明原因**。
+ *
+ * ## 布局（2026-09-15 UI 重做）
+ *
+ * 桌面两栏：左边四条轴（卡片 → 面板 → 每轴一组选项），右边吸顶的反馈卡。
+ * 保存 / 反馈的结果提示放在两栏上方——两边的操作都在那里出结果，
+ * 放在任何一栏里，点另一栏的按钮时提示就落在视线之外。
  */
 export function StyleSettings({
   userId,
@@ -177,24 +184,19 @@ export function StyleSettings({
   }
 
   return (
-    <div
-      className="enter mt-10"
-      data-events-pending={eventState.pending}
-      data-events-dropped={eventState.dropped}
-    >
-      <header className="mb-6">
-        <h1 className="t-display">风格设置</h1>
-        <p className="t-body mt-3 max-w-[62ch]">
-          讲解按这四条来。改完保存即刻生效，下一次讲解就用新的。
-        </p>
-      </header>
+    <div data-events-pending={eventState.pending} data-events-dropped={eventState.dropped}>
+      <PageHeader
+        eyebrow="讲解风格"
+        title="按你读得进去的方式讲"
+        lead="讲解按这四条来。改完保存即刻生效，下一次讲解就用新的。"
+      />
 
       {!onboarded && (
-        <p className="panel mb-6 bg-[var(--c-accent-wash)] p-3 text-sm text-[var(--c-accent-ink)]">
+        <p className="notice notice--info mb-6">
           你还没走过一遍风格设置引导。现在这份是默认配置——
           <Link
             href={arm === "pairwise" ? "/onboarding/style" : "/onboarding/style-text"}
-            className="underline underline-offset-4"
+            className="link font-[var(--fw-medium)]"
           >
             去走一遍
           </Link>
@@ -202,150 +204,157 @@ export function StyleSettings({
         </p>
       )}
 
-      <div className="card divide-y divide-[var(--c-border-row)] p-2">
-        {AXIS_IDS.map((axis) => (
-          <fieldset key={axis} data-axis={axis} className="p-4">
-            <legend className="t-heading mb-3 flex items-center gap-2">
-              {AXIS_LABEL[axis]}
-              {ENFORCED[axis] ? (
-                <span className="rounded-full bg-[var(--c-accent-wash)] px-2 py-0.5 text-[11px] font-[var(--fw-medium)] text-[var(--c-accent-ink)]">
-                  会被自动审查
-                </span>
-              ) : (
-                <span className="t-meta font-[var(--fw-regular)]">仅进 prompt，不做判定</span>
-              )}
-            </legend>
+      {(notice || error) && (
+        <div className="mb-6 flex flex-col gap-3">
+          {notice && (
+            <p role="status" data-notice className="notice notice--info">
+              {notice}
+            </p>
+          )}
+          {error && (
+            <p role="alert" className="notice notice--danger">
+              {error}
+            </p>
+          )}
+        </div>
+      )}
 
-            <div className="grid gap-2 sm:grid-cols-3">
-              {(AXES[axis] as readonly string[]).map((value) => {
-                const active = draft[axis] === value;
-                return (
-                  <button
-                    key={value}
-                    type="button"
-                    data-value={value}
-                    data-selected={active}
-                    aria-pressed={active}
-                    disabled={busy}
-                    onClick={() =>
-                      setDraft({ ...draft, [axis]: value } as StyleConfig)
-                    }
-                    className="choice p-3 text-left"
-                  >
-                    <span className="t-ui block">
-                      {(VALUE_LABEL[axis] as Record<string, string>)[value]}
-                    </span>
-                    <span className="t-meta mt-1 block leading-snug">
-                      {(VALUE_HINT[axis] as Record<string, string>)[value]}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </fieldset>
-        ))}
-      </div>
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,360px)]">
+        {/* ================================================================ 四条轴 */}
+        <section className="card enter p-2">
+          <div className="px-3 pt-3 pb-4">
+            <p className="t-eyebrow"># 四条轴</p>
+            <h2 className="t-title mt-1">直接改</h2>
+          </div>
 
-      <div className="mt-5 flex flex-wrap items-center gap-3">
-        <button
-          type="button"
-          className="btn btn--primary"
-          disabled={!dirty || busy}
-          onClick={() => void write(draft, "已保存。", manualChange(saved, draft))}
-          data-action="save"
-        >
-          {busy ? "保存中…" : "保存"}
-        </button>
-        <button
-          type="button"
-          className="btn btn--ghost"
-          disabled={!dirty || busy}
-          onClick={() => {
-            setDraft(saved);
-            setNotice(null);
-          }}
-          data-action="revert"
-        >
-          撤销改动
-        </button>
-        {!dirty && <span className="t-meta">没有未保存的改动</span>}
-      </div>
+          <div className="panel divide-y divide-[var(--c-border-row)]">
+            {AXIS_IDS.map((axis) => (
+              <fieldset key={axis} data-axis={axis} className="p-4 sm:p-5">
+                <legend className="contents">
+                  <span className="t-heading mb-3 flex flex-wrap items-center gap-2">
+                    {AXIS_LABEL[axis]}
+                    {ENFORCED[axis] ? (
+                      <span className="chip chip--accent h-6 px-2 text-[11.5px]">会被自动审查</span>
+                    ) : (
+                      <span className="t-caption font-[var(--fw-regular)]">只作倾向，不做判定</span>
+                    )}
+                  </span>
+                </legend>
 
-      {/* ---------------------------------------------------------------- 反馈 */}
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {(AXES[axis] as readonly string[]).map((value) => {
+                    const active = draft[axis] === value;
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        data-value={value}
+                        data-selected={active}
+                        aria-pressed={active}
+                        disabled={busy}
+                        onClick={() =>
+                          setDraft({ ...draft, [axis]: value } as StyleConfig)
+                        }
+                        className="choice cursor-pointer p-3 text-left"
+                      >
+                        <span className="t-ui block">
+                          {(VALUE_LABEL[axis] as Record<string, string>)[value]}
+                        </span>
+                        <span className="t-caption mt-1 block">
+                          {(VALUE_HINT[axis] as Record<string, string>)[value]}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </fieldset>
+            ))}
+          </div>
 
-      <section className="mt-10">
-        <h2 className="t-title">读完一段讲解之后</h2>
-        <p className="t-body mt-2 max-w-[62ch]">
-          点一下就按下面的规则调整配置 —— 除「例子没懂」外，改的都是<b>以后所有讲解</b>。
-        </p>
-
-        <div className="mt-4 flex flex-wrap gap-2">
-          {FEEDBACK_KINDS.map((kind) => (
+          <div className="flex flex-wrap items-center gap-3 px-3 pt-4 pb-3">
             <button
-              key={kind}
+              type="button"
+              className="btn btn--primary"
+              disabled={!dirty || busy}
+              onClick={() => void write(draft, "已保存。", manualChange(saved, draft))}
+              data-action="save"
+            >
+              {busy ? "保存中…" : "保存"}
+            </button>
+            <button
               type="button"
               className="btn btn--ghost"
-              disabled={busy || dirty}
-              onClick={() => onFeedback(kind)}
-              data-feedback={kind}
+              disabled={!dirty || busy}
+              onClick={() => {
+                setDraft(saved);
+                setNotice(null);
+              }}
+              data-action="revert"
             >
-              {FEEDBACK_LABEL[kind]}
+              撤销改动
             </button>
-          ))}
-        </div>
+            <span className="t-meta">{dirty ? "有未保存的改动" : "没有未保存的改动"}</span>
+          </div>
+        </section>
 
-        {dirty && (
-          <p className="t-meta mt-3">
-            有未保存的改动，反馈按钮先停用——它作用在已保存的配置上，两边同时改会互相覆盖。
-            先保存或撤销。
-          </p>
-        )}
+        {/* ================================================================ 反馈 */}
+        <aside className="card enter-late p-2 lg:sticky lg:top-[84px]">
+          <div className="px-3 pt-3 pb-4">
+            <p className="t-eyebrow"># 反馈</p>
+            <h2 className="t-title mt-1">读完一段讲解之后</h2>
+            <p className="t-meta mt-1">
+              点一下就按下面的规则调整配置 —— 除「例子没懂」外，改的都是<b>以后所有讲解</b>。
+            </p>
+          </div>
 
-        <ul className="t-meta mt-4 max-w-[70ch] list-disc space-y-1 pl-5 leading-relaxed">
-          <li>
-            <b>太啰嗦</b>：详细程度往简洁方向移一格。
-          </li>
-          <li>
-            <b>讲太深 / 讲太浅</b>：深度往浅 / 深方向移一格。
-          </li>
-          <li>
-            <b>例子没懂</b>：<b>不改配置</b>，只把这一段按当前配置重新讲一遍。
-          </li>
-          <li>已经在最边上那一格时，配置保持不变，并会告诉你为什么没变。</li>
-          <li>
-            只是<b>某一段的这几页</b>没看懂、不想以后都讲浅？别点「讲太深」——
-            去讲解页那一轮下面点<b>「这部分没看懂」</b>：不改配置，只在下次讲到这几页时换个切入点（口径 F56）。
-          </li>
-        </ul>
-      </section>
+          <div className="panel p-4">
+            <div className="grid grid-cols-2 gap-2">
+              {FEEDBACK_KINDS.map((kind) => (
+                <button
+                  key={kind}
+                  type="button"
+                  className="btn btn--ghost"
+                  disabled={busy || dirty}
+                  onClick={() => onFeedback(kind)}
+                  data-feedback={kind}
+                >
+                  {FEEDBACK_LABEL[kind]}
+                </button>
+              ))}
+            </div>
 
-      {notice && (
-        <p
-          role="status"
-          data-notice
-          className="panel mt-6 bg-[var(--c-accent-wash)] p-3 text-sm text-[var(--c-accent-ink)]"
-        >
-          {notice}
-        </p>
-      )}
+            {dirty && (
+              <p className="notice notice--warn mt-3 text-[13px]">
+                有未保存的改动，反馈按钮先停用——它作用在已保存的配置上，两边同时改会互相覆盖。
+                先保存或撤销。
+              </p>
+            )}
 
-      {error && (
-        <p
-          role="alert"
-          className="panel mt-6 border-[color:var(--c-danger)]/30 bg-[var(--c-danger-wash)] p-3 text-sm text-[var(--c-danger)]"
-        >
-          {error}
-        </p>
-      )}
+            <ul className="t-caption mt-4 list-disc space-y-1.5 pl-4">
+              <li>
+                <b>太啰嗦</b>：详细程度往简洁方向移一格。
+              </li>
+              <li>
+                <b>讲太深 / 讲太浅</b>：深度往浅 / 深方向移一格。
+              </li>
+              <li>
+                <b>例子没懂</b>：<b>不改配置</b>，只把这一段按当前配置重新讲一遍。
+              </li>
+              <li>已经在最边上那一格时，配置保持不变，并会告诉你为什么没变。</li>
+            </ul>
+
+            <p className="notice notice--info mt-4 text-[13px]">
+              只是<b>某一段的这几页</b>没看懂、不想以后都讲浅？别点「讲太深」——
+              去讲解页那一轮下面点<b>「这部分没看懂」</b>：不改配置，只在下次讲到这几页时换个切入点（口径 F56）。
+            </p>
+          </div>
+        </aside>
+      </div>
 
       {/* 埋点失败不影响配置本身，但要说出来——「还在重试」「等下次」「永久拒绝」
           三种的处置完全不同，所以分开说，不合成一句。 */}
       {(eventState.pending > 0 || eventState.dropped > 0) && (
-        <p
-          role="status"
-          data-event-error
-          className="panel mt-6 bg-[var(--c-accent-wash)] p-3 text-sm text-[var(--c-accent-ink)]"
-        >
+        <p role="status" data-event-error className="notice notice--info mt-6">
           {eventState.dropped > 0 && (
             <b>有 {eventState.dropped} 条埋点被永久拒绝（不是网络问题，请把这句话报给开发）。</b>
           )}
@@ -355,7 +364,7 @@ export function StyleSettings({
               : `还有 ${eventState.pending} 条埋点在写入中。`)}
           {eventState.lastError ? ` 最后一次的错误：${eventState.lastError}` : ""}
           <br />
-          <span className="t-meta">你的配置不受影响。</span>
+          <span className="opacity-80">你的配置不受影响。</span>
         </p>
       )}
     </div>

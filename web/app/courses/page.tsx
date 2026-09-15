@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+
 import { AppNav } from "@/app/components/app-nav";
 import { RowStateNotice } from "@/app/components/row-state";
 import { API_BASE_URL } from "@/lib/env";
@@ -7,6 +9,8 @@ import { loadStyleRow } from "@/lib/style/session";
 import { CourseUpload } from "./upload-client";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = { title: "课件" };
 
 /**
  * 课程与课件上传（阶段 6 第一批）。
@@ -41,26 +45,22 @@ export default async function CoursesPage() {
       // 终态标记。回归工具按它等待与断言，**不按中文文案**——
       // 改一次文案不该让断言静默变绿（同 app/page.tsx 那条）。
       data-state={result.state === "ok" && !API_BASE_URL ? "no-api-base" : result.state}
-      className="mx-auto w-full max-w-[880px] px-5 py-8"
+      className="shell"
     >
       <AppNav email={result.email} />
 
       {result.state !== "ok" ? (
-        <div className="mt-10">
+        <div className="mt-12">
           <RowStateNotice result={result} />
         </div>
       ) : !API_BASE_URL ? (
-        <p
-          role="alert"
-          data-field="no-api-base"
-          className="mt-10 rounded border border-amber-200 bg-amber-50 p-4 text-sm leading-relaxed text-amber-900"
-        >
+        <p role="alert" data-field="no-api-base" className="notice notice--warn mt-12">
           <b>还没配 <code>NEXT_PUBLIC_API_BASE_URL</code>。</b>
           上传与讲解要用产品服务端（<code>api/</code>，部署在 Render），
           这一页在浏览器里直连它。配好之后刷新即可 —— 本站其余页面不受影响，
           它们直连 Supabase。
           <br />
-          <span className="text-amber-700">
+          <span className="opacity-80">
             连带：那个服务要把本站来源列进 <code>CORS_ALLOW_ORIGINS</code>。
             它不配就是空清单（浏览器一律被挡），不是默认放开。
           </span>

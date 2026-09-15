@@ -18,9 +18,9 @@ export default async function OnboardingEntryPage() {
 
   if (result.state !== "ok") {
     return (
-      <main data-state={result.state} className="mx-auto w-full max-w-[880px] px-5 py-8">
+      <main data-state={result.state} className="shell">
         <AppNav email={result.email} />
-        <div className="mt-10">
+        <div className="mt-12">
           <RowStateNotice result={result} />
         </div>
       </main>

@@ -20,8 +20,8 @@ const figtree = Figtree({
 });
 
 export const metadata: Metadata = {
-  title: "AI 课件讲解助手",
-  description: "F1 风格获取",
+  title: { default: "AI 课件讲解助手", template: "%s · AI 课件讲解助手" },
+  description: "上传自己的课件，按你偏好的讲法提问。讲解只用你给的材料，出处标到页。",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

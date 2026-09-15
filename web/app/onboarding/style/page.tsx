@@ -22,9 +22,9 @@ export default async function PairwiseOnboardingPage() {
 
   if (result.state !== "ok") {
     return (
-      <main data-state={result.state} className="mx-auto w-full max-w-[880px] px-5 py-8">
+      <main data-state={result.state} className="shell">
         <AppNav email={result.email} />
-        <div className="mt-10">
+        <div className="mt-12">
           <RowStateNotice result={result} />
         </div>
       </main>
@@ -35,7 +35,7 @@ export default async function PairwiseOnboardingPage() {
   if (result.row.f1_arm !== "pairwise") redirect("/onboarding/style-text");
 
   return (
-    <main data-state="ok" data-arm="pairwise" className="mx-auto w-full max-w-[1220px] px-5 py-8">
+    <main data-state="ok" data-arm="pairwise" className="shell max-w-[1240px]">
       <AppNav email={result.email} />
       {/*
         左右顺序**在服务端抽一次**，作为 prop 传下去。

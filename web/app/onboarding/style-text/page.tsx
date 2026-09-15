@@ -22,9 +22,9 @@ export default async function TextOnboardingPage() {
 
   if (result.state !== "ok") {
     return (
-      <main data-state={result.state} className="mx-auto w-full max-w-[880px] px-5 py-8">
+      <main data-state={result.state} className="shell">
         <AppNav email={result.email} />
-        <div className="mt-10">
+        <div className="mt-12">
           <RowStateNotice result={result} />
         </div>
       </main>
@@ -34,7 +34,7 @@ export default async function TextOnboardingPage() {
   if (result.row.f1_arm !== "text") redirect("/onboarding/style");
 
   return (
-    <main data-state="ok" data-arm="text" className="mx-auto w-full max-w-[880px] px-5 py-8">
+    <main data-state="ok" data-arm="text" className="shell shell--narrow">
       <AppNav email={result.email} />
       {/*
         `sessionId` 在**服务端**抽（同主臂）：客户端组件的渲染在 SSR 与 hydrate

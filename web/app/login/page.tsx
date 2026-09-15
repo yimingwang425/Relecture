@@ -44,7 +44,7 @@ export default function LoginPage() {
 
   return (
     <main className="relative flex min-h-dvh flex-col overflow-hidden">
-      <div aria-hidden className="band absolute inset-x-0 bottom-0 h-[44dvh]" />
+      <div aria-hidden className="welcome-fade absolute inset-x-0 bottom-0 h-[44dvh]" />
 
       <header className="relative z-10 flex justify-center px-[var(--page-margin)] pt-6 sm:pt-8">
         <Link href="/welcome" className="wordmark-sm enter-drop" aria-label="Relecture，回到欢迎页">
@@ -55,8 +55,7 @@ export default function LoginPage() {
       <div className="relative z-10 flex flex-1 items-center justify-center px-[var(--page-margin)] py-6">
         <form onSubmit={submit} className="card card--raised enter w-full max-w-[400px] p-2">
           <div className="px-3 pt-3 pb-4">
-            <p className="t-eyebrow"># 登录</p>
-            <p className="t-title mt-1">欢迎回来</p>
+            <p className="t-title">欢迎回来</p>
           </div>
 
           <div className="panel flex flex-col gap-4 p-4">

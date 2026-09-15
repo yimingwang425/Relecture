@@ -25,8 +25,14 @@ export default async function WelcomePage() {
   if (data.user) redirect("/");
 
   return (
-    <main className="reveal-down flex min-h-dvh flex-col overflow-hidden">
-      <section className="flex flex-1 flex-col items-center justify-center px-[var(--page-margin)] py-12 text-center">
+    <main className="reveal-down relative flex min-h-dvh flex-col overflow-hidden">
+      {/* 渐隐层绝对定位在底部、垫在内容下面：内容按整个视口居中，按钮可以落在渐隐区里。 */}
+      <div
+        aria-hidden
+        className="welcome-fade welcome-band absolute inset-x-0 bottom-0 h-[30dvh] min-h-[160px]"
+      />
+
+      <section className="relative z-10 flex flex-1 flex-col items-center justify-center px-[var(--page-margin)] py-12 text-center">
         <h1 className="wordmark-hero welcome-1">Relecture</h1>
         {/* 断行写死在逗号后：交给浏览器的话，「在」会被留在上一行（2026-09-15 截图实测）。 */}
         <p className="t-body welcome-2 mt-5 text-[17px] sm:mt-6">
@@ -46,8 +52,6 @@ export default async function WelcomePage() {
           注册即将开放
         </p>
       </section>
-
-      <div aria-hidden className="band welcome-band h-[26dvh] min-h-[140px] shrink-0" />
     </main>
   );
 }

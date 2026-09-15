@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
 
+import { WaveWordmark } from "./wave-wordmark";
+
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = { title: { absolute: "Relecture" } };
@@ -11,8 +13,18 @@ export const metadata: Metadata = { title: { absolute: "Relecture" } };
 /**
  * 欢迎页：未登录用户的入口。
  *
- * 只有三样东西：文字标志、一句话、登录 / 注册。入场是一道从上往下扫开的渐变遮罩
- * （`.reveal-down`），标志、说明、按钮再依次上浮——视线被动画从上带到下，落在按钮上。
+ * 只有三样东西：文字标志、一句话、登录 / 注册。
+ *
+ * ## 入场
+ *
+ * 标志擦出、说明与按钮上浮；随后一道淡蓝波带从页顶扫到页底，扫过标志时字母各抖一下
+ * （`wave-wordmark.tsx`），扫到底部时渐隐落定成静止的样子。时间线定义在 globals.css 的
+ * `.welcome-stage`，只有一处。
+ *
+ * ## 位置
+ *
+ * 内容**略高于视口中线**（底部多留 10dvh）。正中间看起来会往下坠——视觉中心本来就比几何中心高一点。
+ * 渐隐层绝对定位垫在内容下面，不占居中区域的高度。
  *
  * **注册按钮先放着但禁用**：自助注册是进度总结 §七 第 2 项，还没做。
  * 按钮在、说明在，用户就知道「现在不能注册」而不是「找不到注册」。
@@ -25,15 +37,15 @@ export default async function WelcomePage() {
   if (data.user) redirect("/");
 
   return (
-    <main className="reveal-down relative flex min-h-dvh flex-col overflow-hidden">
-      {/* 渐隐层绝对定位在底部、垫在内容下面：内容按整个视口居中，按钮可以落在渐隐区里。 */}
+    <main className="welcome-stage relative flex min-h-dvh flex-col overflow-hidden">
       <div
         aria-hidden
-        className="welcome-fade welcome-band absolute inset-x-0 bottom-0 h-[30dvh] min-h-[160px]"
+        className="welcome-fade welcome-settle absolute inset-x-0 bottom-0 h-[30dvh] min-h-[160px]"
       />
+      <div aria-hidden id="welcome-wave" className="welcome-wave" />
 
-      <section className="relative z-10 flex flex-1 flex-col items-center justify-center px-[var(--page-margin)] py-12 text-center">
-        <h1 className="wordmark-hero welcome-1">Relecture</h1>
+      <section className="relative z-10 flex flex-1 flex-col items-center justify-center px-[var(--page-margin)] pt-12 pb-[calc(3rem+10dvh)] text-center">
+        <WaveWordmark waveId="welcome-wave" className="wordmark-hero welcome-1" />
         {/* 断行写死在逗号后：交给浏览器的话，「在」会被留在上一行（2026-09-15 截图实测）。 */}
         <p className="t-body welcome-2 mt-5 text-[17px] sm:mt-6">
           选择适合你的讲解方式，

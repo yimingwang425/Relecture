@@ -833,8 +833,19 @@ body {
 
   /* ---------------------------------------------------------------- 欢迎页入场 */
 
+  /**
+   * 欢迎页的时间线只在这里定义一次（波带、渐隐落定都从这两个变量取）：
+   * 标志擦出 0.15–1.15s → 说明与按钮上浮 → 波带从页顶扫到页底 → 渐隐在底部落定。
+   * 字母颤抖**不按时间算**：由 `wave-wordmark.tsx` 读波带的实际位置触发，屏幕多高都对得上。
+   */
+  .welcome-stage {
+    --wave-delay: 1.05s;
+    --wave-dur: 1.9s;
+  }
+
+  /* fill-mode 用 backwards 不用 both：擦出结束后不能留着 clip-path，否则字母抖出边框会被裁掉 */
   .welcome-1 {
-    animation: enter-wipe 1s var(--ease-reveal) 0.15s both;
+    animation: enter-wipe 1s var(--ease-reveal) 0.15s backwards;
   }
 
   .welcome-2 {
@@ -845,18 +856,46 @@ body {
     animation: enter-rise 0.8s var(--ease-settle) 0.85s both;
   }
 
-  .welcome-band {
-    animation: band-reveal 1.1s var(--ease-reveal) 0.9s both;
-  }
-
   /* 欢迎页收尾：饱和色带换成一层向下加深的品牌色渐隐——无硬边、无斜纹、无文字 */
   .welcome-fade {
     background-image: linear-gradient(
       180deg,
-      rgba(234, 248, 253, 0) 0%,
-      var(--c-accent-wash) 55%,
-      #d7f0fa 100%
+      rgba(226, 245, 252, 0) 0%,
+      #e3f5fc 55%,
+      #cdebf8 100%
     );
+  }
+
+  /* 渐隐在波带扫到底部区域时落定（波带走完约六成的时候，它的亮部正好进入这一层） */
+  .welcome-settle {
+    animation: settle-in 0.9s var(--ease-settle) calc(var(--wave-delay) + var(--wave-dur) * 0.6) both;
+  }
+
+  /* 扫过整页的波带：上下两端都羽化，亮部偏下，像一道往下走的波前 */
+  .welcome-wave {
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    height: 40dvh;
+    pointer-events: none;
+    background-image: linear-gradient(
+      180deg,
+      rgba(56, 198, 236, 0) 0%,
+      rgba(56, 198, 236, 0.1) 45%,
+      rgba(56, 198, 236, 0.26) 82%,
+      rgba(56, 198, 236, 0) 100%
+    );
+    translate: 0 -100%;
+    animation: wave-sweep var(--wave-dur) cubic-bezier(0.45, 0.05, 0.55, 0.95) var(--wave-delay) both;
+  }
+
+  /* 标志逐字母：颤抖的方向与幅度由组件按字母给（--jx / --jy / --jr / --jd） */
+  .wordmark-letter {
+    display: inline-block;
+  }
+
+  [data-shake="1"] .wordmark-letter {
+    animation: letter-jolt 0.42s cubic-bezier(0.36, 0.07, 0.19, 0.97) var(--jd, 0ms) both;
   }
 
   /* ---------------------------------------------------------------- 等待时的轮播句 */
@@ -875,39 +914,55 @@ body {
   }
 }
 
-/**
- * 从上往下扫开的渐变遮罩。遮罩高 250%：窗口落在上端时全黑（可见），落在下端时全透明（不可见），
- * 动画把窗口从下端推到上端，于是可见区域带着一段柔边从页顶往下铺开。
- *
- * **只在允许动效时挂遮罩**：动画被关掉时遮罩会停在初始位置——整页不可见。
- */
-@media (prefers-reduced-motion: no-preference) {
-  .reveal-down {
-    -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 40%, transparent 60%, transparent 100%);
-    mask-image: linear-gradient(to bottom, #000 0%, #000 40%, transparent 60%, transparent 100%);
-    -webkit-mask-size: 100% 250%;
-    mask-size: 100% 250%;
-    animation: reveal-down 1.6s var(--ease-reveal) both;
+/* 波带从页顶之上（整条藏在视口外）扫到页底之下，末段淡出，交给底部的渐隐接住 */
+@keyframes wave-sweep {
+  0% {
+    translate: 0 -100%;
+    opacity: 1;
+  }
+  78% {
+    opacity: 1;
+  }
+  100% {
+    translate: 0 100dvh;
+    opacity: 0;
   }
 }
 
-@keyframes reveal-down {
+@keyframes settle-in {
   from {
-    -webkit-mask-position: 0 100%;
-    mask-position: 0 100%;
+    opacity: 0;
   }
   to {
-    -webkit-mask-position: 0 0;
-    mask-position: 0 0;
+    opacity: 1;
   }
 }
 
-@keyframes band-reveal {
-  from {
-    clip-path: inset(0 0 100% 0);
+/* 一次短促的抖动：先冲出去，再回弹两次，归零。幅度由每个字母的变量决定 */
+@keyframes letter-jolt {
+  0% {
+    translate: 0 0;
+    rotate: 0deg;
   }
-  to {
-    clip-path: inset(0 0 0 0);
+  18% {
+    translate: var(--jx) var(--jy);
+    rotate: var(--jr);
+  }
+  36% {
+    translate: calc(var(--jx) * -0.7) calc(var(--jy) * -0.6);
+    rotate: calc(var(--jr) * -0.6);
+  }
+  56% {
+    translate: calc(var(--jx) * 0.35) calc(var(--jy) * 0.3);
+    rotate: calc(var(--jr) * 0.3);
+  }
+  76% {
+    translate: calc(var(--jx) * -0.12) 0;
+    rotate: 0deg;
+  }
+  100% {
+    translate: 0 0;
+    rotate: 0deg;
   }
 }
 

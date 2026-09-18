@@ -27,5 +27,9 @@ export default async function OnboardingEntryPage() {
     );
   }
 
-  redirect(result.row.f1_arm === "pairwise" ? "/onboarding/style" : "/onboarding/style-text");
+  // 三臂分流（2026-09-19）。`text` 是历史臂，不再分配给新用户，但已有行不回改（F10）。
+  if (result.row.f1_arm === "text") redirect("/onboarding/style-text");
+  if (result.row.f1_arm === "pairwise") redirect("/onboarding/style");
+  // taste 臂：先过标签页；已经选过就直接进比较（刷新 / 中途退出再回来不重来一遍）。
+  redirect(result.row.taste_tags === null ? "/onboarding/taste" : "/onboarding/style");
 }

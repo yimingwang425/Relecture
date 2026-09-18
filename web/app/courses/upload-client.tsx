@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Diagnostics } from "@/app/components/diagnostics";
 import { PageHeader } from "@/app/components/page-header";
 import { StatusDot, type DotKind } from "@/app/components/status-dot";
+import type { Arm } from "@/lib/style/axes";
 import { createClient } from "@/lib/supabase/client";
 import { copyFor, kindFromStatus, type FailureKind } from "@/lib/upload/failures";
 
@@ -87,7 +88,7 @@ export function CourseUpload({
 }: {
   apiBase: string;
   userId: string;
-  arm: "pairwise" | "text";
+  arm: Arm;
   sessionId: string;
   /**
    * 项目页（`/courses/[id]`）用：只往这门课传，不渲染课程列表与建课表单，

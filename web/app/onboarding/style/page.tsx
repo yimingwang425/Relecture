@@ -1,11 +1,11 @@
 import { redirect } from "next/navigation";
 
-import { AppNav } from "@/app/components/app-nav";
 import { RowStateNotice } from "@/app/components/row-state";
 import { newSessionId } from "@/lib/style/events";
 import { TOTAL_STEPS, makeFlips } from "@/lib/style/flow";
 import { SAMPLE_QUESTION, loadPairs } from "@/lib/style/pairs";
 import { loadStyleRow } from "@/lib/style/session";
+import { resolveTaste } from "@/lib/style/taste";
 
 import { PairwiseOnboarding } from "./pairwise-client";
 
@@ -23,7 +23,6 @@ export default async function PairwiseOnboardingPage() {
   if (result.state !== "ok") {
     return (
       <main data-state={result.state} className="shell">
-        <AppNav email={result.email} />
         <div className="mt-12">
           <RowStateNotice result={result} />
         </div>
@@ -31,12 +30,12 @@ export default async function PairwiseOnboardingPage() {
     );
   }
 
-  // AB 分组的完整性：对照臂的用户不该看到成对比较，否则 A5 的三个读数按臂分组就没意义了。
-  if (result.row.f1_arm !== "pairwise") redirect("/onboarding/style-text");
+  // AB 分组的完整性：历史的 text 臂不该看到成对比较（他们走的是一段话描述那一版）。
+  // pairwise（对照）与 taste（标签 + 比较）都走这一页，区别只在**有没有先验**。
+  if (result.row.f1_arm === "text") redirect("/onboarding/style-text");
 
   return (
-    <main data-state="ok" data-arm="pairwise" className="shell max-w-[1240px]">
-      <AppNav email={result.email} />
+    <main data-state="ok" data-arm={result.row.f1_arm} className="shell max-w-[1240px]">
       {/*
         左右顺序**在服务端抽一次**，作为 prop 传下去。
 
@@ -65,6 +64,7 @@ export default async function PairwiseOnboardingPage() {
       */}
       <PairwiseOnboarding
         userId={result.userId}
+        priors={resolveTaste(result.row.taste_tags ?? []).priors}
         arm={result.row.f1_arm}
         sessionId={newSessionId()}
         pairs={loadPairs()}

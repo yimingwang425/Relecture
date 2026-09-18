@@ -270,13 +270,21 @@ async function main() {
       : bad("f1_arm 由 f1_assign_arm 定");
 
     // 两个臂都要被断言碰到。测试用的两个 uuid 恰好都落在 pairwise 上，
-    // 若只看它们，f1_assign_arm 的 text 分支从没被任何断言执行过（通则七 #7）。
+    // 若只看它们，另一个分支从没被任何断言执行过（通则七 #7）。
+    //
+    // 2026-09-19：对照臂由 `text`（一段话描述）换成 `taste`（标签 + 成对比较）。
+    // **`text` 不再被分配**，但已有行不回改（口径 F10）——所以这里多断一条：
+    // 它一旦又被发出去，说明 f1_assign_arm 被改回了旧版，而那会把新老两批人
+    // 混进同一个臂里，A5 的三个读数当场失去意义，且不会有任何东西报错。
     const dist = (await db.query(
       "select public.f1_assign_arm(gen_random_uuid()) arm from generate_series(1, 400)")).rows
       .reduce((m, r) => ((m[r.arm] = (m[r.arm] || 0) + 1), m), {});
-    dist.pairwise > 0 && dist.text > 0
-      ? ok("f1_assign_arm 两个分支都可达", `400 个随机 uuid → pairwise ${dist.pairwise} / text ${dist.text}`)
+    dist.pairwise > 0 && dist.taste > 0
+      ? ok("f1_assign_arm 两个分支都可达", `400 个随机 uuid → pairwise ${dist.pairwise} / taste ${dist.taste}`)
       : bad("f1_assign_arm 有分支不可达", JSON.stringify(dist));
+    !dist.text
+      ? ok("历史臂 text 不再被分配", "已有行保持原值（F10），但新用户只会拿到 pairwise / taste")
+      : bad("历史臂 text 又被分配出去了", JSON.stringify(dist));
 
     for (const [name, fn] of Object.entries(CHECKS)) {
       (await fn(db)) ? ok(name) : bad(name);

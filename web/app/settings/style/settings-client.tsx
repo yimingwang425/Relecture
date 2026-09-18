@@ -13,6 +13,7 @@ import {
   VALUE_HINT,
   VALUE_LABEL,
   type StyleConfig,
+  type Arm,
 } from "@/lib/style/axes";
 import {
   createEventQueue,
@@ -69,7 +70,7 @@ export function StyleSettings({
   userId: string;
   initialConfig: StyleConfig;
   onboarded: boolean;
-  arm: "pairwise" | "text";
+  arm: Arm;
   /** 一次页面加载一个，**由服务端生成**（见 `page.tsx`）。 */
   sessionId: string;
 }) {
@@ -195,7 +196,7 @@ export function StyleSettings({
         <p className="notice notice--info mb-6">
           你还没走过一遍风格设置引导。现在这份是默认配置——
           <Link
-            href={arm === "pairwise" ? "/onboarding/style" : "/onboarding/style-text"}
+            href={arm === "text" ? "/onboarding/style-text" : "/onboarding"}
             className="link font-[var(--fw-medium)]"
           >
             去走一遍

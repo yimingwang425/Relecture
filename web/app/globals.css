@@ -907,10 +907,21 @@ body {
   }
 
   .quote-line {
-    white-space: pre-line;
+    display: block;
     animation-name: quote-cycle;
     animation-timing-function: var(--ease-settle);
     animation-fill-mode: both;
+  }
+
+  .quote-row {
+    display: block;
+  }
+
+  /* 逐字翻滚。延迟由组件按字序给（--jd 那套的同一做法）。 */
+  .quote-char {
+    display: inline-block;
+    white-space: pre;
+    animation: char-roll 0.62s var(--ease-settle) both;
   }
 }
 
@@ -963,6 +974,24 @@ body {
   100% {
     translate: 0 0;
     rotate: 0deg;
+  }
+}
+
+@keyframes char-roll {
+  0% {
+    opacity: 0;
+    translate: 0 0.6em;
+    rotate: x 70deg;
+    filter: blur(3px);
+  }
+  60% {
+    filter: blur(0);
+  }
+  100% {
+    opacity: 1;
+    translate: 0 0;
+    rotate: x 0deg;
+    filter: blur(0);
   }
 }
 

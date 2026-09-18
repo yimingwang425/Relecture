@@ -32,7 +32,7 @@
  * 等于没法改）与**位置效应可算**。
  */
 
-import { PROMPT_TEMPLATE_VERSION, type AxisId, type StyleConfig } from "./axes";
+import { PROMPT_TEMPLATE_VERSION, type Arm, type AxisId, type StyleConfig } from "./axes";
 import { applyFeedback, type FeedbackKind } from "./feedback";
 import { TEXT_ARM_CALL } from "./text-arm";
 
@@ -44,6 +44,10 @@ export const EVENT_TYPES = [
   "style_onboarding_completed",
   "style_text_mapped",
   "style_config_changed",
+  // ---- 2026-09-19 开场标签。分两条的理由同 pair_shown / pair_chosen：
+  // 只记最终结果的话，**弃流点**就没了——标签页有三块，用户在第几块走掉要能读出来。
+  "style_taste_shown",
+  "style_taste_chosen",
 ] as const;
 export type EventType = (typeof EVENT_TYPES)[number];
 
@@ -77,6 +81,9 @@ export const REQUIRED_PAYLOAD_KEYS: Record<EventType, readonly string[]> = {
     "counts_as_config_edit",
     "prompt_template_version",
   ],
+  style_taste_shown: ["board", "tag_ids"],
+  // `field` **刻意不进清单**：可能是 null（没选领域），而 null 有含义（口径 F50）。
+  style_taste_chosen: ["tags", "tone", "priors", "total_ms"],
 };
 
 export type EventPayload = Record<string, unknown>;
@@ -181,6 +188,37 @@ export function pairChosen(args: {
  * 它的用途是**臂内**的弃流点分析——「卡在第几步」只有主臂问得出来。
  * 跨臂能比的是 `arm` 这一列上的完成率本身，不是这个数。
  */
+/**
+ * 标签页的某一块被展示了。`tag_ids` 记**当时那一版**的标签集合——
+ * 标签表以后会改，不记的话事后没法按当时那一版读「哪些标签被点得多」。
+ */
+export function tasteShown(args: { board: string; tagIds: readonly string[] }): StyleEvent {
+  return complete("style_taste_shown", { board: args.board, tag_ids: [...args.tagIds] });
+}
+
+/**
+ * 三块选完。**`priors` 进事件**是为了事后能核一件事：先验有没有真的改变提问顺序。
+ * 不记的话，「自适应」是不是空转就只能靠读代码判断，而代码会变。
+ *
+ * ⚠️ 这里**不记配置**：标签不产生配置（四条轴仍由成对比较选出来），
+ * 记一份配置进来会让读数的人以为标签定了轴。
+ */
+export function tasteChosen(args: {
+  tags: readonly string[];
+  tone: string;
+  field: string | null;
+  priors: Record<string, string>;
+  totalMs: number;
+}): StyleEvent {
+  return complete("style_taste_chosen", {
+    tags: [...args.tags],
+    tone: args.tone,
+    field: args.field,
+    priors: args.priors,
+    total_ms: args.totalMs,
+  });
+}
+
 export function onboardingCompleted(args: {
   config: StyleConfig;
   stepsCompleted: number;
@@ -334,7 +372,7 @@ export function classifyInsertFailure(error: { code?: string | null }): "transie
  */
 export async function recordEvent(
   sink: EventSink,
-  args: { userId: string; arm: "pairwise" | "text"; sessionId: string; event: StyleEvent },
+  args: { userId: string; arm: Arm; sessionId: string; event: StyleEvent },
   opts: { delaysMs?: readonly number[]; sleep?: (ms: number) => Promise<void> } = {},
 ): Promise<RecordResult> {
   const delays = opts.delaysMs ?? SERVER_RETRY_DELAYS_MS;
@@ -470,7 +508,7 @@ const RETRY_DELAYS_MS = [300, 1000, 3000, 8000] as const;
 
 export function createEventQueue(
   sink: EventSink,
-  ctx: { userId: string; arm: "pairwise" | "text"; sessionId: string },
+  ctx: { userId: string; arm: Arm; sessionId: string },
   opts: {
     delaysMs?: readonly number[];
     sleep?: (ms: number) => Promise<void>;

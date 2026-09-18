@@ -9,7 +9,9 @@ import { useEffect, useState } from "react";
  *   `verify:logic` 五节有断言）。从第一句开始，每次等待都一样，这没有关系。
  * - 它**不替代计时器**：计时器回答「是不是卡住了」，这几句话只是陪着等。
  * - 换句的间隔只在这里定义一次，CSS 动画时长从同一个常量取，两边不会各走各的。
- * - 系统开了「减少动态效果」时，淡入淡出被 globals.css 关掉，只剩换字。
+ * - 系统开了「减少动态效果」时，翻滚与淡入淡出都被 globals.css 关掉，只剩换字。
+ * - **逐字翻滚**：每个字单独入场（上翻 + 轻微模糊），按字序错开 28ms。
+ *   拆字是为了让等待有东西可看；不拆的话一句话淡入淡出，几十秒里只动四五次。
  */
 const QUOTES = [
   "难懂的往往不是知识，\n而是讲法。",
@@ -29,11 +31,27 @@ export function LoadingQuotes({ className = "" }: { className?: string }) {
     return () => clearInterval(id);
   }, []);
 
+  const lines = QUOTES[index].split("\n");
+
   return (
     <p className={`quote-stage ${className}`} aria-hidden>
-      {/* key 变化 → 重新挂载 → CSS 动画从头播一遍 */}
+      {/* key 变化 → 整句重新挂载 → 每个字从头翻滚一遍 */}
       <span key={index} className="quote-line" style={{ animationDuration: `${INTERVAL_MS}ms` }}>
-        {QUOTES[index]}
+        {lines.map((line, li) => (
+          <span key={li} className="quote-row">
+            {[...line].map((ch, ci) => (
+              <span
+                key={ci}
+                className="quote-char"
+                // 逐字错开。**延迟按字序算，不随机**：客户端组件里不许有随机源
+                // （SSR 与 hydrate 会分叉），而且同一句每次翻滚一致，看起来才像设计过的。
+                style={{ animationDelay: `${(li * line.length + ci) * 28}ms` }}
+              >
+                {ch === " " ? "\u00a0" : ch}
+              </span>
+            ))}
+          </span>
+        ))}
       </span>
     </p>
   );

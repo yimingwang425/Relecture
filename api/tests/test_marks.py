@@ -685,14 +685,15 @@ def _effective_required_keys() -> dict[str, list[str]]:
 
 
 class TestMirrorsTheSql:
-    def test_effective_definition_has_twelve_types(self):
-        """分辨力先立：十二 = F1 五个 + 讲解四个 + 上传两个 + F4 一个。
+    def test_effective_definition_has_fourteen_types(self):
+        """分辨力先立：十四 = F1 五个 + 讲解四个 + 上传两个 + F4 一个
+        + 开场标签两个（`style_taste_shown` / `style_taste_chosen`，2026-09-19）。
 
-        得到 11 说明本轮那次 `create or replace` 漏了 `confusion_mark_created`；
-        得到 5 说明解析器读的是阶段 4 那份旧定义。
+        得到 12 说明解析器读的是内测前那一版；得到 11 说明漏了 `confusion_mark_created`；
+        得到 5 说明读的是阶段 4 那份旧定义。
         """
         parsed = _effective_required_keys()
-        assert len(parsed) == 12, sorted(parsed)
+        assert len(parsed) == 14, sorted(parsed)
 
     def test_confusion_mark_created_mirrors_the_sql(self):
         from api.events import REQUIRED_KEYS

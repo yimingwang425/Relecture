@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { ConfigSummary } from "@/app/components/config-summary";
-import { AXIS_LABEL, type StyleConfig } from "@/lib/style/axes";
+import { AXIS_LABEL, type StyleConfig,
+  type Arm,
+} from "@/lib/style/axes";
 import { createDwellClock, type DwellClock } from "@/lib/style/dwell";
 import {
   createEventQueue,
@@ -16,7 +18,8 @@ import {
   type EventQueueState,
   type StyleEvent,
 } from "@/lib/style/events";
-import { TOTAL_STEPS, configFromPicks, stepAt, type Picks } from "@/lib/style/flow";
+import { TOTAL_STEPS, configFromPicks, type Picks } from "@/lib/style/flow";
+import { stepAtWithPriors } from "@/lib/style/taste";
 import { Markdown } from "@/lib/style/markdown";
 import type { PairView } from "@/lib/style/pairs";
 import { createClient } from "@/lib/supabase/client";
@@ -75,9 +78,10 @@ export function PairwiseOnboarding({
   question,
   flips,
   alreadyOnboarded,
+  priors,
 }: {
   userId: string;
-  arm: "pairwise" | "text";
+  arm: Arm;
   /** 一次页面加载一个，**由服务端生成**（见 `page.tsx`）。 */
   sessionId: string;
   pairs: Record<string, PairView>;
@@ -91,6 +95,17 @@ export function PairwiseOnboarding({
    */
   flips: (0 | 1)[];
   alreadyOnboarded: boolean;
+  /**
+   * 开场标签算出来的先验（`taste.resolveTaste`）。对照臂是空对象。
+   *
+   * **先验只决定「先问哪一对」，不决定任何一条轴的取值**——轴仍然由这 6 次
+   * 选择定。拿先验去跳过比较等于让「他说的」直接变成配置，而那正是不可信的那一半
+   * （理由与证据在 `lib/style/taste.ts`）。
+   *
+   * 空先验时这套排法与旧的固定顺序**逐步相同**（`verify:logic` 十六节断言），
+   * 所以对照臂的体验一个字节都没变，A5 两臂仍然可比。
+   */
+  priors: Partial<Record<string, string>>;
 }) {
   const router = useRouter();
   const [picks, setPicks] = useState<Picks>({});
@@ -128,7 +143,7 @@ export function PairwiseOnboarding({
   const [frozenSessionId] = useState(sessionId);
 
   // 步骤计算放在早退之前：hooks 必须无条件执行，而下面的 effect 要用到它们。
-  const step = stepAt(stepIndex, picks);
+  const step = stepAtWithPriors(stepIndex, picks, priors as Partial<Record<never, string>>);
   const pair = pairs[step.pairId];
   const isLast = stepIndex === TOTAL_STEPS;
 

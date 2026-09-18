@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import type { Arm } from "@/lib/style/axes";
 import { NextResponse } from "next/server";
 
 import {
@@ -151,7 +152,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const arm = rows[0].f1_arm as "pairwise" | "text";
+  const arm = rows[0].f1_arm as Arm;
 
   let description: unknown;
   let sessionId: unknown;

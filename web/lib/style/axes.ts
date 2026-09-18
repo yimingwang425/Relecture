@@ -35,6 +35,16 @@
  */
 export const PROMPT_TEMPLATE_VERSION = "b1";
 
+/**
+ * A5 的分臂。**取值域与迁移里的 CHECK 同一件事**（`style_config_f1_arm_check`）。
+ *
+ * - `pairwise` —— 只有 6 次成对比较（对照臂）
+ * - `taste` —— 开场三块标签 + 成对比较（2026-09-19 起的新臂）
+ * - `text` —— **历史臂**：一段话描述自己想要的讲法。不再分配给新用户，
+ *   但已有行不回改（口径 F10；那批人确实走过那一版，改写等于篡改 A5 要读的历史）
+ */
+export type Arm = "pairwise" | "text" | "taste";
+
 export const AXIS_IDS = ["detail_level", "use_examples", "structure", "depth"] as const;
 export type AxisId = (typeof AXIS_IDS)[number];
 

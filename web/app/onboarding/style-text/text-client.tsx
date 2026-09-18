@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { ConfigSummary } from "@/app/components/config-summary";
-import { AXIS_IDS, AXIS_LABEL, VALUE_LABEL, type StyleConfig } from "@/lib/style/axes";
+import { AXIS_IDS, AXIS_LABEL, VALUE_LABEL, type StyleConfig,
+  type Arm,
+} from "@/lib/style/axes";
 import {
   createEventQueue,
   onboardingCompleted,
@@ -64,7 +66,7 @@ export function TextOnboarding({
   alreadyOnboarded,
 }: {
   userId: string;
-  arm: "pairwise" | "text";
+  arm: Arm;
   /**
    * 一次页面加载一个，**由服务端生成**（见 `page.tsx`）。
    * 这里只负责原样带给 route handler —— 事件由服务端写（`call` 与失败分支都在那边）。

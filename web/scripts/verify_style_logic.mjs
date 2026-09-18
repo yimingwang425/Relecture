@@ -148,6 +148,7 @@ try {
       "lib/style/axes.ts",
       "lib/style/feedback.ts",
       "lib/style/flow.ts",
+      "lib/style/taste.ts",
       "lib/style/text-arm.ts",
       "lib/style/events.ts",
       "lib/style/dwell.ts",
@@ -652,14 +653,14 @@ console.log("\n\x1b[1m七 · 埋点五事件（阶段 4）\x1b[0m");
   const sqlKeys = parseSqlRequiredKeys(migSrc);
   // 判据自身的分辨力：解析失败会得到 null 或空对象，而空对象之间的比对必然相等。
   check(sqlKeys !== null, "迁移里找到 f1_event_required_keys");
-  // **生效那一份有十二个类型**：F1 五个 + 讲解四个 + 上传两个 + F4 一个
-  // （`confusion_mark_created`，2026-09-13）。
-  // 这个数是「解析器读到的是最新定义」的证据——读到旧定义会得到 5 或 11。
+  // **生效那一份有十四个类型**：F1 五个 + 讲解四个 + 上传两个 + F4 一个
+  // （`confusion_mark_created`，2026-09-13）+ 开场标签两个（2026-09-19）。
+  // 这个数是「解析器读到的是最新定义」的证据——读到旧定义会得到 5、11 或 12。
   check(
-    Object.keys(sqlKeys ?? {}).length === 12,
-    "SQL 生效定义解析出 12 个 event_type",
+    Object.keys(sqlKeys ?? {}).length === 14,
+    "SQL 生效定义解析出 14 个 event_type",
     `实得 ${Object.keys(sqlKeys ?? {}).length} ← 得到 5 说明解析器读的是阶段 4 那份旧定义；`
-      + `得到 11 说明 F4 那次 create or replace 漏了 confusion_mark_created`,
+      + `得到 11/12 说明读的是 F4 或内测前那一版，漏了后来加的类型`,
   );
   // 反向控制：只取第一个定义时**必须**得到 5，否则上一条的分辨力是空的。
   {
@@ -667,7 +668,9 @@ console.log("\n\x1b[1m七 · 埋点五事件（阶段 4）\x1b[0m");
     const n = [...firstOnly.matchAll(/when\s+'(\w+)'/g)].length;
     check(n === 5, "反向控制：第一个定义确实只有 5 个类型", `${n} 个 ← 上一条的分辨力靠它`);
   }
-  check(ev.EVENT_TYPES.length === 5, "TS 的 EVENT_TYPES 是 5 个", ev.EVENT_TYPES.join(" · "));
+  // TS 只构造前端发得出的那几个（讲解 / 上传那批由服务端发，口径 F51）：
+  // F1 的五个 + 开场标签两个 = 7。
+  check(ev.EVENT_TYPES.length === 7, "TS 的 EVENT_TYPES 是 7 个", ev.EVENT_TYPES.join(" · "));
   // **TS 只镜像 F1 那五个**，这是口径 F51 的结果：讲解与上传的事件由 Python 侧
   // 构造（它们的字段全部产生在服务端），镜像在 `api/api/events.py`，
   // 那边有自己的一条从 SQL 原文读回来的比对。
@@ -743,7 +746,7 @@ console.log("\n\x1b[1m七 · 埋点五事件（阶段 4）\x1b[0m");
   );
   check(dupes.length === 0, "payload 里不重复存公共列", dupes.join(" "));
 
-  // -------- 7.2 五个构造函数产出的 payload 必带必需字段
+  // -------- 7.2 每个构造函数产出的 payload 必带必需字段
   //
   // 「缺一个字段」是这套埋点最容易发生也最安静的坏法：数据库会拒，用户无感，
   // 报表里那一列就是空的。所以每个事件都真的构造一次再逐字段核。
@@ -757,6 +760,11 @@ console.log("\n\x1b[1m七 · 埋点五事件（阶段 4）\x1b[0m");
     style_onboarding_completed: ev.onboardingCompleted({ config: cfg0, stepsCompleted: 6, totalMs: 42000 }),
     style_text_mapped: ev.textMapped({ ok: true, axesFromText: ["detail_level"], axesFromDefault: ["depth"] }),
     style_config_changed: ev.manualChange(cfg0, { ...cfg0, depth: "derivation" }),
+    style_taste_shown: ev.tasteShown({ board: "tone", tagIds: ["tone_peer", "tone_written"] }),
+    style_taste_chosen: ev.tasteChosen({
+      tags: ["tone_peer", "field_cs", "stuck_why"], tone: "spoken", field: "cs",
+      priors: { depth: "why" }, totalMs: 18000,
+    }),
   };
   for (const t of ev.EVENT_TYPES) {
     const payload = built[t].payload;
@@ -1700,6 +1708,109 @@ console.log("\n\x1b[1m十五 · 讲解页 · 兜底判断提示与出处（UI �
     "讲解页按 gapNotice 渲染提示");
   check(/data-field="slices"/.test(client) && /data-field="turn-diagnostics"/.test(client),
     "出处面板与诊断面板在页面上", "← 诊断字段折叠不删（进度总结 §八 第 7 条）");
+}
+
+// ================================================================ 十六 · 开场标签（2026-09-19）
+console.log("\n\x1b[1m十六 · 开场标签 → 语气 / 领域 / 先验\x1b[0m");
+{
+  const T = require_(join(out, "taste.js"));
+  const F = require_(join(out, "flow.js"));
+  const A = require_(join(out, "axes.js"));
+
+  // -------- 16.1 标签表本身：**没有装饰标签**
+  const ids = T.ALL_TAGS.map((x) => x.id);
+  check(new Set(ids).size === ids.length, "标签 id 不重复", `${ids.length} 个`);
+  check(T.BOARDS.length === 3, "三个板块", `${T.BOARDS.length} 个`);
+  const noEffect = T.ALL_TAGS.filter((x) => !x.effect || !x.effect.kind);
+  check(noEffect.length === 0, "每个标签都有 effect",
+    "← 没有 effect 的标签就是让用户白点一次，正是这次要消灭的「假装选择」",
+    noEffect.map((x) => x.id).join(", "));
+  const badPrior = T.ALL_TAGS.filter(
+    (x) => x.effect.kind === "prior" && !(A.AXES[x.effect.axis] ?? []).includes(x.effect.value));
+  check(badPrior.length === 0, "先验标签的取值都在该轴取值域里", "",
+    badPrior.map((x) => `${x.id}→${x.effect.value}`).join(", "));
+
+  // -------- 16.2 解析：多数票 / 平票回落 / 同轴矛盾作废 / 未知报出
+  function resolveProblems(fn) {
+    const p = [];
+    if (fn(["tone_peer", "tone_plain", "tone_written"]).tone !== "spoken") p.push("多数票没生效");
+    if (fn(["tone_peer", "tone_written"]).tone !== "neutral") p.push("平票没回落中性");
+    if (fn([]).tone !== "neutral") p.push("没选语气时不是默认中性");
+    if (fn(["stuck_short", "stuck_slow"]).priors.detail_level !== undefined)
+      p.push("同轴矛盾没有作废该轴先验（替用户猜了一个）");
+    if (!fn(["nope_not_a_tag"]).unknown.includes("nope_not_a_tag")) p.push("未知标签没被报出来");
+    if (fn(["field_cs"]).field !== "cs") p.push("领域没取出来");
+    if (fn(["stuck_why"]).priors.depth !== "why") p.push("先验没取出来");
+    return p;
+  }
+  const resolveReal = resolveProblems(T.resolveTaste);
+  check(resolveReal.length === 0,
+    "resolveTaste：多数票 · 平票回落中性 · 同轴矛盾作废 · 未知标签报出", resolveReal.join("；"));
+  check(resolveProblems(() => ({ tone: "spoken", field: null, priors: {}, unknown: [] })).length > 0,
+    "反向控制：恒返回同一个语气的实现 → 判据红");
+  check(resolveProblems((sel) => {
+    const r = T.resolveTaste(sel);
+    if (sel.includes("stuck_short") && sel.includes("stuck_slow")) r.priors.detail_level = "P3";
+    return r;
+  }).length > 0, "反向控制：同轴矛盾时替用户猜一个 → 判据红");
+
+  // -------- 16.3 排步：先验用来挑更有信息量的一对，**不用来跳过**
+  function planProblems(planFn) {
+    const p = [];
+    const cases = [{}, { detail_level: "P0" }, { depth: "what" },
+      { detail_level: "P3", depth: "derivation", use_examples: "more", structure: "buildup_first" }];
+    for (const priors of cases) {
+      let steps;
+      try { steps = planFn(priors); } catch (e) { p.push(`${JSON.stringify(priors)} 抛了 ${e.message}`); continue; }
+      if (steps.length !== F.TOTAL_STEPS) p.push(`${JSON.stringify(priors)} 排出 ${steps.length} 步`);
+      const axes = new Set(steps.map((s) => s.axis));
+      for (const axis of Object.keys(A.AXES)) {
+        if (!axes.has(axis)) p.push(`${JSON.stringify(priors)} 少问了 ${axis}`);
+      }
+    }
+    const withPrior = planFn({ detail_level: "P0" });
+    const firstDetail = withPrior.findIndex((s) => s.axis === "detail_level");
+    const firstOther = withPrior.findIndex((s) => s.axis !== "detail_level");
+    if (firstOther > firstDetail) p.push("有先验的轴没被排到没有先验的轴后面");
+    return p;
+  }
+  const planReal = planProblems(T.plan);
+  check(planReal.length === 0, "plan：恒 6 步 · 四条轴一条不少 · 有先验的轴排后面", planReal.join("；"));
+  check(planProblems((priors) => T.plan(priors).filter((s) => priors[s.axis] === undefined)).length > 0,
+    "反向控制：拿先验跳过比较 → 判据红",
+    "← 跳过等于让「他说的」直接变成配置，而那正是不可信的那一半");
+
+  // -------- 16.35 空先验时必须与旧的固定顺序**逐步相同**
+  //
+  // 对照臂（pairwise）走的就是这条路径。两者一旦不一致，A5 比的就不再是
+  // 「标签先验有没有用」，而是「两套不同的提问顺序」——而这不会报错。
+  {
+    const picksCases = [{}, { detail_level: "P0" }, { detail_level: "P3" },
+      { depth: "what" }, { depth: "derivation" }];
+    const diffs = [];
+    for (let i = 1; i <= F.TOTAL_STEPS; i++) {
+      for (const picks of picksCases) {
+        const legacy = F.stepAt(i, picks);
+        const adaptive = T.stepAtWithPriors(i, picks, {});
+        if (legacy.pairId !== adaptive.pairId || legacy.axis !== adaptive.axis) {
+          diffs.push(`第 ${i} 步 picks=${JSON.stringify(picks)}：固定 ${legacy.pairId} vs 自适应 ${adaptive.pairId}`);
+        }
+      }
+    }
+    check(diffs.length === 0, "空先验 → 与旧的固定顺序逐步相同（对照臂体验没变）", "", diffs.join("；"));
+  }
+
+  // -------- 16.4 覆盖的样例集合必须与固定顺序**完全相同**（pairs.json 就那 8 对）
+  const reach = T.reachablePairIds();
+  check(eq(sorted_(reach), sorted_([...F.REACHABLE_PAIR_IDS])),
+    "自适应排法覆盖的 pair_id 与旧的固定顺序一致", `${reach.length} 对`,
+    `${JSON.stringify(reach)}\n      vs ${JSON.stringify([...F.REACHABLE_PAIR_IDS])}`);
+
+  // -------- 16.5 先验不进配置
+  let threw = false;
+  try { T.configFromPicksAndTone({ detail_level: "P0" }, "spoken"); } catch { threw = true; }
+  check(threw, "6 步没走完就取配置 → 抛异常，不拿先验补齐",
+    "← 补齐会让「他选的」与「他说的」在库里长得一模一样");
 }
 
 rmSync(out, { recursive: true, force: true });

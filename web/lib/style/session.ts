@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
-import { AXIS_IDS, type StyleConfig } from "./axes";
+import { AXIS_IDS, type Arm, type StyleConfig } from "./axes";
 
 /**
  * 三个新页面共用的读取路径：登录态 + 自己那行 `style_config`。
@@ -14,8 +14,14 @@ import { AXIS_IDS, type StyleConfig } from "./axes";
 
 export type StyleRow = StyleConfig & {
   user_id: string;
-  f1_arm: "pairwise" | "text";
+  f1_arm: Arm;
   onboarded_at: string | null;
+  /** 开场标签页里原始点选的 tag_id。**null = 没走过那一页**（老用户或对照臂）。 */
+  taste_tags: string[] | null;
+  /** 生效的语气档。默认 neutral，与样例库的生成条件一致。 */
+  tone: string;
+  /** 主学领域，决定成对比较用哪个领域的题目。null = 没选过。 */
+  field: string | null;
 };
 
 export type StyleRowResult =
@@ -35,7 +41,7 @@ export async function loadStyleRow(): Promise<StyleRowResult> {
 
   const { data: rows, error } = await supabase
     .from("style_config")
-    .select("user_id, detail_level, use_examples, structure, depth, f1_arm, onboarded_at")
+    .select("user_id, detail_level, use_examples, structure, depth, f1_arm, onboarded_at, taste_tags, tone, field")
     .eq("user_id", userId);
 
   if (error) {

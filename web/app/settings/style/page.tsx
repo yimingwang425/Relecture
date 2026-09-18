@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { AppNav } from "@/app/components/app-nav";
+import { Diagnostics } from "@/app/components/diagnostics";
 import { RowStateNotice } from "@/app/components/row-state";
 import { newSessionId } from "@/lib/style/events";
 import { configOf, loadStyleRow } from "@/lib/style/session";
@@ -34,13 +35,35 @@ export default async function StyleSettingsPage() {
         /* `sessionId` 在**服务端**抽（同 /onboarding/style/page.tsx）：客户端组件的
            渲染在 SSR 与 hydrate 各跑一次，渲染期取随机数两侧会分叉（React #418）。
            「一次页面加载 = 一个 session」是占位口径，PRD §3.4.5 的切分规则未定。 */
-        <StyleSettings
-          userId={result.userId}
-          initialConfig={configOf(result.row)}
-          onboarded={result.row.onboarded_at !== null}
-          arm={result.row.f1_arm}
-          sessionId={newSessionId()}
-        />
+        <>
+          <StyleSettings
+            userId={result.userId}
+            initialConfig={configOf(result.row)}
+            onboarded={result.row.onboarded_at !== null}
+            arm={result.row.f1_arm}
+            sessionId={newSessionId()}
+          />
+
+          {/* 这一行四个轴的**真实取值**（不是中文标签）。回归工具按 data-field 读它们：
+              2026-09-19 起首页会把没走过 onboarding 的人直接送去风格选择，
+              那几条断言于是搬到这一页——断的仍是「用自己的会话读到自己那一行」。 */}
+          <Diagnostics
+            className="mt-12"
+            items={[
+              ["账号", result.email ?? "—"],
+              ["user_id", result.userId, "user-id"],
+              ["detail_level", result.row.detail_level, "detail_level"],
+              ["use_examples", result.row.use_examples, "use_examples"],
+              ["structure", result.row.structure, "structure"],
+              ["depth", result.row.depth, "depth"],
+              ["f1_arm", result.row.f1_arm, "f1_arm"],
+              [
+                "onboarded_at",
+                result.row.onboarded_at ? String(result.row.onboarded_at) : "null（未完成 onboarding）",
+              ],
+            ]}
+          />
+        </>
       )}
     </main>
   );

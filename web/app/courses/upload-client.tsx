@@ -83,14 +83,21 @@ export function CourseUpload({
   userId,
   arm,
   sessionId,
+  lockedCourse,
 }: {
   apiBase: string;
   userId: string;
   arm: "pairwise" | "text";
   sessionId: string;
+  /**
+   * 项目页（`/courses/[id]`）用：只往这门课传，不渲染课程列表与建课表单，
+   * 页头也交给项目页自己出。仍然要拉一次 `/courses`——构建标识（口径 F17）
+   * 只有那个响应头带得回来。
+   */
+  lockedCourse?: { id: string; name: string };
 }) {
   const [courses, setCourses] = useState<Course[] | null>(null);
-  const [courseId, setCourseId] = useState<string>("");
+  const [courseId, setCourseId] = useState<string>(lockedCourse?.id ?? "");
   const [newName, setNewName] = useState("");
   const [items, setItems] = useState<Item[]>([]);
   /** 取课程列表 / 建课这一层的错误。**与上传失败分开显示**：处置完全不同。 */
@@ -126,7 +133,7 @@ export function CourseUpload({
       }
       const rows = (await r.json()) as Course[];
       setCourses(rows);
-      setCourseId((prev) => prev || rows[0]?.id || "");
+      if (!lockedCourse) setCourseId((prev) => prev || rows[0]?.id || "");
     } catch (e) {
       // fetch 被网络层拒掉时没有状态码 —— **CORS 被挡就长这样**。
       // 点名说出这个可能，否则它读起来像「网络不好」。
@@ -135,7 +142,7 @@ export function CourseUpload({
           `或者它的 CORS_ALLOW_ORIGINS 里没有本站来源。原始错误：${String(e)}`,
       );
     }
-  }, [apiBase, token]);
+  }, [apiBase, token, lockedCourse]);
 
   useEffect(() => {
     void loadCourses();
@@ -276,11 +283,13 @@ export function CourseUpload({
 
   return (
     <section className="flex flex-col" data-testid="course-upload">
-      <PageHeader
-        eyebrow="课件"
-        title="我的课程与课件"
-        lead="先建一门课，再把这门课的 PDF 讲义传上来。之后在「提问」里选这门课，讲解就只用这些材料。"
-      />
+      {!lockedCourse && (
+        <PageHeader
+          eyebrow="课件"
+          title="批量上传课件"
+          lead="要往哪门课传就选哪门。平时在课程里传更顺手——首页点开一门课，里面就有上传入口。"
+        />
+      )}
 
       {listError && (
         <p role="alert" data-field="list-error" className="notice notice--danger mb-6">
@@ -288,8 +297,15 @@ export function CourseUpload({
         </p>
       )}
 
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)]">
+      <div
+        className={
+          lockedCourse
+            ? "grid items-start gap-6"
+            : "grid items-start gap-6 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)]"
+        }
+      >
         {/* ================================================================ 课程 */}
+        {!lockedCourse && (
         <div className="card enter p-2">
           <div className="px-3 pt-3 pb-4">
             <p className="t-eyebrow"># 课程</p>
@@ -370,6 +386,7 @@ export function CourseUpload({
             </form>
           </div>
         </div>
+        )}
 
         {/* ================================================================ 上传 */}
         <div className="card enter-late p-2">
@@ -378,7 +395,9 @@ export function CourseUpload({
               <p className="t-eyebrow"># 上传</p>
               <h2 className="t-title mt-1">上传课件</h2>
             </div>
-            {courseName && <span className="chip chip--accent max-w-full truncate">传到：{courseName}</span>}
+            {!lockedCourse && courseName && (
+              <span className="chip chip--accent max-w-full truncate">传到：{courseName}</span>
+            )}
           </div>
 
           <div className="panel flex flex-col gap-4 p-4">

@@ -6,7 +6,7 @@
 | 文件 | 内容 |
 | --- | --- |
 | `README.md` | **F1 口径决策表**（下 §一），全项目唯一一份 |
-| `synthetic_deck.md` | 自写合成课件片段（英文，Bloom filter，503 词）。文件头写明**为什么这个主题撑得住四条轴**——换素材时照那一节判断新素材够不够格 |
+| `synthetic_deck.md` | 自写合成课件（英文，**特征值与特征向量**，10 页 / 每页 2–3 块，2026-09-19 从 Bloom filter 换题）。文件头写明喂哪 5 块与两条准入条件——换素材时照那一节逐块过 |
 | `style_axes.py` | 四条轴的取值、默认值、prompt 片段。A 类走 `explain.style_prompt`，B 类措辞在这里 |
 | `generate_pairs.py` | 样例生成（口径 F18/F19）。`--pairs <id>` 重生成指定的对 |
 | `pairs.json` | 8 对 / 16 个预生成样例 + 完整元数据 |
@@ -16,13 +16,17 @@
 | `spend_log.jsonl` | 每一次真实调用的花费流水，**含被丢弃的重生成** |
 | `_paths.py` | 包路径注入，与 `scan/_paths.py` 同一约定 |
 
+⚠️ **2026-09-09 清理时删掉了 `实验脚本/A类规则计算脚本/.venv`**（见 `docs/环境重建.md`）。
+下面改用 `api/.venv`，它装了 `explain` 与 `anthropic`；`a_rules` 另外装一次：
+`api/.venv/bin/pip install -e 实验脚本/A类规则计算脚本`。
+
 ```bash
 # 生成（凭据局部注入，不要全局 export——全局会让 Claude Code 从订阅切到 API 计费）
 env $(grep -v '^#' ../实验脚本/配置扫描实验/.env | xargs) \
-  ../实验脚本/A类规则计算脚本/.venv/bin/python generate_pairs.py
+  ../api/.venv/bin/python generate_pairs.py
 
 # 核对（零 API 成本）
-../实验脚本/A类规则计算脚本/.venv/bin/python verify_pairs.py
+../api/.venv/bin/python verify_pairs.py
 ```
 
 ---
@@ -115,6 +119,9 @@ env $(grep -v '^#' ../实验脚本/配置扫描实验/.env | xargs) \
 | **F74** | **容器冷启动后的第一轮判断必然超时**，登记不修 | 修法是 keep-alive 或升级计划，**不是调大超时**；`GAP_TIMEOUT_S = 5.0` 不动。触发条件：内测中 `gap_implementation == "error"` 占比超过可接受范围 | Render 免费层 15 分钟休眠，首次调用要建连接、初始化 SDK。生产实测：首轮 `gap_latency_ms 5000.5` / `TimeoutError`、讲解照常返回；次轮 `1678.8 ms`，与 F3b 实测 P90 1,595 ms 几乎一致——那 5 秒是冷启动，不是网络常态。方向单向：那一轮没有兜底提示，退回 F3b 之前的行为。**调超时是把症状藏起来**，让真正的挂起更晚被发现 | 【评审指定】 | 2026-09-15 |
 | **F75** | **判断失败时单轮成本被低估，金额未知** | 不修；`cost_usd` 读数按「下界」理解。**作为一条记，不拆成两条小问题** | 同一件事的两半：超时后后台调用可能仍计费（线程杀不掉）；`GuardedGapChecker` 给的 `GapResult.cost_usd` 是 0.0，`RoundResult.cost_usd` 不计入这笔。方向单向（低估）。拆成「超时计费」「总数少算」两条会让人以为是两个独立的小缺口，而修其中一条另一条自动消失。触发条件同 F74 | 【评审指定】 | 2026-09-15 |
 | **F76** | `explain_turn` 的 `gap_*` 字段**不进必需清单** | `gap_verdict` / `gap_cost_usd` / `gap_latency_ms` / `gap_implementation` / `gap_model` / `gap_error` / `gap_skipped_hint_pages` 都只在 payload 里，`f1_event_required_keys('explain_turn')` 不变；护栏在 `api/tests/test_gap_wiring.py` | 两个理由，**都已被生产数据验证**：失败时 `gap_cost_usd` 写 null 不写 0（请求可能已计费、金额未知——F73 / F75）；迁移上线到新构建上线之间旧构建发的事件没有这些键，进了清单会被 23514 全拒——**真库里确实存在一行三个 `gap_*` 全 null 的旧构建事件**。代价同 F50：这几列没有数据库护栏 | 【评审指定】 | 2026-09-15 |
+| **F77** | **onboarding 样例用大学通识题，不用需要前置知识的题** | 课件主题从 Bloom filter 换成**特征值与特征向量**（`synthetic_deck.md`，2026-09-19）。换题时按文件头那两条准入条件逐块过：页间无前向引用、块内无悬空前提 | onboarding 是用户**第一次**打开产品看到的东西，他要在两段讲解之间选一个。旧题要先懂哈希与误判率，不熟的人会去读**内容**而不是比**讲法**——那正好打穿 F01 想要的归因（「他选的是这一维上的差异」）。线性代数几乎人人学过，注意力才留得在讲法上 | 【评审指定】 | 2026-09-19 |
+| **F78** | **同一档位的样例可以复用，但必须标出来** | 两个样例的 `style_config` 与 system/user prompt 逐字节相同时（如 `detail_p0_p2.b` 与 `detail_p2_p3.a` 都是 P2 + 其余默认），允许把已通过的那次输出复用给另一个，**前提是先断言三个 sha 相同**；被复用的那条记 `reused_from` + `reuse_note`，`cost_usd` / `usage` 记 0，合计里不重复计钱 | 它们本就是同一个 prompt 的两次抽样，复用不引入任何新东西。P2 这一档在这份课件上连续 36 次未落进 25–55 字/段，继续重掷是纯花钱（实测命中率约 1/23）。比较树决定同一个用户只会走到 `detail_p0_p2` 与 `detail_p2_p3` 其中一对，**不会看到重复文本**。⚠️ 不标 `reused_from` 的话，人工核对会把同一段文字当成两次独立生成的证据 | 【评审指定】 | 2026-09-19 |
+| **F79** | **首次登录直接进风格选择，不给可跳过的入口** | `app/page.tsx`：读到自己那行且 `onboarded_at` 为空 → `redirect("/onboarding")`。**放在读到行之后**——读不到行是坏状态（F09），那种情况要显示坏状态，不是把人送进 onboarding 转一圈 | 讲解的四条轴都由那份配置驱动。没走过一遍就先提问，拿到的是默认档，而用户并不知道这是可调的——「按你的偏好讲」这个前提在他眼里根本不存在。代价如实记：`f1_arm = text` 的那一半用户进的是**文字描述臂**，看不到成对样例（A5 实验仍在跑，见 §二未决项） | 【评审指定】 | 2026-09-19 |
 
 ### 编号冲突的一次修正
 

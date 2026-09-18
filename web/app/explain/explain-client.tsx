@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Diagnostics } from "@/app/components/diagnostics";
@@ -103,13 +104,20 @@ export function ExplainClient({
   apiBase,
   sessionId,
   detailLevel,
+  lockedCourse,
 }: {
   apiBase: string;
   sessionId: string;
   detailLevel: string;
+  /**
+   * 项目页（`/courses/[id]`）用：这一页只问这门课。
+   * 给了它就不渲染课程下拉，`courseId` 也不再被课程列表覆盖——
+   * 用户是从这门课点进来的，换课应当是回到列表再进另一门，不是在这里改一个下拉。
+   */
+  lockedCourse?: { id: string; name: string };
 }) {
   const [courses, setCourses] = useState<Course[] | null>(null);
-  const [courseId, setCourseId] = useState("");
+  const [courseId, setCourseId] = useState(lockedCourse?.id ?? "");
   const [question, setQuestion] = useState("");
   const [turns, setTurns] = useState<Turn[]>([]);
   const [listError, setListError] = useState<string | null>(null);
@@ -138,7 +146,8 @@ export function ExplainClient({
         if (!r.ok) return setListError(`读课程列表失败（HTTP ${r.status}）。${await r.text()}`);
         const rows = (await r.json()) as Course[];
         setCourses(rows);
-        setCourseId((prev) => prev || rows[0]?.id || "");
+        // 锁定课程时不让列表覆盖选择：那会把用户点进来的这门课换掉。
+        if (!lockedCourse) setCourseId((prev) => prev || rows[0]?.id || "");
       } catch (e) {
         // fetch 被网络层拒掉时没有状态码 —— **CORS 被挡就长这样**。
         // 点名说出这个可能，否则它读起来像「网络不好」。
@@ -148,7 +157,7 @@ export function ExplainClient({
         );
       }
     })();
-  }, [apiBase, token]);
+  }, [apiBase, token, lockedCourse]);
 
   // 等待计时器。只在有一轮在飞时走。归零放在 `ask()` 里发起那一刻，
   // 不在 effect 里同步 setState（react-hooks/set-state-in-effect）。
@@ -298,33 +307,35 @@ export function ExplainClient({
                   <div className="skeleton h-28" />
                 </div>
               )
-            ) : courses.length === 0 ? (
+            ) : courses.length === 0 && !lockedCourse ? (
               <div className="flex flex-col items-start gap-3" data-field="no-courses">
                 <p className="t-body">
                   还没有课件。讲解只用你上传的材料，不靠通用知识补全——先传一份再来问。
                 </p>
-                <a href="/courses" className="btn btn--primary btn--sm">
+                <Link href="/courses" className="btn btn--primary btn--sm no-underline">
                   去上传课件
-                </a>
+                </Link>
               </div>
             ) : (
               <>
-                <label>
-                  <span className="field-label">问哪门课</span>
-                  <select
-                    data-field="course-select"
-                    value={courseId}
-                    onChange={(e) => setCourseId(e.target.value)}
-                    disabled={pending}
-                    className="input"
-                  >
-                    {courses.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                {!lockedCourse && (
+                  <label>
+                    <span className="field-label">问哪门课</span>
+                    <select
+                      data-field="course-select"
+                      value={courseId}
+                      onChange={(e) => setCourseId(e.target.value)}
+                      disabled={pending}
+                      className="input"
+                    >
+                      {courses.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
 
                 <label>
                   <span className="field-label">问题</span>
@@ -380,7 +391,7 @@ export function ExplainClient({
         <div className="px-1">
           <p className="t-caption">
             这次打开页面已问 <b className="kbd-count" data-field="answered-count">{answeredCount(turns)}</b> 轮
-            {courseName ? ` · 当前课程：${courseName}` : ""}
+            {!lockedCourse && courseName ? ` · 当前课程：${courseName}` : ""}
           </p>
           <Diagnostics
             className="mt-3"

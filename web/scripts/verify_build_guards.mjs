@@ -327,6 +327,11 @@ console.log("\n\x1b[1m三 · 构建产物里有没有真实凭据（口径 F16�
     // ① `.next/types` 里对 `app/scan-canary-tmp/page.js` 的类型引用——之后每次
     //    `tsc --noEmit` 都报 TS2307（2026-09-15 查实：每跑一次本脚本它就回来一次）；
     // ② 产物里那串 `sb_secret_` 形态的 canary 值——下一次有人扫 `.next` 会命中一个假泄露。
+    //
+    // ⚠️ **别在 `next dev` 开着的时候跑本套件**：这一删会把开发服务器的状态挖空，
+    // 表现是**嵌套路由全部 404**（`/settings/style`、`/onboarding/style` …），
+    // 一级路由却正常——看起来完全像代码 bug。2026-09-19 在这上面查了半天。
+    // 修法是停掉 dev、`rm -rf .next` 再起。
     rmSync(join(WEB, ".next"), { recursive: true, force: true });
   }
 

@@ -236,11 +236,8 @@ export function TextOnboarding({
           </p>
         )}
         <div className="mt-6 flex flex-wrap gap-3">
-          <Link href="/explain" className="btn btn--primary no-underline">
-            去提问
-          </Link>
-          <Link href="/" className="btn btn--ghost no-underline">
-            回到首页
+          <Link href="/" className="btn btn--primary no-underline">
+            去我的课程
           </Link>
           <Link href="/settings/style" className="btn btn--ghost no-underline">
             去改配置

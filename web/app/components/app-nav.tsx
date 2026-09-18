@@ -17,10 +17,15 @@ import { LogoutButton } from "@/app/components/logout-button";
  * 顺序是使用顺序：**提问在前**——那是用户每天来做的事；课件是一次性的准备；
  * 风格是偶尔调。
  */
+/**
+ * `exact` 的那几条只精确匹配，不吃前缀：
+ * 项目页 `/courses/<id>` 属于「我的课程」，不属于「课件」（那一页是跨课上传）。
+ * 不区分的话，点进一门课时高亮会落在「课件」上。
+ */
 const LINKS = [
-  { href: "/explain", label: "提问", match: ["/explain"] },
-  { href: "/courses", label: "课件", match: ["/courses"] },
-  { href: "/settings/style", label: "讲解风格", match: ["/settings", "/onboarding"] },
+  { href: "/", label: "我的课程", exact: ["/"], prefix: ["/courses/"] },
+  { href: "/courses", label: "课件", exact: ["/courses"], prefix: [] },
+  { href: "/settings/style", label: "讲解风格", exact: [], prefix: ["/settings", "/onboarding"] },
 ] as const;
 
 export function AppNav({ email }: { email?: string | null }) {
@@ -48,8 +53,9 @@ export function AppNav({ email }: { email?: string | null }) {
     };
   }, [open]);
 
-  const isCurrent = (match: readonly string[]) =>
-    match.some((m) => pathname === m || pathname.startsWith(`${m}/`));
+  const isCurrent = (l: (typeof LINKS)[number]) =>
+    l.exact.some((m) => pathname === m) ||
+    l.prefix.some((m) => pathname === m || pathname.startsWith(m.endsWith("/") ? m : `${m}/`));
 
   return (
     <div className="nav-sticky enter-drop">
@@ -65,7 +71,7 @@ export function AppNav({ email }: { email?: string | null }) {
               key={l.href}
               href={l.href}
               className="nav-link"
-              aria-current={isCurrent(l.match) ? "page" : undefined}
+              aria-current={isCurrent(l) ? "page" : undefined}
             >
               {l.label}
             </Link>
@@ -100,7 +106,7 @@ export function AppNav({ email }: { email?: string | null }) {
               href={l.href}
               className="nav-link"
               tabIndex={open ? 0 : -1}
-              aria-current={isCurrent(l.match) ? "page" : undefined}
+              aria-current={isCurrent(l) ? "page" : undefined}
               onClick={() => setOpen(false)}
             >
               {l.label}

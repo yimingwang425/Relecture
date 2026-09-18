@@ -61,7 +61,7 @@ SPEND_LOG = HERE / "spend_log.jsonl"
 
 #: 提问模板。概念名随课件变——课件换了那个名词必须跟着换，这是不可消除的混杂。
 QUESTION_TEMPLATE = "请给我讲解这份课件里的 {concept}。"
-CONCEPT = "Bloom filter"
+CONCEPT = "eigenvalue（特征值）"
 COURSE_LABEL = "合成课件"
 
 #: 课件在 prompt 里的位置：**走生产的 user turn，不进 system**。
@@ -240,6 +240,11 @@ def generate_until_pass(model: AnthropicModel, blocks: list, sample_id: str, var
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--pairs", default="", help="只生成这几对（逗号分隔）；缺省为全部八对")
+    # **按样例重生成**：`--pairs` 会把一对里两个样例都重掷，包括已经通过的那个——
+    # 那既多花一次钱，又可能把一个通过的样例换成不通过的（2026-09-19 实测：
+    # P2 反复不达标而同对的 P3 已通过，用 --pairs 重跑会把 P3 也重掷）。
+    ap.add_argument("--samples", default="",
+                    help="只重生成这几个样例（逗号分隔的 sample_id，如 detail_p0_p2.b）")
     ap.add_argument("--dry-run", action="store_true", help="只打印将要发的 prompt，不调模型")
     args = ap.parse_args()
 
@@ -247,6 +252,13 @@ def main() -> int:
     known = {p[0] for p in PAIRS}
     if wanted - known:
         raise SystemExit(f"未知 pair_id：{sorted(wanted - known)}；可选 {sorted(known)}")
+
+    wanted_samples = {s.strip() for s in args.samples.split(",") if s.strip()}
+    known_samples = {f"{p[0]}.{suf}" for p in PAIRS for suf in ("a", "b")}
+    if wanted_samples - known_samples:
+        raise SystemExit(f"未知 sample_id：{sorted(wanted_samples - known_samples)}")
+    if wanted_samples and wanted:
+        raise SystemExit("--pairs 与 --samples 二选一，同时给会说不清到底重掷了哪些")
 
     blocks = fed_blocks()
     model = AnthropicModel()
@@ -275,7 +287,10 @@ def main() -> int:
         samples = []
         for suffix, value in (("a", value_a), ("b", value_b)):
             sample_id = f"{pair_id}.{suffix}"
-            regenerate = not wanted or pair_id in wanted
+            regenerate = (
+                sample_id in wanted_samples if wanted_samples
+                else (not wanted or pair_id in wanted)
+            )
             if not regenerate and sample_id in prior:
                 samples.append(prior[sample_id])
                 continue
@@ -285,6 +300,7 @@ def main() -> int:
             samples.append(generate_until_pass(model, blocks, sample_id, value, style, base))
         pairs_out.append({"pair_id": pair_id, "target_dimension": axis, "samples": samples})
 
+    reused = [s["sample_id"] for pair in pairs_out for s in pair["samples"] if s.get("reused_from")]
     for pair in pairs_out:
         for s in pair["samples"]:
             total_cost += s["cost_usd"]
@@ -327,9 +343,16 @@ def main() -> int:
         "defaults": DEFAULTS,
         "b_class_prompt_fragments": B_CLASS_FRAGMENTS,
         "cost_usd_total": round(total_cost, 6),
+        # 复用的样例（`reused_from`）记 0：那次调用的钱记在源样例上，两边都记会把总额说大。
+        # 说明由脚本自己拼——手工补的话，下一次重生成又会把它覆盖掉（2026-09-19 踩到）。
         "cost_usd_total_note": (
             "只含存活的 16 个样例。核对不过被丢弃的重生成同样花了钱，"
             "全部真实调用的流水在 spend_log.jsonl"
+            + (
+                f"。其中 {len(reused)} 个是**复用**的（{'、'.join(reused)}），"
+                "它们的 cost_usd / usage 记 0，真实花费在各自的源样例上，见该样例的 reuse_note"
+                if reused else ""
+            )
         ),
         "usage_total": totals,
         "pairs": pairs_out,

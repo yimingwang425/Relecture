@@ -556,12 +556,33 @@ console.log("\n\x1b[1m六 · 16 个样例都渲染得出来\x1b[0m");
   check(crashed === null, "16 个样例全部渲染不抛异常", crashed ?? "");
 
   const all = rendered.join("");
-  // 判据的分辨力：这些标记在语料里确实存在（上面数过），所以「渲染出来了」才有信息量。
-  check(all.includes("<strong>"), "粗体渲染成 <strong>");
-  check(all.includes("<code"), "代码渲染成 <code>");
-  check(all.includes("<li>"), "列表渲染成 <li>");
-  check(all.includes("<blockquote"), "引用渲染成 <blockquote>");
-  check(all.includes("<em>"), "斜体渲染成 <em>  ← 语料里只有 3 处，漏了就会剩下裸星号");
+  // 判据的分辨力：**前提由语料自己数出来**，不写死。
+  //
+  // 原来这五条直接断言五种标记都被渲染出来，前提是「语料里确实存在（上面数过）」——
+  // 那个「数过」锚在 2026-09-09 那版 Bloom filter 语料上。2026-09-19 换成线性代数语料后
+  // 斜体一处都没有，这条当场变红，而渲染器一个字节都没改。
+  //
+  // 改成：语料里有这种标记才断言它渲染成对应标签；没有就**明说这条空转、不计入绿数**。
+  // 删掉它是另一个错误——以后语料里再出现斜体，渲染漏了就没有东西会红。
+  //
+  // 计数用的正则**独立于实现**（`lib/style/markdown.tsx` 里的 INLINE 是另一份）：
+  // 同源的话，两边一起改仍然全绿，那就是空断言（同 F4-P1 抓到的形态）。
+  const MARKERS = [
+    ["粗体", "<strong>", /\*\*[^*\n]+\*\*/],
+    ["代码", "<code", /`[^`\n]+`/],
+    ["无序列表", "<li>", /^[-*][ \t]+\S/m],
+    ["引用", "<blockquote", /^>[ \t]?\S/m],
+    ["斜体", "<em>", /(^|[^*])\*[^*\n]+\*([^*]|$)/],
+  ];
+  for (const [label, tag, re] of MARKERS) {
+    const hits = samples.filter((s) => re.test(s.text)).length;
+    if (hits === 0) {
+      console.log(`  \x1b[33m—\x1b[0m ${label}：当前语料里没有这种标记，这条判据空转（不计入绿数）`);
+      continue;
+    }
+    check(all.includes(tag), `${label}渲染成 ${tag}`, `语料里 ${hits} 个样例含它`,
+      `语料里 ${hits} 个样例含它，渲染结果里却没有 —— 会剩下裸标记`);
+  }
 
   // 反向控制：标记确实被吃掉了，而不是原样漏进输出。
   const leftoverBold = (all.match(/\*\*/g) ?? []).length;

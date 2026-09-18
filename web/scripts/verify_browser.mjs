@@ -97,7 +97,7 @@ async function login(page, who) {
   await page.fill('input[type="email"]', email);
   await page.fill('input[type="password"]', password);
   await page.click('button[type="submit"]');
-  await page.waitForURL(`${BASE}/`, { timeout: 20000 });
+  await page.waitForURL(/\/(|onboarding.*|settings.*)$/, { timeout: 20000 });
   await page.waitForSelector("main[data-state]", { timeout: 20000 });
 }
 
@@ -179,12 +179,16 @@ async function main() {
 
   // ---------------------------------------------------------- 3 A 登录
   console.log("\n\x1b[1m3 · A 登录后看到自己的配置\x1b[0m");
+  // 2026-09-19：首页改成「我的课程」，且没走过 onboarding 的人会被直接送去风格选择。
+  // 四条轴的真实取值挂在 /settings/style 的诊断区，所以这一节去那一页读。
   let uidA = null;
   {
     const ctx = await browser.newContext();
     const page = await ctx.newPage();
     recordRequests(page, requests);
     await login(page, "A");
+    await page.goto(`${BASE}/settings/style`, { waitUntil: "domcontentloaded" });
+    await page.waitForSelector("main[data-state]", { timeout: 20000 });
 
     // 按 data-* 定位，不按中文文案。文案匹配会在改一次措辞后**静默变绿**：
     // 匹配不到「读取失败」，于是「没出错」成立。
@@ -208,7 +212,7 @@ async function main() {
           fields.detail_level ?? "", `取值域外：${fields.detail_level}`);
     check(["pairwise", "text"].includes(fields.f1_arm ?? ""), "f1_arm 是合法臂",
           fields.f1_arm ?? "", `取值域外：${fields.f1_arm}`);
-    await page.screenshot({ path: join(SHOTS, "home-A.png"), fullPage: true });
+    await page.screenshot({ path: join(SHOTS, "settings-A.png"), fullPage: true });
     await ctx.close();
   }
 
@@ -247,6 +251,8 @@ async function main() {
     const ctxB = await browser.newContext();
     const pageB = await ctxB.newPage();
     await login(pageB, "B");
+    await pageB.goto(`${BASE}/settings/style`, { waitUntil: "domcontentloaded" });
+    await pageB.waitForSelector("main[data-state]", { timeout: 20000 });
     const bodyB = (await pageB.locator("body").textContent()) ?? "";
     const uidB = bodyB.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/)?.[0];
     check(!!uidB && uidB !== uidA, "拿到 B 的 user_id 且与 A 不同", uidB ?? "",

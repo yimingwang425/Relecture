@@ -32,17 +32,19 @@ export type SampleView = {
 export type PairView = {
   pairId: string;
   targetDimension: string;
+  /** 这一对在回答的问题。**每对各不相同**（2026-09-19）：8 对共用一个问题时，
+   *  用户连读 12 段几乎一样的内容，「选了跟没选没区别」。 */
+  question: string;
   samples: [SampleView, SampleView];
 };
 
 type RawSample = { sample_id: string; variant_label: string; text: string };
-type RawPair = { pair_id: string; target_dimension: string; samples: RawSample[] };
-type RawFile = { pairs: RawPair[]; question: string };
+type RawPair = { pair_id: string; target_dimension: string; question: string; samples: RawSample[] };
+type RawFile = { pairs: RawPair[] };
 
 const file = rawPairs as unknown as RawFile;
 
-/** 样例回答的那个提问。onboarding 上要写出来——不然用户不知道两段在回答什么。 */
-export const SAMPLE_QUESTION: string = file.question;
+// 顶层不再有单一问题（每对一个，见 `PairView.question`）。
 
 function toView(pair: RawPair): PairView {
   if (pair.samples.length !== 2) {
@@ -54,7 +56,17 @@ function toView(pair: RawPair): PairView {
     variantLabel: s.variant_label,
     text: s.text,
   });
-  return { pairId: pair.pair_id, targetDimension: pair.target_dimension, samples: [view(a), view(b)] };
+  if (!pair.question) {
+    // 缺问题就抛：页面会写「两段回答的是：…」，缺了那句话会变成空白，
+    // 而用户不知道这两段在回答什么就没法比讲法。
+    throw new Error(`${pair.pair_id} 没有 question —— pairs.json 是旧版？重生成样例`);
+  }
+  return {
+    pairId: pair.pair_id,
+    targetDimension: pair.target_dimension,
+    question: pair.question,
+    samples: [view(a), view(b)],
+  };
 }
 
 /**

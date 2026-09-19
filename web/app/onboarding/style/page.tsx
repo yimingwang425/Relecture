@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { RowStateNotice } from "@/app/components/row-state";
 import { newSessionId } from "@/lib/style/events";
 import { TOTAL_STEPS, makeFlips } from "@/lib/style/flow";
-import { SAMPLE_QUESTION, loadPairs } from "@/lib/style/pairs";
+import { loadPairs } from "@/lib/style/pairs";
 import { loadStyleRow } from "@/lib/style/session";
 import { resolveTaste } from "@/lib/style/taste";
 
@@ -69,7 +69,6 @@ export default async function PairwiseOnboardingPage() {
         arm={result.row.f1_arm}
         sessionId={newSessionId()}
         pairs={loadPairs()}
-        question={SAMPLE_QUESTION}
         flips={makeFlips(TOTAL_STEPS)}
         alreadyOnboarded={result.row.onboarded_at !== null}
       />

@@ -14,19 +14,65 @@ from explain.prompt import (
     estimate_system_tokens,
     system_cache_status,
 )
-from explain.style_prompt import render_style_rules
+from explain.style_prompt import AXES, TONES, render_all_style_rules, render_style_rules
+
+#: 生产发的是 A 类 + B 类 + 语气（`api/api/main.py::render_all_style_rules`）。
+#: 这里必须用同一个渲染函数：旧测试量的是只有 A 类的那个形状，**生产一次都没发过**，
+#: 于是它报的 token 数不是任何一次真实请求的 token 数（判据与生产同源）。
+B_CLASS = {axis: AXES[axis][0] for axis in ("use_examples", "structure", "depth")}
 
 
 class TestSystemCacheability:
-    def test_retrieval_era_system_is_below_the_cache_floor(self, config, retriever):
-        """**这是本轮最重要的一条实测**：接检索后 system 撑不到可缓存长度。
+    def test_the_production_system_clears_the_cache_floor(self, config, retriever):
+        """接检索后 system **越过**了最小可缓存长度。**这条断言 2026-09-19 翻过来了。**
 
-        第 0 周 system 里有 5K token 的课件全文，断点当然生效；
-        现在课件全文根本不在上下文里。若报告照抄「已启用 prompt caching」，
-        那句话是错的——PRD §7.3 的论断前提已经不成立。
+        原来断的是反面：「接检索后 system 撑不到可缓存长度」。它当时是对的，
+        但量的是只有 A 类规则的形状（约 1,039 token）——而生产发的是 A+B+语气。
+        「怎么说话」那一节（s2/s3 去 AI 味）加进 system 之后，生产形状落到
+        1,079–1,159：**36 种 B 类 × 语气组合没有一种低于 1,024**。
+        论断翻了，断言就得跟着翻，否则 PRD §7.3 那句「缓存不生效」会一直留在报告里
+        而没有任何东西在核对它。
+
+        ⚠️ **余量只有 ~55 token，而这个估算器自己是粗口径**（见 `estimate_system_tokens`：
+        只用来判量级，真实值以 API 的 usage 为准）。所以这条说的是「按估算已过线」，
+        不是「缓存必然命中」。**删掉 system 里任何一节之前先回来看这条。**
         """
-        system = build_system(render_style_rules(config), retriever.fetch("q"), "22.081J")
+        system = build_system(
+            render_all_style_rules(config, B_CLASS), retriever.fetch("q"), "22.081J")
         status = system_cache_status(system)
+        assert status["system_tokens_estimated"] >= MIN_CACHEABLE_TOKENS
+        assert status["system_cache_expected_effective"] is True
+
+    def test_every_style_combination_clears_the_floor(self, config, retriever):
+        """36 种组合**逐个**过线，不是「拿一种代表全部」。
+
+        风格是用户选的，不同组合的 system 长度不同（B 类三条 + 语气一行）。
+        只量一种等于赌其余 35 种也过线；余量只有几十 token 时这个赌不该打。
+        """
+        ctx = retriever.fetch("q")
+        sizes = [
+            system_cache_status(build_system(
+                render_all_style_rules(
+                    config,
+                    {"use_examples": e, "structure": st, "depth": d},
+                    tone=tone,
+                ), ctx, "22.081J"))["system_tokens_estimated"]
+            for e in AXES["use_examples"]
+            for st in AXES["structure"]
+            for d in AXES["depth"]
+            for tone in TONES
+        ]
+        assert len(sizes) == 36
+        assert min(sizes) >= MIN_CACHEABLE_TOKENS, f"最小 {min(sizes)}"
+
+    def test_a_short_system_still_reports_not_effective(self):
+        """**反向验证**：主断言翻成 True 之后，这个判定有了恒为 True 的可能。
+
+        一个永远给同一个答案的检查不是检查。注意**不能拿「只有 A 类规则」的形状
+        当反向控制**——它现在是 1,039，也在线上了（翻转前它是低于下限的那一个，
+        2026-09-19 实测它跟着「怎么说话」那一节一起过了线）。所以用一段真的短的。
+        """
+        status = system_cache_status("只讲重点。")
         assert status["system_tokens_estimated"] < MIN_CACHEABLE_TOKENS
         assert status["system_cache_expected_effective"] is False
         assert "不生效" in status["note"]

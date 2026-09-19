@@ -87,9 +87,15 @@ def profile_payload(
     if missing:
         raise ValueError(f"B 类轴缺取值：{', '.join(missing)}（不补默认值，见文档字符串）")
 
+    from .prompt import SYSTEM_TEMPLATE_VERSION
+
     payload: dict[str, object] = {
         "algo_version": PROFILE_ALGO_VERSION,
         "template_version": template_version,
+        # system 模板的版本（2026-09-19 起）。它与 `template_version` 不是一回事：
+        # 后者是 B 类**措辞**的版本，前者是 system 骨架本身。改了 system 而 id 不变，
+        # 等于两份不同的 prompt 共用一个标识——正是这个 id 要防的事。
+        "system_version": SYSTEM_TEMPLATE_VERSION,
         "b_class": {a: b_class[a] for a in sorted(B_CLASS_AXES)},
     }
     # 语气（2026-09-19）：**只在它真的改变 prompt 时进 payload**。

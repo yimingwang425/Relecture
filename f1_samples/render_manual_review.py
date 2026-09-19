@@ -38,7 +38,8 @@ w("")
 w(f"- 样例来源：`pairs.json`（生成于 {DATA['generated_at']}，deck sha256 `{DATA['deck']['sha256']}`）")
 w(f"- 模型：`{DATA['model']['id']}`（取自 `explain.llm.AnthropicModel` 的默认值——"
   f"生产讲解用哪个模型，样例就必须用哪个，否则用户选到的不是他真会得到的东西）")
-w(f"- 提问（16 个样例完全相同）：{DATA['question']}")
+# 2026-09-19 起**每对一个问题**（此前 8 对共用一个，用户连读 12 段几乎一样的内容）。
+w("- 提问：每对各不相同，见下面每一节的标题行")
 w(f"- 非目标维度的默认值：{DEFAULTS}")
 w("")
 w("## 为什么 B 类只能人工核")
@@ -70,6 +71,10 @@ for pair in DATA["pairs"]:
     a, b = pair["samples"]
     w("")
     w(f"## {pair['pair_id']} —— 目标维度：**{AXIS_CN[axis]}**（`{axis}`）")
+    w("")
+    w(f"**这一对的提问**：{pair['question']}　·　"
+      f"喂了 {len(pair['fed_blocks'])} 块（"
+      + "、".join(f"{b['id']}·{b['chars']}字符" for b in pair["fed_blocks"]) + "）")
     w("")
     w(f"`{a['variant_label']}` vs `{b['variant_label']}`"
       f"　·　非目标维度两侧相同：" +

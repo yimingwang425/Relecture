@@ -30,8 +30,20 @@
 
 ## 喂哪 5 块（口径 F28：我在扮演检索器）
 
-`p1b1` 矩阵即线性映射 · `p2b1` 特征值定义 · `p3b1` 三个能直接读出特征值的例子 ·
-`p4b1` 反复作用时主方向主导 · `p7b1` 两处真实应用
+**可选块池**（6 块）：`p1b1` 矩阵即线性映射 · `p2b1` 特征值定义 ·
+`p3b1` 三个能直接读出特征值的例子 · `p4b1` 反复作用时主方向主导 ·
+`p5b2` 对称矩阵 · `p7b1` 两处真实应用
+
+⚠️ **2026-09-19 改成每对只喂 1–2 块**（不再是每对都喂同样的 5 块）。两个理由：
+
+1. 8 对全用同一个问题、同一批片段时，用户连着读 12 段几乎一样的内容——
+   **选了跟没选没区别**，而 F01 要的归因正建立在「他读出了差异」上。
+   现在每对一个不同的短问题，各自取自己那 1–2 块。
+2. 5 块 → 1–2 块，输出自然变短。**不靠「请简短」这类指令**：那会让 prompt 形状
+   与生产分叉，F19 的前提就垮了。
+
+代价如实登记：**样例比真实一轮短**（真实每轮恒 5 片）。方向单向、已知；
+换来的是用户真的会读完两段再选。
 
 2026-09-19 换过一次 FED 集合：原来喂 `p5b2`（对称矩阵）。实测 P3（每段 15–40 字）
 连续 6 次都在 43–69 字，从未进区间——那一块抽象、可枚举的事实少，模型只能写长段。
@@ -117,7 +129,7 @@ A matrix is symmetric when it equals its own transpose, that is, the entry in ro
 column j equals the entry in row j, column i. Covariance matrices and the matrices of
 undirected graphs are symmetric by construction.
 
-<!-- p5b2 -->
+<!-- p5b2 · FED -->
 Let `A` be a square matrix equal to its own transpose. Then every eigenvalue of `A` is a
 real number, and eigenvectors with different eigenvalues meet at right angles. Such a matrix
 stretches space along perpendicular directions, each by its own factor.

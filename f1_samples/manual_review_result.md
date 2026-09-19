@@ -18,14 +18,14 @@
 
 | pair_id | 目标维度 | 结论 | 样例版本 | 日期 | 复核人YIMING | 备注 |
 | --- | --- | --- | --- | --- | --- | --- |
-| `detail_p0_p3` | 详细程度 | 待核 | 10/22 | | | |
-| `detail_p0_p2` | 详细程度 | 待核 | 6/29 | | | |
-| `detail_p2_p3` | 详细程度 | 待核 | 36/21 | | | |
-| `examples_more_fewer` | 举例 | 待核 | 4/4 | | | |
-| `structure_conclusion_buildup` | 结构 | 待核 | 4/4 | | | |
-| `depth_what_derivation` | 深度 | 待核 | 4/4 | | | |
-| `depth_what_why` | 深度 | 待核 | 5/5 | | | |
-| `depth_why_derivation` | 深度 | 待核 | 5/6 | | | |
+| `detail_p0_p3` | 详细程度 | 待核 | 19/83 | | | |
+| `detail_p0_p2` | 详细程度 | 待核 | 10/46 | | | |
+| `detail_p2_p3` | 详细程度 | 待核 | 45/31 | | | |
+| `examples_more_fewer` | 举例 | 待核 | 6/6 | | | |
+| `structure_conclusion_buildup` | 结构 | 待核 | 6/6 | | | |
+| `depth_what_derivation` | 深度 | 待核 | 6/6 | | | |
+| `depth_what_why` | 深度 | 待核 | 7/7 | | | |
+| `depth_why_derivation` | 深度 | 待核 | 8/16 | | | |
 
 > **2026-09-19 第三次重置。** 课件从 Bloom filter 换成**特征值与特征向量**
 > （理由见 `synthetic_deck.md` 文件头：onboarding 是用户第一次打开产品看到的东西，

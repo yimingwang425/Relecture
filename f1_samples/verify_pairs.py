@@ -363,6 +363,9 @@ def check_review_freshness(data: dict, review_path: Path = REVIEW_RESULT) -> Non
     （通则七：失效的验证会让人停止追问）。所以只有**「通过」且版本对不上**判红；
     诚实的 `待核` / `暂缓` 不判红。
     """
+    print("\n\033[1m同一对看同一份材料（口径 F01）\033[0m")
+    check_same_context(data["pairs"], check)
+
     print("\n\033[1m人工结论的时效（口径 F25）\033[0m")
     if not review_path.is_file():
         check(False, "manual_review_result.md 存在", "", "缺文件 —— B 类没有任何质量证据")
@@ -392,6 +395,27 @@ def check_review_freshness(data: dict, review_path: Path = REVIEW_RESULT) -> Non
     if pending:
         print(f"  \033[33m—\033[0m 尚未通过的对：{pending}"
               f"（诚实状态，不判红；上线前须清零）")
+
+
+def check_same_context(pairs: list, check) -> None:
+    """同一对的两个样例**必须看到同一份 user turn**（同样的片段 + 同样的问题）。
+
+    F01 要的是「两段只在目标维度上不同」。片段或问题不同的话，用户读出的差异
+    可能来自内容而不是讲法，而那次点击照样被记成「他偏好这一档」。
+
+    2026-09-19 真的发生过：`detail_p0_p3.a` 是用 1 块课件生成的，`.b` 重生成时
+    改成了 2 块（为了让 P3 够得着 15–40 字/段），于是同一对的两段看的是不同材料——
+    而 `pairs.json` 顶上记的 `fed_blocks` 按**当前**配置写，文件本身读起来毫无异常。
+    比对的是每个样例自己记下的 `prompt.user_sha256`，不是文件顶上的声明。
+    """
+    for p in pairs:
+        shas = {s["sample_id"]: s["prompt"]["user_sha256"] for s in p["samples"]}
+        check(
+            len(set(shas.values())) == 1,
+            f"{p['pair_id']} 两个样例看到同一份 user turn",
+            f"user_sha256 {next(iter(set(shas.values())))[:12]}",
+            f"不同：{shas} —— 一对里的两段看了不同的片段或问题，差异可能来自内容而非讲法",
+        )
 
 
 def main() -> int:

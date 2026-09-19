@@ -275,16 +275,40 @@ class TestToneEntersThePrompt:
         with pytest.raises(ValueError):
             render_tone_rule("casual")
 
-    def test_profile_id_unchanged_for_default_tone(self):
-        """历史 id 不许因为「加了语气这个概念」而变一批。
+    def test_default_tone_does_not_change_the_id(self):
+        """**语气这个概念本身**不许改变 id：不传 tone 与传 neutral 必须同值。
 
-        钉死的是 2026-09-19 改动**之前**算出来的那个值。
+        ⚠️ 这里不再钉死一个跨版本的字面量。同日稍晚 system 模板加了「怎么说话」
+        一节（`SYSTEM_TEMPLATE_VERSION` s1 → s2），**那是合法的 id 变更**：
+        prompt 真的变了。历史值留档：s1 + b1 + 默认配置 = `2b18b1974d80`。
         """
         from explain.prompt_profile import prompt_profile_id
 
         b = {"use_examples": "more", "structure": "conclusion_first", "depth": "why"}
-        assert prompt_profile_id(b, "b1") == "2b18b1974d80"
-        assert prompt_profile_id(b, "b1", "neutral") == "2b18b1974d80"
+        assert prompt_profile_id(b, "b1") == prompt_profile_id(b, "b1", "neutral")
+
+    def test_system_template_version_enters_the_id(self):
+        """改了 system 骨架而 id 不变 = 两份不同的 prompt 共用一个标识。
+
+        这条断言的形式是**把版本换掉再算一次**，不是比对字面量——
+        比字面量的话，改了模板却忘了抬版本号，它照样绿。
+        """
+        from explain import prompt_profile
+        from explain.prompt_profile import prompt_profile_id
+
+        b = {"use_examples": "more", "structure": "conclusion_first", "depth": "why"}
+        before = prompt_profile_id(b, "b1")
+
+        import explain.prompt as prompt_mod
+
+        original = prompt_mod.SYSTEM_TEMPLATE_VERSION
+        try:
+            prompt_mod.SYSTEM_TEMPLATE_VERSION = "s-test"
+            assert prompt_profile_id(b, "b1") != before
+        finally:
+            prompt_mod.SYSTEM_TEMPLATE_VERSION = original
+        assert prompt_profile_id(b, "b1") == before
+        assert prompt_profile is not None
 
     def test_profile_id_differs_for_non_default_tone(self):
         """prompt 真的多了一行 → id 必须不同，否则两份不同的 prompt 共用一个标识。"""
@@ -293,3 +317,27 @@ class TestToneEntersThePrompt:
         b = {"use_examples": "more", "structure": "conclusion_first", "depth": "why"}
         ids = {prompt_profile_id(b, "b1", t) for t in ("neutral", "spoken", "academic")}
         assert len(ids) == 3, ids
+
+
+class TestSamplesAreNotStale:
+    """`pairs.json` 的生成条件必须与**当前生产**一致。
+
+    改了 system 骨架而样例没重生成，是一种**静默**失效：样例仍然读得通，
+    但它不再代表用户真会拿到的东西——F18 的整个前提就是这个。
+    没有这条断言，唯一能发现它的方式是有人恰好想起来去比对两个版本号。
+    """
+
+    def test_recorded_system_version_matches_production(self):
+        import json
+        from pathlib import Path
+
+        from explain.prompt import SYSTEM_TEMPLATE_VERSION
+
+        pairs = json.loads(
+            (Path(__file__).resolve().parents[2] / "f1_samples" / "pairs.json").read_text("utf-8")
+        )
+        recorded = pairs["prompt_shape"].get("system_template_version")
+        assert recorded == SYSTEM_TEMPLATE_VERSION, (
+            f"样例生成时 system 版本是 {recorded}，生产现在是 {SYSTEM_TEMPLATE_VERSION}——"
+            "改了 system 就要重新生成样例（f1_samples/generate_pairs.py）"
+        )

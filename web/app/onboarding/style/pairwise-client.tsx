@@ -4,10 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-import { ConfigSummary } from "@/app/components/config-summary";
-import { AXIS_LABEL, type StyleConfig,
-  type Arm,
-} from "@/lib/style/axes";
+import { type Arm, type StyleConfig } from "@/lib/style/axes";
 import { createDwellClock, type DwellClock } from "@/lib/style/dwell";
 import {
   createEventQueue,
@@ -75,7 +72,6 @@ export function PairwiseOnboarding({
   arm,
   sessionId,
   pairs,
-  question,
   flips,
   alreadyOnboarded,
   priors,
@@ -86,7 +82,6 @@ export function PairwiseOnboarding({
   /** 一次页面加载一个，**由服务端生成**（见 `page.tsx`）。 */
   sessionId: string;
   pairs: Record<string, PairView>;
-  question: string;
   /**
    * 每步的左右顺序，**由服务端抽好传进来**（见 `page.tsx` 的注释）。
    *
@@ -234,7 +229,7 @@ export function PairwiseOnboarding({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stepIndex, saved]);
 
-  if (saved) return <DoneScreen config={saved} log={shownLog} eventState={eventState} />;
+  if (saved) return <DoneScreen log={shownLog} eventState={eventState} />;
 
   async function commit(config: StyleConfig) {
     setBusy(true);
@@ -315,20 +310,14 @@ export function PairwiseOnboarding({
       data-events-dropped={eventState.dropped}
     >
       <header className="mt-10 mb-6 sm:mt-14">
-        <p className="t-eyebrow mb-3 flex flex-wrap items-center gap-2" data-step={stepIndex}>
+        <p className="t-eyebrow mb-3" data-step={stepIndex}>
           <span className="chip kbd-count">
-            第 {stepIndex} / {TOTAL_STEPS} 步
-          </span>
-          <span>
-            {stepIndex < TOTAL_STEPS ? `选完还剩 ${TOTAL_STEPS - stepIndex} 步` : "最后一步"}
-            {" · 这一步在比较"}
-            <b className="text-[var(--c-ink-soft)]">{AXIS_LABEL[step.axis]}</b>
+            {stepIndex} / {TOTAL_STEPS}
           </span>
         </p>
-        <h1 className="t-display enter-wipe">哪一段讲解你更想读？</h1>
+        <h1 className="t-display enter-wipe">哪一段你更想读？</h1>
         <p className="t-body mt-3 max-w-[62ch]">
-          两段回答的是同一个提问：「{question}」。它们的差别只在一个维度上，其余都一样。
-          <b>只按读起来的感觉选</b>，不用去猜差在哪。
+          两段都在回答：<b>{pair.question}</b>
         </p>
       </header>
 
@@ -395,15 +384,8 @@ export function PairwiseOnboarding({
         })}
       </div>
 
-      {/* 发现 C（2026-09-09 拍板：接受现状 + 文案解释）。
-          16 个样例里 12 个以「片段里没有涉及××」收尾，4 个点到没喂过的第 3/6 页。
-          两次机制假设（加长课件 / 去前向引用）都被证伪，杠杆不在素材上；
-          样例是模型在生产 prompt 形状下真实生成的（口径 F18/F19），**不截尾、不重写**，
-          所以这里用一句话解释它，而不是把它藏起来。 */}
-      <p className="t-meta mt-5 max-w-[78ch] leading-relaxed">
-        这两段是模型在一份<b>示例课件</b>的同一批片段上真实生成的，不是手写的范文。片段是节选，
-        所以结尾常出现「这部分没有涉及××，需要补充材料」，偶尔还会点到没给出的页码——
-        那是讲解助手在如实说明它手里有什么，<b>与你自己的课件无关</b>。比较时看讲法就好。
+      <p className="t-caption mt-5 max-w-[70ch]">
+        两段都是模型在同一份示例课件、同一个问题上真实生成的，不是手写范文。
       </p>
 
       {error && (
@@ -458,11 +440,9 @@ function Progress({ current }: { current: number }) {
 }
 
 function DoneScreen({
-  config,
   log,
   eventState,
 }: {
-  config: StyleConfig;
   /** 6 步的呈现与选择记录。`data-left-variants` 供人工核对随机化真的在发生。 */
   log: { step: number; pairId: string; leftVariant: string; chosenVariant: string }[];
   eventState: EventQueueState;
@@ -475,24 +455,13 @@ function DoneScreen({
       data-events-dropped={eventState.dropped}
       className="enter mx-auto max-w-[720px]"
     >
+      {/* **不展示配置结果**（2026-09-19 拍板）：用户刚按读感选完，这里再列一遍
+          「你的风格是 P0 / 多举例 / 先给结论」既没用又把注意力拉回标签——
+          F31 不显示档位标签的理由到这里同样成立。要看去 /settings/style。 */}
       <header className="mt-10 mb-6 sm:mt-14">
-        <p className="t-eyebrow mb-3">
-          {TOTAL_STEPS} / {TOTAL_STEPS} 步 · 完成
-        </p>
-        <h1 className="t-display enter-wipe">配置好了</h1>
-        <p className="t-body mt-3 max-w-[62ch]">
-          下面是这 6 次选择得到的风格。之后每次讲解都会按它来，随时可以改。
-        </p>
+        <h1 className="t-display enter-wipe">好了</h1>
+        <p className="t-body mt-3 max-w-[62ch]">之后的讲解会按你刚才的选择来，随时可以改。</p>
       </header>
-
-      <div className="card p-2">
-        <div className="px-3 pt-3 pb-4">
-          <p className="t-eyebrow"># 我的讲解风格</p>
-        </div>
-        <div className="tabpanel rounded-[10px] p-3">
-          <ConfigSummary config={config} />
-        </div>
-      </div>
 
       <EventNotice state={eventState} className="mt-6" />
 

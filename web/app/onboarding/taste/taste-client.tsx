@@ -169,12 +169,9 @@ export function TasteBoards({
   return (
     <div className="enter pb-28" data-events-pending={eventState.pending} data-events-dropped={eventState.dropped}>
       <header className="mt-10 mb-8 sm:mt-14">
-        <p className="t-eyebrow mb-3">第 1 步 · 共 2 步</p>
+        <p className="t-eyebrow mb-3">1 / 2</p>
         <h1 className="t-display enter-wipe">先说说你的口味</h1>
-        <p className="t-body mt-3 max-w-[62ch]">
-          点几个就行，不用想太久。<b>这一步只是起点</b>——下一步会给你几段真实的讲解，
-          由你挑哪段读着顺，那才算数。
-        </p>
+        <p className="t-body mt-3 max-w-[62ch]">点几个就行。下一步给你几段真实的讲解，由你挑。</p>
       </header>
 
       <div className="flex flex-col gap-8">
@@ -219,8 +216,7 @@ export function TasteBoards({
 
             {board.max > 1 && picked.length >= board.max && (
               <p className="t-caption px-3 py-2" data-field={`full-${board.id}`}>
-                这一块最多选 {board.max} 个。想换的话，先取消一个——
-                <b>限制是故意的</b>：什么都选等于没选，区分不出你更在意哪一头。
+                最多 {board.max} 个。想换先取消一个。
               </p>
             )}
           </section>
@@ -252,12 +248,10 @@ export function TasteBoards({
             onClick={() => void submit()}
             data-action="continue"
           >
-            {busy ? "保存中…" : "下一步：挑你读着顺的那段"}
+            {busy ? "保存中…" : "下一步"}
           </button>
           <span className="t-meta" data-field="gate">
-            {unmet.length === 0
-              ? `已选 ${selected.length} 个`
-              : `还差：${unmet.map(({ board }) => board.title).join(" · ")}`}
+            {unmet.length === 0 ? `已选 ${selected.length}` : `还差：${unmet.map(({ board }) => board.title).join(" · ")}`}
           </span>
         </div>
       </div>

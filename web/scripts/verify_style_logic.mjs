@@ -762,7 +762,7 @@ console.log("\n\x1b[1m七 · 埋点五事件（阶段 4）\x1b[0m");
     style_config_changed: ev.manualChange(cfg0, { ...cfg0, depth: "derivation" }),
     style_taste_shown: ev.tasteShown({ board: "tone", tagIds: ["tone_peer", "tone_written"] }),
     style_taste_chosen: ev.tasteChosen({
-      tags: ["tone_peer", "field_cs", "stuck_why"], tone: "spoken", field: "cs",
+      tags: ["tone_peer", "stuck_why"], tone: "spoken",
       priors: { depth: "why" }, totalMs: 18000,
     }),
   };
@@ -1720,7 +1720,8 @@ console.log("\n\x1b[1m十六 · 开场标签 → 语气 / 领域 / 先验\x1b[0m
   // -------- 16.1 标签表本身：**没有装饰标签**
   const ids = T.ALL_TAGS.map((x) => x.id);
   check(new Set(ids).size === ids.length, "标签 id 不重复", `${ids.length} 个`);
-  check(T.BOARDS.length === 3, "三个板块", `${T.BOARDS.length} 个`);
+  // 2026-09-19 去掉「你学什么」：课件讲什么由老师定，不由学生的专业定。
+  check(T.BOARDS.length === 2, "两个板块", T.BOARDS.map((b) => b.id).join(" / "));
   const noEffect = T.ALL_TAGS.filter((x) => !x.effect || !x.effect.kind);
   check(noEffect.length === 0, "每个标签都有 effect",
     "← 没有 effect 的标签就是让用户白点一次，正是这次要消灭的「假装选择」",
@@ -1736,17 +1737,17 @@ console.log("\n\x1b[1m十六 · 开场标签 → 语气 / 领域 / 先验\x1b[0m
     if (fn(["tone_peer", "tone_plain", "tone_written"]).tone !== "spoken") p.push("多数票没生效");
     if (fn(["tone_peer", "tone_written"]).tone !== "neutral") p.push("平票没回落中性");
     if (fn([]).tone !== "neutral") p.push("没选语气时不是默认中性");
+    if ("field" in fn(["tone_peer"])) p.push("去掉的 field 又回来了（专业猜不出内容类型）");
     if (fn(["stuck_short", "stuck_slow"]).priors.detail_level !== undefined)
       p.push("同轴矛盾没有作废该轴先验（替用户猜了一个）");
     if (!fn(["nope_not_a_tag"]).unknown.includes("nope_not_a_tag")) p.push("未知标签没被报出来");
-    if (fn(["field_cs"]).field !== "cs") p.push("领域没取出来");
     if (fn(["stuck_why"]).priors.depth !== "why") p.push("先验没取出来");
     return p;
   }
   const resolveReal = resolveProblems(T.resolveTaste);
   check(resolveReal.length === 0,
     "resolveTaste：多数票 · 平票回落中性 · 同轴矛盾作废 · 未知标签报出", resolveReal.join("；"));
-  check(resolveProblems(() => ({ tone: "spoken", field: null, priors: {}, unknown: [] })).length > 0,
+  check(resolveProblems(() => ({ tone: "spoken", priors: {}, unknown: [] })).length > 0,
     "反向控制：恒返回同一个语气的实现 → 判据红");
   check(resolveProblems((sel) => {
     const r = T.resolveTaste(sel);

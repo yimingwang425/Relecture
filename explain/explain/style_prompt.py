@@ -55,6 +55,10 @@ __all__ = [
     "render_all_style_rules",
     "LANGUAGE_BANDS",
     "B_CLASS_FRAGMENTS",
+    "TONES",
+    "DEFAULT_TONE",
+    "TONE_FRAGMENTS",
+    "render_tone_rule",
     "PROMPT_TEMPLATE_VERSION",
     "PROMPT_TEMPLATE_DIGEST",
 ]
@@ -169,6 +173,43 @@ PROMPT_TEMPLATE_VERSION: str = "b1"
 PROMPT_TEMPLATE_DIGEST: str = "292b62f6b396"
 
 
+# ---------------------------------------------------------------- 语气（2026-09-19）
+
+#: 语气档。**不是第四条 B 类轴**：它不进 `prompt_profile_id` 的 `b_class`、不被 A 类判定，
+#: 由用户在开场标签页直接选（口径 F80/F81）。
+TONES: tuple[str, ...] = ("spoken", "neutral", "academic")
+DEFAULT_TONE: str = "neutral"
+
+#: 语气 → prompt 里多出的那一行。
+#:
+#: ⚠️ **`neutral` 必须是空串**，这是硬要求，不是省事：
+#: `pairs.json` 的 16 个样例是在**没有这一行**的 prompt 下生成的（口径 F18/F19）。
+#: 默认档渲染成空 → 默认档的 prompt 与样例的生成条件**逐字节相同** → 样例仍然代表
+#: 用户真会拿到的东西。哪天给 neutral 写上一句，那 16 个样例当场失效，必须连着重生成
+#: （`explain/tests/test_style_axes.py` 有一条断言钉住这件事）。
+#:
+#: 每条都带一句**反向约束**：只说「要口语」，模型会为了口语牺牲准确；
+#: 只说「要严谨」，它会把话拉长。两种偏移在 A 类实测里都见过。
+TONE_FRAGMENTS: dict[str, str] = {
+    "spoken": (
+        "用口语讲：像同学之间讲题那样，句子短一些，可以直接用「你」称呼。"
+        "**不要为了口语化牺牲准确**——该出现的术语照样出现，只是把它解释清楚。"
+    ),
+    "neutral": "",
+    "academic": (
+        "用书面语讲：措辞规范、句子完整，专业名词给出英文原文（括号紧跟中文之后），"
+        "需要时直接写公式与符号。**严谨不等于啰嗦**——不要因此把话拉长。"
+    ),
+}
+
+
+def render_tone_rule(tone: str) -> str:
+    """语气那一行。默认档返回空串（见 `TONE_FRAGMENTS` 的注释）。"""
+    if tone not in TONE_FRAGMENTS:
+        raise ValueError(f"语气取值 {tone!r} 不在取值域 {TONES}")
+    return TONE_FRAGMENTS[tone]
+
+
 def render_b_class_rules(style: dict[str, str]) -> str:
     """渲染 B 类三条。顺序固定——system 要能被缓存，任何非确定性都会让缓存失效。"""
     lines = []
@@ -180,7 +221,9 @@ def render_b_class_rules(style: dict[str, str]) -> str:
     return "\n".join(lines)
 
 
-def render_all_style_rules(config: StyleConfig, b_class: dict[str, str]) -> str:
+def render_all_style_rules(
+    config: StyleConfig, b_class: dict[str, str], tone: str = DEFAULT_TONE
+) -> str:
     """A 类 + B 类，**这是进 `build_system()` 的那一段**。
 
     拼法是 `A + "\n" + B`，**与 `pairs.json` 里 16 个样例的生成形状逐字节一致**
@@ -188,7 +231,14 @@ def render_all_style_rules(config: StyleConfig, b_class: dict[str, str]) -> str:
     这不是风格选择：样例是用户在 onboarding 里据以选择的东西，
     它的 prompt 形状与生产分叉，F18/F19 的前提就垮了。
 
+    `tone` 默认 `neutral` 且 neutral 渲染成空串，所以**不传它时的输出与 2026-09-19
+    之前逐字节相同**——`generate_pairs.py` 不传，16 个样例因此仍然有效。
+
     `render_style_rules` 的签名与行为**一个字没动**：配置扫描实验按它跑过 180 轮，
     改它等于让那批已落盘的数据对应不上任何现存代码（口径 F19 的同一条理由）。
     """
-    return render_style_rules(config) + "\n" + render_b_class_rules(b_class)
+    base = render_style_rules(config) + "\n" + render_b_class_rules(b_class)
+    # 语气那一行接在 B 类之后。**默认档不加行**——加了的话，这一段就与
+    # 16 个样例的生成条件分叉，而那正是 F18/F19 盯着的东西。
+    line = render_tone_rule(tone)
+    return base + ("\n- " + line if line else "")

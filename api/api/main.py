@@ -352,7 +352,8 @@ def create_app(
             model=make_model(),
             reviewer=RuleReviewer(style),
             # ← A 类 + B 类，拼法与 pairs.json 里 16 个样例逐字节同形（口径 F19/F45）
-            style_rules=render_all_style_rules(style, row.b_class),
+            # 语气那一行：默认 neutral 渲染成空，这一段与样例的生成条件逐字节相同。
+            style_rules=render_all_style_rules(style, row.b_class, row.tone),
             course_label=label,
             review_enabled=True,
             # F4 的限定语进**本轮用户消息**，不进 system（口径 F57）：
@@ -412,6 +413,7 @@ def create_app(
             "retrieval": ctx.to_dict(),
             # 这三个是验收要读的：配置真的进了 prompt 吗、真的改变了输出吗。
             "detail_level": row.detail_level,
+            "tone": row.tone,
             "config_fingerprint": style.fingerprint(),
             "paragraph_length_target": style.paragraph_length.to_dict(),
             "mean_paragraph_chars": ev.by_name("paragraph_length").raw,

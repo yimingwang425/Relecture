@@ -48,13 +48,13 @@ export const TONES = ["spoken", "neutral", "academic"] as const;
 export type Tone = (typeof TONES)[number];
 export const DEFAULT_TONE: Tone = "neutral";
 
-export type BoardId = "tone" | "field" | "stuck";
+export type BoardId = "tone" | "stuck";
 
 export type Tag = {
   id: string;
   label: string;
   /** 这个标签**改变什么**。没有效果的标签不许存在——那就是「假装选择」。 */
-  effect: { kind: "tone"; tone: Tone } | { kind: "field"; field: string } | { kind: "prior"; axis: AxisId; value: string };
+  effect: { kind: "tone"; tone: Tone } | { kind: "prior"; axis: AxisId; value: string };
 };
 
 export type Board = {
@@ -69,8 +69,13 @@ export type Board = {
 };
 
 /**
- * 三个板块。**每个标签都必须有 `effect`**：要么改语气、要么定领域、要么给一条轴的先验。
+ * 两个板块（2026-09-19 去掉了「你学什么」那一块）。**每个标签都必须有 `effect`**：要么改语气、要么定领域、要么给一条轴的先验。
  * 加一个没有 effect 的标签就是让用户白点一次（`verify:logic` 十六节断言这件事）。
+ */
+/**
+ * ⚠️ **去掉过一块「你学什么」（领域 10 选 1）**，理由记在这里免得有人再加回来：
+ * 课件讲什么由老师定，不由学生的专业定；而且理工科里有纯文字课程、文科里有数学与
+ * 逻辑学——**拿专业去猜内容类型本来就不成立**，那一块问到的东西不能用来选样例题目。
  */
 export const BOARDS: readonly Board[] = [
   {
@@ -93,28 +98,11 @@ export const BOARDS: readonly Board[] = [
     ],
   },
   {
-    id: "field",
-    title: "你主要在学什么",
-    lead: "选一个。它决定下一步那几段示例讲解用哪个领域的题目。",
-    max: 1,
-    min: 1,
-    tags: [
-      { id: "field_math", label: "数学", effect: { kind: "field", field: "math" } },
-      { id: "field_physics", label: "物理", effect: { kind: "field", field: "physics" } },
-      { id: "field_cs", label: "计算机", effect: { kind: "field", field: "cs" } },
-      { id: "field_eng", label: "电子与工程", effect: { kind: "field", field: "engineering" } },
-      { id: "field_chem", label: "化学与材料", effect: { kind: "field", field: "chemistry" } },
-      { id: "field_bio", label: "生物与医学", effect: { kind: "field", field: "biomed" } },
-      { id: "field_econ", label: "经济与金融", effect: { kind: "field", field: "econ" } },
-      { id: "field_psych", label: "心理与社科", effect: { kind: "field", field: "social" } },
-      { id: "field_humanities", label: "人文与历史", effect: { kind: "field", field: "humanities" } },
-      { id: "field_other", label: "别的", effect: { kind: "field", field: "other" } },
-    ],
-  },
-  {
     id: "stuck",
     title: "讲到你卡住的时候",
-    lead: "你希望它怎么做？最多三个。这一项**不直接生效**，它只决定下一步先问你哪几组对比。",
+    // ⚠️ 这段文字是**纯文本渲染**的，不走 markdown —— 写 `**粗体**` 会原样显示成星号
+    // （2026-09-19 截图里看到的就是这个）。要强调就换措辞，不要写标记。
+    lead: "你希望它怎么做？最多三个。这一项不直接改配置，它决定下一步先问你哪几组对比。",
     max: 3,
     min: 1,
     tags: [
@@ -142,7 +130,6 @@ function tagById(id: string): Tag | undefined {
 
 export type TasteResult = {
   tone: Tone;
-  field: string | null;
   /** 四条轴上的先验。**不是配置**——配置仍由成对比较选出来。 */
   priors: Partial<Record<AxisId, string>>;
   /** 认不出的标签 id。**报出来，不静默丢**：静默丢会让前后端标签表漂了也没人知道。 */
@@ -160,14 +147,11 @@ export function resolveTaste(selected: readonly string[]): TasteResult {
   const tags = selected.map(tagById).filter((t): t is Tag => t !== undefined);
 
   const toneVotes = new Map<Tone, number>();
-  let field: string | null = null;
   const priors: Partial<Record<AxisId, string>> = {};
 
   for (const tag of tags) {
     if (tag.effect.kind === "tone") {
       toneVotes.set(tag.effect.tone, (toneVotes.get(tag.effect.tone) ?? 0) + 1);
-    } else if (tag.effect.kind === "field") {
-      field = tag.effect.field;
     } else {
       // 同一条轴被点了互相矛盾的两个标签（「尽量短」+「讲透一点」）→ **不猜**，
       // 这条轴当作没有先验。猜一个等于替用户做了他没做的决定，而且不可见。
@@ -192,7 +176,7 @@ export function resolveTaste(selected: readonly string[]): TasteResult {
   }
   if (best === 0 || tied) tone = DEFAULT_TONE;
 
-  return { tone, field, priors, unknown };
+  return { tone, priors, unknown };
 }
 
 /** 取值域校验：先验必须落在该轴的取值里，否则它进不了配置，只会在后面炸。 */

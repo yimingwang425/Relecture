@@ -138,9 +138,9 @@ export function TasteBoards({
     // 也不碰 f1_arm（口径 F10：改它抛 23514）与 onboarded_at（走完比较才算完成）。
     const { data, error: err } = await createClient()
       .from("style_config")
-      .update({ taste_tags: selected, tone: taste.tone, field: taste.field })
+      .update({ taste_tags: selected, tone: taste.tone })
       .eq("user_id", userId)
-      .select("user_id, taste_tags, tone, field");
+      .select("user_id, taste_tags, tone");
 
     if (err) {
       setError(`${err.message}（${err.code ?? "?"}）`);
@@ -158,7 +158,6 @@ export function TasteBoards({
       tasteChosen({
         tags: selected,
         tone: taste.tone,
-        field: taste.field,
         priors: taste.priors as Record<string, string>,
         totalMs: Math.round(performance.now() - (startedAtRef.current ?? performance.now())),
       }),

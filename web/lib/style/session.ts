@@ -20,8 +20,6 @@ export type StyleRow = StyleConfig & {
   taste_tags: string[] | null;
   /** 生效的语气档。默认 neutral，与样例库的生成条件一致。 */
   tone: string;
-  /** 主学领域，决定成对比较用哪个领域的题目。null = 没选过。 */
-  field: string | null;
 };
 
 export type StyleRowResult =
@@ -41,7 +39,7 @@ export async function loadStyleRow(): Promise<StyleRowResult> {
 
   const { data: rows, error } = await supabase
     .from("style_config")
-    .select("user_id, detail_level, use_examples, structure, depth, f1_arm, onboarded_at, taste_tags, tone, field")
+    .select("user_id, detail_level, use_examples, structure, depth, f1_arm, onboarded_at, taste_tags, tone")
     .eq("user_id", userId);
 
   if (error) {

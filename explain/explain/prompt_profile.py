@@ -67,7 +67,9 @@ B_CLASS_AXES: tuple[str, ...] = ("use_examples", "structure", "depth")
 PROFILE_ALGO_VERSION = "1.0"
 
 
-def profile_payload(b_class: dict[str, str], template_version: str) -> dict[str, object]:
+def profile_payload(
+    b_class: dict[str, str], template_version: str, tone: str = "neutral"
+) -> dict[str, object]:
     """把原始字段整理成待哈希的规范结构。**先验取值非空**，不静默补默认值。
 
     埋点事件里存的就是这几个字段，所以这个函数的入参形状 = 事件 payload 的形状：
@@ -85,14 +87,28 @@ def profile_payload(b_class: dict[str, str], template_version: str) -> dict[str,
     if missing:
         raise ValueError(f"B 类轴缺取值：{', '.join(missing)}（不补默认值，见文档字符串）")
 
-    return {
+    payload: dict[str, object] = {
         "algo_version": PROFILE_ALGO_VERSION,
         "template_version": template_version,
         "b_class": {a: b_class[a] for a in sorted(B_CLASS_AXES)},
     }
+    # 语气（2026-09-19）：**只在它真的改变 prompt 时进 payload**。
+    #
+    # 这个 id 的语义是「prompt 侧变没变」，所以它应当是 **prompt 形状的指纹**。
+    # `neutral` 渲染成空串（`style_prompt.TONE_FRAGMENTS`），prompt 逐字节不变——
+    # 那么 id 也必须不变，否则历史数据会平白多出一批「prompt 变了」的假信号，
+    # 而真相是什么都没变。反过来，非默认档确实多了一行，id 就必须不同。
+    #
+    # 这也是**没有抬 `PROFILE_ALGO_VERSION` 的理由**：算 id 的方式没变，
+    # 变的是「prompt 里可能多一行」这件事本身，而它由 payload 里多出的键表达。
+    if tone and tone != "neutral":
+        payload["tone"] = tone
+    return payload
 
 
-def prompt_profile_id(b_class: dict[str, str], template_version: str) -> str:
+def prompt_profile_id(
+    b_class: dict[str, str], template_version: str, tone: str = "neutral"
+) -> str:
     """prompt 侧标识，前 12 位十六进制。
 
     形状与 `StyleConfig.fingerprint()` / `.metric_set_id()` 完全一致——
@@ -108,8 +124,14 @@ def prompt_profile_id(b_class: dict[str, str], template_version: str) -> str:
     True
     >>> len(a)
     12
+    >>> a == prompt_profile_id({"use_examples": "more", "structure": "conclusion_first",
+    ...                         "depth": "why"}, "b1", "neutral")   # 默认档不改变 id
+    True
+    >>> a == prompt_profile_id({"use_examples": "more", "structure": "conclusion_first",
+    ...                         "depth": "why"}, "b1", "spoken")    # 非默认档必须不同
+    False
     """
     canonical = json.dumps(
-        profile_payload(b_class, template_version), sort_keys=True, ensure_ascii=False
+        profile_payload(b_class, template_version, tone), sort_keys=True, ensure_ascii=False
     )
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:12]

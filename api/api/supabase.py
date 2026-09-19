@@ -28,7 +28,7 @@ from typing import Any
 __all__ = ["StyleRow", "SupabaseError", "DuplicateDocument", "DuplicateMark",
            "SupabaseClient"]
 
-STYLE_COLUMNS = "user_id,detail_level,use_examples,structure,depth,f1_arm,onboarded_at"
+STYLE_COLUMNS = "user_id,detail_level,use_examples,structure,depth,f1_arm,onboarded_at,tone"
 
 
 def _pg_array_literal(values: list[str]) -> str:
@@ -115,6 +115,9 @@ class StyleRow:
     depth: str
     f1_arm: str
     onboarded_at: str | None
+    #: 语气档（2026-09-19）。**默认 neutral**：老行没有这一列时也要能工作，
+    #: 而 neutral 渲染成空串 —— 与样例库的生成条件逐字节相同（F18/F19）。
+    tone: str = "neutral"
 
     @property
     def b_class(self) -> dict[str, str]:
@@ -134,6 +137,7 @@ class StyleRow:
             "depth": self.depth,
             "f1_arm": self.f1_arm,
             "onboarded_at": self.onboarded_at,
+            "tone": self.tone,
         }
 
 
@@ -189,6 +193,10 @@ class SupabaseClient:
             depth=r["depth"],
             f1_arm=r["f1_arm"],
             onboarded_at=r.get("onboarded_at"),
+            # `.get` 而不是 `[...]`：迁移上线到新构建上线之间那段窗口里，
+            # 旧库还没有这一列。缺了回落 neutral —— 而 neutral 渲染成空串，
+            # 等于「与 2026-09-19 之前一模一样」，不是一个编出来的语气。
+            tone=r.get("tone") or "neutral",
         )
 
     # ---------------------------------------------------------------- 写入

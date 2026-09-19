@@ -223,3 +223,73 @@ def _main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(_main())
+
+
+class TestToneEntersThePrompt:
+    """语气（2026-09-19，口径 F80）：它必须**真的改变输出**，否则那一块标签是装饰。
+
+    同时必须**不打翻已有的 16 个样例**——它们是在没有语气那一行的 prompt 下生成的。
+    """
+
+    def test_neutral_fragment_is_empty(self):
+        """**这条是钉子**：给 neutral 写上一句话，`pairs.json` 的 16 个样例当场失效
+        （它们的生成条件里没有这一行），必须连着重新生成。"""
+        from explain.style_prompt import TONE_FRAGMENTS
+
+        assert TONE_FRAGMENTS["neutral"] == ""
+
+    def test_default_render_is_byte_identical(self):
+        """不传 tone / 传 neutral / 2026-09-19 之前，三者产出同一段文字。
+
+        `generate_pairs.py` 不传这个参数，所以这条断言就是「样例仍然代表用户
+        真会拿到的东西」（F18/F19）的机械形式。
+        """
+        from explain.style_axes import style_config_for
+        from explain.style_prompt import render_all_style_rules
+
+        cfg = style_config_for("P0")
+        b = {"use_examples": "more", "structure": "conclusion_first", "depth": "why"}
+        assert render_all_style_rules(cfg, b) == render_all_style_rules(cfg, b, "neutral")
+
+    def test_non_default_tones_add_exactly_one_line(self):
+        from explain.style_axes import style_config_for
+        from explain.style_prompt import render_all_style_rules
+
+        cfg = style_config_for("P0")
+        b = {"use_examples": "more", "structure": "conclusion_first", "depth": "why"}
+        base = render_all_style_rules(cfg, b)
+        for tone in ("spoken", "academic"):
+            got = render_all_style_rules(cfg, b, tone)
+            extra = got[len(base):]
+            assert got.startswith(base), tone
+            assert extra.startswith("\n- ") and len(extra) > 20, (tone, extra)
+            # 反向约束那句必须在：只说「要口语」模型会牺牲准确，只说「要严谨」它会变啰嗦。
+            assert "不要" in extra or "不等于" in extra, (tone, extra)
+
+    def test_unknown_tone_raises(self):
+        """取值域外**判失败，不静默回落默认**（同 F10 / F32：回落必须显式）。"""
+        import pytest
+
+        from explain.style_prompt import render_tone_rule
+
+        with pytest.raises(ValueError):
+            render_tone_rule("casual")
+
+    def test_profile_id_unchanged_for_default_tone(self):
+        """历史 id 不许因为「加了语气这个概念」而变一批。
+
+        钉死的是 2026-09-19 改动**之前**算出来的那个值。
+        """
+        from explain.prompt_profile import prompt_profile_id
+
+        b = {"use_examples": "more", "structure": "conclusion_first", "depth": "why"}
+        assert prompt_profile_id(b, "b1") == "2b18b1974d80"
+        assert prompt_profile_id(b, "b1", "neutral") == "2b18b1974d80"
+
+    def test_profile_id_differs_for_non_default_tone(self):
+        """prompt 真的多了一行 → id 必须不同，否则两份不同的 prompt 共用一个标识。"""
+        from explain.prompt_profile import prompt_profile_id
+
+        b = {"use_examples": "more", "structure": "conclusion_first", "depth": "why"}
+        ids = {prompt_profile_id(b, "b1", t) for t in ("neutral", "spoken", "academic")}
+        assert len(ids) == 3, ids

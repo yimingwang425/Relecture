@@ -206,14 +206,12 @@ export function tasteShown(args: { board: string; tagIds: readonly string[] }): 
 export function tasteChosen(args: {
   tags: readonly string[];
   tone: string;
-  field: string | null;
   priors: Record<string, string>;
   totalMs: number;
 }): StyleEvent {
   return complete("style_taste_chosen", {
     tags: [...args.tags],
     tone: args.tone,
-    field: args.field,
     priors: args.priors,
     total_ms: args.totalMs,
   });
@@ -222,9 +220,13 @@ export function tasteChosen(args: {
 export function onboardingCompleted(args: {
   config: StyleConfig;
   stepsCompleted: number;
+  /** 生效的语气档（2026-09-19）。分析侧要靠它算 `prompt_profile_id`——
+   *  非默认档的 prompt 多一行，不记的话那一批轮次算出来的 id 是错的。 */
+  tone?: string;
   totalMs: number;
 }): StyleEvent {
   return complete("style_onboarding_completed", {
+    tone: args.tone ?? "neutral",
     config: args.config,
     steps_completed: args.stepsCompleted,
     total_ms: args.totalMs,

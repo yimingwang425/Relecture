@@ -65,6 +65,7 @@ export default async function PairwiseOnboardingPage() {
       <PairwiseOnboarding
         userId={result.userId}
         priors={resolveTaste(result.row.taste_tags ?? []).priors}
+        tone={result.row.tone}
         arm={result.row.f1_arm}
         sessionId={newSessionId()}
         pairs={loadPairs()}

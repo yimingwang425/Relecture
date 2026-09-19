@@ -79,6 +79,7 @@ export function PairwiseOnboarding({
   flips,
   alreadyOnboarded,
   priors,
+  tone,
 }: {
   userId: string;
   arm: Arm;
@@ -106,6 +107,8 @@ export function PairwiseOnboarding({
    * 所以对照臂的体验一个字节都没变，A5 两臂仍然可比。
    */
   priors: Partial<Record<string, string>>;
+  /** 生效的语气档（标签页选的）。这里只**转述**给完成事件，不参与比较。 */
+  tone: string;
 }) {
   const router = useRouter();
   const [picks, setPicks] = useState<Picks>({});
@@ -263,6 +266,7 @@ export function PairwiseOnboarding({
     send(
       onboardingCompleted({
         config,
+        tone,
         stepsCompleted: TOTAL_STEPS,
         totalMs: Math.round(performance.now() - (startedAtRef.current ?? performance.now())),
       }),

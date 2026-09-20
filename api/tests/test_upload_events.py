@@ -44,17 +44,28 @@ SESSION = "99999999-9999-4999-8999-999999999999"
 
 
 def parse_failure_kinds_from_sql() -> list[str]:
-    """从迁移原文里解析 `f3_deck_upload_failure_kinds()` 的那个 array[...]。
+    """`f3_deck_upload_failure_kinds()` 的**生效定义**——按文件名排序后的最后一个。
+
+    ⚠️ **不能钉死在 `20260912180000` 那一个文件上**（2026-09-20 改）。
+    钉死的话，晚一点的迁移 `create or replace` 掉它之后，这条比对仍在跟一份
+    **已经不生效**的定义比：Python 侧跟着新定义改对了反而红，跟着旧定义改错了反而绿。
+    这与内测前-P1 修掉的 `REQUIRED_KEYS` 那条是同一个形态，做法原样搬
+    （`test_marks._effective_required_keys`）。
 
     解析不出来**抛**，不返回空列表：空列表会让下面的比对
     「两边都是空」地平凡通过（同 F16 反对的那件事）。
     """
-    src = MIG_UPLOAD.read_text(encoding="utf-8")
-    m = re.search(r"f3_deck_upload_failure_kinds\(\).*?select array\[(.*?)\]",
-                  src, re.DOTALL)
-    if not m:
-        raise AssertionError("解析不出 f3_deck_upload_failure_kinds 的清单——"
+    mig = REPO / "supabase" / "migrations"
+    src = "\n".join(p.read_text(encoding="utf-8") for p in sorted(mig.glob("*.sql")))
+    blocks = re.findall(
+        r"create or replace function public\.f3_deck_upload_failure_kinds.*?\$\$;",
+        src, re.DOTALL)
+    if not blocks:
+        raise AssertionError("一个 f3_deck_upload_failure_kinds 定义都没解析出来——"
                              "解析器与 SQL 写法漂了")
+    m = re.search(r"select array\[(.*?)\]", blocks[-1], re.DOTALL)
+    if not m:
+        raise AssertionError("生效定义里解析不出 array[...]")
     kinds = re.findall(r"'([a-z_]+)'", m.group(1))
     if not kinds:
         raise AssertionError("解析到空清单")
@@ -77,12 +88,15 @@ class TestMirrorsTheSql:
         assert list(FAILURE_KINDS) == parse_failure_kinds_from_sql()
 
     def test_parser_has_discriminating_power(self):
-        """**先立解析器的分辨力**：它至少要认出 8 类。
+        """**先立解析器的分辨力**：它要认出 9 类（2026-09-20 加了 `no_usable_text`）。
 
         少了这一条，解析器只认出 1 类时上面的比对会因为「两边都只有 1 类」
         而平凡通过。
+
+        得到 8 说明它读的是 `20260912180000` 那一份——那份已经被
+        `20260920100000` 的 `create or replace` 换掉了，**不再生效**。
         """
-        assert len(parse_failure_kinds_from_sql()) == 8
+        assert len(parse_failure_kinds_from_sql()) == 9
 
     def test_required_keys_for_both_upload_types_mirror_the_sql(self):
         """与**生效定义**比，不与本批那个迁移比。
@@ -211,10 +225,15 @@ class RecordingRest:
         self.fail_insert_document = fail_insert_document
         self.events: list[dict[str, Any]] = []
         self.seen: list[str] = []
+        #: **只记写入**（`body is not None` 那一支）。`seen` 里读写混在一起，
+        #: 而「有没有建过 documents 行」这件事必须与「查过 documents 没有」分开——
+        #: 「先查后提示」本来就会读一次 `/documents?...content_sha256=eq.`。
+        self.writes: list[tuple[str, Any]] = []
 
     def __call__(self, url: str, headers: dict[str, str], body: Any = None) -> Any:
         self.seen.append(url)
         if body is not None:
+            self.writes.append((url, body))
             if "/style_events" in url:
                 self.events.extend(body if isinstance(body, list) else [body])
                 return None
@@ -301,6 +320,54 @@ class TestFailuresAreClassifiedNotCollapsed:
         # **失败时 deck_id 是 null，且这是事实不是遗漏**：没有 document 行。
         assert ev["deck_id"] is None
         assert ev["course_id"] == COURSE
+
+    def test_a_deck_with_no_readable_text_is_refused_and_not_stored(self, jwks, keypair):
+        """整份读不出文字 → **拒收，且一行都不建**（2026-09-20）。
+
+        用户实测报上来的形态是：界面写着
+        「已入库：0 个切片 · 0 条向量 · 19 页读不出文字 · 整份判为不可用」——
+        **「已入库」与「不可用」同时为真**。那份文档会一直挂在课里，检索一片都取不到；
+        而唯一索引把它记住了，再传一次同一份文件会被判 `duplicate_in_course`，
+        于是用户连重试都做不到。
+
+        ⚠️ 这里用的是**空白 PDF**，真实成因通常是扫描件。两者走的是同一条判断
+        （`usable_page_count == 0` → verdict `unusable`），所以分类名叫
+        `no_usable_text` 而不是「scan」——判据是「读不出文字」，扫描只是最常见的成因。
+
+        断的是三件事，缺一条这个 bug 都会以另一种样子回来：
+        406 + 分类对；**没有任何一次 /documents 写入**；事件的 `deck_id` 是 null。
+        """
+        import pymupdf
+
+        doc = pymupdf.open()
+        for _ in range(3):
+            doc.new_page()
+        blank = doc.tobytes()
+
+        rest = RecordingRest()
+        r = post_file(client(jwks, rest), keypair, name="扫描讲义.pdf", data=blank)
+        assert r.status_code == 406, r.text
+        assert r.json()["failure_kind"] == "no_usable_text"
+
+        # **一行都没建。** 这是这条断言的重点：状态码对而行还是建了的话，
+        # 用户看到的仍然是那份「已入库的不可用课件」。
+        written = [u for u, _ in rest.writes]
+        assert not any("/documents" in u for u in written), written
+
+        ev = only_event(rest)
+        assert ev["event_type"] == "deck_upload_failed"
+        assert ev["payload"]["failure_kind"] == "no_usable_text"
+        assert ev["payload"]["page_count"] == 3
+        assert ev["deck_id"] is None
+
+    def test_a_readable_pdf_still_gets_through(self, jwks, keypair):
+        """**允许控制。** 少了它，「一律拒收」的实现会让上面那条全绿。"""
+        deck = (Path(__file__).resolve().parents[2]
+                / "实验脚本" / "测试集" / "MIT22_081JF10_lec01b.pdf")
+        rest = RecordingRest()
+        r = post_file(client(jwks, rest), keypair, name=deck.name, data=deck.read_bytes())
+        assert r.status_code == 201, r.text
+        assert r.json()["slice_count"] > 0
 
     def test_the_four_kinds_really_differ(self, jwks, keypair):
         """**把上面那组的分辨力单独立起来。**

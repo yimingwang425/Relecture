@@ -45,6 +45,7 @@ export const FAILURE_KINDS = [
   "too_large",
   "duplicate_in_course",
   "unparsable",
+  "no_usable_text",
   "db_error",
   "unknown",
 ] as const;
@@ -90,8 +91,19 @@ export const FAILURE_COPY: Record<FailureKind, FailureCopy> = {
     retryable: false,
   },
   unparsable: {
-    title: "这份 PDF 打不开，或者里面读不出文字。",
-    action: "扫描件（整页都是图片）目前读不了。如果是加密或损坏的文件，换一份能正常打开的。",
+    // 2026-09-20：「读不出文字」那一半搬去 `no_usable_text` 了，这一条只留「打不开」。
+    // 两件事混在一句里，用户没法知道该换一个没坏的文件还是该去找文字版。
+    title: "这份 PDF 打不开。",
+    action: "可能是加密或损坏了。换一份能正常打开的文件再试。",
+    retryable: false,
+  },
+  no_usable_text: {
+    // **重点是说清「没有入库」**：此前这种文件会建行，列表里挂着一份
+    // 「已入库但不可用」的课件，而且再传一次会被判重复，用户连重试都做不到。
+    title: "这份课件一页都读不出文字，没有上传。",
+    action:
+      "多半是扫描件或图片版讲义（整页都是图片）。找一份能选中文字的 PDF 再传；" +
+      "我们暂时不做 OCR。",
     retryable: false,
   },
   db_error: {
@@ -146,6 +158,9 @@ export const KIND_BY_STATUS: Record<number, FailureKind> = {
   413: "too_large",
   409: "duplicate_in_course",
   422: "unparsable",
+  // 406 不是这一类最贴切的码（422 才是），但 422 已经给了 `unparsable`，
+  // 而「一个类一个码」那条不许复用。理由写在 `api/api/upload_failures.py` 里。
+  406: "no_usable_text",
   502: "db_error",
   500: "unknown",
 };

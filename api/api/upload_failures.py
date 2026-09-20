@@ -15,7 +15,8 @@ PRD §13.0 把 `deck_upload_failed` 登记为「本批不做」，触发条件�
 | `empty_file` | 检查文件是不是没存盘 | — |
 | `too_large` | 拆分或压缩 | 他会重试同一个文件 |
 | `duplicate_in_course` | **什么都不用做**，已经在这门课里了 | 他会再传一次，再失败一次 |
-| `unparsable` | 换一个能打开的文件；扫描件我们读不了 | 他会怀疑是网络问题 |
+| `unparsable` | 换一个能打开的文件 | 他会怀疑是网络问题 |
+| `no_usable_text` | **找一份文字版**，或等我们做 OCR | 与 `unparsable` 混在一起之后，「文件坏了」与「文件好好的但是扫描件」说不清 |
 | `db_error` / `unknown` | **重试有意义** | 混进上面几类之后，「重试有没有用」这个问题答不出来 |
 
 而在**分析**侧，合并的代价是另一个：§3.2 的「课件支持率」分母里，
@@ -70,6 +71,13 @@ FAILURE_KINDS: tuple[str, ...] = (
     "too_large",               # 超过 parse_service.app.MAX_UPLOAD_BYTES
     "duplicate_in_course",     # 这门课里已有同一份文件（唯一索引带 course_id）
     "unparsable",              # 解析器打不开 / 抛异常
+    # ⚠️ **与 `unparsable` 分开，理由与 `pptx_not_implemented` 那条完全一样**：
+    # 这一类是「文件好好的，但整份一页都读不出文字」（扫描件 / 图片版讲义），
+    # 而 `unparsable` 是「这个文件我们打不开」。
+    # · 用户侧：前者该去找一份文字版，后者该换一个没坏的文件；
+    # · 分析侧（PRD §3.2 课件支持率）：**我们做了 OCR 之后前者会消失，后者不会**。
+    #   合成一个数之后，支持率的变化说不清是哪一边动了。
+    "no_usable_text",           # 解析成功，但 usable_page_count == 0
     "db_error",                # PostgREST / 网络
     "unknown",                 # 兜底。**它出现就是一个待分类的 bug**，见下
 )
@@ -86,6 +94,12 @@ HTTP_STATUS_BY_KIND: dict[str, int] = {
     "too_large": 413,
     "duplicate_in_course": 409,
     "unparsable": 422,
+    # ⚠️ 406 不是这一类最贴切的码，**422 才是**（语法没问题、语义处理不了）——
+    # 但 422 已经给了 `unparsable`，而上面那条「一个类一个码、不复用」拦着。
+    # 在「换一个不那么贴切但唯一的码」与「两类共用 422」之间选了前者：
+    # 复用会让 `classify_http_status()` 的反推**悄悄**把两类并成一类，
+    # 而不贴切只是不贴切（响应体里的 `failure_kind` 才是主路径，状态码是兜底）。
+    "no_usable_text": 406,
     "db_error": 502,
     "unknown": 500,
 }

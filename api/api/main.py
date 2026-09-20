@@ -517,7 +517,7 @@ def create_app(
         """
         import time
 
-        from .ingest import ingest_document
+        from .ingest import UnusableDocument, ingest_document
         # 唯一定义处是 supabase.py（两个同名类已于 2026-09-12 合并，见那里的 docstring）。
         from .supabase import DuplicateDocument
         t0 = time.monotonic()
@@ -568,6 +568,18 @@ def create_app(
                            # **哪一层拦下的**要记：如果 `by_unique_index` 长期占多数，
                            # 说明「先查」这一层没在起作用（而它的绿是看不见的）。
                            "caught_by": "pre_check" if exc.existing else "unique_index"}) from exc
+            except UnusableDocument as exc:
+                # ⚠️ **必须排在下面那个裸 `except Exception` 前面。**
+                # 排在后面会被归成 `unparsable`（「这个文件我们打不开」），而事实是
+                # 文件打开了、解析成功了、只是一个字都读不出来。归错之后用户会去
+                # 换一个「没坏的」文件，然后再传一次同一份扫描件。
+                raise _UploadFailure(
+                    "no_usable_text",
+                    f"{exc.message}：{exc.reason}",
+                    extra={"bytes": len(data),
+                           "page_count": exc.page_count,
+                           "unusable_page_count": exc.unusable_page_count},
+                ) from exc
             except SupabaseError as exc:
                 raise _UploadFailure("db_error", exc.message,
                                     extra={"bytes": len(data)}) from exc

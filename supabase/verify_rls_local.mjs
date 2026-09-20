@@ -1434,7 +1434,9 @@ async function main() {
       if (err) rejected.push(`${kind}(${err.code})`);
     }
     rejected.length === 0
-      ? ok("闭集里的 8 个值全部写得进去（允许控制）", `${kinds.length} 个 ← 少了它，`
+      // 标签里**不写死个数**：循环本来就是按 SQL 的真实清单跑的，
+      // 写死的那个数只会在加一类之后变成一句陈旧的话（它不会红，因为它只是文案）。
+      ? ok(`闭集里的 ${kinds.length} 个值全部写得进去（允许控制）`, `${kinds.length} 个 ← 少了它，`
            + "「任何值都拒」的 CHECK 也会让上一条全绿")
       : bad("闭集里有值被拒", rejected.join(" "));
 

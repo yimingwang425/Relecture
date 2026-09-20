@@ -1175,15 +1175,22 @@ console.log("\n\x1b[1m十 · 上传页 · 失败分类（阶段 6 第一批）\x
   }
   const sqlKinds = parseSqlKinds(migAll);
   check(sqlKinds !== null, "迁移里找到 f3_deck_upload_failure_kinds");
-  check(sqlKinds?.length === 8, "SQL 解析出 8 类", `实得 ${sqlKinds?.length}`);
+  check(sqlKinds?.length === 9, "SQL 解析出 9 类", `实得 ${sqlKinds?.length}`);
   check(eq(sorted_(f.FAILURE_KINDS), sorted_(sqlKinds ?? [])),
     "TS 的 FAILURE_KINDS 与 SQL 逐项一致",
     `TS ${JSON.stringify(sorted_(f.FAILURE_KINDS))} vs SQL ${JSON.stringify(sorted_(sqlKinds ?? []))}`);
 
   // 反向控制：SQL 少一类时比对必须变红。
+  //
+  // ⚠️ **必须 replaceAll，不能 replace**（2026-09-20 当场红了一次）。
+  // `20260920100000` 用 `create or replace` 又定义了一遍这个函数，于是
+  // `'unparsable',` 在迁移全文里出现两次；`replace` 只删掉**旧文件里**那一次，
+  // 而解析取的是**最后一份**（生效的那一份）——于是这条反向控制自己空转了：
+  // 它删了一行，被比对的那份却一个字没变，然后「比对没红」被读成「控制失败」。
+  // 这正是这条控制存在的理由，只是它这次指向的是它自己。
   check(
     !eq(sorted_(f.FAILURE_KINDS),
-        sorted_(parseSqlKinds(migAll.replace("    'unparsable',\n", "")) ?? [])),
+        sorted_(parseSqlKinds(migAll.replaceAll("    'unparsable',\n", "")) ?? [])),
     "反向控制：SQL 少一类时比对变红",
     "← 少了它，两个空数组之间的相等也会被读成一致",
   );
@@ -1191,7 +1198,7 @@ console.log("\n\x1b[1m十 · 上传页 · 失败分类（阶段 6 第一批）\x
   // Python 侧那份（分类的服务端出处）。**从源文件解析**，不在这里抄第三份。
   const pyKinds = [...(/FAILURE_KINDS: tuple\[str, \.\.\.\] = \(([\s\S]*?)\)/.exec(pySrc)?.[1] ?? "")
     .matchAll(/"(\w+)"/g)].map((m) => m[1]);
-  check(pyKinds.length === 8, "Python 侧解析出 8 类", `实得 ${pyKinds.length}`);
+  check(pyKinds.length === 9, "Python 侧解析出 9 类", `实得 ${pyKinds.length}`);
   check(eq(sorted_(f.FAILURE_KINDS), sorted_(pyKinds)), "TS 与 Python 的闭集逐项一致");
 
   // -------- 10.2 `retryable` 与 Python 的 RETRYABLE_KINDS 同源
@@ -1208,12 +1215,14 @@ console.log("\n\x1b[1m十 · 上传页 · 失败分类（阶段 6 第一批）\x
   check(!tsRetryable.includes("duplicate_in_course"),
     "「已经有这份文件了」不给重试按钮", "← 重试会再失败一次，而事实是什么都不用做");
   check(!tsRetryable.includes("unparsable"),
-    "「读不出文字」不给重试按钮", "← 重试一个永远不会成功的上传");
+    "「打不开」不给重试按钮", "← 重试一个永远不会成功的上传");
+  check(!tsRetryable.includes("no_usable_text"),
+    "「一页都读不出文字」不给重试按钮", "← 同一份扫描件重试多少次都是同一个结果");
 
   // -------- 10.3 每一类都有自己的文案，且不含无信息量的措辞（PRD §10）
   const emptyCopy = f.FAILURE_KINDS.filter(
     (k) => !f.FAILURE_COPY[k]?.title?.trim() || !f.FAILURE_COPY[k]?.action?.trim());
-  check(emptyCopy.length === 0, "八类各有 title 与 action", emptyCopy.join(" "));
+  check(emptyCopy.length === 0, "九类各有 title 与 action", emptyCopy.join(" "));
 
   const titles = f.FAILURE_KINDS.map((k) => f.FAILURE_COPY[k].title);
   check(new Set(titles).size === titles.length,
@@ -1241,14 +1250,14 @@ console.log("\n\x1b[1m十 · 上传页 · 失败分类（阶段 6 第一批）\x
   // -------- 10.4 状态码兜底表与 Python 的 HTTP_STATUS_BY_KIND 同源
   const pyStatus = Object.fromEntries(
     [...pySrc.matchAll(/"(\w+)": (\d{3}),/g)].map((m) => [m[1], Number(m[2])]));
-  check(Object.keys(pyStatus).length === 8, "Python 侧解析出 8 个状态码映射",
+  check(Object.keys(pyStatus).length === 9, "Python 侧解析出 9 个状态码映射",
     `实得 ${Object.keys(pyStatus).length}`);
   const statusProblems = f.FAILURE_KINDS.filter(
     (k) => f.KIND_BY_STATUS[pyStatus[k]] !== k);
   check(statusProblems.length === 0, "TS 的状态码兜底表与 Python 互为反函数",
     statusProblems.join(" "));
-  check(new Set(Object.values(pyStatus)).size === 8,
-    "八类各有不同的状态码", "← 复用会让前端按状态码分支时把两类并成一类");
+  check(new Set(Object.values(pyStatus)).size === 9,
+    "九类各有不同的状态码", "← 复用会让前端按状态码分支时把两类并成一类");
 
   // -------- 10.5 认不出来的分类：回落 unknown，但 `matched` 为 false
   check(f.copyFor("unsupported_format").matched === true, "认得的分类 matched=true");

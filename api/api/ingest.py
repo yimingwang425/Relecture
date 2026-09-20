@@ -32,7 +32,44 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any, Protocol
 
-__all__ = ["Embedder", "IngestResult", "DuplicateDocument", "ingest_document", "EMBED_MODEL_ID"]
+__all__ = ["Embedder", "IngestResult", "DuplicateDocument", "UnusableDocument",
+           "ingest_document", "EMBED_MODEL_ID"]
+
+
+class UnusableDocument(Exception):
+    """整份课件一页都读不出文字（`verdict == "unusable"`）——**不建行、不入库**。
+
+    ## 为什么这条判断在这里，不在 parse-service
+
+    `parse-service/README.md` 的 P08 写得很清楚：文档级 verdict 只报事实
+    （`usable_page_count == 0` → `unusable`），**放行并告知，不替用户拒绝**——
+    「可用页占比低于某数就拒收」是把产品决策塞进解析层。
+    所以「拒不拒收」这个产品决策就该落在调用方，也就是这里。
+
+    ## 不拦的后果（2026-09-20 用户实测报上来的）
+
+    不拦的话这份文档照样建行、照样进课件列表，界面上写着
+    「已入库：0 个切片 · 0 条向量 · 19 页读不出文字 · 整份判为不可用」——
+    **「已入库」和「不可用」同时为真**。它之后会一直挂在那门课里：
+    检索一片都取不到，而用户看到的是一份「传上去了」的课件。
+    更糟的是唯一索引把它记住了：同一份文件再传一次会被判
+    `duplicate_in_course`（「这门课里已经有了」），于是他连重试都做不到。
+
+    ⚠️ **判据是 verdict，不是切片数。** 切片数为 0 还有别的来路——
+    比如受限页把所有片都排除掉（`restricted_pages`）。那是另一件事，
+    文案与处置都不同，混在一起用户会被告知错误的原因。
+    """
+
+    def __init__(self, message: str, *, page_count: int,
+                 unusable_page_count: int, reason: str) -> None:
+        super().__init__(message)
+        self.message = message
+        self.page_count = page_count
+        self.unusable_page_count = unusable_page_count
+        #: 解析器给的原因（「共 19 页：2 页 image_only、17 页 scanned_ocr」）。
+        #: **它进 HTTP body 给这一次请求的用户，不进事件**——同 `unparsable`
+        #: 那条纪律：它谈论的是用户上传的文件内容（口径 F32 / PRD §12.2）。
+        self.reason = reason
 
 
 class Embedder(Protocol):
@@ -116,6 +153,18 @@ def ingest_document(
     from slicer.schema import SLICE_SCHEMA_VERSION
 
     parsed = parse_pdf(data, filename)
+
+    # ---- 一页都读不出文字 → **到此为止，不建行**（见 `UnusableDocument`）。
+    # 放在切片之前：没有可用页就没有片可切，再往下走只是在为一份注定检索不到的
+    # 文档建行、写唯一索引，把「重新传一份文字版」这条路也堵死。
+    if parsed.document.verdict == "unusable":
+        raise UnusableDocument(
+            "这份课件一页都读不出文字，没有入库",
+            page_count=parsed.document.page_count,
+            unusable_page_count=len(parsed.document.unusable_pages),
+            reason=parsed.document.verdict_reason,
+        )
+
     sliceset = slice_document(parsed, split_threshold_chars)
     manifest = sliceset.manifest
 

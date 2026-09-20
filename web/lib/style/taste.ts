@@ -316,3 +316,37 @@ export function configFromPicksAndTone(picks: Picks, tone: Tone): StyleConfig & 
 
 /** 护栏用：这套排法与旧的固定顺序必须覆盖同一批样例。 */
 export const LEGACY_REACHABLE = REACHABLE_PAIR_IDS;
+
+/**
+ * 标签 → 配置（2026-09-20）。**成对比较去掉之后，标签就是配置的来源。**
+ *
+ * ## 这推翻了 `configFromPicksAndTone` 那条纪律，说清楚为什么
+ *
+ * 上面那个函数刻意**不让先验进配置**，理由是「没被比较选中的值不许进配置」——
+ * 当时比较是可信的那一半，标签只是他「说的」。
+ *
+ * 用户 2026-09-20 的判断：「不论多短，用户都无法从两组如此密集的文字中获得
+ * 有效信息，甚至这个信息还不是用户领域。」比较那一半因此不存在了。
+ * 剩下标签是唯一的来源，所以它必须能变成配置——否则每个新用户拿到的都是默认档。
+ *
+ * ## 没被标签覆盖的轴回落默认，而且**报出来**
+ *
+ * 回落本身不可怕，可怕的是回落看不见：库里「他选的 P0」与「我们填的 P0」
+ * 长得一模一样（这正是旧注释担心的那件事）。所以返回值里带 `fellBack`，
+ * 调用方把它写进 `style_taste_chosen` 事件——「标签平均定下几条轴」
+ * 因此是一个查得出来的数，而不是一个感觉。
+ *
+ * 真正的矫正发生在用户看过一次真实讲解之后（聊天里的「调整讲法」），
+ * 那时他手上有具体的东西可以反应，而不是在对着两段陌生领域的文字猜。
+ */
+export function configFromTaste(
+  priors: Partial<Record<AxisId, string>>,
+  tone: Tone,
+): { config: StyleConfig & { tone: Tone }; fellBack: AxisId[] } {
+  const axisIds = Object.keys(AXES) as AxisId[];
+  const fellBack = axisIds.filter((axis) => priors[axis] === undefined);
+  return {
+    config: { ...DEFAULTS, ...priors, tone } as StyleConfig & { tone: Tone },
+    fellBack,
+  };
+}

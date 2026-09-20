@@ -376,16 +376,22 @@ console.log("\n\x1b[1m五 · 两处「一处出处」的接线\x1b[0m");
     "TEXT_ARM_CALL 有 model",
     TEXT_ARM_CALL.model,
   );
-  check(
-    typeof TEXT_ARM_CALL.effort === "string" && TEXT_ARM_CALL.effort.length > 0,
-    "TEXT_ARM_CALL 有 effort",
-    TEXT_ARM_CALL.effort,
-  );
-
   // 单测能证明这个对象存在，证明不了 **route 真的用了它**——
   // F3a 那次 59 条全绿而 request_signature 被改名没人发现，就是这个形态（通则七 #7）。
   // 所以这里读源码：请求参数必须从 TEXT_ARM_CALL 取，不能是字面量。
-  for (const field of ["model", "max_tokens", "effort", "thinking"]) {
+  //
+  // ⚠️ **字段名从对象自己派生，不写死一张清单**（2026-09-20 改）。
+  // 原来写死的是 Anthropic 那套（effort / thinking / max_tokens）；换成 Gemini
+  // 之后那三条必然红，而红的理由不是「参数没同源」，是**判据记着一套过时的字段名**。
+  // 派生之后，下一次换服务商这几条会自动跟着走。
+  //
+  // `provider` 例外：它是**描述**（记进事件、回给客户端），不是请求参数。
+  // 例外清单显式写在这里，而不是「碰巧没检查到」。
+  const NOT_A_REQUEST_PARAM = new Set(["provider"]);
+  const callFields = Object.keys(TEXT_ARM_CALL).filter((k) => !NOT_A_REQUEST_PARAM.has(k));
+  check(callFields.length >= 3, "TEXT_ARM_CALL 里有足够多的请求参数可查",
+    `${callFields.join(" / ")} ← 少于 3 个说明这条在空转`);
+  for (const field of callFields) {
     check(
       routeSrc.includes(`TEXT_ARM_CALL.${field}`),
       `route.ts 的 ${field} 取自 TEXT_ARM_CALL`,
@@ -393,9 +399,9 @@ console.log("\n\x1b[1m五 · 两处「一处出处」的接线\x1b[0m");
     );
   }
   check(
-    /model:\s*"claude-/.test(routeSrc) === false,
+    /\bmodel:\s*["'`]/.test(routeSrc) === false,
     "route.ts 里没有硬编码的模型 id",
-    "← 有的话就是第二处出处",
+    "← 有的话就是第二处出处（不限某一家的前缀：换服务商时前缀会变，这条不该跟着失效）",
   );
   check(
     routeSrc.includes("call: TEXT_ARM_CALL"),
@@ -1896,6 +1902,62 @@ console.log("\n\x1b[1m十七 · 会话工作区 · 抄件与纪律\x1b[0m");
   check(/data-field="elapsed"/.test(explainCode), "等待计时器还在",
     "← 没有它，40 秒的等待与一个卡死的请求长得一模一样");
   check(/conversation_id: conversationId/.test(explainCode), "请求体里带 conversation_id");
+}
+
+// ================================================================ 十八 · 讲法矫正（2026-09-20）
+//
+// 成对比较撤掉之后，风格矫正搬到了讲解里。这一节盯的是**搬家过程中最容易错的
+// 那几条**——它们错了都不会报错，只会让用户的配置悄悄变成别的样子。
+console.log("\n\x1b[1m十八 · 讲法矫正 · 搬进讲解之后\x1b[0m");
+{
+  const routeSrc = readFileSync(join(WEB, "app/api/style/from-text/route.ts"), "utf8");
+  const route = stripComments(routeSrc);
+  const nudge = stripComments(readFileSync(join(WEB, "app/explain/style-nudge.tsx"), "utf8"));
+  const onboarding = stripComments(readFileSync(join(WEB, "app/onboarding/page.tsx"), "utf8"));
+  const taste = stripComments(readFileSync(join(WEB, "app/onboarding/taste/taste-client.tsx"), "utf8"));
+
+  // -------- 18.1 **没提到的轴保持原样，不回落默认档**
+  //
+  // 这是整节最要紧的一条。用户说「再短一点」，描述里只提到详细程度；
+  // 以默认档为基线的话另外三条会被悄悄重置——他改了一件事，四件事全变了，
+  // 而页面上什么都不会说。
+  check(/const config: StyleConfig = \{ \.\.\.base \}/.test(route),
+    "矫正以**用户当前配置**为基线", "← 用 DEFAULTS 当基线会把没提到的轴悄悄重置");
+  check(/value: base\[axis\], source: "default"/.test(route),
+    "未提到的轴取当前值，不取默认值");
+  check(!/const config: StyleConfig = \{ \.\.\.DEFAULTS \}/.test(route),
+    "反向控制：基线不是 DEFAULTS");
+
+  // -------- 18.2 臂的门禁去掉了（成对比较撤了，留着它每个人都会撞上 409）
+  check(!/f1_arm !== "text"/.test(route), "不再按臂拦下这个端点");
+  check(!/status: 409/.test(route), "没有「你在成对比较臂」那条 409");
+
+  // -------- 18.3 key 不许是公开变量
+  check(/process\.env\.GEMINI_API_KEY/.test(route), "key 从 GEMINI_API_KEY 读");
+  check(!/NEXT_PUBLIC_GEMINI/.test(routeSrc), "key **不带 NEXT_PUBLIC_ 前缀**",
+    "← 带了就会被内联进浏览器 bundle，任何人都能烧这个额度");
+
+  // -------- 18.4 顺序：先写标签，再让服务端读着刚写完的那一行去映射那句话
+  const iTags = nudge.indexOf('.from("style_config")');
+  const iText = nudge.indexOf("/api/style/from-text");
+  check(iTags > -1 && iText > -1 && iTags < iText,
+    "标签先写库，那句话后调",
+    "← 反了的话那句话以旧配置为基线，刚点的标签当场被盖掉");
+
+  // -------- 18.5 看过讲解才提示
+  check(/answered >= 1/.test(nudge), "第一次拿到讲解之后才提示",
+    "← 没看过讲解就没有可反应的东西，那正是成对比较被撤掉的理由");
+  check(/localStorage/.test(nudge) && /catch/.test(nudge),
+    "「已看过」记在本地且读写都包了 try/catch",
+    "← 隐私模式下 localStorage 会抛；抛了就再提示一次，不该白屏");
+
+  // -------- 18.6 开场只剩标签页，且它自己写完 onboarded_at
+  check(/redirect\("\/onboarding\/taste"\)/.test(onboarding), "开场一律进标签页");
+  check(!/f1_arm/.test(onboarding), "开场不再按臂分流");
+  check(/onboarded_at: new Date\(\)/.test(taste), "标签页自己写 onboarded_at",
+    "← 不写的话首页会把人一直送回 onboarding");
+  check(/configFromTaste\(/.test(taste), "标签真的变成四条轴",
+    "← 不写轴的话每个新用户拿到的都是默认档");
 }
 
 rmSync(out, { recursive: true, force: true });

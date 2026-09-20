@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Diagnostics } from "@/app/components/diagnostics";
 import { LoadingQuotes } from "@/app/components/loading-quotes";
+import { StyleNudge } from "@/app/explain/style-nudge";
 import { StatusDot } from "@/app/components/status-dot";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -102,6 +103,7 @@ export function ExplainClient({
   sessionId,
   detailLevel,
   modelLabel,
+  userId,
   conversationId = null,
   initialTurns,
   lockedCourse,
@@ -111,6 +113,8 @@ export function ExplainClient({
   detailLevel: string;
   /** 模型名。**显示在输入框下面**——用户有权知道这段讲解是谁生成的。 */
   modelLabel?: string;
+  /** 改风格配置要写自己那一行。给了它才渲染「调整讲法」。 */
+  userId?: string;
   /**
    * F5 · 这一轮写进哪个会话。给了它，服务端才会读历史、写消息、自己算轮次。
    * 不给就是一次性问答（`/explain` 那个跨课页面仍然是这样）。
@@ -364,6 +368,9 @@ export function ExplainClient({
                 </Link>
               </span>
               <span className="flex items-center gap-3">
+                {userId && (
+                  <StyleNudge userId={userId} sessionId={sessionId} answered={answeredCount(turns)} />
+                )}
                 <span className="t-caption kbd-count">{question.length} / 500</span>
                 <button
                   data-field="ask"

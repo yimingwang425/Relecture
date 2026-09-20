@@ -12,7 +12,7 @@ import {
   type EventQueueState,
   type StyleEvent,
 } from "@/lib/style/events";
-import { BOARDS, resolveTaste, priorsAreValid } from "@/lib/style/taste";
+import { BOARDS, configFromTaste, resolveTaste, priorsAreValid } from "@/lib/style/taste";
 import { createClient } from "@/lib/supabase/client";
 
 /**
@@ -134,13 +134,29 @@ export function TasteBoards({
       return;
     }
 
-    // 只写这三列。**不碰四条轴**——轴由后面的成对比较选出来；
-    // 也不碰 f1_arm（口径 F10：改它抛 23514）与 onboarded_at（走完比较才算完成）。
+    // ---- 2026-09-20：成对比较去掉了，**这一页就是 onboarding 的全部**。
+    //
+    // 所以这里要写的不再只是「先验」三列，而是真正的四条轴 + `onboarded_at`。
+    // 标签没覆盖到的轴回落默认档，并且把回落了哪几条**记进事件**——
+    // 回落本身不可怕，看不见的回落才可怕（库里「他选的 P0」和「我们填的 P0」
+    // 长得一模一样）。
+    //
+    // 仍然不碰 `f1_arm`（口径 F10：改它抛 23514）。它现在的含义从「实验臂」
+    // 变成「这行配置是怎么来的」，新用户一律 taste（见迁移 20260920120000）。
+    const { config, fellBack } = configFromTaste(taste.priors, taste.tone);
     const { data, error: err } = await createClient()
       .from("style_config")
-      .update({ taste_tags: selected, tone: taste.tone })
+      .update({
+        taste_tags: selected,
+        tone: config.tone,
+        detail_level: config.detail_level,
+        use_examples: config.use_examples,
+        structure: config.structure,
+        depth: config.depth,
+        onboarded_at: new Date().toISOString(),
+      })
       .eq("user_id", userId)
-      .select("user_id, taste_tags, tone");
+      .select("user_id, taste_tags, tone, onboarded_at");
 
     if (err) {
       setError(`${err.message}（${err.code ?? "?"}）`);
@@ -162,16 +178,21 @@ export function TasteBoards({
         totalMs: Math.round(performance.now() - (startedAtRef.current ?? performance.now())),
       }),
     );
+    if (fellBack.length > 0) {
+      // 标签没定下来的轴。**查得出来的数**，不是一句感觉——
+      // 如果它长期是 3 条、4 条，说明这两块标签没在做事。
+      console.info(JSON.stringify({ event: "taste_axes_fell_back", axes: fellBack }));
+    }
 
-    router.push("/onboarding/style");
+    router.replace("/");
   }
 
   return (
     <div className="enter pb-28" data-events-pending={eventState.pending} data-events-dropped={eventState.dropped}>
       <header className="mt-10 mb-8 sm:mt-14">
-        <p className="t-eyebrow mb-3">1 / 2</p>
+        
         <h1 className="t-display enter-wipe">先说说你的口味</h1>
-        <p className="t-body mt-3 max-w-[62ch]">点几个就行。下一步给你几段真实的讲解，由你挑。</p>
+        <p className="t-body mt-3 max-w-[62ch]">点几个就行。之后在讲解里随时能改——那时你手上有具体的东西可以反应。</p>
       </header>
 
       <div className="flex flex-col gap-8">
@@ -248,7 +269,7 @@ export function TasteBoards({
             onClick={() => void submit()}
             data-action="continue"
           >
-            {busy ? "保存中…" : "下一步"}
+            {busy ? "保存中…" : "开始用"}
           </button>
           <span className="t-meta" data-field="gate">
             {unmet.length === 0 ? `已选 ${selected.length}` : `还差：${unmet.map(({ board }) => board.title).join(" · ")}`}

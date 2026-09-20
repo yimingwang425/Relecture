@@ -137,6 +137,25 @@ export function Workspace({
     if (e) setError(`改名字失败：${e.message}`);
   }
 
+  /**
+   * 重新读这门课的课件。**传完一份就调一次**（2026-09-20）。
+   *
+   * 列表是服务端组件读好传进来的，而上传发生在浏览器里——两边不通气的话，
+   * 传完之后用户得自己刷新页面才看得见新课件。而「传完了但列表没变」
+   * 与「传失败了」在屏幕上长得一模一样。
+   *
+   * 读失败只记错误、**不清空列表**：清空的话一次网络抖动会让用户以为课件没了。
+   */
+  const reloadDocs = useCallback(async () => {
+    const { data, error: e } = await createClient()
+      .from("documents")
+      .select("id, filename, display_name, page_count, verdict")
+      .eq("course_id", course.id)
+      .order("created_at", { ascending: false });
+    if (e) return setError(`刷新课件列表失败：${e.message}（${e.code}）`);
+    setDocs((data ?? []) as Doc[]);
+  }, [course.id]);
+
   async function renameDoc(id: string, name: string) {
     const clean = name.trim();
     // 清空 = 恢复显示原文件名。**存 null，不存空串**：null 的含义是「没改过」，
@@ -255,7 +274,7 @@ export function Workspace({
       {/* ============================================================ 聊天 */}
       <div className="ws-main">
         {docs.length === 0 ? (
-          <div className="mx-auto mt-16 max-w-[46rem] px-4">
+          <div className="ws-empty">
             <p className="t-title">这门课还没有材料</p>
             <p className="t-body mt-2">
               讲解只用你上传的材料，不靠通用知识补全。先传一份 PDF 讲义。
@@ -269,7 +288,7 @@ export function Workspace({
             </button>
           </div>
         ) : activeId === null ? (
-          <div className="mx-auto mt-16 max-w-[46rem] px-4">
+          <div className="ws-empty">
             <p className="t-title">开一个对话</p>
             <p className="t-body mt-2">
               一个对话一个上下文。按周分开，追问时它才知道「刚才那一点」指的是什么。
@@ -279,7 +298,7 @@ export function Workspace({
             </button>
           </div>
         ) : turns === null ? (
-          <div className="mx-auto mt-16 w-full max-w-[46rem] px-4" aria-label="读取中">
+          <div className="ws-empty" aria-label="读取中">
             <div className="skeleton h-5 w-[40%]" />
             <div className="skeleton mt-3 h-5 w-[70%]" />
           </div>
@@ -291,6 +310,7 @@ export function Workspace({
             sessionId={sessionId}
             detailLevel={detailLevel}
             modelLabel={modelLabel}
+            userId={userId}
             conversationId={activeId}
             initialTurns={turns}
             lockedCourse={course}
@@ -346,6 +366,7 @@ export function Workspace({
             arm={arm}
             sessionId={sessionId}
             lockedCourse={course}
+            onUploaded={() => void reloadDocs()}
           />
         </div>
       </dialog>

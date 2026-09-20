@@ -18,14 +18,14 @@
 
 | pair_id | 目标维度 | 结论 | 样例版本 | 日期 | 复核人YIMING | 备注 |
 | --- | --- | --- | --- | --- | --- | --- |
-| `detail_p0_p3` | 详细程度 | 待核 | 20/99 | | | |
-| `detail_p0_p2` | 详细程度 | 待核 | 11/47 | | | |
-| `detail_p2_p3` | 详细程度 | 待核 | 46/32 | | | |
-| `examples_more_fewer` | 举例 | 待核 | 14/15 | | | |
-| `structure_conclusion_buildup` | 结构 | 待核 | 14/14 | | | |
-| `depth_what_derivation` | 深度 | 待核 | 9/13 | | | |
-| `depth_what_why` | 深度 | 待核 | 10/21 | | | |
-| `depth_why_derivation` | 深度 | 待核 | 11/23 | | | |
+| `detail_p0_p3` | 详细程度 | 通过 | 20/99 | 2026-09-20 | WANG YIMING| |
+| `detail_p0_p2` | 详细程度 | 通过 | 11/47 | 2026-09-20 | WANG YIMING| |
+| `detail_p2_p3` | 详细程度 | 通过 | 46/32 | 2026-09-20 | WANG YIMING| |
+| `examples_more_fewer` | 举例 | 通过 | 14/15 | 2026-09-20 | WANG YIMING| |
+| `structure_conclusion_buildup` | 结构 | 通过 | 14/14 | 2026-09-20 | WANG YIMING| |
+| `depth_what_derivation` | 深度 | 通过 | 9/13 | 2026-09-20 | WANG YIMING| |
+| `depth_what_why` | 深度 | 通过 | 10/21 | 2026-09-20 | WANG YIMING| |
+| `depth_why_derivation` | 深度 | 通过 | 11/23 | 2026-09-20 | WANG YIMING| |
 
 > **2026-09-19 第三次重置。** 课件从 Bloom filter 换成**特征值与特征向量**
 > （理由见 `synthetic_deck.md` 文件头：onboarding 是用户第一次打开产品看到的东西，

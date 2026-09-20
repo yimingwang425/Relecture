@@ -85,11 +85,22 @@ export function CourseUpload({
   arm,
   sessionId,
   lockedCourse,
+  onUploaded,
 }: {
   apiBase: string;
   userId: string;
   arm: Arm;
   sessionId: string;
+  /**
+   * 一份课件**真的入库之后**调一次（2026-09-20）。
+   *
+   * 为什么要这个回调：课件列表是服务端组件从 Supabase 读的，上传发生在浏览器里，
+   * 两边不通气——传完之后列表还是旧的，用户得自己刷新页面才看得见
+   * （实测报上来的问题）。而「传完了但看不见」与「传失败了」在屏幕上长得一样。
+   *
+   * **只在成功那一支调**：失败时没有新行，刷新列表只是白跑一趟。
+   */
+  onUploaded?: () => void;
   /**
    * 项目页（`/courses/[id]`）用：只往这门课传，不渲染课程列表与建课表单，
    * 页头也交给项目页自己出。仍然要拉一次 `/courses`——构建标识（口径 F17）
@@ -206,6 +217,7 @@ export function CourseUpload({
         setItems((prev) =>
           prev.map((x) => (x.key === item.key ? { ...x, state: "done", result } : x)),
         );
+        onUploaded?.();
         return;
       }
 

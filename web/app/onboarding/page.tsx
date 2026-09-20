@@ -25,9 +25,14 @@ export default async function OnboardingEntryPage() {
     );
   }
 
-  // 三臂分流（2026-09-19）。`text` 是历史臂，不再分配给新用户，但已有行不回改（F10）。
-  if (result.row.f1_arm === "text") redirect("/onboarding/style-text");
-  if (result.row.f1_arm === "pairwise") redirect("/onboarding/style");
-  // taste 臂：先过标签页；已经选过就直接进比较（刷新 / 中途退出再回来不重来一遍）。
-  redirect(result.row.taste_tags === null ? "/onboarding/taste" : "/onboarding/style");
+  // ---- 2026-09-20：**不再按臂分流，所有人都走标签页。**
+  //
+  // 成对比较去掉了（用户的判断：「不论多短，用户都无法从两组如此密集的文字中
+  // 获得有效信息，甚至这个信息还不是用户领域」）。于是 onboarding 只剩这一页，
+  // 而 `f1_arm` 那一列的含义从「实验臂」变成「这行配置是怎么来的」——
+  // 老行不回改（口径 F10），新用户一律 taste（迁移 20260920120000）。
+  //
+  // **这里不读 f1_arm 了**。读它就还得决定「pairwise 的老用户再进来看什么」，
+  // 而那个答案是「和新用户一样」——那就不该有分支。
+  redirect("/onboarding/taste");
 }

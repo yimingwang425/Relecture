@@ -973,6 +973,21 @@ body {
     }
   }
 
+  /* 空状态（还没课件 / 还没对话 / 正在读）。
+     在聊天区里**居中**，不是「顶上往下 4rem、左边顶着」——那个位置读起来像
+     内容没加载完，而不是像一句要你做点什么的话。 */
+  .ws-empty {
+    display: grid;
+    flex: 1;
+    place-content: center;
+    justify-items: center;
+    gap: 6px;
+    padding: 24px;
+    text-align: center;
+    max-width: 44ch;
+    margin-inline: auto;
+  }
+
   .ws-main {
     display: flex;
     min-width: 0;
@@ -1108,6 +1123,45 @@ body {
     padding-top: 6px;
   }
 
+  /* ---------------------------------------------------------------- 讲法引导
+   *
+   * 第一次拿到讲解之后弹一次。**背景压暗、提示保持正常亮度**——
+   * 用户此刻的注意力在刚读完的那段讲解上，不压暗的话这条提示会被当成
+   * 页面的一部分而略过。
+   */
+
+  .nudge {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    display: grid;
+    place-items: end center;
+    padding-bottom: 120px;
+    pointer-events: none;
+  }
+
+  .nudge__backdrop {
+    position: absolute;
+    inset: 0;
+    border: 0;
+    background: rgb(0 0 0 / 0.42);
+    cursor: pointer;
+    pointer-events: auto;
+    animation: enter-rise 0.28s var(--ease-settle) both;
+  }
+
+  .nudge__card {
+    position: relative;
+    max-width: min(420px, calc(100vw - 32px));
+    border: 1px solid var(--c-border-strong);
+    border-radius: 14px;
+    background: var(--c-surface-panel);
+    padding: 16px 18px;
+    box-shadow: var(--shadow-card);
+    pointer-events: auto;
+    animation: enter-rise 0.32s var(--ease-settle) both;
+  }
+
   /* ---------------------------------------------------------------- 弹窗（课件） */
 
   .dialog::backdrop {
@@ -1115,6 +1169,11 @@ body {
   }
 
   .dialog {
+    /* ⚠️ **必须显式写 margin: auto。**
+       原生 `<dialog>` 是靠 UA 样式的 `margin: auto` 居中的，而 Tailwind 的
+       preflight 把所有元素的 margin 清零 —— 于是弹窗贴在左上角。
+       这不是「样式没调好」，是一条被重置掉的默认行为：谁都不会去想到它。 */
+    margin: auto;
     width: min(720px, calc(100vw - 32px));
     max-height: min(80dvh, 720px);
     border: 1px solid var(--c-border-strong);

@@ -1,4 +1,3 @@
-import Anthropic from "@anthropic-ai/sdk";
 import type { Arm } from "@/lib/style/axes";
 import { NextResponse } from "next/server";
 
@@ -6,7 +5,6 @@ import {
   AXES,
   AXIS_IDS,
   AXIS_LABEL,
-  DEFAULTS,
   VALUE_HINT,
   VALUE_LABEL,
   isAxisValue,
@@ -14,7 +12,7 @@ import {
   type StyleConfig,
 } from "@/lib/style/axes";
 import { recordEvent, textMapped } from "@/lib/style/events";
-import { TEXT_ARM_CALL } from "@/lib/style/text-arm";
+import { GEMINI_ENDPOINT, TEXT_ARM_CALL } from "@/lib/style/text-arm";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -66,6 +64,12 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 /** 每条轴的取值 + 一句依据；`unspecified` = 描述里没提到这一维。 */
 const UNSPECIFIED = "unspecified";
 
+/**
+ * ⚠️ **不写 `additionalProperties`。** Gemini 的 `responseSchema` 只认 OpenAPI 的
+ * 一个子集，多给一个字段它会整条请求 400，而那个 400 读起来像「参数写错了」。
+ * 取值域靠 `enum` 管住，多出来的字段由下面的取值域校验挡下——
+ * 那一层本来就要有（模型跑偏不是假设，是已经发生过的事）。
+ */
 function axisSchema(axis: AxisId) {
   return {
     type: "object",
@@ -74,7 +78,6 @@ function axisSchema(axis: AxisId) {
       reason: { type: "string", description: "一句话说明依据；未提到就说明为什么算未提到" },
     },
     required: ["value", "reason"],
-    additionalProperties: false,
   };
 }
 
@@ -82,7 +85,6 @@ const SCHEMA = {
   type: "object",
   properties: Object.fromEntries(AXIS_IDS.map((axis) => [axis, axisSchema(axis)])),
   required: [...AXIS_IDS],
-  additionalProperties: false,
 };
 
 /**
@@ -131,9 +133,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "未登录" }, { status: 401 });
   }
 
+  // 读**整行**：矫正要以用户当前的配置为基线（见下面 `base`）。
   const { data: rows, error: rowError } = await supabase
     .from("style_config")
-    .select("f1_arm")
+    .select("f1_arm, detail_level, use_examples, structure, depth")
     .eq("user_id", auth.user.id);
 
   if (rowError) {
@@ -145,14 +148,25 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
-  if (rows[0].f1_arm !== "text") {
-    return NextResponse.json(
-      { error: "该账号在成对比较臂，不该调用文字描述接口" },
-      { status: 409 },
-    );
-  }
-
+  // 2026-09-20：**臂的门禁去掉了。** 这个端点原来只给 `text` 对照臂用
+  // （那条臂已退役），现在它服务的是所有人在讲解里的风格矫正。
+  // 留着 409 的话，每个登录用户点「调整讲法」都会撞上一个说他「在成对比较臂」
+  // 的错误——而那句话在成对比较撤掉之后已经没有意义了。
   const arm = rows[0].f1_arm as Arm;
+
+  /**
+   * 矫正的**基线是用户当前的配置**，不是默认档。
+   *
+   * ⚠️ 这是这次改动里最容易错的一条：用户说「再短一点」，描述里只提到了详细程度，
+   * 另外三条轴没提。以默认档为基线的话，那三条会被**悄悄重置**——
+   * 他改了一件事，结果四件事全变了，而页面上什么都不会说。
+   */
+  const base: StyleConfig = {
+    detail_level: rows[0].detail_level,
+    use_examples: rows[0].use_examples,
+    structure: rows[0].structure,
+    depth: rows[0].depth,
+  } as StyleConfig;
 
   let description: unknown;
   let sessionId: unknown;
@@ -189,40 +203,71 @@ export async function POST(request: Request) {
     );
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
+  const apiKey = process.env.GEMINI_API_KEY?.trim();
   if (!apiKey) {
     // 缺 key 是部署配置问题，不是用户输入问题——报 503 并说清是服务端的事。
     return NextResponse.json(
-      { error: "服务端未配置 ANTHROPIC_API_KEY，文字描述暂时不可用" },
+      { error: "服务端未配置 GEMINI_API_KEY，「说一句想要的讲法」暂时不可用" },
       { status: 503 },
     );
   }
 
-  const client = new Anthropic({ apiKey });
-
   let raw: string;
   try {
-    // 参数**全部**取自 TEXT_ARM_CALL：发出去的和记进事件的必须是同一份，
-    // 否则事后从数据里看不出两条臂的对照关系什么时候变的。
-    const message = await client.messages.create({
-      model: TEXT_ARM_CALL.model,
-      max_tokens: TEXT_ARM_CALL.max_tokens,
-      thinking: { type: TEXT_ARM_CALL.thinking },
-      output_config: {
-        effort: TEXT_ARM_CALL.effort,
-        format: { type: "json_schema", schema: SCHEMA },
-      },
-      system: buildSystem(),
-      messages: [{ role: "user", content: description }],
+    // 参数**全部**取自 TEXT_ARM_CALL：发出去的和记进事件的必须是同一份。
+    //
+    // 用 fetch 直接打 REST，不引 SDK：这里只需要一次 generateContent，
+    // 而多一个依赖就多一份要跟着升级的东西（何况 bundle 也要装它）。
+    const r = await fetch(`${GEMINI_ENDPOINT}?key=${encodeURIComponent(apiKey)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: buildSystem() }] },
+        contents: [{ role: "user", parts: [{ text: description }] }],
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseSchema: SCHEMA,
+          temperature: TEXT_ARM_CALL.temperature,
+          maxOutputTokens: TEXT_ARM_CALL.max_output_tokens,
+        },
+      }),
     });
 
-    // 失败分支各记一条 `ok: false` 的事件。**`failure` 是分类不是文案**——
-    // 记一句人话的话，事后要按正则去分组，而正则会随文案漂。
-    if (message.stop_reason === "max_tokens") {
-      await track(textMapped({ ok: false, failure: "max_tokens" }));
-      return NextResponse.json({ error: "模型输出被截断，请重试" }, { status: 502 });
+    if (!r.ok) {
+      // 失败分支各记一条 `ok: false` 的事件。**`failure` 是分类不是文案**——
+      // 记一句人话的话，事后要按正则去分组，而正则会随文案漂。
+      const body = await r.text().catch(() => "");
+      if (r.status === 429) {
+        await track(textMapped({ ok: false, failure: "rate_limited" }));
+        return NextResponse.json(
+          { error: "这一分钟问得有点多（免费额度约 10 次/分钟），过一会儿再试。" },
+          { status: 429 },
+        );
+      }
+      if (r.status === 401 || r.status === 403) {
+        await track(textMapped({ ok: false, failure: "bad_credentials" }));
+        return NextResponse.json({ error: "服务端的模型凭据无效" }, { status: 503 });
+      }
+      if (r.status === 404) {
+        // **点名那个模型 id。** 不点名的话，一个被下线的模型读起来像网络问题，
+        // 而它其实改一个环境变量（GEMINI_MODEL）就好了。
+        await track(textMapped({ ok: false, failure: "api_error" }));
+        return NextResponse.json(
+          { error: `模型 ${TEXT_ARM_CALL.model} 不存在或不可用（可用 GEMINI_MODEL 换一个）` },
+          { status: 502 },
+        );
+      }
+      await track(textMapped({ ok: false, failure: "api_error" }));
+      console.error(JSON.stringify({ event: "gemini_http_error", status: r.status, body: body.slice(0, 400) }));
+      return NextResponse.json({ error: `模型调用失败（HTTP ${r.status}）` }, { status: 502 });
     }
-    if (message.stop_reason === "refusal") {
+
+    const payload = (await r.json()) as {
+      candidates?: { content?: { parts?: { text?: string }[] }; finishReason?: string }[];
+      promptFeedback?: { blockReason?: string };
+    };
+
+    if (payload.promptFeedback?.blockReason) {
       await track(textMapped({ ok: false, failure: "refusal" }));
       return NextResponse.json(
         { error: "模型拒绝处理这段描述，请换一种说法" },
@@ -230,28 +275,23 @@ export async function POST(request: Request) {
       );
     }
 
-    const text = message.content.find((b) => b.type === "text");
-    if (!text || text.type !== "text") {
+    const candidate = payload.candidates?.[0];
+    if (candidate?.finishReason === "MAX_TOKENS") {
+      await track(textMapped({ ok: false, failure: "max_tokens" }));
+      return NextResponse.json({ error: "模型输出被截断，请重试" }, { status: 502 });
+    }
+
+    const text = candidate?.content?.parts?.map((x) => x.text ?? "").join("") ?? "";
+    if (!text.trim()) {
       await track(textMapped({ ok: false, failure: "no_text_block" }));
       return NextResponse.json({ error: "模型没有返回文本" }, { status: 502 });
     }
-    raw = text.text;
+    raw = text;
   } catch (err) {
-    if (err instanceof Anthropic.RateLimitError) {
-      await track(textMapped({ ok: false, failure: "rate_limited" }));
-      return NextResponse.json({ error: "模型调用被限流，请稍后重试" }, { status: 429 });
-    }
-    if (err instanceof Anthropic.AuthenticationError) {
-      await track(textMapped({ ok: false, failure: "bad_credentials" }));
-      return NextResponse.json({ error: "服务端的模型凭据无效" }, { status: 503 });
-    }
-    if (err instanceof Anthropic.APIConnectionError) {
-      await track(textMapped({ ok: false, failure: "connection" }));
-      return NextResponse.json({ error: "连不上模型服务，请稍后重试" }, { status: 504 });
-    }
-    await track(textMapped({ ok: false, failure: "api_error" }));
-    const detail = err instanceof Anthropic.APIError ? `（${err.status}）` : "";
-    return NextResponse.json({ error: `模型调用失败${detail}` }, { status: 502 });
+    // fetch 抛出来只有一类：连不上。状态码在上面那一支里判。
+    await track(textMapped({ ok: false, failure: "connection" }));
+    console.error(JSON.stringify({ event: "gemini_connection_error", detail: String(err) }));
+    return NextResponse.json({ error: "连不上模型服务，请稍后重试" }, { status: 504 });
   }
 
   let parsed: Record<string, { value?: unknown; reason?: unknown }>;
@@ -265,9 +305,10 @@ export async function POST(request: Request) {
   // 服务端按取值域校验。**非法取值判失败，不改写成默认值**（同 F10：不静默改写）——
   // 改写会把「模型跑偏了」伪装成「用户没提这一维」，而这两件事的处置完全不同。
   const axes: Record<string, AxisOutcome> = {};
-  // 从默认值起步：没提到的轴保持默认，提到的覆盖掉。
-  // 这样 `config` 全程是一个完整的 StyleConfig，不存在「少一条轴」的中间态。
-  const config: StyleConfig = { ...DEFAULTS };
+  // **从用户当前的配置起步**（不是默认档，见上面 `base`）：没提到的轴原样保留，
+  // 提到的覆盖掉。这样 `config` 全程是一个完整的 StyleConfig，
+  // 不存在「少一条轴」的中间态。
+  const config: StyleConfig = { ...base };
 
   for (const axis of AXIS_IDS) {
     const entry = parsed?.[axis];
@@ -275,7 +316,12 @@ export async function POST(request: Request) {
     const reason = typeof entry?.reason === "string" ? entry.reason : "";
 
     if (value === UNSPECIFIED) {
-      axes[axis] = { value: DEFAULTS[axis], source: "default", reason };
+      // `source: "default"` 这个名字是**历史的**：它现在的含义是
+      // 「这一轴描述里没提到，所以保持原样」，而不是「回落到默认档」。
+      // 名字没改是因为它已经进了 `style_text_mapped` 事件的必需字段
+      // （改名要连迁移与两处镜像一起动）。**登记为待清理**，
+      // 在那之前读这个字段的人要知道它说的是「没提到」，不是「用了默认值」。
+      axes[axis] = { value: base[axis], source: "default", reason };
       continue;
     }
     if (!isAxisValue(axis, value)) {

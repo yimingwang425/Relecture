@@ -269,19 +269,44 @@ async function main() {
       ? ok("f1_arm 由 f1_assign_arm 定", arms.map((r) => `${r.user_id.slice(0, 4)}→${r.f1_arm}`).join(" "))
       : bad("f1_arm 由 f1_assign_arm 定");
 
-    // 两个臂都要被断言碰到。测试用的两个 uuid 恰好都落在 pairwise 上，
-    // 若只看它们，另一个分支从没被任何断言执行过（通则七 #7）。
+    // ---- 2026-09-20：**AB 对照结束，这一条的性质换了。**
     //
-    // 2026-09-19：对照臂由 `text`（一段话描述）换成 `taste`（标签 + 成对比较）。
-    // **`text` 不再被分配**，但已有行不回改（口径 F10）——所以这里多断一条：
-    // 它一旦又被发出去，说明 f1_assign_arm 被改回了旧版，而那会把新老两批人
-    // 混进同一个臂里，A5 的三个读数当场失去意义，且不会有任何东西报错。
+    // 原来断的是「两个臂都可达」（少了它，另一个分支从没被任何断言执行过）。
+    // 成对比较撤掉之后 `f1_assign_arm` 恒返回 `taste`，那条断言必然红——
+    // 而红的理由不是分组坏了，是**分组没有了**。
+    //
+    // 现在断两件事，都是眼下真正成立的：
+    //   ① 新分配一律 taste（400 个随机 uuid 一个例外都没有）；
+    //   ② `text` / `pairwise` 这两个历史值**仍然写得进这一列**——已有行不回改
+    //      （口径 F10），而「这行配置是怎么来的」是唯一还能把三批人分开的东西。
+    //      哪天有人顺手给这一列加个只允许 taste 的 CHECK，②会红。
     const dist = (await db.query(
       "select public.f1_assign_arm(gen_random_uuid()) arm from generate_series(1, 400)")).rows
       .reduce((m, r) => ((m[r.arm] = (m[r.arm] || 0) + 1), m), {});
-    dist.pairwise > 0 && dist.taste > 0
-      ? ok("f1_assign_arm 两个分支都可达", `400 个随机 uuid → pairwise ${dist.pairwise} / taste ${dist.taste}`)
-      : bad("f1_assign_arm 有分支不可达", JSON.stringify(dist));
+    Object.keys(dist).length === 1 && dist.taste === 400
+      ? ok("f1_assign_arm 恒为 taste（AB 对照已结束）",
+           `400 个随机 uuid → ${JSON.stringify(dist)} ← 恒定值没有分辨力，别再拿它做 AB 分析`)
+      : bad("f1_assign_arm 不是恒定的 taste", JSON.stringify(dist));
+
+    // ⚠️ 这里**不能**断「历史臂还写得进这一列」——写了一次，红了，而红得对：
+    // `f1_arm` 由 `style_config_before_update` 锁成**任何人都改不了**
+    // （注册时定死）。所以「老行保住历史值」不靠写得进去，靠的是**没人能改它**。
+    //
+    // 顺带记下当时的误判：看到 23514 时我以为函数改成常量会让 pairwise 老用户
+    // 存不进配置。不会——PostgREST 的 PATCH 只带改动的列，f1_arm 不在里面，
+    // 触发器比的是 new 与 old，两者相等。**那条 23514 是我自己去写这一列写出来的。**
+    const frozen = await errorOf(() => db.query(
+      "update public.style_config set f1_arm='pairwise' where user_id=$1", [UID_B]));
+    frozen?.code === "23514"
+      ? ok("f1_arm 改不动（连改成历史值也不行）",
+           "← 老行保住「配置是怎么来的」靠的是这条，不靠取值域")
+      : bad("f1_arm 被改掉了", frozen?.code ?? "未报错");
+
+    const stillTaste = (await db.query(
+      "select f1_arm from public.style_config where user_id=$1", [UID_B])).rows[0].f1_arm;
+    stillTaste === "taste"
+      ? ok("那次尝试之后值没变（允许控制）", `仍是 ${stillTaste}`)
+      : bad("值被改动了", stillTaste);
     !dist.text
       ? ok("历史臂 text 不再被分配", "已有行保持原值（F10），但新用户只会拿到 pairwise / taste")
       : bad("历史臂 text 又被分配出去了", JSON.stringify(dist));
@@ -318,9 +343,18 @@ async function main() {
 
     await runMigrations(db); // 重跑同一份迁移文件——顺带验幂等
 
+    // ⚠️ **不拿这一行去比「现在」的 f1_assign_arm**（2026-09-20 改）。
+    //
+    // 回填发生在早期那个迁移里，而 `f1_assign_arm` 在**后面**的迁移里被
+    // `create or replace` 换过（两臂 → 恒 taste）。所以回填那一刻算出来的臂
+    // 与现在算出来的不同——**这正是 F10「已有行不回改」的样子**，不是 bug。
+    // 拿现在的函数去比，等于要求历史行跟着函数一起变，而那恰恰是不许做的事。
+    //
+    // 所以断的是回填**真的发生了**、且值落在取值域里。
     const c = (await db.query("select f1_arm from public.style_config where user_id=$1", [UID_C])).rows;
-    c.length === 1 && c[0].f1_arm === (await db.query("select public.f1_assign_arm($1) a", [UID_C])).rows[0].a
-      ? ok("重跑迁移后 C 被补上，且臂由 f1_assign_arm 定", `C → ${c[0]?.f1_arm}`)
+    c.length === 1 && ["text", "pairwise", "taste"].includes(c[0].f1_arm)
+      ? ok("重跑迁移后 C 被补上，臂落在取值域里",
+           `C → ${c[0].f1_arm} ← 不与「现在」的 f1_assign_arm 比：回填在函数被替换之前`)
       : bad("回填没补上 C", JSON.stringify(c));
 
     const armsAfter = (await db.query(

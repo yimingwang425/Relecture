@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 
-import { AppNav } from "@/app/components/app-nav";
+import Link from "next/link";
+
+import { BrandLine } from "@/app/components/brand-line";
 import { Diagnostics } from "@/app/components/diagnostics";
 import { RowStateNotice } from "@/app/components/row-state";
 import { newSessionId } from "@/lib/style/events";
@@ -25,7 +27,11 @@ export default async function StyleSettingsPage() {
 
   return (
     <main data-state={result.state} className="shell">
-      <AppNav email={result.email} />
+      <BrandLine>
+        <Link href="/settings" className="link">
+          返回设置
+        </Link>
+      </BrandLine>
 
       {result.state !== "ok" ? (
         <div className="mt-12">

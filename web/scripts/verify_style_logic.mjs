@@ -1273,7 +1273,13 @@ console.log("\n\x1b[1m十 · 上传页 · 失败分类（阶段 6 第一批）\x
 // ================================================================ 十一 · 上传页的接线
 console.log("\n\x1b[1m十一 · 上传页 · 接线（阶段 6 第一批）\x1b[0m");
 {
-  const page = readFileSync(join(WEB, "app", "courses", "page.tsx"), "utf8");
+  // ⚠️ **2026-09-20 改了这一行指向的文件。**
+  //
+  // 跨课的 `/courses` 上传页退役了（现在只是一条 redirect），上传搬进了每门课
+  // 自己的侧栏弹窗，托管它的服务端页面是 `app/courses/[id]/page.tsx`。
+  // 继续读那个 redirect 壳子的话，下面三条会一直红——而红的理由不是纪律没守，
+  // 是判据指着一个已经不承担这件事的文件。**纪律没变，承载它的页面变了。**
+  const page = readFileSync(join(WEB, "app", "courses", "[id]", "page.tsx"), "utf8");
   const client = readFileSync(join(WEB, "app", "courses", "upload-client.tsx"), "utf8");
   const clientCode = stripComments(client);
   const pageCode = stripComments(page);
@@ -1588,8 +1594,14 @@ await (async () => {
     check(s.status === "marked" && T.markButtonDisabled(s) === true, "成功 → marked 且 disabled");
     check(T.markButtonDisabled({ status: "sending" }) === true, "在飞时 disabled");
     check(T.markButtonDisabled(undefined) === false, "未点过 → 可点");
-    check(/onClick=\{\(\) => void markConfused\(turns\.length - 1 - i\)\}/.test(clientCode),
-      "按钮点击接到 markConfused（按原始下标，不是最后一轮）");
+    // 2026-09-20：轮次列表从倒序改成正序（聊天式布局），所以下标表达式从
+    // `turns.length - 1 - i` 变成了 `index`。**断的是意图，不是那一串字符**：
+    // 用户完全可能在下一轮还在飞时回头标记上一轮，所以不能按「最后一轮」标记。
+    check(/onClick=\{\(\) => void markConfused\(index\)\}/.test(clientCode),
+      "按钮点击接到 markConfused（按那一轮自己的下标）");
+    check(!/markConfused\(turns\.length - 1\)/.test(clientCode),
+      "不按「最后一轮」标记",
+      "← 下一轮在飞时回头标上一轮，会标到错的那一轮上，而页面看起来完全正常");
     check(/submitMark\(\{/.test(clientCode) && /disabled=\{markButtonDisabled\(t\.mark\)\}/.test(clientCode),
       "页面走 submitMark，disabled 由 markButtonDisabled 决定");
     check(/"已记下"/.test(clientCode), "成功后按钮文案是「已记下」");
@@ -1821,6 +1833,69 @@ console.log("\n\x1b[1m十六 · 开场标签 → 语气 / 领域 / 先验\x1b[0m
   try { T.configFromPicksAndTone({ detail_level: "P0" }, "spoken"); } catch { threw = true; }
   check(threw, "6 步没走完就取配置 → 抛异常，不拿先验补齐",
     "← 补齐会让「他选的」与「他说的」在库里长得一模一样");
+}
+
+// ================================================================ 十七 · 会话工作区（2026-09-20）
+//
+// 这一节盯的是**改版之后新出现的几处「两份可以漂的东西」**。
+// 它不测 UI 长什么样——那要浏览器，走 verify:browser。
+console.log("\n\x1b[1m十七 · 会话工作区 · 抄件与纪律\x1b[0m");
+{
+  const wsPath = join(WEB, "app", "courses", "[id]", "workspace-client.tsx");
+  const coursePath = join(WEB, "app", "courses", "[id]", "page.tsx");
+  const ws = readFileSync(wsPath, "utf8");
+  const coursePage = readFileSync(coursePath, "utf8");
+  const wsCode = stripComments(ws);
+  const coursePageCode = stripComments(coursePage);
+  const explainCode = stripComments(
+    readFileSync(join(WEB, "app", "explain", "explain-client.tsx"), "utf8"));
+
+  // -------- 17.1 模型名那份抄件与 llm.py 的默认值逐字相同
+  //
+  // 写这一行的时候真的漂过一次（"Claude Sonnet 4.5" vs claude-sonnet-5）。
+  // 抄件不靠小心维护，靠这一条。
+  const llm = readFileSync(join(WEB, "..", "explain", "explain", "llm.py"), "utf8");
+  const pyModel = /name:\s*str\s*=\s*"([^"]+)"/.exec(llm)?.[1] ?? null;
+  check(pyModel !== null, "从 llm.py 解析出默认模型 id", String(pyModel));
+  const tsModel = /EXPLAIN_MODEL_LABEL\s*=\s*"([^"]+)"/.exec(coursePageCode)?.[1] ?? null;
+  check(tsModel !== null, "从课程页解析出模型标签", String(tsModel));
+  check(tsModel === pyModel, "输入框下面那个模型名与 llm.py 的默认值相同",
+    `页面 ${tsModel} vs llm.py ${pyModel}`);
+  // 反向控制：解析器要真的分得开，不是两边都解析成 null 然后「相等」。
+  check(pyModel !== null && tsModel !== null && pyModel.length > 3,
+    "反向控制：两个解析器都拿到了非空值",
+    "← 都解析成 null 的话，上一条会在 null === null 上平凡通过");
+
+  // -------- 17.2 换会话必须重挂载，不能用 effect 同步 props 到 state
+  check(/key=\{activeId\}/.test(wsCode), "换会话时聊天组件按 activeId 重挂载",
+    "← 不重挂载的话，旧会话的轮次还在屏幕上而输入框已经指向新会话了");
+
+  // -------- 17.3 会话行由浏览器建，消息**不由**浏览器写
+  check(/from\("conversations"\)[\s\S]{0,200}\.insert\(/.test(wsCode),
+    "会话行由浏览器直写（标题是纯 UI 状态）");
+  check(!/from\("messages"\)[\s\S]{0,120}\.insert\(/.test(wsCode),
+    "浏览器不写 messages",
+    "← round_id / turn_index / 答案正文只有那一次 run_round 知道（同口径 F51）");
+
+  // -------- 17.4 读消息失败**不能**渲染成空会话
+  check(/setError\(`读这个会话的消息失败/.test(wsCode),
+    "读消息失败要说出来，不悄悄显示成空会话",
+    "← 2026-09-19 在课件列表上踩过同一个形态（42703 被吞成「还没有课件」）");
+
+  // -------- 17.5 课件读失败与「真的没有」分开
+  check(/data-field="documents-error"/.test(coursePageCode), "课件/对话读失败有自己的提示");
+
+  // -------- 17.6 去掉的那些东西**真的去掉了**
+  check(!/AppNav/.test(coursePageCode) && !/AppNav/.test(wsCode),
+    "课程工作区里没有顶栏", "← 2026-09-20 去掉");
+  check(!/empty-turns/.test(explainCode), "「还没有提问」那张卡已经去掉");
+  check(!/type="file"[\s\S]{0,200}image/.test(wsCode) && !/accept="image/.test(wsCode),
+    "提问框不提供上传图片");
+
+  // -------- 17.7 输入框仍然守着原来那几条
+  check(/data-field="elapsed"/.test(explainCode), "等待计时器还在",
+    "← 没有它，40 秒的等待与一个卡死的请求长得一模一样");
+  check(/conversation_id: conversationId/.test(explainCode), "请求体里带 conversation_id");
 }
 
 rmSync(out, { recursive: true, force: true });

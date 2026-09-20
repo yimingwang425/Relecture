@@ -1955,6 +1955,157 @@ async function main() {
     await db.close();
   }
 
+  // ============================================================ conversations / messages（F5）
+  //
+  // 迁移 20260920110000_f5_conversations.sql。
+  //
+  // 这一节要回答的**不是**「表建出来了吗」，而是三件会静默出错的事：
+  //   ① 跨 owner：RLS 只管「这一行的 owner 是不是我」，**不管我引用的那一行是不是我的**；
+  //   ② `updated_at` 真的被消息触发器推着走（侧栏排序全靠它，而它错了不会报错）；
+  //   ③ `messages` 的 update **真的没授权**（改一条已经说出口的回答没有合法场景）。
+  // 每一条都配一个允许控制，否则「一律拒」的实现会让它们全绿。
+  console.log("\n\x1b[1mconversations / messages · F5 会话\x1b[0m");
+
+  {
+    const db = await freshDb();
+
+    async function mkCourse5(uid, name) {
+      return await asUser(db, uid, async () => {
+        const r = await db.query(
+          "insert into public.courses (owner, name) values ($1,$2) returning id", [uid, name]);
+        return r.rows[0].id;
+      });
+    }
+    async function mkConv(uid, courseId, title, { owner = uid, asUid = uid } = {}) {
+      return await errorOf(() => asUser(db, asUid, () => db.query(
+        "insert into public.conversations (owner, course_id, title) values ($1,$2,$3)",
+        [owner, courseId, title])));
+    }
+    async function convId(courseId, title) {
+      const r = await db.query(
+        "select id from public.conversations where course_id=$1 and title=$2", [courseId, title]);
+      return r.rows[0]?.id ?? null;
+    }
+    async function mkMsg(uid, conversationId, role, content, turn, { owner = uid, asUid = uid } = {}) {
+      return await errorOf(() => asUser(db, asUid, () => db.query(
+        `insert into public.messages (owner, conversation_id, role, content, turn_index)
+         values ($1,$2,$3,$4,$5)`, [owner, conversationId, role, content, turn])));
+    }
+
+    const courseA = await mkCourse5(UID_A, "线性代数");
+    const courseB = await mkCourse5(UID_B, "B 的课");
+
+    // ---- ① 允许控制先立：正常的会话与消息必须写得进去
+    const okConv = await mkConv(UID_A, courseA, "week1");
+    okConv === null
+      ? ok("A 在自己的课下建会话（允许控制）", "← 少了它，「一律拒」也会让下面全绿")
+      : bad("A 建自己的会话被拒", okConv.code);
+    const cA = await convId(courseA, "week1");
+
+    const okMsg = await mkMsg(UID_A, cA, "user", "特征值是什么", 1);
+    okMsg === null
+      ? ok("A 在自己的会话里写消息（允许控制）")
+      : bad("A 写自己的消息被拒", okMsg.code);
+
+    // ---- ② 跨用户：RLS 的正面
+    const crossConv = await mkConv(UID_A, courseA, "冒名", { asUid: UID_B });
+    crossConv?.code === "42501"
+      ? ok("B 冒充 A 建会话 → 42501", "← with check (owner = auth.uid())")
+      : bad("B 冒充 A 建会话没被挡", crossConv?.code ?? "未报错");
+
+    const seenByB = await asUser(db, UID_B, async () =>
+      (await db.query("select count(*)::int c from public.conversations")).rows[0].c);
+    seenByB === 0
+      ? ok("B 读不到 A 的会话", "0 行")
+      : bad("B 读到了 A 的会话", `${seenByB} 行`);
+
+    // ---- ③ 跨 owner 引用：**RLS 挡不住的那一类**
+    const wrongCourse = await mkConv(UID_A, courseB, "挂到 B 的课下");
+    wrongCourse?.code === "42501"
+      ? ok("A 把自己的会话挂到 B 的课下 → 42501",
+           "← RLS 只看 conversations.owner，这一条是触发器挡的")
+      : bad("会话挂到别人的课下没被挡", wrongCourse?.code ?? "未报错");
+
+    const ghostCourse = await mkConv(
+      UID_A, "00000000-0000-4000-8000-000000000000", "挂到不存在的课");
+    ghostCourse?.code === "23503"
+      ? ok("会话挂到不存在的课 → 23503")
+      : bad("挂到不存在的课没被挡", ghostCourse?.code ?? "未报错");
+
+    const convB = await asUser(db, UID_B, async () => {
+      await db.query("insert into public.conversations (owner, course_id, title) values ($1,$2,'B 的会话')",
+        [UID_B, courseB]);
+      return (await db.query("select id from public.conversations where owner=$1", [UID_B])).rows[0].id;
+    });
+    const wrongConv = await mkMsg(UID_A, convB, "user", "塞进 B 的会话", 1);
+    (wrongConv?.code === "42501" || wrongConv?.code === "23503")
+      ? ok("A 把消息塞进 B 的会话 → 被挡", wrongConv.code)
+      : bad("消息塞进别人的会话没被挡", wrongConv?.code ?? "未报错");
+
+    // ---- ④ updated_at 由消息推着走
+    await db.query("update public.conversations set updated_at = now() - interval '1 hour' where id=$1", [cA]);
+    const before = (await db.query(
+      "select updated_at from public.conversations where id=$1", [cA])).rows[0].updated_at;
+    await mkMsg(UID_A, cA, "assistant", "它是只被缩放的那个方向", 1);
+    const after = (await db.query(
+      "select updated_at from public.conversations where id=$1", [cA])).rows[0].updated_at;
+    after > before
+      ? ok("写一条消息把会话的 updated_at 推到最新", "← 侧栏按它倒序；它不动就永远沉在底部")
+      : bad("updated_at 没被推动", `${before} → ${after}`);
+
+    // 允许控制：不写消息时它**不该**动——否则「每次查询都 touch」也会让上一条全绿。
+    const still = (await db.query(
+      "select updated_at from public.conversations where id=$1", [cA])).rows[0].updated_at;
+    await db.query("select * from public.conversations where id=$1", [cA]);
+    const still2 = (await db.query(
+      "select updated_at from public.conversations where id=$1", [cA])).rows[0].updated_at;
+    String(still) === String(still2)
+      ? ok("只读不写时 updated_at 不动（允许控制）", "← 否则「恒 touch」也会让上一条全绿")
+      : bad("只读也把 updated_at 推了", `${still} → ${still2}`);
+
+    // ---- ⑤ messages 不给 update
+    const upd = await errorOf(() => asUser(db, UID_A, () => db.query(
+      "update public.messages set content = '改过的回答' where conversation_id=$1", [cA])));
+    upd?.code === "42501"
+      ? ok("改一条已经说出口的消息 → 42501", "← 没授 update；改回答没有合法场景")
+      : bad("消息被改掉了", upd?.code ?? "未报错");
+
+    // 允许控制：会话的标题**要能改**（用户按 week 重命名，那是这张表存在的理由之一）
+    const ren = await errorOf(() => asUser(db, UID_A, () => db.query(
+      "update public.conversations set title='第一周' where id=$1", [cA])));
+    ren === null
+      ? ok("会话标题改得掉（允许控制）", "← 少了它，「一律不给 update」也会让上一条全绿")
+      : bad("会话标题改不掉", ren.code);
+
+    // ---- ⑥ cascade：删课 → 会话 → 消息
+    await asUser(db, UID_A, () => db.query("delete from public.courses where id=$1", [courseA]));
+    const leftConv = (await db.query("select count(*)::int c from public.conversations where course_id=$1", [courseA])).rows[0].c;
+    const leftMsg = (await db.query("select count(*)::int c from public.messages where conversation_id=$1", [cA])).rows[0].c;
+    leftConv === 0 && leftMsg === 0
+      ? ok("删掉一门课 → 它的会话与消息一起没了", "两级 cascade")
+      : bad("cascade 没到底", `会话 ${leftConv} 行 / 消息 ${leftMsg} 行`);
+
+    // ---- ⑦ 空白标题拒收（侧栏里一行空的既看不出是什么，也没法点）
+    //
+    // ⚠️ **必须挂在 A 自己的课下。** 第一版写的是 `courseB`，于是跨 owner 那条
+    // 触发器先抛 42501，这条断言**绿得完全不是因为空标题**——它在为另一条护栏
+    // 的存在鼓掌，而空标题那条 CHECK 一次都没被碰到。所以这里断的是 **23514**，
+    // 不是「有没有报错」。
+    const courseA2 = await mkCourse5(UID_A, "第二门课");
+    const blank = await mkConv(UID_A, courseA2, "   ");
+    blank?.code === "23514"
+      ? ok("空白标题被 CHECK 拒 → 23514", "← 断的是这个码，不是「有没有报错」")
+      : bad("空白标题没被那条 CHECK 拦下", blank?.code ?? "写进去了");
+
+    // 允许控制：同一门课下**正常标题写得进去**——否则「一律拒」也会让上一条全绿。
+    const named = await mkConv(UID_A, courseA2, "week2");
+    named === null
+      ? ok("同一门课下正常标题写得进去（允许控制）")
+      : bad("正常标题也被拒", named.code);
+
+    await db.close();
+  }
+
   console.log(`\n\x1b[1m本地\x1b[0m  绿 ${passed} · 红 ${failed}`);
   console.log(
     `\x1b[1m待真库验证\x1b[0m  ${NOT_VERIFIABLE_LOCALLY.join(", ")} ` +

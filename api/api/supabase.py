@@ -331,6 +331,63 @@ class SupabaseClient:
         out = self._get(f"/courses?select=id,name&id=eq.{course_id}", token)
         return out[0] if isinstance(out, list) and len(out) == 1 else None
 
+    # ---------------------------------------------------------------- F5 · 会话与消息
+    #
+    # 三个方法都带**用户自己的 JWT**，RLS 由数据库执行（同 F4 那三个）。
+    #
+    # ⚠️ `messages` 这张表**服务端只写不改**（迁移里没授 update）。
+    # 这里也就只有读与插两个方法——没有 `update_message`，
+    # 不是忘了写：改一条已经说出口的回答没有合法场景。
+
+    #: 重建历史要用到的列。**不读 `meta`**：那里面是出处片段与兜底判断结果，
+    #: 给模型看没有用（本轮会重新检索），而它会把请求体撑大好几倍。
+    MESSAGE_COLUMNS = "role,content,turn_index"
+
+    def conversation(self, token: str, conversation_id: str) -> dict[str, Any] | None:
+        """一个会话。读不到返回 None —— 可能不存在，也可能是别人的（同 `course()`）。"""
+        out = self._get(
+            f"/conversations?select=id,course_id,title&id=eq.{conversation_id}", token)
+        return out[0] if isinstance(out, list) and len(out) == 1 else None
+
+    def conversation_history(self, token: str, conversation_id: str,
+                             limit: int = 40) -> list[dict[str, Any]]:
+        """这个会话已有的消息，**按时间正序**。
+
+        `limit` 取的是**最近**的那些（PostgREST 只能先倒序取再翻回来）。
+        取不完整的历史是刻意的：上下文窗口与钱都是有限的，而越早的轮次越可能
+        已经被后面的轮次覆盖掉。**截断在这里发生，不在 prompt 拼装处**——
+        放在那边的话，「这一轮模型看到了几轮历史」就散在两个地方决定。
+        """
+        out = self._get(
+            f"/messages?select={self.MESSAGE_COLUMNS}"
+            f"&conversation_id=eq.{conversation_id}"
+            f"&order=created_at.desc&limit={limit}", token)
+        rows = out if isinstance(out, list) else []
+        return list(reversed(rows))
+
+    def next_turn_index(self, token: str, conversation_id: str) -> int:
+        """这个会话的下一轮是第几轮。
+
+        ⚠️ **由服务端从库里算，不采信调用方给的那个数**（口径 F13 的同一条）。
+        前端也有一个 `turn_index`（`lib/explain/turns.ts`），它按「用户看到第几次
+        回答」算；两边各算一份的话，刷新页面之后前端会从 1 重新数，
+        而「平均会话轮次」是北极星指标（PRD §3.1）——那个数会静静地变小。
+        """
+        out = self._get(
+            f"/messages?select=turn_index&conversation_id=eq.{conversation_id}"
+            f"&order=turn_index.desc&limit=1", token)
+        if isinstance(out, list) and out:
+            return int(out[0]["turn_index"]) + 1
+        return 1
+
+    def insert_messages(self, *, token: str, rows: list[dict[str, Any]]) -> None:
+        """写一问一答。**不加 `Prefer: return=representation`**——
+        这张表授了 select，所以带回读其实不会 42501，但回读的内容我们一个字都不用，
+        白白把答案正文再传一遍。
+        """
+        if rows:
+            self._post("/messages", token, rows)
+
     # ---------------------------------------------------------------- F4 · confusion_marks
     #
     # 三个方法都带**用户自己的 JWT**，RLS 由数据库执行。

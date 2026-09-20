@@ -923,6 +923,248 @@ body {
     white-space: pre;
     animation: char-roll 0.62s var(--ease-settle) both;
   }
+
+  /* 等一轮讲解时的小号版：贴在回答位置的左上角，不占一屏。 */
+  .quote-stage--sm {
+    min-height: 2.6em;
+    font-size: 15px;
+    line-height: 1.45;
+    color: var(--c-ink-soft);
+  }
+
+  /* ================================================================ 课程工作区
+   *
+   * 2026-09-20 的改版：去掉黑色胶囊顶栏，改成**左侧栏 + 右聊天**。
+   *
+   * 顶栏那一版的问题不是好不好看：它把「我的课程 / 课件 / 讲解风格」三件
+   * 使用频率完全不同的事并排放在同一行，而用户真正每天做的只有第三件之外的
+   * 那一件——在一门课里提问。现在课件与会话都在侧栏，风格与退出进设置页。
+   */
+
+  .ws {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 100dvh;
+  }
+
+  @media (min-width: 900px) {
+    .ws {
+      grid-template-columns: 264px minmax(0, 1fr);
+    }
+  }
+
+  .ws-side {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 18px 14px;
+    border-bottom: 1px solid var(--c-border-row);
+    background: var(--c-surface-card);
+  }
+
+  @media (min-width: 900px) {
+    .ws-side {
+      position: sticky;
+      top: 0;
+      height: 100dvh;
+      overflow-y: auto;
+      border-right: 1px solid var(--c-border-row);
+      border-bottom: 0;
+    }
+  }
+
+  .ws-main {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    /* 桌面上聊天区自己滚，侧栏不跟着走。窄屏退回整页滚。 */
+    max-height: 100dvh;
+  }
+
+  /* 侧栏里的一行：会话、课件按钮都用它。 */
+  .side-item {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 8px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    padding: 8px 10px;
+    text-align: left;
+    font: inherit;
+    font-size: 13.5px;
+    color: var(--c-ink-soft);
+    cursor: pointer;
+    transition: background-color 0.15s var(--ease-settle);
+  }
+
+  .side-item:hover {
+    background: var(--c-border-row);
+    color: var(--c-ink);
+  }
+
+  .side-item[aria-current="true"] {
+    background: var(--c-surface-card);
+    color: var(--c-ink);
+    font-weight: var(--fw-medium);
+  }
+
+  .side-label {
+    padding: 0 10px;
+    font-size: 11.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--c-muted-text);
+  }
+
+  /* ---------------------------------------------------------------- 聊天 */
+
+  .chat {
+    --chat-w: 46rem;
+    display: flex;
+    min-height: 0;
+    flex: 1;
+    flex-direction: column;
+  }
+
+  .chat__scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 28px var(--page-margin) 8px;
+  }
+
+  .chat__turns {
+    display: flex;
+    width: 100%;
+    max-width: var(--chat-w);
+    margin-inline: auto;
+    flex-direction: column;
+    gap: 34px;
+  }
+
+  .turn {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  /* 用户那句话。右对齐的浅色气泡——和回答（纯文本，占满宽）分得开。 */
+  .bubble {
+    align-self: flex-end;
+    max-width: 85%;
+    border-radius: 16px;
+    background: var(--c-surface-card);
+    padding: 10px 14px;
+    font-size: 15px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+  }
+
+  .answer-wait {
+    padding: 2px 0 6px;
+  }
+
+  /* ---------------------------------------------------------------- 输入框 */
+
+  .composer {
+    width: 100%;
+    max-width: var(--chat-w);
+    margin-inline: auto;
+    padding: 10px var(--page-margin) 18px;
+  }
+
+  .composer__box {
+    border: 1px solid var(--c-border-strong);
+    border-radius: 18px;
+    background: var(--c-surface-panel);
+    padding: 10px 12px 8px;
+    box-shadow: var(--shadow-row);
+  }
+
+  .composer__box:focus-within {
+    border-color: var(--c-ink-soft);
+  }
+
+  .composer__input {
+    display: block;
+    width: 100%;
+    resize: none;
+    border: 0;
+    background: transparent;
+    font: inherit;
+    font-size: 15px;
+    line-height: 1.6;
+    outline: none;
+    field-sizing: content;
+    max-height: 40dvh;
+  }
+
+  .composer__foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 6px;
+  }
+
+  /* ---------------------------------------------------------------- 弹窗（课件） */
+
+  .dialog::backdrop {
+    background: rgb(0 0 0 / 0.32);
+  }
+
+  .dialog {
+    width: min(720px, calc(100vw - 32px));
+    max-height: min(80dvh, 720px);
+    border: 1px solid var(--c-border-strong);
+    border-radius: 16px;
+    background: var(--c-surface-panel);
+    padding: 0;
+    color: var(--c-ink);
+  }
+
+  .dialog__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    border-bottom: 1px solid var(--c-border-row);
+    padding: 16px 18px;
+  }
+
+  .dialog__body {
+    max-height: calc(80dvh - 64px);
+    overflow-y: auto;
+    padding: 16px 18px 20px;
+  }
+
+  /* ---------------------------------------------------------------- 顶部一行
+   *
+   * 不是导航栏：只有应用名与一个去处。放在「我的课程」与设置页上。
+   */
+
+  /* 标志本身。**不能复用 .wordmark**：那个是白字，给已经去掉的黑胶囊导航用的，
+     放在白底页面上就是一行看不见的字。 */
+  .brandline__mark {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 17px;
+    font-weight: var(--fw-black);
+    letter-spacing: var(--tr-wordmark);
+    color: var(--c-ink);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .brandline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding-block: 18px 6px;
+  }
 }
 
 /* 波带从页顶之上（整条藏在视口外）扫到页底之下，末段淡出，交给底部的渐隐接住 */

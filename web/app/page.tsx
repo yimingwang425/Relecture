@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { AppNav } from "@/app/components/app-nav";
+import { BrandLine } from "@/app/components/brand-line";
 import { Diagnostics } from "@/app/components/diagnostics";
 import { NewCourse } from "@/app/components/new-course";
 import { PageHeader } from "@/app/components/page-header";
@@ -59,7 +59,11 @@ export default async function HomePage() {
 
   return (
     <main data-state={state} className="shell">
-      <AppNav email={auth.user.email} />
+      <BrandLine>
+        <Link href="/settings" className="link">
+          设置
+        </Link>
+      </BrandLine>
 
       {error ? (
         <p role="alert" className="notice notice--danger mt-12">

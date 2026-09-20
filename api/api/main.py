@@ -84,8 +84,19 @@ class ExplainRequest(BaseModel):
     #: 少发事件是可见的损失，编一个 session 是不可见的错数。
     session_id: str | None = None
     #: 会话内第几轮。**按用户可见的输出计，重生成不计入轮次**（PRD §13.0）。
-    #: 由调用方给：只有它知道这是第几轮（本服务不持有会话状态）。
+    #:
+    #: ⚠️ **给了 `conversation_id` 时这个字段不作数**（2026-09-20）：
+    #: 那种情况下真实轮次由服务端从 `messages` 里算（`next_turn_index()`）。
+    #: 两边各算一份的话，刷新页面之后前端会从 1 重新数，而「平均会话轮次」
+    #: 是北极星指标（PRD §3.1）——那个数会静静地变小，没有任何东西会报错。
+    #: 响应里回传 `turn_index`，是**这一轮真正用的那个**。
     turn_index: int = 1
+    #: 这一轮属于哪个会话（F5）。**可选**：不给就是一次性的问答，不落库、无历史。
+    #:
+    #: 给了的话这一轮会做三件事：读这个会话已有的消息当历史、把一问一答写回去、
+    #: 轮次从库里算。会话行本身由**浏览器**建（标题是纯 UI 状态，
+    #: 服务端不产出它的任何一个字段），所以这里只认 id、不建行。
+    conversation_id: str | None = None
 
 
 class CourseRequest(BaseModel):
@@ -342,11 +353,33 @@ def create_app(
         make_gap = gap_checker_factory or _default_gap_checker
         gap_checker = GuardedGapChecker(make_gap())
 
+        # ---- F5 · 会话历史。**给了 conversation_id 才有历史**，否则这一轮是孤立的。
+        #
+        # 历史喂的是「**用户当时问的那句话** + 最终答案」，不是当时那一整个渲染过的
+        # user turn（它带着那一轮检索到的片段、兜底判断的限定语、F4 的注入语）。
+        # 两个理由，都不是省事：
+        #   · 每轮的片段都是**那一轮**检索的，本轮会重新检索一遍；把旧片段再带上
+        #     既不让模型多知道什么，又按轮数线性撑大请求体（实测每轮 1100–1500 字符）；
+        #   · 限定语是**当时那一轮的状态**（他那一轮点了「没看懂」）。带进历史等于
+        #     让它对之后每一轮都生效，而用户只点了一次。
+        # 代价如实记：历史里的提问不含它当时看到的材料，所以模型对旧轮的细节
+        # 只能依赖自己上一轮说过的话。这是有意的取舍，不是疏漏。
+        history: list[dict[str, Any]] = []
+        turn_index = req.turn_index
+        if req.conversation_id:
+            conv = db.conversation(p.token, req.conversation_id)
+            if conv is None:
+                # 同 `course` 那条：**不区分「不存在」与「是别人的」**。
+                raise HTTPException(404, "找不到这个会话（可能不存在，也可能不是你的）")
+            for m in db.conversation_history(p.token, req.conversation_id):
+                history.append({"role": m["role"], "content": m["content"]})
+            turn_index = db.next_turn_index(p.token, req.conversation_id)
+
         make_model = model_factory or _default_model
         result = run_round(
             round_index=1,
             question=req.question,
-            trajectory=Trajectory(),
+            trajectory=Trajectory(history=history),
             retriever=active,
             context=ctx,
             model=make_model(),
@@ -364,6 +397,50 @@ def create_app(
             gap_checker=gap_checker,
         )
 
+        ev = result.final_review.evaluation
+
+        # ---- F5 · 把这一问一答写回会话。**在发事件之前**，理由与事件同一条
+        # （口径 F42）：写库失败**不打断这次讲解**，但也不静默——结果进响应。
+        #
+        # ⚠️ 一问一答**共用同一个 turn_index**。分开编号的话「平均会话轮次」
+        # 会当场翻倍，而那是北极星指标。
+        persisted: dict[str, Any] = {"written": 0, "attempted": 0}
+        if req.conversation_id:
+            persisted["attempted"] = 2
+            try:
+                db.insert_messages(token=p.token, rows=[
+                    {"owner": p.user_id, "conversation_id": req.conversation_id,
+                     "role": "user", "content": req.question, "turn_index": turn_index},
+                    {"owner": p.user_id, "conversation_id": req.conversation_id,
+                     "role": "assistant", "content": result.final_text,
+                     "turn_index": turn_index, "round_id": round_id,
+                     # 重新打开这个会话时，这一轮要能**原样重现**：出处面板、
+                     # 兜底判断那条提示、诊断里的那几个数。所以 meta 装的是
+                     # `answerFromResponse()` 读的那一组字段，一个不少——
+                     # 少一个的表现不是报错，是历史轮次的出处面板莫名其妙地空着。
+                     #
+                     # **不进 content**：content 是讲解正文，混进结构化数据之后
+                     # 「这条消息说了什么」就不再是一个字符串能回答的问题了。
+                     "meta": {
+                         # **写 `result.context`，不写上面那个 `ctx`。**
+                         # 两者目前是同一个对象（`run_round(context=ctx)` 原样带着走），
+                         # 但依赖这一点等于让「落库的出处」跟着 run_round 的内部实现走：
+                         # 哪天它在轮内重取一次，历史里存的就还是旧的那一份，
+                         # 而页面上显示得完全正常。
+                         "retrieval": result.context.to_dict(),
+                         "gap": result.gap.to_dict(),
+                         "slice_keys": slice_keys,
+                         "confusion": confusion,
+                         "accepted": result.accepted,
+                         "regenerations": result.regenerations,
+                         "detail_level": row.detail_level,
+                         "mean_paragraph_chars": ev.by_name("paragraph_length").raw,
+                     }},
+                ])
+                persisted["written"] = 2
+            except Exception as exc:  # noqa: BLE001
+                persisted["error"] = f"{type(exc).__name__}: {exc}"
+
         # ---- §13.0 的四个事件。**在返回之前发**，且失败不打断这次讲解。
         #
         # 在 Python 侧发而不是让前端发：这四个事件的全部字段都产生在
@@ -375,7 +452,8 @@ def create_app(
         try:
             built = build_explain_events(
                 result, config=style, question=req.question,
-                course_id=req.course_id, turn_index=req.turn_index,
+                # **用真正跑的那个轮次**，不是请求里带来的那个（见 `turn_index` 的注释）。
+                course_id=req.course_id, turn_index=turn_index,
             )
             events_result = record_events(
                 db, token=p.token, user_id=p.user_id, arm=row.f1_arm,
@@ -387,7 +465,6 @@ def create_app(
             events_result = {"emitted": 0, "attempted": 0, "failed": 0,
                              "build_error": f"{type(exc).__name__}: {exc}"}
 
-        ev = result.final_review.evaluation
         ctx = result.context
         return {
             # 埋点的结果**进响应**。写不进去不打断讲解，但也不许静默（口径 F42）。
@@ -396,6 +473,11 @@ def create_app(
             # 前端**原样带回来**，不自己拼、不自己编。
             "round_id": round_id,
             "slice_keys": slice_keys,
+            # ---- F5。`turn_index` 是**这一轮真正用的那个**（给了 conversation_id
+            # 时由服务端从库里算）。前端据此显示轮次，不再自己数。
+            "conversation_id": req.conversation_id,
+            "turn_index": turn_index,
+            "persisted": persisted,
             # 注入到底触发没触发，**从外面看得见**（口径 F53：验收要确认的东西，
             # 系统必须能自己答出来）。§九的判据「注入组的 messages 里必须含限定语」
             # 靠它机械可查，不靠人去读那段讲解。

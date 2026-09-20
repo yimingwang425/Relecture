@@ -6,15 +6,29 @@ from typing import Any
 
 
 class FakeRest:
-    def __init__(self, rows_by_user: dict[str, list[dict[str, Any]]]) -> None:
+    def __init__(self, rows_by_user: dict[str, list[dict[str, Any]]],
+                 *, conversations: dict[str, dict[str, Any]] | None = None,
+                 messages: list[dict[str, Any]] | None = None,
+                 fail_message_insert: bool = False) -> None:
         self.rows_by_user = rows_by_user
         self.seen: list[tuple[str, dict[str, str]]] = []
         self.writes: list[tuple[str, Any]] = []
+        #: F5。**必须显式给**——默认空字典的意思是「这个账号一个会话都没有」，
+        #: 而不是「随便什么 id 都能读到一个会话」。后者会让 404 那条断言永远绿不了。
+        self.conversations = conversations or {}
+        self.messages = list(messages or [])
+        self.fail_message_insert = fail_message_insert
 
     def __call__(self, url: str, headers: dict[str, str], body: Any = None) -> Any:
         self.seen.append((url, dict(headers)))
         if body is not None:          # 写入
             self.writes.append((url, body))
+            if "/messages" in url:
+                if self.fail_message_insert:
+                    from api.supabase import SupabaseError
+                    raise SupabaseError("写 messages 失败（造出来的）")
+                self.messages.extend(body if isinstance(body, list) else [body])
+                return None
             if "/documents" in url:
                 import uuid as _uuid
                 return [{"id": str(_uuid.uuid4()), **(body if isinstance(body, dict) else {})}]
@@ -32,6 +46,25 @@ class FakeRest:
             sub = _jwt.decode(token, options={"verify_signature": False})["sub"]
         except Exception:  # noqa: BLE001
             return []
+
+        # ---- F5 的两张表。**先于兜底那一行判**：兜底返回的是风格行，
+        # 而 `conversation()` 只看「是不是恰好 1 行」——不拦的话任何一个 id
+        # 都会被读成一个存在的会话，404 那条断言就永远绿不了。
+        if "/conversations" in url:
+            cid = _eq(url, "id")
+            conv = self.conversations.get(cid or "")
+            return [conv] if conv is not None else []
+        if "/messages" in url:
+            cid = _eq(url, "conversation_id")
+            rows = [m for m in self.messages if m.get("conversation_id") == cid]
+            if "order=turn_index.desc" in url:
+                if not rows:
+                    return []
+                return [{"turn_index": max(int(m["turn_index"]) for m in rows)}]
+            # 历史：服务端按 created_at.desc 取最近 N 条再自己翻回正序。
+            limit = int(_eq(url, "limit") or len(rows) or 1)
+            return list(reversed(rows))[:limit]
+
         return list(self.rows_by_user.get(sub, []))
 
 
@@ -47,3 +80,11 @@ def row(user_id: str, **over: Any) -> dict[str, Any]:
     }
     base.update(over)
     return base
+
+
+def _eq(url: str, field: str) -> str | None:
+    """从 PostgREST 风格的查询串里取 `field=eq.<值>`（`limit=` 不带 eq.）。"""
+    import re
+
+    m = re.search(rf"[?&]{field}=(?:eq\.)?([^&]+)", url)
+    return m.group(1) if m else None

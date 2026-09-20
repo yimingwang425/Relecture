@@ -229,7 +229,7 @@ export function PairwiseOnboarding({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stepIndex, saved]);
 
-  if (saved) return <DoneScreen log={shownLog} eventState={eventState} />;
+  if (saved) return <DoneScreen log={shownLog} eventState={eventState} router={router} />;
 
   async function commit(config: StyleConfig) {
     setBusy(true);
@@ -442,11 +442,27 @@ function Progress({ current }: { current: number }) {
 function DoneScreen({
   log,
   eventState,
+  router,
 }: {
   /** 6 步的呈现与选择记录。`data-left-variants` 供人工核对随机化真的在发生。 */
   log: { step: number; pairId: string; leftVariant: string; chosenVariant: string }[];
   eventState: EventQueueState;
+  router: { replace: (href: string) => void };
 }) {
+  // 配置已经存好了 → **直接进我的课程**（2026-09-20，用户要求）。
+  // 中间这一屏原来摆着「去我的课程 / 去改配置」两个按钮，而刚选完的人两件事
+  // 都不想做——他想开始用。
+  //
+  // ⚠️ **埋点出过问题就不跳。** 这一屏存在的另一半理由是让 `dropped` / `stalled`
+  // 被看见（口径 F42：埋点失败不打断，但也不静默）。跳走等于把那句话闪一下就没了，
+  // 而它恰恰是唯一会提到「有几条事件没写进去」的地方。
+  const clean = eventState.dropped === 0 && !eventState.stalled && !eventState.lastError;
+  useEffect(() => {
+    if (!clean) return;
+    const t = setTimeout(() => router.replace("/"), 900);
+    return () => clearTimeout(t);
+  }, [clean, router]);
+
   return (
     <div
       data-state="saved"
@@ -465,14 +481,22 @@ function DoneScreen({
 
       <EventNotice state={eventState} className="mt-6" />
 
-      <div className="mt-6 flex flex-wrap gap-3">
-        <Link href="/" className="btn btn--primary no-underline">
-          去我的课程
-        </Link>
-        <Link href="/settings/style" className="btn btn--ghost no-underline">
-          去改配置
-        </Link>
-      </div>
+      {clean ? (
+        // 跳转前的一瞬间也要有话说：空屏一闪比慢一点更让人以为出错了。
+        <p className="t-meta flex items-center gap-2" data-field="leaving">
+          <span aria-hidden className="spinner" />
+          正在进入我的课程…
+        </p>
+      ) : (
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Link href="/" className="btn btn--primary no-underline">
+            去我的课程
+          </Link>
+          <Link href="/settings/style" className="btn btn--ghost no-underline">
+            去改配置
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

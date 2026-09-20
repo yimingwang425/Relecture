@@ -164,3 +164,161 @@ class TestRefusesToGuess:
 
     def test_explain_needs_auth(self, jwks, rest):
         assert build(jwks, rest).post("/explain", json={"question": "x"}).status_code == 401
+
+
+# ---------------------------------------------------------------- F5 · 会话
+
+
+CONV = "cccccccc-1111-4111-8111-cccccccccccc"
+
+
+def _conv_rest(**over):
+    """带一个会话的假库。`messages` 可预置，用来造「已经问过两轮」的局面。"""
+    return FakeRest(
+        {USER_A: [row(USER_A, detail_level="P0")]},
+        conversations={CONV: {"id": CONV, "course_id": None, "title": "week1"}},
+        **over,
+    )
+
+
+def _ask_in(client, keypair, q="那第二点再展开讲讲", conversation_id=CONV, **extra):
+    body = {"question": q, **extra}
+    if conversation_id is not None:
+        body["conversation_id"] = conversation_id
+    return client.post("/explain", json=body,
+                       headers={"Authorization": f"Bearer {keypair.sign(sub=USER_A)}"})
+
+
+class TestConversationHistoryReachesTheModel:
+    """**这一组要证的是「历史真的进了那次请求」**，不是「接口收下了这个字段」。
+
+    收下字段而不用它的实现会让「支持多轮」看起来完全正常：响应 200、正文通顺，
+    只是模型每一轮都在从头猜「第二点」指的是什么。这种失败没有任何报错。
+    """
+
+    class Recorder:
+        """记下最后一次收到的 messages。其余行为与 FakeExplainModel 一致。"""
+
+        def __init__(self):
+            from explain.fake import FakeExplainModel
+
+            self.inner = FakeExplainModel()
+            self.seen: list[dict] | None = None
+            self.name = self.inner.name
+            self.params = self.inner.params
+
+        def complete(self, system, messages):
+            self.seen = list(messages)
+            return self.inner.complete(system, messages)
+
+        def request_signature(self, system, messages):
+            return self.inner.request_signature(system, messages)
+
+    def test_prior_turns_are_sent_as_history(self, jwks, keypair):
+        rec = self.Recorder()
+        rest = _conv_rest(messages=[
+            {"conversation_id": CONV, "role": "user", "content": "特征值是什么", "turn_index": 1},
+            {"conversation_id": CONV, "role": "assistant",
+             "content": "它是只被缩放的那个方向对应的那个数", "turn_index": 1},
+        ])
+        r = _ask_in(build(jwks, rest, model=rec), keypair)
+        assert r.status_code == 200, r.text
+
+        assert rec.seen is not None
+        roles = [m["role"] for m in rec.seen]
+        # 历史两条在前、本轮在最后。**顺序也要断**：顺序反了模型看到的是
+        # 「回答在提问之前」，而它仍然会给出一段通顺的正文。
+        assert roles == ["user", "assistant", "user"], roles
+        assert rec.seen[0]["content"] == "特征值是什么"
+        assert "只被缩放" in rec.seen[1]["content"]
+
+    def test_without_a_conversation_there_is_no_history(self, jwks, keypair):
+        """**允许控制。** 少了它，一个「永远塞两条历史进去」的实现也会让上一条全绿。"""
+        rec = self.Recorder()
+        rest = _conv_rest(messages=[
+            {"conversation_id": CONV, "role": "user", "content": "特征值是什么", "turn_index": 1},
+            {"conversation_id": CONV, "role": "assistant", "content": "……", "turn_index": 1},
+        ])
+        r = _ask_in(build(jwks, rest, model=rec), keypair, conversation_id=None)
+        assert r.status_code == 200, r.text
+        assert [m["role"] for m in rec.seen] == ["user"]
+
+    def test_history_of_another_conversation_does_not_leak_in(self, jwks, keypair):
+        """另一个会话的消息**不进这一轮**。按 conversation_id 过滤是唯一的边界。"""
+        rec = self.Recorder()
+        rest = _conv_rest(messages=[
+            {"conversation_id": "别的会话", "role": "user", "content": "别的课的问题", "turn_index": 1},
+            {"conversation_id": "别的会话", "role": "assistant", "content": "别的答案", "turn_index": 1},
+        ])
+        r = _ask_in(build(jwks, rest, model=rec), keypair)
+        assert r.status_code == 200, r.text
+        assert [m["role"] for m in rec.seen] == ["user"]
+
+
+class TestTheTurnIsPersisted:
+    def test_question_and_answer_are_written_with_one_turn_index(self, jwks, keypair):
+        rest = _conv_rest()
+        r = _ask_in(build(jwks, rest), keypair, q="特征值是什么")
+        assert r.status_code == 200, r.text
+        assert r.json()["persisted"] == {"written": 2, "attempted": 2}
+
+        written = [b for u, b in rest.writes if "/messages" in u]
+        assert len(written) == 1
+        rows = written[0]
+        assert [x["role"] for x in rows] == ["user", "assistant"]
+        # **一问一答共用同一个 turn_index。** 分开编号会让「平均会话轮次」当场翻倍，
+        # 而那是北极星指标（PRD §3.1）。
+        assert rows[0]["turn_index"] == rows[1]["turn_index"] == 1
+        assert rows[0]["content"] == "特征值是什么"
+        assert rows[1]["content"] == r.json()["text"]
+        # round_id **只有 assistant 行有**；user 行为 null 是事实，不是遗漏（F50）。
+        assert rows[1]["round_id"] == r.json()["round_id"]
+        assert "round_id" not in rows[0]
+
+    def test_turn_index_comes_from_the_database_not_the_request(self, jwks, keypair):
+        """**请求里那个 turn_index 不作数。**
+
+        前端刷新一次就会从 1 重新数。采信它的话「平均会话轮次」会静静地变小，
+        而没有任何东西会报错——所以这里故意传一个错的进去。
+        """
+        rest = _conv_rest(messages=[
+            {"conversation_id": CONV, "role": "user", "content": "第一问", "turn_index": 1},
+            {"conversation_id": CONV, "role": "assistant", "content": "第一答", "turn_index": 1},
+            {"conversation_id": CONV, "role": "user", "content": "第二问", "turn_index": 2},
+            {"conversation_id": CONV, "role": "assistant", "content": "第二答", "turn_index": 2},
+        ])
+        r = _ask_in(build(jwks, rest), keypair, turn_index=1)
+        assert r.status_code == 200, r.text
+        assert r.json()["turn_index"] == 3
+        rows = [b for u, b in rest.writes if "/messages" in u][0]
+        assert rows[0]["turn_index"] == 3
+
+    def test_nothing_is_written_without_a_conversation(self, jwks, keypair):
+        """**允许控制**：不给 conversation_id 就是一次性问答，一行都不落。"""
+        rest = _conv_rest()
+        r = _ask_in(build(jwks, rest), keypair, conversation_id=None)
+        assert r.status_code == 200, r.text
+        assert r.json()["persisted"] == {"written": 0, "attempted": 0}
+        assert not [u for u, _ in rest.writes if "/messages" in u]
+
+    def test_a_write_failure_does_not_swallow_the_answer(self, jwks, keypair):
+        """写库失败**不打断这次讲解**，但也不静默（口径 F42，同埋点那条）。
+
+        反过来的实现——写不进去就 500——会让用户丢掉一段已经生成好、
+        已经花过钱的讲解，而失败的是一件他并不关心的事。
+        """
+        rest = _conv_rest(fail_message_insert=True)
+        r = _ask_in(build(jwks, rest), keypair)
+        assert r.status_code == 200, r.text
+        body = r.json()
+        assert body["text"]
+        assert body["persisted"]["written"] == 0
+        assert "SupabaseError" in body["persisted"]["error"]
+
+    def test_an_unknown_conversation_is_404(self, jwks, keypair):
+        """不存在与「是别人的」**不区分**——区分了就泄露了 id 的存在性。"""
+        rest = _conv_rest()
+        r = _ask_in(build(jwks, rest), keypair,
+                    conversation_id="00000000-0000-4000-8000-000000000000")
+        assert r.status_code == 404, r.text
+        assert not [u for u, _ in rest.writes if "/messages" in u]

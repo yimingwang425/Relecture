@@ -97,18 +97,27 @@ const SKIP_KIND: Record<string, string> = {
   empty: "空白页",
 };
 
-/** 空状态里的示范问题。只示范「问得具体」这件事，不假装知道用户的课件内容。 */
-const EXAMPLES = ["这一讲的核心结论是什么？", "这两个概念有什么区别？", "这个公式为什么成立？"];
-
 export function ExplainClient({
   apiBase,
   sessionId,
   detailLevel,
+  modelLabel,
+  conversationId = null,
+  initialTurns,
   lockedCourse,
 }: {
   apiBase: string;
   sessionId: string;
   detailLevel: string;
+  /** 模型名。**显示在输入框下面**——用户有权知道这段讲解是谁生成的。 */
+  modelLabel?: string;
+  /**
+   * F5 · 这一轮写进哪个会话。给了它，服务端才会读历史、写消息、自己算轮次。
+   * 不给就是一次性问答（`/explain` 那个跨课页面仍然是这样）。
+   */
+  conversationId?: string | null;
+  /** 打开一个已有会话时，先把已经问过的轮次铺上（服务端组件从库里读好传进来）。 */
+  initialTurns?: Turn[];
   /**
    * 项目页（`/courses/[id]`）用：这一页只问这门课。
    * 给了它就不渲染课程下拉，`courseId` 也不再被课程列表覆盖——
@@ -119,7 +128,10 @@ export function ExplainClient({
   const [courses, setCourses] = useState<Course[] | null>(null);
   const [courseId, setCourseId] = useState(lockedCourse?.id ?? "");
   const [question, setQuestion] = useState("");
-  const [turns, setTurns] = useState<Turn[]>([]);
+  // 打开已有会话时先铺上历史。**key 由调用方按 conversationId 给**，
+  // 换会话时整个组件重挂载——用 effect 去同步 props 到 state 的话，
+  // 换会话那一瞬间旧会话的轮次还在屏幕上，而输入框已经指向新会话了。
+  const [turns, setTurns] = useState<Turn[]>(initialTurns ?? []);
   const [listError, setListError] = useState<string | null>(null);
   const [buildCommit, setBuildCommit] = useState<string | null>(null);
   /** 当前这一轮等了多少秒。**不是阈值判断**，只是让等待可见。 */
@@ -169,15 +181,18 @@ export function ExplainClient({
   }, [pending]);
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const turnsRef = useRef<HTMLOListElement>(null);
+  const turnsRef = useRef<HTMLDivElement>(null);
 
-  // 窄屏上提问卡在上、轮次在下：发出之后把轮次列表滚进视野，
-  // 否则等待动画与计时都在首屏以下，用户看到的只是一个变灰的按钮。
-  // 桌面两栏时两边都在视野里，不滚。
+  // 新的一轮出现就滚到底（聊天式布局：最新的在最下面）。
+  //
+  // **按 `turns.length` 触发，不按 `pending`**：一轮结束时 pending 从 true 变 false，
+  // 而那一刻答案刚渲染出来、正是最该滚的时候；只盯 pending 的话，答案回来后
+  // 页面停在提问那一屏，用户以为什么都没发生。
   useEffect(() => {
-    if (!pending || !window.matchMedia("(max-width: 1023.98px)").matches) return;
-    turnsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [pending]);
+    const el = turnsRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+  }, [turns.length, pending]);
 
   async function ask() {
     const q = question.trim();
@@ -214,6 +229,9 @@ export function ExplainClient({
           course_id: courseId,
           session_id: sessionId,
           turn_index: turnIndex,
+          // 给了会话，服务端会读历史、写消息，并**用它自己算出来的轮次**
+          // 覆盖上面这个（见 api/api/main.py 里 `turn_index` 的注释）。
+          ...(conversationId ? { conversation_id: conversationId } : {}),
         }),
       });
       setBuildCommit((prev) => r.headers.get("x-build-commit") ?? prev);
@@ -271,171 +289,108 @@ export function ExplainClient({
     patchMark(await submitMark({ fetch: (u, init) => fetch(u, init), apiBase, jwt, turn: t, sessionId }));
   }
 
-  const courseName = courses?.find((c) => c.id === courseId)?.name;
+  const composer = (
+    <div className="composer" data-field="composer">
+      {listError && (
+        <p role="alert" data-field="list-error" className="notice notice--danger mb-3 text-[13px]">
+          {listError}
+        </p>
+      )}
 
-  return (
-    <section
-      className="mt-8 grid items-start gap-6 lg:grid-cols-[minmax(0,344px)_minmax(0,1fr)] xl:gap-8"
-      data-testid="explain"
-    >
-      {/* ================================================================ 左栏 · 提问 */}
-      <aside className="flex flex-col gap-4 lg:sticky lg:top-[84px]">
-        <div className="card enter p-2">
-          <div className="px-3 pt-3 pb-4">
-            <p className="t-eyebrow"># 提问</p>
-            <h1 className="t-title mt-1">问我关于课件的问题</h1>
-            <p className="t-caption mt-2" data-field="detail-level">
-              当前讲解详略：<b className="text-[var(--c-ink-soft)]">{DETAIL_COPY[detailLevel] ?? detailLevel}</b>
-              {" · "}
-              <a href="/settings/style" className="link">
-                去调整
-              </a>
-            </p>
-          </div>
-
-          <div className="panel flex flex-col gap-4 p-4">
-            {listError && (
-              <p role="alert" data-field="list-error" className="notice notice--danger text-[13px]">
-                {listError}
-              </p>
-            )}
-
-            {courses === null ? (
-              !listError && (
-                <div className="flex flex-col gap-3" aria-label="读取中">
-                  <div className="skeleton h-10" />
-                  <div className="skeleton h-28" />
-                </div>
-              )
-            ) : courses.length === 0 && !lockedCourse ? (
-              <div className="flex flex-col items-start gap-3" data-field="no-courses">
-                <p className="t-body">
-                  还没有课件。讲解只用你上传的材料，不靠通用知识补全——先传一份再来问。
-                </p>
-                <Link href="/courses" className="btn btn--primary btn--sm no-underline">
-                  去上传课件
-                </Link>
-              </div>
-            ) : (
-              <>
-                {!lockedCourse && (
-                  <label>
-                    <span className="field-label">问哪门课</span>
-                    <select
-                      data-field="course-select"
-                      value={courseId}
-                      onChange={(e) => setCourseId(e.target.value)}
-                      disabled={pending}
-                      className="input"
-                    >
-                      {courses.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                )}
-
-                <label>
-                  <span className="field-label">问题</span>
-                  <textarea
-                    ref={inputRef}
-                    data-field="question"
-                    value={question}
-                    onChange={(e) => setQuestion(e.target.value)}
-                    onKeyDown={(e) => {
-                      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-                        e.preventDefault();
-                        void ask();
-                      }
-                    }}
-                    disabled={pending}
-                    rows={4}
-                    maxLength={500}
-                    placeholder="例如：这门课讲的能源问题主要有哪些？"
-                    className="input min-h-[112px]"
-                  />
-                </label>
-
-                <div className="flex items-center justify-between gap-3">
-                  <span className="t-caption kbd-count">{question.length} / 500</span>
-                  <button
-                    data-field="ask"
-                    onClick={() => void ask()}
-                    disabled={!question.trim() || !courseId || pending}
-                    className="btn btn--primary"
-                  >
-                    {pending ? "正在讲解…" : "提问"}
-                  </button>
-                </div>
-
-                {pending ? (
-                  // 走着的计时器。**没有它，一个 40 秒的等待与一个卡死的请求
-                  // 在页面上长得一模一样。** 它不是阈值判断，只是让等待可见。
-                  <p className="notice notice--info flex items-start gap-2 text-[13px]" data-field="elapsed">
-                    <span aria-hidden className="spinner mt-[4px]" />
-                    <span>
-                      已等 <b className="kbd-count">{elapsed}</b> 秒 —— 生成加最多两次重生成，通常几十秒。
-                      <b>别关页面</b>（不流式，关了这一轮就没了）。
-                    </span>
-                  </p>
-                ) : (
-                  <p className="t-caption">⌘ / Ctrl + Enter 发送 · 一次只问一个问题</p>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-
-        <div className="px-1">
-          <p className="t-caption">
-            这次打开页面已问 <b className="kbd-count" data-field="answered-count">{answeredCount(turns)}</b> 轮
-            {!lockedCourse && courseName ? ` · 当前课程：${courseName}` : ""}
+      {courses !== null && courses.length === 0 && !lockedCourse ? (
+        <div className="flex flex-col items-start gap-3" data-field="no-courses">
+          <p className="t-body">
+            还没有课件。讲解只用你上传的材料，不靠通用知识补全——先传一份再来问。
           </p>
-          <Diagnostics
-            className="mt-3"
-            items={[
-              ["服务端", apiBase],
-              ["构建", buildCommit ? buildCommit.slice(0, 7) : "读不到构建标识", "api-build"],
-              ["session", sessionId.slice(0, 8)],
-            ]}
-          />
+          <Link href="/" className="btn btn--primary btn--sm no-underline">
+            去我的课程
+          </Link>
         </div>
-      </aside>
+      ) : (
+        <>
+          {!lockedCourse && courses !== null && (
+            <label className="mb-2 block">
+              <span className="field-label">问哪门课</span>
+              <select
+                data-field="course-select"
+                value={courseId}
+                onChange={(e) => setCourseId(e.target.value)}
+                disabled={pending}
+                className="input"
+              >
+                {courses.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
 
-      {/* ================================================================ 右栏 · 轮次 */}
-      <div className="min-w-0">
-        {turns.length === 0 && courses !== null && courses.length > 0 && (
-          <div className="card enter-late flex flex-col items-start gap-4 p-6 sm:p-8" data-field="empty-turns">
-            <p className="t-eyebrow"># 还没有提问</p>
-            <p className="t-title">问得越具体，讲解越贴近你的课件</p>
-            <p className="t-body max-w-[54ch]">
-              讲解只用你选中那门课的材料，出处标到页；片段里没有的，它会直说，不拿通用知识补。
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {EXAMPLES.map((q) => (
+          <div className="composer__box">
+            <textarea
+              ref={inputRef}
+              data-field="question"
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              onKeyDown={(e) => {
+                // Enter 发送、Shift+Enter 换行（和 Claude 一致）。
+                // ⌘/Ctrl+Enter 仍然留着——改键位不该把旧习惯打掉。
+                if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                  e.preventDefault();
+                  void ask();
+                } else if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                  e.preventDefault();
+                  void ask();
+                }
+              }}
+              disabled={pending}
+              rows={2}
+              maxLength={500}
+              placeholder={pending ? "正在讲解，等这一轮回来再问…" : "问这门课的任何问题"}
+              className="composer__input"
+            />
+            <div className="composer__foot">
+              <span className="t-caption">
+                {/* 用的是哪个模型，**说出来**。 */}
+                {modelLabel ? <span className="mono">{modelLabel}</span> : null}
+                {modelLabel ? " · " : ""}
+                <span data-field="detail-level">
+                  {DETAIL_COPY[detailLevel] ?? detailLevel}
+                </span>
+                {" · "}
+                <Link href="/settings/style" className="link">
+                  调整讲法
+                </Link>
+              </span>
+              <span className="flex items-center gap-3">
+                <span className="t-caption kbd-count">{question.length} / 500</span>
                 <button
-                  key={q}
-                  type="button"
-                  className="chip cursor-pointer hover:border-[var(--c-border-strong)]"
-                  disabled={pending || !courseId}
-                  onClick={() => {
-                    setQuestion(q);
-                    inputRef.current?.focus();
-                  }}
+                  data-field="ask"
+                  onClick={() => void ask()}
+                  disabled={!question.trim() || !courseId || pending}
+                  className="btn btn--primary btn--sm"
                 >
-                  {q}
+                  {pending ? "讲解中…" : "发送"}
                 </button>
-              ))}
+              </span>
             </div>
           </div>
-        )}
+        </>
+      )}
+    </div>
+  );
 
-        {turns.length > 0 && (
-          <ol ref={turnsRef} className="flex scroll-mt-[84px] flex-col gap-6" data-field="turns">
-            {[...turns].reverse().map((t, i) => {
-              const index = turns.length - 1 - i;
+  return (
+    <section className="chat" data-testid="explain">
+      <div ref={turnsRef} className="chat__scroll">
+        {/* ⚠️ **不放「还没有提问」那张卡**（2026-09-20 去掉）。
+            它占满首屏、每次新建会话都再来一遍，而它说的三件事
+            （问得具体些、只用你的课件、片段里没有会直说）第一次之后就是噪声。
+            空会话现在就是空的——输入框自己会说该做什么。 */}
+
+        <ol className="chat__turns" data-field="turns">
+            {turns.map((t, index) => {
               const tab = tabs[index] ?? "answer";
               const sliceCount = t.answer?.slices.length ?? 0;
               const notice = t.answer ? gapNotice(t.answer) : null;
@@ -448,26 +403,26 @@ export function ExplainClient({
                   data-backend={t.answer?.backend ?? ""}
                   data-round-id={t.answer?.roundId ?? ""}
                   data-confusion-injected={String(t.answer?.confusion?.injected ?? "")}
-                  className="card enter p-2"
+                  className="turn enter"
                 >
-                  <div className="flex items-start gap-3 px-3 pt-3 pb-4">
-                    <span className="chip kbd-count shrink-0">第 {t.turnIndex} 轮</span>
-                    <p className="t-heading min-w-0 flex-1 pt-[3px]">{t.question}</p>
-                  </div>
+                  {/* 用户那句话。**不再用「第 N 轮」当标题**：聊天式布局里
+                      轮次编号是内部口径，用户读的是自己问了什么。编号仍然在
+                      data-turn-index 上，回归工具按它断言。 */}
+                  <p className="bubble" data-field="turn-question">{t.question}</p>
 
                   {t.state === "pending" && (
-                    <div className="panel p-5 sm:p-6" aria-live="polite">
-                      <LoadingQuotes className="t-title text-[var(--c-ink-soft)]" />
-                      <p className="t-meta mt-4 flex items-center gap-2">
+                    <div className="answer-wait" aria-live="polite">
+                      {/* 小尺寸、贴左上角（2026-09-20）。原来是整块面板 + 四条骨架，
+                          在聊天式布局里那等于每问一句就插进来一屏占位。
+                          等待要看得见，但它不该比回答还大。 */}
+                      <LoadingQuotes className="quote-stage--sm" />
+                      {/* 走着的计时器。**不能省**：没有它，一个 40 秒的等待与一个
+                          卡死的请求在页面上长得一模一样。它不是阈值判断，
+                          只是让等待可见——所以只报秒数，不报「是不是太久了」。 */}
+                      <p className="t-caption mt-2 flex items-center gap-2" data-field="elapsed">
                         <span aria-hidden className="spinner" />
-                        正在检索你的课件片段并生成讲解…
+                        已等 <b className="kbd-count">{elapsed}</b> 秒 · 不流式，别关页面
                       </p>
-                      <div className="mt-5 flex flex-col gap-3" aria-hidden>
-                        <div className="skeleton h-4 w-[92%]" />
-                        <div className="skeleton h-4 w-[84%]" />
-                        <div className="skeleton h-4 w-[88%]" />
-                        <div className="skeleton h-4 w-[56%]" />
-                      </div>
                     </div>
                   )}
 
@@ -621,7 +576,7 @@ export function ExplainClient({
                                   <button
                                     data-field="mark-confused"
                                     data-mark-state={t.mark?.status ?? "idle"}
-                                    onClick={() => void markConfused(turns.length - 1 - i)}
+                                    onClick={() => void markConfused(index)}
                                     disabled={markButtonDisabled(t.mark)}
                                     className="btn btn--ghost btn--sm shrink-0"
                                   >
@@ -721,9 +676,27 @@ export function ExplainClient({
                 </li>
               );
             })}
-          </ol>
-        )}
+        </ol>
       </div>
+
+      {composer}
+
+      {/* 验收要读的那几个数。**折叠，不删**（进度总结 §八 第 7 条）。 */}
+      <details className="diagnostics mx-auto w-full max-w-[var(--chat-w)] px-1">
+        <summary>
+          这个会话已答{" "}
+          <b className="kbd-count" data-field="answered-count">{answeredCount(turns)}</b> 轮
+        </summary>
+        <Diagnostics
+          className="mt-3"
+          items={[
+            ["服务端", apiBase],
+            ["构建", buildCommit ? buildCommit.slice(0, 7) : "读不到构建标识", "api-build"],
+            ["session", sessionId.slice(0, 8)],
+            ["conversation", conversationId ? conversationId.slice(0, 8) : "无（这一轮不落库）"],
+          ]}
+        />
+      </details>
     </section>
   );
 }

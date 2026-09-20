@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 
-import { AppNav } from "@/app/components/app-nav";
 import { RowStateNotice } from "@/app/components/row-state";
 import { API_BASE_URL } from "@/lib/env";
 import { newSessionId } from "@/lib/style/events";
@@ -46,7 +45,6 @@ export default async function ExplainPage() {
       data-state={result.state === "ok" && !API_BASE_URL ? "no-api-base" : result.state}
       className="shell"
     >
-      <AppNav email={result.email} />
 
       {result.state !== "ok" ? (
         <div className="mt-12">

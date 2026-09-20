@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 
-import { AppNav } from "@/app/components/app-nav";
 import { RowStateNotice } from "@/app/components/row-state";
 import { loadStyleRow } from "@/lib/style/session";
 
@@ -19,7 +18,6 @@ export default async function OnboardingEntryPage() {
   if (result.state !== "ok") {
     return (
       <main data-state={result.state} className="shell">
-        <AppNav email={result.email} />
         <div className="mt-12">
           <RowStateNotice result={result} />
         </div>

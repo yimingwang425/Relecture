@@ -375,3 +375,73 @@ export async function submitMark(args: {
 export function markButtonDisabled(mark: MarkState | undefined): boolean {
   return mark?.status === "sending" || mark?.status === "marked";
 }
+
+/**
+ * 库里的 `messages` 行 → 页面上的轮次（F5，2026-09-20）。
+ *
+ * ## 为什么这段映射住在这里
+ *
+ * `answerFromResponse()` 就在上面：一轮讲解长什么样，**只有一处出处**。
+ * 写在页面组件里的话，重新打开会话看到的那一轮与刚问完看到的那一轮
+ * 会慢慢长成两个样子，而没有任何东西会红——两边都「显示正常」。
+ *
+ * ## 配不上的行**丢掉，不编**
+ *
+ * 一问一答共用同一个 `turn_index`（服务端落库时就是这么写的）。
+ * 只有 user 没有 assistant 的那种，意味着那一轮的回答没写进去
+ * （写库失败，口径 F42：不打断讲解）。这里**不给它造一个空回答**——
+ * 造出来的是一轮「讲解为空」的记录，看起来像模型什么都没说。
+ */
+export function turnsFromMessages(
+  rows: {
+    role: string;
+    content: string;
+    turn_index: number;
+    /** **列，不是 meta 里的字段**（迁移里它是 messages.round_id）。 */
+    round_id?: string | null;
+    meta?: unknown;
+  }[],
+): Turn[] {
+  const byTurn = new Map<
+    number,
+    { q?: string; a?: string; roundId?: string | null; meta?: Record<string, unknown> }
+  >();
+  for (const r of rows) {
+    const slot = byTurn.get(r.turn_index) ?? {};
+    if (r.role === "user") slot.q = r.content;
+    else {
+      slot.a = r.content;
+      slot.roundId = r.round_id ?? null;
+      slot.meta = (r.meta ?? {}) as Record<string, unknown>;
+    }
+    byTurn.set(r.turn_index, slot);
+  }
+
+  return [...byTurn.entries()]
+    .sort((x, y) => x[0] - y[0])
+    .filter(([, v]) => v.q !== undefined && v.a !== undefined)
+    .map(([turnIndex, v]) => {
+      const m = v.meta ?? {};
+      return {
+        turnIndex,
+        question: v.q!,
+        state: "answered" as const,
+        answer: answerFromResponse({
+          text: v.a!,
+          // 这几个是 meta 里存的。**存的时候少一个，这里就会读到 undefined**，
+          // 所以给的是「读不到」的值而不是一个看起来正常的默认数：
+          // `accepted: true` / `regenerations: 0` 会让一轮其实重生成过两次的讲解
+          // 在诊断里显示成一次过。
+          accepted: m.accepted as boolean,
+          regenerations: m.regenerations as number,
+          mean_paragraph_chars: m.mean_paragraph_chars as number,
+          detail_level: m.detail_level as string,
+          retrieval: m.retrieval as never,
+          round_id: v.roundId ?? undefined,
+          slice_keys: m.slice_keys as string[] | undefined,
+          confusion: m.confusion as never,
+          gap: m.gap as never,
+        }),
+      };
+    });
+}

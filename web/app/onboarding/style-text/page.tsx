@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 
-import { AppNav } from "@/app/components/app-nav";
 import { RowStateNotice } from "@/app/components/row-state";
 import { newSessionId } from "@/lib/style/events";
 import { loadStyleRow } from "@/lib/style/session";
@@ -23,7 +22,6 @@ export default async function TextOnboardingPage() {
   if (result.state !== "ok") {
     return (
       <main data-state={result.state} className="shell">
-        <AppNav email={result.email} />
         <div className="mt-12">
           <RowStateNotice result={result} />
         </div>
@@ -35,7 +33,6 @@ export default async function TextOnboardingPage() {
 
   return (
     <main data-state="ok" data-arm="text" className="shell shell--narrow">
-      <AppNav email={result.email} />
       {/*
         `sessionId` 在**服务端**抽（同主臂）：客户端组件的渲染在 SSR 与 hydrate
         各跑一次，渲染期取随机数两侧会分叉（React #418）。

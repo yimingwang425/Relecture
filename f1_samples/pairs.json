@@ -1,6 +1,6 @@
 {
   "schema_version": "1",
-  "generated_at": "2026-09-19T10:30:46+00:00",
+  "generated_at": "2026-09-20T03:04:08+00:00",
   "deck": {
     "path": "synthetic_deck.md",
     "sha256": "2320f50a732da92f",
@@ -58,16 +58,16 @@
     "detail_p0_p3": "反射、整体放大两倍、把一个方向压到原点，这三种变换各自的特征向量是哪些方向，为什么？",
     "detail_p0_p2": "镜面反射、整体放大两倍、特征值为 0，这三种情况的特征值各是多少？",
     "detail_p2_p3": "这些例子里的特征值分别是多少，为什么？",
-    "examples_more_fewer": "特征值在实际问题里用来做什么？",
-    "structure_conclusion_buildup": "反复用同一个矩阵作用下去会发生什么？",
-    "depth_what_derivation": "对称矩阵的特征值有什么特别？",
-    "depth_what_why": "特征值等于 0 意味着什么？",
-    "depth_why_derivation": "为什么最大的那个特征值最后会主导？"
+    "examples_more_fewer": "PCA 从协方差矩阵里找出的是哪些方向？",
+    "structure_conclusion_buildup": "反复作用很多次之后，剩下的是哪个方向？",
+    "depth_what_derivation": "对称矩阵不同特征值的特征向量之间是什么关系？",
+    "depth_what_why": "特征值等于 0 的方向被送到了哪里？",
+    "depth_why_derivation": "为什么反复作用之后，最大的那个因子会主导？"
   },
   "prompt_shape": {
     "source": "explain.prompt.build_system / build_user_turn（口径 F19）",
     "note": "每对 1–2 块走 user turn；不执行检索",
-    "system_template_version": "s3",
+    "system_template_version": "s4",
     "course_label": "合成课件"
   },
   "selection_rule": "通过即停：留下的是第一个**同时**通过生产判定与成对关系判据的样例，不是试出来的最好的那个（口径 F27）。成对关系判据与 verify_pairs.py 同源（口径 F13）。用尽 MAX_TRIES 仍不过则留最后一次并标 production_passed:false",
@@ -77,6 +77,7 @@
     "structure": "conclusion_first",
     "depth": "why"
   },
+  "pair_background_detail": {},
   "b_class_prompt_fragments": {
     "use_examples": {
       "more": "多举例子：每讲一个要点，配一个具体例子或类比帮助理解。",
@@ -92,13 +93,13 @@
       "derivation": "讲到推导：在解释为什么的基础上，把关键结论一步步推出来，写出中间步骤和用到的假设。"
     }
   },
-  "cost_usd_total": 0.135089,
+  "cost_usd_total": 0.093777,
   "cost_usd_total_note": "只含存活的 16 个样例。核对不过被丢弃的重生成同样花了钱，全部真实调用的流水在 spend_log.jsonl",
   "usage_total": {
     "input_tokens": 32,
-    "output_tokens": 6653,
-    "cache_creation_input_tokens": 8123,
-    "cache_read_input_tokens": 15794
+    "output_tokens": 3786,
+    "cache_creation_input_tokens": 8512,
+    "cache_read_input_tokens": 16567
   },
   "pairs": [
     {
@@ -169,26 +170,26 @@
             "shape": "生产：explain.prompt.build_system / build_user_turn（口径 F19）",
             "a_class_rules": "- 段落长度：每段控制在 30–120 字。这是**平均**要求，不要靠拆行凑数——把内容讲完整，再决定分几段。\n- 讲解语言：用中文讲解。英文可以出现在专业名词和必要的原文引用里。\n- 引用课件原文时，**单段引用不超过 100 字**，其余内容用自己的话讲。这是版权约束，不可协商。",
             "b_class_rules": "- 多举例子：每讲一个要点，配一个具体例子或类比帮助理解。\n- 先给结论：开头第一段就说出最重要的那句判断，后面再解释它为什么成立。\n- 讲到为什么：在说清是什么之外，解释这个机制为什么成立、为什么这样设计。",
-            "system_sha256": "1c63fec7d1015c38",
-            "system_chars": 1233,
+            "system_sha256": "450d99401afc6373",
+            "system_chars": 1306,
             "user_sha256": "e28c0ef109121620",
-            "request_signature": "67ef1dd29f9ace02"
+            "request_signature": "69d3c1ca654a9d3a"
           },
-          "text": "反射变换有两个特征方向：镜面所在的直线方向，特征值为1，因为这条线上的向量被原样保留、没有变化；垂直于镜面的方向，特征值为-1，因为这个方向上的向量被翻转到相反方向，相当于乘以-1（第3页）。\n\n比如以x轴为镜面做反射，落在x轴上的向量不动（λ=1）；而沿y轴的向量会被翻转成相反方向的向量（λ=-1）。这两个方向各自「守住自己的线」，只是被缩放（这里是±1倍），符合特征向量的定义——变换后仍在原来的直线上（第2页）。\n\n整体放大两倍的变换，**任何方向**都是特征向量，特征值统一为2。原因是这种变换对所有向量都做同样的缩放，不偏向任何方向，所以不管你选哪个方向的向量，变换后都还在原来的直线上，只是长度变成两倍（第3页）。\n\n把某个方向压到原点的变换，这个被压缩的方向本身就是特征向量，特征值为0。因为这个方向上的向量被变换后成了零向量，而零向量可以看作是原向量乘以0——它仍然「留在原来的线上」（准确说是被压缩到线上唯一一点，即原点），符合 A v = λv 且 λ=0 的定义（第2、3页）。",
+          "text": "反射变换：镜面直线上的向量是特征向量，特征值为1（原地不动）；垂直于镜面的向量也是特征向量，特征值为-1（被翻转到反方向）。原因很简单——反射的定义就是保留镜面方向不变，把垂直方向翻过去，这两类方向没被“转到别的线上”，所以都满足 `Av=λv`。\n\n整体放大两倍：**每一个方向**都是特征向量，特征值都是2。因为这种变换对所有向量做同样的缩放，不改变任何向量的方向，只是长度乘以2，天然满足特征向量“留在自己的线上”的条件（第3页）。\n\n把某个方向压到原点：这个方向本身是特征向量，特征值为0。因为 `Av=0=0·v`，向量被压缩成零向量，虽然长度变成0，但依然可以看作“留在原来的线上”（原点是这条线上的点），只是缩放因子是0（第3页）。",
           "production_passed": true,
-          "mean_paragraph_chars": 91.8,
+          "mean_paragraph_chars": 84.3,
           "usage": {
             "input_tokens": 2,
-            "output_tokens": 468,
-            "cache_creation_input_tokens": 456,
-            "cache_read_input_tokens": 1220
+            "output_tokens": 332,
+            "cache_creation_input_tokens": 1748,
+            "cache_read_input_tokens": 0
           },
-          "cost_usd": 0.009102,
-          "latency_ms": 12215.3,
+          "cost_usd": 0.011541,
+          "latency_ms": 5607.1,
           "stop_reason": "end_turn",
           "model_reported": "claude-sonnet-5",
-          "attempt": 19,
-          "generated_at": "2026-09-19T10:30:39+00:00",
+          "attempt": 20,
+          "generated_at": "2026-09-20T02:58:58+00:00",
           "tries_in_run": 1
         },
         {
@@ -237,27 +238,27 @@
             "shape": "生产：explain.prompt.build_system / build_user_turn（口径 F19）",
             "a_class_rules": "- 段落长度：每段控制在 15–40 字。这是**平均**要求，不要靠拆行凑数——把内容讲完整，再决定分几段。\n- 讲解语言：用中文讲解。英文可以出现在专业名词和必要的原文引用里。\n- 引用课件原文时，**单段引用不超过 100 字**，其余内容用自己的话讲。这是版权约束，不可协商。",
             "b_class_rules": "- 多举例子：每讲一个要点，配一个具体例子或类比帮助理解。\n- 先给结论：开头第一段就说出最重要的那句判断，后面再解释它为什么成立。\n- 讲到为什么：在说清是什么之外，解释这个机制为什么成立、为什么这样设计。",
-            "system_sha256": "d50649525e518404",
-            "system_chars": 1232,
+            "system_sha256": "12cb42d9924d9e38",
+            "system_chars": 1305,
             "user_sha256": "e28c0ef109121620",
-            "request_signature": "97e4c6d38321d253"
+            "request_signature": "e90b9b2c85e48613"
           },
-          "text": "反射、整体放大、压到原点这三种变换的特征向量方向不同，因为它们对空间的“作用方式”不同。\n\n**反射（沿某条镜线）**\n特征向量有两类方向：\n- 镜线方向本身：向量在反射中原地不动，特征值是1。\n- 垂直于镜线的方向：向量被翻转到相反方向，特征值是-1。\n\n为什么这两个方向特殊？因为反射只对“跨过镜线”的分量取反，沿镜线的分量完全保留。所以只有这两个方向不会被“转到别的方向去”，其余方向都会被扭到一条新的直线上，不满足 `Av=λv` 的条件。\n\n**整体放大两倍**\n每一个方向都是特征向量，特征值都是2。\n\n原因很直接：这个变换对所有向量做同样的处理——方向不变，长度乘2。既然没有哪个方向被特殊对待，所有方向自然都符合“方向不变、只被缩放”的定义。\n\n**把某个方向压到原点**\n被压缩的那个方向本身是特征向量，特征值是0。\n\n因为 `Av=0=0·v`，方向没有被转到别处，只是长度变成了0，形式上仍满足特征向量的定义（只要 `v` 本身不是零向量）。\n\n（以上内容对应第2、3页。）",
+          "text": "反射变换：镜面方向的向量特征值为1，因为在镜面上的向量不动；垂直镜面的向量被翻到反方向，特征值为-1。\n\n整体放大两倍：所有方向都是特征向量，特征值都是2，因为每个向量都只是被拉伸而方向不变。\n\n压到原点的变换：被压缩方向的向量特征值为0，因为这个方向上的向量乘以A后变成零向量。\n\n（第3页）",
           "production_passed": true,
-          "mean_paragraph_chars": 37.6,
+          "mean_paragraph_chars": 31.5,
           "usage": {
             "input_tokens": 2,
-            "output_tokens": 455,
-            "cache_creation_input_tokens": 456,
-            "cache_read_input_tokens": 1220
+            "output_tokens": 156,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 1748
           },
-          "cost_usd": 0.008907,
-          "latency_ms": 7022.7,
+          "cost_usd": 0.00287,
+          "latency_ms": 3162.7,
           "stop_reason": "end_turn",
           "model_reported": "claude-sonnet-5",
-          "attempt": 83,
-          "generated_at": "2026-09-19T10:30:46+00:00",
-          "tries_in_run": 1
+          "attempt": 99,
+          "generated_at": "2026-09-20T03:02:31+00:00",
+          "tries_in_run": 4
         }
       ]
     },
@@ -329,26 +330,26 @@
             "shape": "生产：explain.prompt.build_system / build_user_turn（口径 F19）",
             "a_class_rules": "- 段落长度：每段控制在 30–120 字。这是**平均**要求，不要靠拆行凑数——把内容讲完整，再决定分几段。\n- 讲解语言：用中文讲解。英文可以出现在专业名词和必要的原文引用里。\n- 引用课件原文时，**单段引用不超过 100 字**，其余内容用自己的话讲。这是版权约束，不可协商。",
             "b_class_rules": "- 多举例子：每讲一个要点，配一个具体例子或类比帮助理解。\n- 先给结论：开头第一段就说出最重要的那句判断，后面再解释它为什么成立。\n- 讲到为什么：在说清是什么之外，解释这个机制为什么成立、为什么这样设计。",
-            "system_sha256": "1c63fec7d1015c38",
-            "system_chars": 1233,
+            "system_sha256": "450d99401afc6373",
+            "system_chars": 1306,
             "user_sha256": "e926eaeb5058d59d",
-            "request_signature": "7844ffb06904db58"
+            "request_signature": "385c9bc7116dd190"
           },
-          "text": "镜面反射：沿镜面方向的向量不动，特征值是 1；垂直于镜面的向量被翻转到反方向，特征值是 −1。所以反射矩阵有两个特征值，1 和 −1。\n\n整体放大两倍：所有方向的向量都被拉伸为原来的两倍，特征值是 2，而且这时每个方向都是特征向量（不像反射那样只有两条特殊线）。\n\n特征值为 0 的情况：这本身描述的是一种效果，而不是单独一种矩阵——意思是存在某个方向上的向量，被 A 作用后直接压缩到原点（变成零向量），这个方向对应的特征值就是 0。\n\n这三者的共同点是：特征值衡量的是\"这个方向上的向量被拉伸/压缩/翻转了多少倍\"，1 表示不变，−1 表示反向不变长度，2 表示放大两倍，0 表示完全塌缩（第3页）。",
+          "text": "镜面反射有两个特征值：沿镜面方向的向量不动，特征值为1；垂直于镜面的向量被翻转到相反方向，特征值为-1（第3页）。\n\n整体放大两倍是纯缩放变换，所有方向都是特征向量，特征值统一为2。\n\n特征值为0表示对应方向的向量被压缩到原点，即整个方向被“坍缩”掉了。这三种情况分别对应：1和-1（反射）、2（缩放）、0（坍缩），课件里都在第3页给出。",
           "production_passed": true,
-          "mean_paragraph_chars": 61.2,
+          "mean_paragraph_chars": 46.0,
           "usage": {
             "input_tokens": 2,
-            "output_tokens": 324,
+            "output_tokens": 184,
             "cache_creation_input_tokens": 447,
-            "cache_read_input_tokens": 1220
+            "cache_read_input_tokens": 1292
           },
-          "cost_usd": 0.006908,
-          "latency_ms": 5001.2,
+          "cost_usd": 0.00483,
+          "latency_ms": 3039.8,
           "stop_reason": "end_turn",
           "model_reported": "claude-sonnet-5",
-          "attempt": 10,
-          "generated_at": "2026-09-19T10:14:02+00:00",
+          "attempt": 11,
+          "generated_at": "2026-09-20T02:59:25+00:00",
           "tries_in_run": 1
         },
         {
@@ -397,27 +398,27 @@
             "shape": "生产：explain.prompt.build_system / build_user_turn（口径 F19）",
             "a_class_rules": "- 段落长度：每段控制在 25–55 字。这是**平均**要求，不要靠拆行凑数——把内容讲完整，再决定分几段。\n- 讲解语言：用中文讲解。英文可以出现在专业名词和必要的原文引用里。\n- 引用课件原文时，**单段引用不超过 100 字**，其余内容用自己的话讲。这是版权约束，不可协商。",
             "b_class_rules": "- 多举例子：每讲一个要点，配一个具体例子或类比帮助理解。\n- 先给结论：开头第一段就说出最重要的那句判断，后面再解释它为什么成立。\n- 讲到为什么：在说清是什么之外，解释这个机制为什么成立、为什么这样设计。",
-            "system_sha256": "4c5dce643a2d202e",
-            "system_chars": 1232,
+            "system_sha256": "c2b17b16b36b1b2d",
+            "system_chars": 1305,
             "user_sha256": "e926eaeb5058d59d",
-            "request_signature": "f7bc637f46638441"
+            "request_signature": "6a633df1c69f50e6"
           },
-          "text": "镜面反射：沿镜面方向的向量特征值是1，垂直于镜面方向的特征值是-1，两个特征值。\n\n整体放大两倍：只有一个特征值2，而且所有方向的向量都是特征向量。\n\n特征值为0：这本身就是指某个方向被压缩到原点的情况，即A作用在该方向的向量上得到零向量。\n\n原理上，反射把空间分成两类方向：留在原地的（不变，特征值1）和被翻转的（取反，特征值-1）。纯放大则对所有方向一视同仁，效果统一，所以只有一个特征值。而特征值为0意味着这个方向的信息被完全抹掉，矩阵在这个方向上不可逆。（第3页）",
+          "text": "镜面反射有两个特征值：镜面方向上的向量不变，特征值为1；垂直镜面方向的向量被翻转成相反方向，特征值为-1。\n\n整体放大两倍是纯缩放，所有方向都是特征向量，特征值统一为2。\n\n特征值为0表示对应方向的向量被压缩到原点，即该方向被完全\"压扁\"。\n\n（第3页）",
           "production_passed": true,
-          "mean_paragraph_chars": 50.5,
+          "mean_paragraph_chars": 26.5,
           "usage": {
             "input_tokens": 2,
-            "output_tokens": 250,
-            "cache_creation_input_tokens": 0,
-            "cache_read_input_tokens": 1667
+            "output_tokens": 136,
+            "cache_creation_input_tokens": 1739,
+            "cache_read_input_tokens": 0
           },
-          "cost_usd": 0.004256,
-          "latency_ms": 4703.3,
+          "cost_usd": 0.008567,
+          "latency_ms": 2571.5,
           "stop_reason": "end_turn",
           "model_reported": "claude-sonnet-5",
-          "attempt": 46,
-          "generated_at": "2026-09-19T10:14:22+00:00",
-          "tries_in_run": 4
+          "attempt": 47,
+          "generated_at": "2026-09-20T02:59:28+00:00",
+          "tries_in_run": 1
         }
       ]
     },
@@ -489,27 +490,27 @@
             "shape": "生产：explain.prompt.build_system / build_user_turn（口径 F19）",
             "a_class_rules": "- 段落长度：每段控制在 25–55 字。这是**平均**要求，不要靠拆行凑数——把内容讲完整，再决定分几段。\n- 讲解语言：用中文讲解。英文可以出现在专业名词和必要的原文引用里。\n- 引用课件原文时，**单段引用不超过 100 字**，其余内容用自己的话讲。这是版权约束，不可协商。",
             "b_class_rules": "- 多举例子：每讲一个要点，配一个具体例子或类比帮助理解。\n- 先给结论：开头第一段就说出最重要的那句判断，后面再解释它为什么成立。\n- 讲到为什么：在说清是什么之外，解释这个机制为什么成立、为什么这样设计。",
-            "system_sha256": "4c5dce643a2d202e",
-            "system_chars": 1232,
+            "system_sha256": "c2b17b16b36b1b2d",
+            "system_chars": 1305,
             "user_sha256": "5757b3c05667b13f",
-            "request_signature": "ee13630c0f639e20"
+            "request_signature": "b58d1246237d2f12"
           },
-          "text": "反射变换的特征值是 1 和 −1，纯放大变换的特征值是 2，另外还提到特征值为 0 的情况（第3页）。\n\n镜面反射：沿镜面线的向量方向不变，`Av = v`，所以特征值是 1——因为反射本身就不动镜面上的点。垂直于镜面的向量被翻转成相反方向，`Av = -v`，特征值是 −1，因为反射把这个方向整个掉头。\n\n放大变换把每个向量都拉长为原来的两倍，`Av = 2v`，所以特征值是 2。这个例子特殊之处在于**每个方向**都是特征向量，因为矩阵对所有方向做的事情是一样的，都是均匀缩放。\n\n课件还提到特征值为 0 的情况：这意味着该方向被压缩到原点，`Av = 0`，向量彻底消失在那个方向上（第3页）。\n\n判断特征值的核心逻辑都一样：看这个方向的向量被 `A` 作用后，是否还落在原来那条线上，只是被拉伸或翻转了多少倍，那个倍数就是特征值。",
+          "text": "反射的特征值是1和-1：沿镜面方向的向量不动（缩放倍数1），垂直镜面的向量被翻转成相反方向（缩放倍数-1）（第3页）。\n\n纯放大两倍的变换特征值是2，因为每个方向的向量都被等比例放大两倍，所以所有方向都是特征向量（第3页）。\n\n特征值为0，说明该方向的向量被压缩到原点，即完全\"消失\"，不再保留任何长度（第3页）。",
           "production_passed": true,
-          "mean_paragraph_chars": 55.0,
+          "mean_paragraph_chars": 43.0,
           "usage": {
             "input_tokens": 2,
-            "output_tokens": 385,
-            "cache_creation_input_tokens": 0,
-            "cache_read_input_tokens": 1647
+            "output_tokens": 169,
+            "cache_creation_input_tokens": 427,
+            "cache_read_input_tokens": 1292
           },
-          "cost_usd": 0.006275,
-          "latency_ms": 6294.8,
+          "cost_usd": 0.00453,
+          "latency_ms": 3043.6,
           "stop_reason": "end_turn",
           "model_reported": "claude-sonnet-5",
-          "attempt": 45,
-          "generated_at": "2026-09-19T10:15:01+00:00",
-          "tries_in_run": 5
+          "attempt": 46,
+          "generated_at": "2026-09-20T02:59:31+00:00",
+          "tries_in_run": 1
         },
         {
           "sample_id": "detail_p2_p3.b",
@@ -557,26 +558,26 @@
             "shape": "生产：explain.prompt.build_system / build_user_turn（口径 F19）",
             "a_class_rules": "- 段落长度：每段控制在 15–40 字。这是**平均**要求，不要靠拆行凑数——把内容讲完整，再决定分几段。\n- 讲解语言：用中文讲解。英文可以出现在专业名词和必要的原文引用里。\n- 引用课件原文时，**单段引用不超过 100 字**，其余内容用自己的话讲。这是版权约束，不可协商。",
             "b_class_rules": "- 多举例子：每讲一个要点，配一个具体例子或类比帮助理解。\n- 先给结论：开头第一段就说出最重要的那句判断，后面再解释它为什么成立。\n- 讲到为什么：在说清是什么之外，解释这个机制为什么成立、为什么这样设计。",
-            "system_sha256": "d50649525e518404",
-            "system_chars": 1232,
+            "system_sha256": "12cb42d9924d9e38",
+            "system_chars": 1305,
             "user_sha256": "5757b3c05667b13f",
-            "request_signature": "608e62e804b3f400"
+            "request_signature": "92bd2d346340c22d"
           },
-          "text": "第3页举了三个例子，特征值分别是 1、-1、2（还有一种是0）。\n\n**反射变换**：沿镜面方向的向量不动，所以特征值是1——\n因为 `Av=v` 就意味着 λ=1，向量方向和大小都没变。\n\n垂直于镜面的向量被翻到正对面，方向反了但长度不变，\n即 `Av=-v`，所以特征值是-1。\n\n**纯缩放变换**（把所有向量放大两倍）：任何方向的向量都只是被拉伸，\n`Av=2v`对所有方向都成立，所以特征值是2，且每个方向都是特征向量。\n\n这是因为缩放对所有方向一视同仁，不像反射那样区分方向。\n\n**特征值为0**的情况：某个方向被压缩到原点，\n即 `Av=0`，说明这个方向上的信息被完全\"抹掉\"了。\n\n这些例子共同说明：特征值就是描述\"这个方向被拉伸/压缩/翻转了多少倍\"的数字，\n不同的几何变换会在不同方向上产生不同的缩放系数。",
+          "text": "反射矩阵有两个特征值：沿镜面方向为1（向量不变），垂直镜面方向为-1（向量变成相反方向）。第3页。\n\n缩放矩阵（把所有向量放大两倍）只有一个特征值2，且所有方向都是特征向量——因为每个方向都被同样地拉伸。\n\n特征值为0意味着该方向被压缩到原点，即向量被完全\"压平\"，Av=0。",
           "production_passed": true,
-          "mean_paragraph_chars": 37.4,
+          "mean_paragraph_chars": 37.3,
           "usage": {
             "input_tokens": 2,
-            "output_tokens": 376,
+            "output_tokens": 149,
             "cache_creation_input_tokens": 427,
-            "cache_read_input_tokens": 1220
+            "cache_read_input_tokens": 1292
           },
-          "cost_usd": 0.007613,
-          "latency_ms": 6102.7,
+          "cost_usd": 0.00423,
+          "latency_ms": 3142.9,
           "stop_reason": "end_turn",
           "model_reported": "claude-sonnet-5",
-          "attempt": 31,
-          "generated_at": "2026-09-19T10:15:07+00:00",
+          "attempt": 32,
+          "generated_at": "2026-09-20T02:59:34+00:00",
           "tries_in_run": 1
         }
       ]
@@ -584,7 +585,7 @@
     {
       "pair_id": "examples_more_fewer",
       "target_dimension": "use_examples",
-      "question": "特征值在实际问题里用来做什么？",
+      "question": "PCA 从协方差矩阵里找出的是哪些方向？",
       "fed_blocks": [
         {
           "id": "p7b1",
@@ -639,26 +640,26 @@
             "shape": "生产：explain.prompt.build_system / build_user_turn（口径 F19）",
             "a_class_rules": "- 段落长度：每段控制在 30–120 字。这是**平均**要求，不要靠拆行凑数——把内容讲完整，再决定分几段。\n- 讲解语言：用中文讲解。英文可以出现在专业名词和必要的原文引用里。\n- 引用课件原文时，**单段引用不超过 100 字**，其余内容用自己的话讲。这是版权约束，不可协商。",
             "b_class_rules": "- 多举例子：每讲一个要点，配一个具体例子或类比帮助理解。\n- 先给结论：开头第一段就说出最重要的那句判断，后面再解释它为什么成立。\n- 讲到为什么：在说清是什么之外，解释这个机制为什么成立、为什么这样设计。",
-            "system_sha256": "1c63fec7d1015c38",
-            "system_chars": 1233,
-            "user_sha256": "83641a9c6ce11176",
-            "request_signature": "456372409d0c2501"
+            "system_sha256": "450d99401afc6373",
+            "system_chars": 1306,
+            "user_sha256": "38921f15c380019d",
+            "request_signature": "10e218d3a2a8bbff"
           },
-          "text": "这一页给了两个具体应用，但没有直接讲\"特征值本身用来做什么\"这个抽象总结，只能从这两个例子反推。\n\n第一个例子是主成分分析（PCA）。它对数据集的协方差矩阵求特征向量和特征值，特征向量指出数据延伸最厉害的方向，特征值的大小则表示数据在这个方向上到底\"伸展\"了多少（方差多大）。比如一堆散点图整体呈椭圆形分布，最长的那条轴就是最大特征值对应的方向——沿着它变化最剧烈，信息量最大，这也是为什么PCA用特征值大小来决定保留哪些方向、丢弃哪些方向。\n\n第二个例子是网页排名算法（类似PageRank）。它寻找\"反复迭代更新后保持不变的状态\"，这其实就是在找矩阵特征值为1对应的特征向量——不断用链接矩阵去乘更新排名分数，最后收敛到一个不再变化的分布，这个稳定分布就是主特征向量。\n\n两个例子的共同点：特征值告诉你\"变换在某个方向上把东西放大或缩小了多少倍\"，特征向量告诉你\"是哪个方向\"。PCA用特征值找方差最大方向来压缩数据，排序算法用特征值等于1的情况找迭代收敛的稳定点。\n\n这页内容就到这里，如果你想了解特征值在其他领域（比如物理振动、量子力学）的应用，课件这一页没有涉及，需要看其他页面。",
+          "text": "PCA从协方差矩阵中找出的是数据**方差最大的方向**，即数据伸展（stretch）程度最大的那些轴（第7页）。\n\n这些方向就是协方差矩阵的**特征向量**，对应的**特征值**大小表示数据沿该方向伸展的程度。特征值最大的方向就是数据变化最剧烈的主方向。\n\n比如一组身高体重数据，通常沿\"整体偏大偏小\"这条斜线方向变化最大——这条斜线就是第一主成分方向；与它垂直、变化较小的方向是第二主成分。PCA就是把协方差矩阵对角化，把这些伸展方向按重要性排出来。",
           "production_passed": true,
-          "mean_paragraph_chars": 85.0,
+          "mean_paragraph_chars": 60.3,
           "usage": {
             "input_tokens": 2,
-            "output_tokens": 525,
-            "cache_creation_input_tokens": 123,
-            "cache_read_input_tokens": 1220
+            "output_tokens": 234,
+            "cache_creation_input_tokens": 131,
+            "cache_read_input_tokens": 1292
           },
-          "cost_usd": 0.008708,
-          "latency_ms": 8600.7,
+          "cost_usd": 0.004395,
+          "latency_ms": 10123.0,
           "stop_reason": "end_turn",
           "model_reported": "claude-sonnet-5",
-          "attempt": 6,
-          "generated_at": "2026-09-19T10:11:02+00:00",
+          "attempt": 14,
+          "generated_at": "2026-09-20T03:03:31+00:00",
           "tries_in_run": 1
         },
         {
@@ -707,26 +708,26 @@
             "shape": "生产：explain.prompt.build_system / build_user_turn（口径 F19）",
             "a_class_rules": "- 段落长度：每段控制在 30–120 字。这是**平均**要求，不要靠拆行凑数——把内容讲完整，再决定分几段。\n- 讲解语言：用中文讲解。英文可以出现在专业名词和必要的原文引用里。\n- 引用课件原文时，**单段引用不超过 100 字**，其余内容用自己的话讲。这是版权约束，不可协商。",
             "b_class_rules": "- 少举例子：把要点本身讲清楚即可，不额外补例子或类比。\n- 先给结论：开头第一段就说出最重要的那句判断，后面再解释它为什么成立。\n- 讲到为什么：在说清是什么之外，解释这个机制为什么成立、为什么这样设计。",
-            "system_sha256": "8e7ec9b4217dbdc1",
-            "system_chars": 1232,
-            "user_sha256": "83641a9c6ce11176",
-            "request_signature": "f5b4449024dd1c36"
+            "system_sha256": "3b4eecde81817037",
+            "system_chars": 1305,
+            "user_sha256": "38921f15c380019d",
+            "request_signature": "1a3dbf3d10b3277c"
           },
-          "text": "这段材料举了两个用途，都依赖同一个数学事实:矩阵的特征值/特征向量能刻画\"矩阵反复作用于数据\"时呈现出的稳定方向或稳定状态。\n\n第一个是主成分分析(PCA)。对数据的协方差矩阵求特征向量，得到的是数据\"伸展\"最厉害的方向——也就是数据变化幅度最大的坐标轴。特征值大小对应该方向上方差的大小，这样就能找出数据里信息量最集中的几个方向，用来降维或提取主要特征。\n\n第二个是网页排名算法(如PageRank一类)。这类算法反复对链接关系矩阵做更新迭代，最终会收敛到一个不再变化的状态——这个不变状态正是矩阵的主特征向量。用特征值来解释就是：反复相乘后能保持方向不变（只被缩放）的向量，对应的就是这个\"稳定排名\"。\n\n这两个例子的共同逻辑是：特征向量代表矩阵作用下\"方向不变\"的特殊方向，特征值告诉你这个方向上被拉伸或压缩了多少。无论是找数据的主要变化方向，还是找网络链接结构的稳定收敛状态，本质都是在利用这一点（第7页）。",
+          "text": "第7页说得很直接：PCA从协方差矩阵中找出的是数据**伸展最多的方向**，也就是数据变化最大的那些坐标轴（axes the data varies along）。\n\n这么设计是因为协方差矩阵本身描述的就是各维度上数据的离散程度和相关性——沿某个方向拉伸得越厉害，说明数据在这个方向上的方差越大、信息量也越大。PCA找的正是这些方差最大的方向，把数据的主要变化模式提取出来，同时可以忽略变化很小、信息贡献低的方向。",
           "production_passed": true,
-          "mean_paragraph_chars": 87.8,
+          "mean_paragraph_chars": 80.5,
           "usage": {
             "input_tokens": 2,
-            "output_tokens": 437,
-            "cache_creation_input_tokens": 1342,
-            "cache_read_input_tokens": 0
+            "output_tokens": 198,
+            "cache_creation_input_tokens": 131,
+            "cache_read_input_tokens": 1291
           },
-          "cost_usd": 0.011593,
-          "latency_ms": 7671.6,
+          "cost_usd": 0.003855,
+          "latency_ms": 5465.3,
           "stop_reason": "end_turn",
           "model_reported": "claude-sonnet-5",
-          "attempt": 6,
-          "generated_at": "2026-09-19T10:11:10+00:00",
+          "attempt": 15,
+          "generated_at": "2026-09-20T03:03:37+00:00",
           "tries_in_run": 1
         }
       ]
@@ -734,7 +735,7 @@
     {
       "pair_id": "structure_conclusion_buildup",
       "target_dimension": "structure",
-      "question": "反复用同一个矩阵作用下去会发生什么？",
+      "question": "反复作用很多次之后，剩下的是哪个方向？",
       "fed_blocks": [
         {
           "id": "p4b1",
@@ -789,26 +790,26 @@
             "shape": "生产：explain.prompt.build_system / build_user_turn（口径 F19）",
             "a_class_rules": "- 段落长度：每段控制在 30–120 字。这是**平均**要求，不要靠拆行凑数——把内容讲完整，再决定分几段。\n- 讲解语言：用中文讲解。英文可以出现在专业名词和必要的原文引用里。\n- 引用课件原文时，**单段引用不超过 100 字**，其余内容用自己的话讲。这是版权约束，不可协商。",
             "b_class_rules": "- 多举例子：每讲一个要点，配一个具体例子或类比帮助理解。\n- 先给结论：开头第一段就说出最重要的那句判断，后面再解释它为什么成立。\n- 讲到为什么：在说清是什么之外，解释这个机制为什么成立、为什么这样设计。",
-            "system_sha256": "1c63fec7d1015c38",
-            "system_chars": 1233,
-            "user_sha256": "124cb7a4d98e1985",
-            "request_signature": "e7b6b5c7eb53820d"
+            "system_sha256": "450d99401afc6373",
+            "system_chars": 1306,
+            "user_sha256": "df5bb54fd18065e8",
+            "request_signature": "b4a6f4b30a24302e"
           },
-          "text": "reflects specifically about eigen-direction dynamics — 这正是第4页讲的内容。\n\n系统状态每天用矩阵 `A` 更新一次，第 n 天的状态就是 A 连乘 n 次作用在初始状态上（第4页）。如果初始状态恰好落在某个方向上，而 `A` 对这个方向只做缩放（不改变方向），那么每走一步就乘一次那个缩放因子。\n\n重复很多次以后，会发生一件关键的事：如果系统同时存在多个这样的\"只缩放\"方向，且缩放因子大小不同，那么因子绝对值最大的那个方向，经过反复相乘后会把其他方向\"甩开\"——因为指数增长的差距会迅速拉大。所以长期看，系统的表现基本由这个最大的缩放因子主导，其余方向的贡献相对变得微不足道。\n\n类比一下：假设有两笔投资，一笔年增长率1.1倍，另一笔1.5倍，起始金额差不多。刚开始两者差别不大，但过10年、20年后，1.5倍那笔会远远超过1.1倍那笔，账户总额几乎就等于那笔高增长投资的值——低增长的部分虽然还在，但占比小到可以忽略。矩阵反复作用的效果与此同理：最大的那个缩放因子（也就是主特征值）决定了长期走向。",
+          "text": "留下的是**最大特征值（绝对值最大）对应的特征向量方向**。\n\n原理是这样：如果一个方向被A只做缩放（也就是特征向量方向），每作用一次A，这个方向上的分量就乘以对应的特征值。经过n次作用后，各方向分量分别是各自特征值的n次方倍。\n\n由于不同特征值大小不同，n次方之后差距会被指数级放大——比如特征值2和0.5，作用10次后变成1024和约0.001，差距悬殊。所以除了最大特征值方向外，其余方向的分量相对来说会趋于淹没，最终系统状态在视觉上几乎只剩下最大特征值对应的那个方向（第4页）。",
           "production_passed": true,
-          "mean_paragraph_chars": 89.0,
+          "mean_paragraph_chars": 67.7,
           "usage": {
             "input_tokens": 2,
-            "output_tokens": 472,
-            "cache_creation_input_tokens": 135,
-            "cache_read_input_tokens": 1220
+            "output_tokens": 245,
+            "cache_creation_input_tokens": 136,
+            "cache_read_input_tokens": 1292
           },
-          "cost_usd": 0.007958,
-          "latency_ms": 8570.0,
+          "cost_usd": 0.004579,
+          "latency_ms": 5434.0,
           "stop_reason": "end_turn",
           "model_reported": "claude-sonnet-5",
-          "attempt": 6,
-          "generated_at": "2026-09-19T10:11:19+00:00",
+          "attempt": 14,
+          "generated_at": "2026-09-20T02:59:53+00:00",
           "tries_in_run": 1
         },
         {
@@ -857,26 +858,26 @@
             "shape": "生产：explain.prompt.build_system / build_user_turn（口径 F19）",
             "a_class_rules": "- 段落长度：每段控制在 30–120 字。这是**平均**要求，不要靠拆行凑数——把内容讲完整，再决定分几段。\n- 讲解语言：用中文讲解。英文可以出现在专业名词和必要的原文引用里。\n- 引用课件原文时，**单段引用不超过 100 字**，其余内容用自己的话讲。这是版权约束，不可协商。",
             "b_class_rules": "- 多举例子：每讲一个要点，配一个具体例子或类比帮助理解。\n- 先铺垫后收结论：按「问题 → 机制 → 结论」的顺序展开，把最重要的那句判断放在最后。\n- 讲到为什么：在说清是什么之外，解释这个机制为什么成立、为什么这样设计。",
-            "system_sha256": "dbd876a1973d73d5",
-            "system_chars": 1242,
-            "user_sha256": "124cb7a4d98e1985",
-            "request_signature": "42a03c8730de81f5"
+            "system_sha256": "06d34f4cf20cb1fc",
+            "system_chars": 1315,
+            "user_sha256": "df5bb54fd18065e8",
+            "request_signature": "85ced6ecc6f2ce18"
           },
-          "text": "这一页在讲一个动态系统的迭代过程：状态每天更新一次，规则是「今天的状态 = A × 昨天的状态」。反复套用同一个矩阵 A，就相当于不断把 A 乘上去。\n\n关键在于沿着 A 只做缩放的那些方向上会发生什么——也就是特征向量方向。如果某个方向上 A 只是把向量拉长或缩短某个倍数（这个倍数就是特征值），那么每迭代一步，这个方向上的分量就乘一次这个特征值。\n\n举个例子：假设某个方向对应的特征值是 2，另一个方向对应的特征值是 0.5。初始状态如果同时含有这两个方向的成分，迭代一次后，第一个方向的分量翻倍，第二个方向的分量减半。迭代 10 次后，第一个方向的分量变成原来的 2¹⁰=1024 倍，第二个方向的分量变成原来的 0.5¹⁰≈0.001 倍。\n\n这样反复迭代下去，各个方向按各自特征值的幂次增长或衰减，增长最快的那个方向（对应绝对值最大的特征值）会迅速把其他方向\"淹没\"，最终整个系统的状态几乎完全由这个主导方向决定——课件原文说的是\"the largest factor dominates what you see\"。\n\n这也是为什么矩阵的特征值和特征向量对分析长期迭代行为特别重要：只要知道最大的那个特征值和对应方向，就能预测系统长期演化的主要趋势（第4页）。",
+          "text": "第4页讲的是：如果沿某个方向，A只是把向量拉伸/压缩（不改变方向），那么反复作用A，每一步都乘以对应的那个缩放因子。经过很多步以后，缩放因子最大的那个方向会主导最终结果。\n\n原因是这样的：假设两个方向对应的缩放因子分别是3和1。第一次作用后，一个变成3倍、另一个不变；作用10次后，前者变成3^10≈59049倍，后者还是1倍——差距被指数级放大，缩放因子小的方向相对来说几乎可以忽略不计。\n\n所以反复作用很多次之后，剩下（占主导）的是缩放因子绝对值最大的那个方向。\n\n不过课件这一页没有明确用「特征向量/特征值」这些术语来点名这个方向具体叫什么，只是描述了这个现象本身——如果你想确认对应的专有名词，需要看看课件其他页有没有相关内容。",
           "production_passed": true,
-          "mean_paragraph_chars": 82.6,
+          "mean_paragraph_chars": 67.8,
           "usage": {
             "input_tokens": 2,
-            "output_tokens": 532,
-            "cache_creation_input_tokens": 1367,
+            "output_tokens": 329,
+            "cache_creation_input_tokens": 1440,
             "cache_read_input_tokens": 0
           },
-          "cost_usd": 0.013112,
-          "latency_ms": 8389.3,
+          "cost_usd": 0.010341,
+          "latency_ms": 6238.3,
           "stop_reason": "end_turn",
           "model_reported": "claude-sonnet-5",
-          "attempt": 6,
-          "generated_at": "2026-09-19T10:11:27+00:00",
+          "attempt": 14,
+          "generated_at": "2026-09-20T02:59:59+00:00",
           "tries_in_run": 1
         }
       ]
@@ -884,7 +885,7 @@
     {
       "pair_id": "depth_what_derivation",
       "target_dimension": "depth",
-      "question": "对称矩阵的特征值有什么特别？",
+      "question": "对称矩阵不同特征值的特征向量之间是什么关系？",
       "fed_blocks": [
         {
           "id": "p5b2",
@@ -939,26 +940,26 @@
             "shape": "生产：explain.prompt.build_system / build_user_turn（口径 F19）",
             "a_class_rules": "- 段落长度：每段控制在 30–120 字。这是**平均**要求，不要靠拆行凑数——把内容讲完整，再决定分几段。\n- 讲解语言：用中文讲解。英文可以出现在专业名词和必要的原文引用里。\n- 引用课件原文时，**单段引用不超过 100 字**，其余内容用自己的话讲。这是版权约束，不可协商。",
             "b_class_rules": "- 多举例子：每讲一个要点，配一个具体例子或类比帮助理解。\n- 先给结论：开头第一段就说出最重要的那句判断，后面再解释它为什么成立。\n- 只讲是什么：说清楚这个概念是什么、拿来做什么用。不解释它为什么这样设计，也不做推导。",
-            "system_sha256": "a6fb0de94f5f4204",
-            "system_chars": 1240,
-            "user_sha256": "4943c97c4ec1c97d",
-            "request_signature": "5802a3ce4fadbda5"
+            "system_sha256": "edd282c3660cf539",
+            "system_chars": 1313,
+            "user_sha256": "0031126c6ae7542d",
+            "request_signature": "6b95adaee53bacba"
           },
-          "text": "对称矩阵（A = A^T）的特征值有两个关键特点：都是实数，且不同特征值对应的特征向量互相垂直（正交）。\n\n第5页原文是这么说的：every eigenvalue of A is a real number, and eigenvectors with different eigenvalues meet at right angles。\n\n举个例子理解：一般矩阵的特征值可能是复数（比如旋转矩阵），特征向量也可能不垂直、方向乱七八糟。但对称矩阵不会这样——它的特征值一定落在实数轴上，不会跑到复平面去；而且如果你找到两个不同特征值对应的特征向量，把它们画出来，夹角必然是90度。\n\n课件里还给了一个几何理解：这样的矩阵相当于沿着几个互相垂直的方向分别拉伸空间，每个方向有自己的拉伸倍数（也就是对应的特征值）。比如可以想象一个矩形网格，沿x轴拉伸2倍、沿y轴拉伸3倍，这两个方向垂直，拉伸倍数就是两个（实数）特征值。",
+          "text": "第5页明确写了：不同特征值对应的特征向量相互垂直（\"meet at right angles\"）。\n\n也就是说，如果 A 是对称矩阵（A 等于自身转置），取两个不同的特征值 λ₁ ≠ λ₂，它们各自对应的特征向量 v₁、v₂ 满足正交关系，即 v₁·v₂ = 0。\n\n直观理解：对称矩阵沿着若干条互相垂直的方向拉伸空间，每个方向有各自的拉伸倍数（特征值）。既然这些方向本身就是互相垂直的坐标轴，那对应不同伸缩倍数的方向自然彼此垂直。",
           "production_passed": true,
-          "mean_paragraph_chars": 69.2,
+          "mean_paragraph_chars": 53.0,
           "usage": {
             "input_tokens": 2,
-            "output_tokens": 374,
-            "cache_creation_input_tokens": 1365,
+            "output_tokens": 232,
+            "cache_creation_input_tokens": 1445,
             "cache_read_input_tokens": 0
           },
-          "cost_usd": 0.010735,
-          "latency_ms": 5841.3,
+          "cost_usd": 0.008905,
+          "latency_ms": 3778.4,
           "stop_reason": "end_turn",
           "model_reported": "claude-sonnet-5",
-          "attempt": 6,
-          "generated_at": "2026-09-19T10:11:33+00:00",
+          "attempt": 9,
+          "generated_at": "2026-09-20T03:00:03+00:00",
           "tries_in_run": 1
         },
         {
@@ -1007,44 +1008,39 @@
             "shape": "生产：explain.prompt.build_system / build_user_turn（口径 F19）",
             "a_class_rules": "- 段落长度：每段控制在 30–120 字。这是**平均**要求，不要靠拆行凑数——把内容讲完整，再决定分几段。\n- 讲解语言：用中文讲解。英文可以出现在专业名词和必要的原文引用里。\n- 引用课件原文时，**单段引用不超过 100 字**，其余内容用自己的话讲。这是版权约束，不可协商。",
             "b_class_rules": "- 多举例子：每讲一个要点，配一个具体例子或类比帮助理解。\n- 先给结论：开头第一段就说出最重要的那句判断，后面再解释它为什么成立。\n- 讲到推导：在解释为什么的基础上，把关键结论一步步推出来，写出中间步骤和用到的假设。",
-            "system_sha256": "66f8ce132b9e8ca9",
-            "system_chars": 1239,
-            "user_sha256": "4943c97c4ec1c97d",
-            "request_signature": "1ddaa45626c6536f"
+            "system_sha256": "dd935bced6141052",
+            "system_chars": 1312,
+            "user_sha256": "0031126c6ae7542d",
+            "request_signature": "891d760cd2056047"
           },
-          "text": "对称矩阵（满足 $A = A^T$）的特征值有两个特别之处：全部是实数，而且不同特征值对应的特征向量互相垂直（正交）。\n\n普通矩阵的特征值可能是复数，特征向量之间也不一定正交，但对称矩阵不会出现这种情况——这是第5页里明确给出的性质。\n\n直观理解：对称矩阵描述的变换，是沿着若干条互相垂直的方向分别做拉伸（每个方向有自己的拉伸倍数，也就是对应的特征值）。举例来说，如果一个二维对称矩阵有特征值 3 和 -1，对应的特征向量分别是水平方向和垂直方向，那么这个变换就是：水平方向拉伸3倍，垂直方向反向拉伸1倍，两个方向始终保持垂直，不会像非对称矩阵那样把空间\"扭斜\"。\n\n这也是为什么对称矩阵可以理解成\"沿着一组正交坐标轴做纯粹的伸缩\"——没有旋转或剪切的成分掺杂在里面。",
+          "text": "对称矩阵不同特征值对应的特征向量互相垂直（正交）。第5页原文说：\"eigenvectors with different eigenvalues meet at right angles\"。\n\n例子：一个对称矩阵有特征值3和5，对应特征向量分别是 (1,1) 和 (1,-1)，这两个向量的点积是 1×1+1×(-1)=0，正好垂直。\n\n直观理解：对称矩阵的作用是沿着几组互相垂直的方向分别拉伸空间（每个方向拉伸倍数就是对应的特征值），这些垂直方向正是不同特征值对应的特征向量所指的方向。",
           "production_passed": true,
-          "mean_paragraph_chars": 70.2,
+          "mean_paragraph_chars": 50.7,
           "usage": {
             "input_tokens": 2,
-            "output_tokens": 373,
-            "cache_creation_input_tokens": 1363,
-            "cache_read_input_tokens": 0
+            "output_tokens": 219,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 1443
           },
-          "cost_usd": 0.010712,
-          "latency_ms": 6232.2,
+          "cost_usd": 0.003724,
+          "latency_ms": 3304.7,
           "stop_reason": "end_turn",
           "model_reported": "claude-sonnet-5",
-          "attempt": 6,
-          "generated_at": "2026-09-19T10:11:39+00:00",
-          "tries_in_run": 1
+          "attempt": 13,
+          "generated_at": "2026-09-20T03:00:25+00:00",
+          "tries_in_run": 5
         }
       ]
     },
     {
       "pair_id": "depth_what_why",
       "target_dimension": "depth",
-      "question": "特征值等于 0 意味着什么？",
+      "question": "特征值等于 0 的方向被送到了哪里？",
       "fed_blocks": [
         {
           "id": "p2b1",
           "page": 2,
           "chars": 265
-        },
-        {
-          "id": "p3b1",
-          "page": 3,
-          "chars": 393
         }
       ],
       "samples": [
@@ -1094,26 +1090,26 @@
             "shape": "生产：explain.prompt.build_system / build_user_turn（口径 F19）",
             "a_class_rules": "- 段落长度：每段控制在 30–120 字。这是**平均**要求，不要靠拆行凑数——把内容讲完整，再决定分几段。\n- 讲解语言：用中文讲解。英文可以出现在专业名词和必要的原文引用里。\n- 引用课件原文时，**单段引用不超过 100 字**，其余内容用自己的话讲。这是版权约束，不可协商。",
             "b_class_rules": "- 多举例子：每讲一个要点，配一个具体例子或类比帮助理解。\n- 先给结论：开头第一段就说出最重要的那句判断，后面再解释它为什么成立。\n- 只讲是什么：说清楚这个概念是什么、拿来做什么用。不解释它为什么这样设计，也不做推导。",
-            "system_sha256": "a6fb0de94f5f4204",
-            "system_chars": 1240,
-            "user_sha256": "3f318cc69ce66c87",
-            "request_signature": "e8c48d050c110de2"
+            "system_sha256": "edd282c3660cf539",
+            "system_chars": 1313,
+            "user_sha256": "2bbbce48ae1e9b1e",
+            "request_signature": "8712e81f9ca6b055"
           },
-          "text": "特征值为0，意味着对应的特征向量方向在这个变换下被压缩到了原点，也就是整个方向被\"抹平\"了（第3页）。\n\n对比着看更清楚：镜面反射里，沿镜面线的向量特征值是1（原地不动），垂直镜面的向量特征值是-1（翻转到反方向）；纯放大变换里特征值是2（沿原方向拉长一倍）。而特征值为0是这些情况的极端版本——不是保持、不是翻转、也不是缩放，而是这个方向上的向量直接被压成了零向量，落到原点上。\n\n可以类比成一个\"压扁\"的效果：如果把一张纸沿某个方向压平，那个被压扁的方向对应的特征值就是0，因为不管原来那个方向上的向量有多长，变换后都变成了0。",
+          "text": "特征值 λ=0 时，Av = 0v = 0，也就是这个方向上的向量被 A 送到了原点（零向量）。\n\n方向本身没变（还在原来那条线上），但被压缩到了长度为 0，相当于整条线被“拍扁”成一个点。\n\n举例：如果一个矩阵把某条直线上所有点都变成原点，这条直线对应的方向就是特征值为 0 的特征向量方向——这条方向的信息在变换后完全丢失了。",
           "production_passed": true,
-          "mean_paragraph_chars": 76.3,
+          "mean_paragraph_chars": 42.7,
           "usage": {
             "input_tokens": 2,
-            "output_tokens": 283,
-            "cache_creation_input_tokens": 321,
-            "cache_read_input_tokens": 1229
+            "output_tokens": 168,
+            "cache_creation_input_tokens": 169,
+            "cache_read_input_tokens": 1301
           },
-          "cost_usd": 0.005823,
-          "latency_ms": 5737.9,
+          "cost_usd": 0.00355,
+          "latency_ms": 3697.5,
           "stop_reason": "end_turn",
           "model_reported": "claude-sonnet-5",
-          "attempt": 7,
-          "generated_at": "2026-09-19T10:11:45+00:00",
+          "attempt": 10,
+          "generated_at": "2026-09-20T03:00:29+00:00",
           "tries_in_run": 1
         },
         {
@@ -1162,35 +1158,40 @@
             "shape": "生产：explain.prompt.build_system / build_user_turn（口径 F19）",
             "a_class_rules": "- 段落长度：每段控制在 30–120 字。这是**平均**要求，不要靠拆行凑数——把内容讲完整，再决定分几段。\n- 讲解语言：用中文讲解。英文可以出现在专业名词和必要的原文引用里。\n- 引用课件原文时，**单段引用不超过 100 字**，其余内容用自己的话讲。这是版权约束，不可协商。",
             "b_class_rules": "- 多举例子：每讲一个要点，配一个具体例子或类比帮助理解。\n- 先给结论：开头第一段就说出最重要的那句判断，后面再解释它为什么成立。\n- 讲到为什么：在说清是什么之外，解释这个机制为什么成立、为什么这样设计。",
-            "system_sha256": "1c63fec7d1015c38",
-            "system_chars": 1233,
-            "user_sha256": "3f318cc69ce66c87",
-            "request_signature": "8deb4ba068f206cc"
+            "system_sha256": "450d99401afc6373",
+            "system_chars": 1306,
+            "user_sha256": "2bbbce48ae1e9b1e",
+            "request_signature": "135516409198e94d"
           },
-          "text": "特征值为 0，意味着存在一个非零向量 v，使得 A v = 0·v = 0——也就是说，A 把这个方向上的所有向量都压缩到了原点（第3页）。\n\n这在几何上很直观：矩阵 A 通常把空间中的向量\"甩\"到不同方向并做缩放，但沿着特征向量的方向，向量只被缩放、不改变方向。缩放因子就是特征值。当这个缩放因子恰好是 0 时，说明该方向被\"压扁\"了——原本有长度的向量，经过 A 变换后长度变成了 0，整个方向坍缩成了一个点（原点）。\n\n类比一下：如果把二维空间投影到 x 轴上（比如变换矩阵是 [[1,0],[0,0]]），那么所有沿 y 轴方向的向量，经过这个变换后都会变成零向量。这时 y 轴方向就是一个特征值为 0 的特征方向——原本占据一维的信息，被这个变换彻底抹掉了。\n\n这也是特征值为 0 和矩阵是否可逆有关的原因：如果某个方向被压缩为 0，说明这个变换会丢失信息，无法通过逆变换恢复，所以矩阵不可逆。不过课件这两页没有展开讲可逆性，只是给出了「坍缩到原点」这个几何含义。",
+          "text": "特征值等于0时，Av = 0·v = 0，说明这个方向的向量被A送到了原点（零向量），不是缩放到另一个点，而是被彻底压缩没了。\n\n这在几何上意味着这条特征向量所在的方向被A\"压扁\"了——沿这个方向的信息完全丢失。这也是为什么λ=0对应的特征向量能揭示A的零空间（null space）：这些方向就是A的\"盲区\"。\n\n比如A是一个把三维空间投影到某个平面的矩阵，那垂直于该平面的方向对应λ=0，因为这个方向上的分量在投影后完全消失了。\n\n（第2页只给出了一般定义 Av=λv，没有专门讨论λ=0的情况，以上是根据该定义推出的结论。）",
           "production_passed": true,
-          "mean_paragraph_chars": 86.0,
+          "mean_paragraph_chars": 51.8,
           "usage": {
             "input_tokens": 2,
-            "output_tokens": 464,
-            "cache_creation_input_tokens": 321,
-            "cache_read_input_tokens": 1220
+            "output_tokens": 267,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 1461
           },
-          "cost_usd": 0.008536,
-          "latency_ms": 7109.8,
+          "cost_usd": 0.004449,
+          "latency_ms": 5063.6,
           "stop_reason": "end_turn",
           "model_reported": "claude-sonnet-5",
-          "attempt": 7,
-          "generated_at": "2026-09-19T10:11:52+00:00",
-          "tries_in_run": 1
+          "attempt": 21,
+          "generated_at": "2026-09-20T03:00:40+00:00",
+          "tries_in_run": 2
         }
       ]
     },
     {
       "pair_id": "depth_why_derivation",
       "target_dimension": "depth",
-      "question": "为什么最大的那个特征值最后会主导？",
+      "question": "为什么反复作用之后，最大的那个因子会主导？",
       "fed_blocks": [
+        {
+          "id": "p2b1",
+          "page": 2,
+          "chars": 265
+        },
         {
           "id": "p4b1",
           "page": 4,
@@ -1244,26 +1245,26 @@
             "shape": "生产：explain.prompt.build_system / build_user_turn（口径 F19）",
             "a_class_rules": "- 段落长度：每段控制在 30–120 字。这是**平均**要求，不要靠拆行凑数——把内容讲完整，再决定分几段。\n- 讲解语言：用中文讲解。英文可以出现在专业名词和必要的原文引用里。\n- 引用课件原文时，**单段引用不超过 100 字**，其余内容用自己的话讲。这是版权约束，不可协商。",
             "b_class_rules": "- 多举例子：每讲一个要点，配一个具体例子或类比帮助理解。\n- 先给结论：开头第一段就说出最重要的那句判断，后面再解释它为什么成立。\n- 讲到为什么：在说清是什么之外，解释这个机制为什么成立、为什么这样设计。",
-            "system_sha256": "1c63fec7d1015c38",
-            "system_chars": 1233,
-            "user_sha256": "5d475472eb143267",
-            "request_signature": "c78fbc23e1ec0710"
+            "system_sha256": "450d99401afc6373",
+            "system_chars": 1306,
+            "user_sha256": "95915523db3a1d1f",
+            "request_signature": "f120194fcba9186a"
           },
-          "text": "这一页只给了结论性描述，没有展开数学推导，我用课件里给的思路把「为什么」说清楚。\n\n系统状态每一步都乘以矩阵 `A`，如果把初始状态分解到各个特征方向上，每个方向上的分量每步都独立地乘以对应的特征值。经过 n 步后，某个方向上的分量就是（初始分量）×（特征值)^n。\n\n关键在于指数增长的差距会被放大。假设两个特征值分别是 3 和 2，n=1 时只差 1.5 倍，但 n=20 时，3^20 约等于 2 的 2^20 的 3486 倍——差距被指数级拉开。所以哪怕最初各方向分量差不多大，几步之后最大特征值对应方向的分量就会远远盖过其他方向，观察到的整体状态几乎完全由它决定。\n\n这也是为什么课件说「along a direction that A only scales, each step multiplies by that one factor」——特征方向的特性就是每步只做纯缩放，不和其他方向混合，所以缩放因子（特征值）的大小差异会被反复相乘、逐步放大，最终最大的那个占主导（第4页）。",
+          "text": "因为反复作用等于把每个特征方向上的因子反复相乘，做的是幂运算，而幂运算会把不同大小的数字之间的差距迅速拉大。\n\n第4页讲的场景是：状态按 A 反复更新，`今天 = A × 昨天`。如果把状态沿着 A 的各个特征方向（第2页定义的 eigenvector 方向）分解，每个方向上不会跑到别的线上去，只是被对应的特征值 λ 反复缩放。\n\nn 步之后，某个方向上的分量大小是 λⁿ 倍。假设两个特征值分别是 2 和 0.5，一步只差 4 倍，但 10 步后就是 1024 倍对 0.001，差距被指数级放大。\n\n所以哪怕一开始各个方向的分量差不多大，只要有一个 λ 的绝对值最大，随着次数增加，它对应的方向会以指数速度压过其他所有方向，最终整个状态看起来几乎只沿着这一个方向变化——这就是「最大因子主导」的原因：不是它一开始更强，而是幂运算把微小的初始优势不断放大。",
           "production_passed": true,
-          "mean_paragraph_chars": 77.2,
+          "mean_paragraph_chars": 71.8,
           "usage": {
             "input_tokens": 2,
-            "output_tokens": 403,
-            "cache_creation_input_tokens": 0,
-            "cache_read_input_tokens": 1352
+            "output_tokens": 389,
+            "cache_creation_input_tokens": 272,
+            "cache_read_input_tokens": 1292
           },
-          "cost_usd": 0.006457,
-          "latency_ms": 7099.0,
+          "cost_usd": 0.007249,
+          "latency_ms": 6727.5,
           "stop_reason": "end_turn",
           "model_reported": "claude-sonnet-5",
-          "attempt": 8,
-          "generated_at": "2026-09-19T10:15:14+00:00",
+          "attempt": 11,
+          "generated_at": "2026-09-20T03:03:43+00:00",
           "tries_in_run": 1
         },
         {
@@ -1312,27 +1313,27 @@
             "shape": "生产：explain.prompt.build_system / build_user_turn（口径 F19）",
             "a_class_rules": "- 段落长度：每段控制在 30–120 字。这是**平均**要求，不要靠拆行凑数——把内容讲完整，再决定分几段。\n- 讲解语言：用中文讲解。英文可以出现在专业名词和必要的原文引用里。\n- 引用课件原文时，**单段引用不超过 100 字**，其余内容用自己的话讲。这是版权约束，不可协商。",
             "b_class_rules": "- 多举例子：每讲一个要点，配一个具体例子或类比帮助理解。\n- 先给结论：开头第一段就说出最重要的那句判断，后面再解释它为什么成立。\n- 讲到推导：在解释为什么的基础上，把关键结论一步步推出来，写出中间步骤和用到的假设。",
-            "system_sha256": "66f8ce132b9e8ca9",
-            "system_chars": 1239,
-            "user_sha256": "5d475472eb143267",
-            "request_signature": "113357aba4bcf130"
+            "system_sha256": "dd935bced6141052",
+            "system_chars": 1312,
+            "user_sha256": "95915523db3a1d1f",
+            "request_signature": "99443db09cc77824"
           },
-          "text": "这个结论的核心在于：不同特征方向上的分量是按各自特征值的幂次增长的，幂次相除后，比值大小的差距会被指数级放大，所以经过多步之后，绝对值最大的特征值对应的分量会压倒其他分量。\n\n推导一下为什么会这样。设状态向量可以分解成若干特征方向的分量之和（这是矩阵可对角化的前提假设）。每次更新时，某个方向上的分量只是被对应的特征值 λ 乘一次——课件里说的「along a direction that A only scales, each step multiplies by that one factor」就是这个意思。\n\n假设有两个特征值 λ₁ 和 λ₂，且 |λ₁| > |λ₂|。经过 n 步之后：\n\n- 沿 λ₁ 方向的分量变成原来的 λ₁ⁿ 倍\n- 沿 λ₂ 方向的分量变成原来的 λ₂ⁿ 倍\n\n两者的比值是 (λ₁/λ₂)ⁿ。因为 |λ₁/λ₂| > 1，这个比值会随 n 增大而指数级增长，趋向无穷。\n\n举个具体例子：λ₁=2，λ₂=1。第1步比值是2，第5步是32，第10步是1024。哪怕两个分量一开始差不多大，λ₂方向的贡献相对来说会迅速变得微不足道。整个状态向量看起来就几乎完全沿着 λ₁ 的方向变化——这就是「最大特征值主导」的含义（第4页）。",
+          "text": "这是个幂次增长的问题：沿某个特征方向，每作用一次 A，就乘一次对应的特征值 λ。作用 n 次后，该方向上的量变成原来的 λⁿ 倍（第4页）。\n\n如果系统状态是多个特征方向的组合（比如状态 = 方向1的分量 + 方向2的分量），那么作用 n 次后就是 λ₁ⁿ×(方向1分量) + λ₂ⁿ×(方向2分量)。\n\n假设 λ₁ 比 λ₂ 大，比如 λ₁=2，λ₂=0.5。n=10 时，λ₁ⁿ=1024，λ₂ⁿ≈0.001。两者相差百万倍以上。哪怕最初两个方向的分量差不多大，几步之后，λ₂ 那部分几乎可以忽略，整体形态几乎完全由 λ₁ 方向决定。\n\n这就是第4页说的「after many steps the largest factor dominates」——不是因为小的因子消失了，而是指数级的差距让它相对大因子的贡献迅速趋于零。",
           "production_passed": true,
-          "mean_paragraph_chars": 59.0,
+          "mean_paragraph_chars": 57.8,
           "usage": {
             "input_tokens": 2,
-            "output_tokens": 532,
+            "output_tokens": 379,
             "cache_creation_input_tokens": 0,
-            "cache_read_input_tokens": 1359
+            "cache_read_input_tokens": 1571
           },
-          "cost_usd": 0.008394,
-          "latency_ms": 8003.0,
+          "cost_usd": 0.006162,
+          "latency_ms": 5547.1,
           "stop_reason": "end_turn",
           "model_reported": "claude-sonnet-5",
-          "attempt": 16,
-          "generated_at": "2026-09-19T10:24:01+00:00",
-          "tries_in_run": 6
+          "attempt": 23,
+          "generated_at": "2026-09-20T03:04:08+00:00",
+          "tries_in_run": 4
         }
       ]
     }

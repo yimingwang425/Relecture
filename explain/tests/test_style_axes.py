@@ -37,7 +37,9 @@ from explain.style_axes import (  # noqa: E402
     ENFORCED,
     style_config_for,
 )
-from explain.style_prompt import (  # noqa: E402
+from explain.style_prompt import (
+    TOTAL_LENGTH_FACTOR,
+    render_total_length_rule,  # noqa: E402
     B_CLASS_FRAGMENTS,
     render_all_style_rules,
     render_b_class_rules,
@@ -127,11 +129,38 @@ class TestMoveChangedNothing:
 class TestJoinShape:
     """A + B 的拼法。**样例就是按这个形状生成的。**"""
 
-    def test_join_is_a_newline_b(self):
+    def test_join_is_a_then_total_length_then_b(self):
+        """拼法：A 类 → 整篇长度 → B 类（→ 语气，非默认档才有）。
+
+        2026-09-20 中间多了「整篇长度」那一行（`render_total_length_rule`）。
+        这条断言跟着改**不是走形式**：它钉的是「只有一处拼法」，
+        而样例就是按这个形状生成的——生产改了拼法而样例没跟，
+        没有任何东西会报错，只是用户按样例选完拿到的不是他选的那个。
+        """
         cfg = style_config_for("P0")
         assert render_all_style_rules(cfg, DEFAULTS) == (
-            render_style_rules(cfg) + "\n" + render_b_class_rules(DEFAULTS)
+            render_style_rules(cfg)
+            + "\n"
+            + render_total_length_rule(cfg)
+            + "\n"
+            + render_b_class_rules(DEFAULTS)
         )
+
+    def test_the_total_length_target_tracks_the_tier(self):
+        """整篇长度**随档位变**，而且是从段落上限推出来的，不是逐档写死的。
+
+        写死的话它就是第四处要跟着档位一起改的地方；而漏改一处的表现是
+        某一档的长度目标停在旧值上，没有任何东西会红。
+        """
+        nums = {}
+        for tier in ("P0", "P2", "P3"):
+            cfg = style_config_for(tier)
+            line = render_total_length_rule(cfg)
+            nums[tier] = cfg.paragraph_length.max * TOTAL_LENGTH_FACTOR
+            assert str(nums[tier]) in line, (tier, line)
+        # 分辨力：三档必须**真的不同**，否则「随档位变」是句空话。
+        assert len(set(nums.values())) == 3, nums
+        assert nums["P0"] > nums["P2"] > nums["P3"], nums
 
     def test_sample_generator_uses_the_same_join(self):
         """`generate_pairs.py` 必须调 `render_all_style_rules`，不自己拼。

@@ -109,12 +109,45 @@ PAIR_CONTEXT: dict[str, tuple[str, tuple[str, ...]]] = {
     "detail_p0_p2": ("镜面反射、整体放大两倍、特征值为 0，这三种情况的特征值各是多少？",
                      ("p1b1", "p2b1", "p3b1")),
     "detail_p2_p3": ("这些例子里的特征值分别是多少，为什么？", ("p2b1", "p3b1", "p4b1")),
-    "examples_more_fewer": ("特征值在实际问题里用来做什么？", ("p7b1",)),
-    "structure_conclusion_buildup": ("反复用同一个矩阵作用下去会发生什么？", ("p4b1",)),
-    "depth_what_derivation": ("对称矩阵的特征值有什么特别？", ("p5b2",)),
-    "depth_what_why": ("特征值等于 0 意味着什么？", ("p2b1", "p3b1")),
-    "depth_why_derivation": ("为什么最大的那个特征值最后会主导？", ("p4b1",)),
+    # ---- 非目标轴那五对：问**答案本来就短**的问题（2026-09-20）
+    #
+    # 原来的五个问题都是开放式的（「用来做什么」「会发生什么」「有什么特别」），
+    # 答案天然是一篇小短文，于是样例 400–536 字，用户要读两屏才比得完两段，
+    # 而他要比的只是讲法。现在每个问题都有一个**确定而简短的答案**，
+    # 目标轴上的差异因此成了那两段里几乎唯一还在变的东西。
+    # ⚠️ 问的东西**那一块片段必须答得上来**，否则模型会去描述片段
+    #（「课件第 7 页没直接提到『特征值』这个词」），而 s3 明令禁止这个。
+    # p7b1 的原话是 PCA「reports the directions it stretches most」，
+    # 它一个字没提 eigenvalue —— 所以问「PCA 用特征值找什么」，两段都以免责开头。
+    "examples_more_fewer": ("PCA 从协方差矩阵里找出的是哪些方向？", ("p7b1",)),
+    "structure_conclusion_buildup": ("反复作用很多次之后，剩下的是哪个方向？", ("p4b1",)),
+    "depth_what_derivation": ("对称矩阵不同特征值的特征向量之间是什么关系？", ("p5b2",)),
+    # 2026-09-20：从两块收到一块。两块时这一对的样例 266 / 437 字，
+    # 而这条轴（是什么 vs 为什么）在两三句话里就能看出来——多出来的那几百字
+    # 只是让用户要读两屏才能比。
+    "depth_what_why": ("特征值等于 0 的方向被送到了哪里？", ("p2b1",)),
+    # 同上：只喂 p4b1 时「推导」这一侧无据可推，于是它开口就说「这一页只给了
+    # 直觉描述，没写推导过程」。补上定义那一块，推导才有起点。
+    "depth_why_derivation": ("为什么反复作用之后，最大的那个因子会主导？",
+                             ("p2b1", "p4b1")),
 }
+
+#: 非目标轴那五对的**背景档**。空字典 = 全部用 `DEFAULTS`。
+#:
+#: ## 2026-09-20 试过改它，**没用，已退回**
+#:
+#: 用户要的是「一句话能区分出来」。当时的判断是：样例长（400–536 字）是因为
+#: 这五对跑在 `DEFAULTS` 的 P0（30–120 字/段，最详细那一档），换 P2 就短了。
+#:
+#: 实测推翻了它：换成 P2 之后长度几乎没变（491/384、447/419），
+#: `depth_why_derivation` 反而从 450/532 长到 597/592。
+#: **段落长度的区间管的是「每段多长」，不管「写多少」**——模型只是把同样多的
+#: 内容多分了几段。而 P2 的区间比 P0 窄，`depth_what_why.b` 因此连掷 12 次不达标。
+#:
+#: 长度的杠杆是**问题本身**（问题的形态决定答案的形态，与 detail_p0_p3 那次
+#: 是同一条）。所以这里退回 `DEFAULTS`，改去收窄那五个问题。
+#: 留着这段字是为了别再试第二次。
+PAIR_BACKGROUND: dict[str, str] = {}
 COURSE_LABEL = "合成课件"
 
 #: 课件在 prompt 里的位置：**走生产的 user turn，不进 system**。
@@ -401,7 +434,11 @@ def main() -> int:
             partner = (samples[0] if suffix == "b"
                        else (None if will_regenerate(other_id) else prior.get(other_id)))
             base = prior.get(sample_id, {}).get("attempt", 0)
-            style = {**DEFAULTS, axis: value}
+            # 背景档在前、目标轴在后：详细程度那三对的 `axis` 就是 detail_level，
+            # 后写的那一个盖掉前面的，所以它们不受 PAIR_BACKGROUND 影响。
+            style = {**DEFAULTS,
+                     "detail_level": PAIR_BACKGROUND.get(pair_id, DEFAULTS["detail_level"]),
+                     axis: value}
             rel = ("无同伴可比，只判自身达标" if partner is None
                    else f"与 {other_id} 的隶属集合须{'相同' if want_same else '不同'}")
             print(f"  {sample_id}（{axis}={value}）　{rel}", flush=True)
@@ -462,6 +499,9 @@ def main() -> int:
             "（口径 F13）。用尽 MAX_TRIES 仍不过则留最后一次并标 production_passed:false"
         ),
         "defaults": DEFAULTS,
+        # 哪几对换了背景档、换成什么。**记进文件**：不记的话，
+        # 「这个样例为什么这么短」就只能靠翻生成脚本的某一版才答得出来。
+        "pair_background_detail": PAIR_BACKGROUND,
         "b_class_prompt_fragments": B_CLASS_FRAGMENTS,
         "cost_usd_total": round(total_cost, 6),
         # 复用的样例（`reused_from`）记 0：那次调用的钱记在源样例上，两边都记会把总额说大。

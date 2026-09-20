@@ -86,7 +86,12 @@ class TestConfigReachesThePrompt:
         assert "讲到为什么" in a and "讲到推导" in b
 
     def test_prompt_has_both_classes_in_the_sample_shape(self, keypair, jwks, rest):
-        """A 类三条 + B 类三条，拼法与 `pairs.json` 里 16 个样例同形（口径 F19）。"""
+        """A 类三条 + 整篇长度 + B 类三条，拼法与 16 个样例同形（口径 F19）。
+
+        2026-09-20 多了「整篇长度」那一行，所以是 **7** 条不是 6 条。
+        这个数**不是装饰**：它是这条断言唯一的分辨力来源——
+        `expected in rules` 在 expected 只有一行时照样成立。
+        """
         from explain.style_axes import style_config_for
         from explain.style_prompt import render_all_style_rules
 
@@ -96,7 +101,7 @@ class TestConfigReachesThePrompt:
             {"use_examples": "more", "structure": "conclusion_first", "depth": "why"},
         )
         assert expected in rules
-        assert len([ln for ln in expected.splitlines() if ln.startswith("- ")]) == 6
+        assert len([ln for ln in expected.splitlines() if ln.startswith("- ")]) == 7
 
     def test_fingerprint_differs_between_tiers(self, keypair, jwks, rest):
         """验收要靠它把「配置没生效」与「两次配置本来就一样」分开。"""

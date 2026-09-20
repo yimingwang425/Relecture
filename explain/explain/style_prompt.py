@@ -51,6 +51,7 @@ from .style_axes import AXES
 
 __all__ = [
     "render_style_rules",
+    "render_total_length_rule",
     "render_b_class_rules",
     "render_all_style_rules",
     "LANGUAGE_BANDS",
@@ -210,6 +211,46 @@ def render_tone_rule(tone: str) -> str:
     return TONE_FRAGMENTS[tone]
 
 
+#: 整篇长度 ≈ 每段上限的几倍。**只有一个数，推出来，不逐档写死**——
+#: 逐档写死就是第四处要跟着档位一起改的地方（F13）。
+TOTAL_LENGTH_FACTOR = 3
+
+
+def render_total_length_rule(config: StyleConfig) -> str:
+    """整篇回答的长度上限那一行（2026-09-20）。
+
+    ## 为什么加它
+
+    在这之前，prompt 里**只有「每段多长」，没有「整篇多长」**。于是「详细程度」
+    这条轴实际上只管段落粒度：P0 与 P3 的回答可以一样长，只是分段不同。
+    而用户以为它管的是长度——他选「精简」，拿到的还是一屏。
+
+    实测（2026-09-20）：onboarding 的 16 个样例 236–597 字，用户的原话是
+    「面对一大段文字只觉得是 2 个不同的东西，分辨不出来」。
+    先试过把样例的背景档从 P0 换到 P2，**没用**：长度几乎没变，
+    `depth_why_derivation` 反而从 450/532 长到 597/592——段落区间管的是
+    「每段多长」，模型只是把同样多的内容多分了几段。
+
+    ## 为什么住在这里，不在 `render_style_rules` 里
+
+    那个函数的签名与行为**一个字不能动**：配置扫描实验按它跑过 180 轮，
+    改它等于让那批已落盘的数据对应不上任何现存代码（同 `render_all_style_rules`
+    docstring 里的理由）。所以新规则加在生产侧的包装里，与语气那一行同一个位置。
+
+    ## 为什么不加进「怎么说话」那一节
+
+    那一节对所有风格生效，而长度**正是档位之间的差别**。写在那里就会出现
+    两节打架：一节说「整篇不超过 N 字」，另一节说「这一档要讲得细」。
+    2026-09-19 已经踩过一次同形的（那次是段落粒度），注释还留在 `prompt.py` 里。
+    """
+    total = config.paragraph_length.max * TOTAL_LENGTH_FACTOR
+    return (
+        f"- 整篇长度：**全部讲完控制在 {total} 字以内**。"
+        f"答完就停——不要为了显得完整再补一段总结，也不要把一句话拆成三句说。"
+        f"讲不完的部分等他追问。"
+    )
+
+
 def render_b_class_rules(style: dict[str, str]) -> str:
     """渲染 B 类三条。顺序固定——system 要能被缓存，任何非确定性都会让缓存失效。"""
     lines = []
@@ -237,7 +278,8 @@ def render_all_style_rules(
     `render_style_rules` 的签名与行为**一个字没动**：配置扫描实验按它跑过 180 轮，
     改它等于让那批已落盘的数据对应不上任何现存代码（口径 F19 的同一条理由）。
     """
-    base = render_style_rules(config) + "\n" + render_b_class_rules(b_class)
+    base = (render_style_rules(config) + "\n" + render_total_length_rule(config)
+            + "\n" + render_b_class_rules(b_class))
     # 语气那一行接在 B 类之后。**默认档不加行**——加了的话，这一段就与
     # 16 个样例的生成条件分叉，而那正是 F18/F19 盯着的东西。
     line = render_tone_rule(tone)

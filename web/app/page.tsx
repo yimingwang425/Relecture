@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { ApiWarmup } from "@/app/components/api-warmup";
 import { BrandLine } from "@/app/components/brand-line";
 import { Diagnostics } from "@/app/components/diagnostics";
 import { NewCourse } from "@/app/components/new-course";
@@ -89,6 +90,9 @@ export default async function HomePage() {
 
           {API_BASE_URL ? (
             <div className="enter mb-8 max-w-[520px]">
+              {/* 叫醒它，**在用户开始打字之前**。建课是打开这一页之后最可能做的事，
+                  而那一次请求正好撞上冷启动（F74）。 */}
+              <ApiWarmup apiBase={API_BASE_URL} />
               <NewCourse apiBase={API_BASE_URL} />
             </div>
           ) : (

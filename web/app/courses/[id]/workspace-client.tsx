@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { ApiWarmup } from "@/app/components/api-warmup";
 import { ExplainClient } from "@/app/explain/explain-client";
 import { CourseUpload } from "@/app/courses/upload-client";
 import { StatusDot } from "@/app/components/status-dot";
@@ -273,6 +274,10 @@ export function Workspace({
 
       {/* ============================================================ 聊天 */}
       <div className="ws-main">
+        {/* 同首页：提问与上传都要这个服务，而进这一页之后马上就会用到它。 */}
+        <div className="mx-auto w-full max-w-[46rem] px-4 pt-3">
+          <ApiWarmup apiBase={apiBase} />
+        </div>
         {docs.length === 0 ? (
           <div className="ws-empty">
             <p className="t-title">这门课还没有材料</p>

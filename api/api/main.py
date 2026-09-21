@@ -260,6 +260,20 @@ def create_app(
             "status": "ok",
             "model_key_configured": cfg.anthropic_api_key is not None,
             "build_commit": build_commit(),
+            # ---- 允许的前端来源（2026-09-21）。
+            #
+            # **不是秘密**：这些来源就是公开的网址，而且任何人打一次预检就能
+            # 逐个试出来。把它说出来换到的是：「我这个域名在不在白名单里」
+            # 从一道猜谜变成一个事实。
+            #
+            # 2026-09-21 真的猜错过一次：建课报 `TypeError: Failed to fetch`，
+            # 而前端那句话说「可能是它没部署，或 CORS 里没有本站来源」——
+            # 两个猜测都不对（服务部署好了、来源也在白名单里，是**冷启动**）。
+            # 于是时间花在翻 Render 控制台上。
+            #
+            # ⚠️ 空清单也要照实报成 `[]`。**不配就是一律挡住**，不是默认放开；
+            # 而 `[]` 与「这个字段不存在」在排错时含义完全不同。
+            "cors_allow_origins": list(cfg.cors_allow_origins),
         }
 
     @app.get("/me/style", response_model=StyleResponse)

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState, useSyncExternalStore } from "react";
 
 import { BOARDS, resolveTaste } from "@/lib/style/taste";
 import { createClient } from "@/lib/supabase/client";
@@ -44,21 +44,37 @@ export function StyleNudge({
   sessionId: string;
   answered: number;
 }) {
-  const [seen, setSeen] = useState(true); // 先当作看过，避免 SSR/hydrate 两侧不一致
+  /**
+   * 「之前提示过了吗」——**用 `useSyncExternalStore` 读，不在 effect 里 setState**。
+   *
+   * 在 effect 里同步 setState 会触发级联渲染（eslint 的 set-state-in-effect 拦它）。
+   * 这个 API 正是为「读一个 React 之外的值」准备的：
+   *   · subscribe 是空的 —— localStorage 不会自己变，只在本组件里被写；
+   *   · 服务端快照返回 `true`（当作看过），所以 SSR 不渲染提示，
+   *     hydrate 时再按真实值决定，两侧不会分叉。
+   *
+   * localStorage **可能抛**（隐私模式、站点数据被禁）。抛了就当没看过——
+   * 代价是多提示一次，不是一次错误的配置。
+   */
+  const stored = useSyncExternalStore(
+    () => () => {},
+    () => {
+      try {
+        return window.localStorage.getItem(SEEN_KEY) === "1";
+      } catch {
+        return false;
+      }
+    },
+    () => true,
+  );
+  /** 本次会话里点掉了。**由事件设置**，不由 effect 设置。 */
+  const [dismissed, setDismissed] = useState(false);
+  const seen = stored || dismissed;
   const [open, setOpen] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
 
-  useEffect(() => {
-    // localStorage 只能在浏览器读，而且**可能抛**（隐私模式）。抛了就当没看过。
-    try {
-      setSeen(window.localStorage.getItem(SEEN_KEY) === "1");
-    } catch {
-      setSeen(false);
-    }
-  }, []);
-
   function dismiss() {
-    setSeen(true);
+    setDismissed(true);
     try {
       window.localStorage.setItem(SEEN_KEY, "1");
     } catch {

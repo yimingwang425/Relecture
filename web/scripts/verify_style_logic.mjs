@@ -1960,6 +1960,44 @@ console.log("\n\x1b[1m十八 · 讲法矫正 · 搬进讲解之后\x1b[0m");
     "← 不写轴的话每个新用户拿到的都是默认档");
 }
 
+// ================================================================ 十九 · 连不上时说什么（2026-09-21）
+//
+// 冷启动那次教训：建课报 `TypeError: Failed to fetch`，而前端那句话说
+// 「可能是它没部署，或 CORS 里没有本站来源」——**两个猜测都不对**
+// （服务部署好了、来源也在白名单里），真正的原因是 Render 免费层休眠。
+// 于是排错时间花在翻控制台和查白名单上。
+//
+// 这一节钉的是：失败时**不猜**，并且给出能一句话分清楚的办法。
+console.log("\n\x1b[1m十九 · 连不上讲解服务时说什么\x1b[0m");
+{
+  const newCourse = stripComments(readFileSync(join(WEB, "app/components/new-course.tsx"), "utf8"));
+  const warmup = stripComments(readFileSync(join(WEB, "app/components/api-warmup.tsx"), "utf8"));
+  const mainPy = readFileSync(join(WEB, "..", "api", "api", "main.py"), "utf8");
+
+  // -------- 19.1 那句猜错的话没了
+  check(!/可能是它没部署/.test(newCourse), "建课失败不再猜「可能是它没部署」",
+    "← 2026-09-21 实测：这个猜测把排错引向了 Render 控制台，而服务是好的");
+  check(/休眠/.test(newCourse), "失败文案先说休眠（最常见的那一种）");
+
+  // -------- 19.2 说得出「本站来源」是什么，别让人去猜
+  check(/window\.location\.origin/.test(newCourse) && /window\.location\.origin/.test(warmup),
+    "失败文案打印本站来源",
+    "← 白名单是逐字匹配的；不打印的话「我的来源是什么」只能靠猜");
+
+  // -------- 19.3 /health 把白名单说出来，于是那个问题有事实可查
+  check(/"cors_allow_origins"/.test(mainPy), "/health 报出 cors_allow_origins",
+    "← 这些来源本来就是公开网址，说出来换到的是一个事实而不是一道猜谜");
+
+  // -------- 19.4 叫醒要真的重试，而且**不报喜**
+  check(/BACKOFF_MS/.test(warmup) && /BACKOFF_MS\.length/.test(warmup),
+    "叫醒按递增间隔重试", "← 冷启动实测几十秒，密集重试只是白发请求");
+  check(/if \(state\.kind === "ready"\) return null/.test(warmup),
+    "醒着时页面上不多一行字", "← 一切正常时不该报喜");
+  check(/data-field="api-waking"/.test(warmup) && /data-field="api-unreachable"/.test(warmup),
+    "「在唤醒」与「叫不醒」是两个不同的终态",
+    "← 压成一个的话，等一会儿有用和等多久都没用就分不开了");
+}
+
 rmSync(out, { recursive: true, force: true });
 rmSync(outUpload, { recursive: true, force: true });
 rmSync(outExplain, { recursive: true, force: true });

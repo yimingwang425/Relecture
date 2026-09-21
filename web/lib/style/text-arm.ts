@@ -33,8 +33,13 @@ export const TEXT_ARM_CALL = {
    * ⚠️ **可以用环境变量覆盖**（`GEMINI_MODEL`）。写死一个 id 的风险是它被下线之后
    * 整条矫正静默不可用——而 Google 返回的 404 会被我们翻译成「模型调用失败」，
    * 看起来像网络问题。改一个环境变量比改代码再部署快得多。
+   *
+   * **默认值本身是一个猜测，而且已经猜错过一次**（2026-09-21：`gemini-2.5-flash`
+   * 对用户那把 key 返回 404）。所以真正的答案不靠这一行：route 在 404 那一支会
+   * 问一次 ListModels，把**这把 key 真的能用**的模型列进错误信息里。
+   * 这一行只决定「运气好的时候不用走那一步」。
    */
-  model: process.env.GEMINI_MODEL?.trim() || "gemini-2.5-flash",
+  model: process.env.GEMINI_MODEL?.trim() || "gemini-2.0-flash",
   /** 分类任务要稳定：同一句话两次映射到不同的轴，用户会以为是随机的。 */
   temperature: 0,
   max_output_tokens: 1500,

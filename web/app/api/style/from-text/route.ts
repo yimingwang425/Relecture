@@ -120,6 +120,33 @@ function buildSystem(): string {
   ].join("\n");
 }
 
+/**
+ * 这把 key 能用、且支持 `generateContent` 的模型有哪些。
+ *
+ * **只在 404 那一支调**——它是为了把「那该用哪个」当场答掉，不是常规路径的一环。
+ * 自己失败就返回空数组：这时候用户已经在看一个错误了，再叠一个错误没有意义，
+ * 而空数组会让上面那句话改口说「列不出来，多半是 key 或 API 没启用」——
+ * **那也是一条有用的信息**，不是沉默。
+ */
+async function listModels(apiKey: string): Promise<string[]> {
+  try {
+    const r = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}&pageSize=200`,
+      { cache: "no-store" },
+    );
+    if (!r.ok) return [];
+    const body = (await r.json()) as {
+      models?: { name?: string; supportedGenerationMethods?: string[] }[];
+    };
+    return (body.models ?? [])
+      .filter((m) => (m.supportedGenerationMethods ?? []).includes("generateContent"))
+      .map((m) => (m.name ?? "").replace(/^models\//, ""))
+      .filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
 type AxisOutcome = {
   value: string;
   source: "text" | "default";
@@ -249,11 +276,33 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "服务端的模型凭据无效" }, { status: 503 });
       }
       if (r.status === 404) {
-        // **点名那个模型 id。** 不点名的话，一个被下线的模型读起来像网络问题，
-        // 而它其实改一个环境变量（GEMINI_MODEL）就好了。
+        // **点名那个模型 id，并且把「那该用哪个」一起答了。**
+        //
+        // 2026-09-21：只点名不够。用户看到「模型 X 不存在，可用 GEMINI_MODEL
+        // 换一个」之后，下一个问题必然是「换成什么」——而那个答案只有 Google
+        // 知道，猜第二个 id 只是把同一轮再走一遍。
+        //
+        // 所以这一支顺手问一次 ListModels，把**这把 key 真的能用**的模型列出来。
+        // 只在 404 这一支发生，正常路径一次都不多调。
         await track(textMapped({ ok: false, failure: "api_error" }));
+        const available = await listModels(apiKey);
+        // 也进服务端日志：UI 里那串可能被截断，而 Vercel 的日志是部署当场就能翻的。
+        console.error(JSON.stringify({
+          event: "gemini_model_not_found",
+          tried: TEXT_ARM_CALL.model,
+          available,
+        }));
         return NextResponse.json(
-          { error: `模型 ${TEXT_ARM_CALL.model} 不存在或不可用（可用 GEMINI_MODEL 换一个）` },
+          {
+            error:
+              `模型 ${TEXT_ARM_CALL.model} 对这把 key 不可用。` +
+              (available.length > 0
+                ? `这把 key 能用的是：${available.join("、")}。` +
+                  `把其中一个填进 Vercel 的 GEMINI_MODEL 再重新部署一次。`
+                : `而且列不出可用模型（${available.length === 0 ? "返回为空" : ""}）——` +
+                  `多半是这把 key 本身有问题，或者 Generative Language API 还没启用。`),
+            available_models: available,
+          },
           { status: 502 },
         );
       }

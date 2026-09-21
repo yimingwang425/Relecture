@@ -40,14 +40,24 @@ export const TEXT_ARM_CALL = {
    * 而 ListModels 报回来的阵容是 2.5 / 3.x / 3.5–3.8——**那一代编号早就换过了**。
    * 根因不是「挑错了型号」，是**拿训练数据里的版本号当事实**。
    *
-   * 所以默认值换成**别名** `gemini-flash-latest`：它跟着 Google 走，
-   * 不会因为某个编号退役而失效。代价是「最新」的具体行为会变——
-   * 对一次四条轴的分类来说可以接受，而且 schema 与取值域校验都还在。
+   * 第一反应是换成别名 `gemini-flash-latest`：它跟着 Google 走，不会因为某个编号
+   * 退役而失效。**这一步也错了**，而且错得更有意思：
+   *
+   * 用户 AI Studio 的额度页显示，那个别名解析到了 **Gemini 3.8 Flash**——
+   * 最新的那一个，免费层 **5 RPM / 20 RPD**，而且正因为新所以最挤（连着 503）。
+   * **「最新」对一次后台分类来说是最差的选择**：配额最紧、争用最凶，
+   * 而我们要的只是把一句话映射到四条轴。
+   *
+   * 所以最终默认 `gemini-flash-lite-latest`：**lite 那一支的别名**。
+   * 仍然是别名（躲开版本号过时），但指向的是为「便宜、量大」设计的那一档。
+   *
+   * ⚠️ 别名指向谁**不再靠猜**：响应里的 `modelVersion` 会被记进日志与响应，
+   * 「我这次实际用的是哪个模型」是一个查得出来的事实。
    *
    * 真正的答案仍然不靠这一行：route 在 404 那一支会问一次 ListModels，
    * 把**这把 key 真的能用**的模型列进错误信息。这一行只决定运气好时不用走那一步。
    */
-  model: process.env.GEMINI_MODEL?.trim() || "gemini-flash-latest",
+  model: process.env.GEMINI_MODEL?.trim() || "gemini-flash-lite-latest",
   /** 分类任务要稳定：同一句话两次映射到不同的轴，用户会以为是随机的。 */
   temperature: 0,
   max_output_tokens: 1500,

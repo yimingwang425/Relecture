@@ -303,6 +303,8 @@ export async function POST(request: Request) {
   }
 
   let raw: string;
+  /** 别名实际解析到的模型。取不到就是 null——**不填一个猜的值**。 */
+  let resolvedModel: string | null = null;
   try {
     // 参数**全部**取自 TEXT_ARM_CALL：发出去的和记进事件的必须是同一份。
     //
@@ -371,7 +373,9 @@ export async function POST(request: Request) {
               `${RETRY_MS.length + 1} 次仍然没成。等一会儿再点一次「应用」就行——` +
               `这是他们服务的临时过载，不是你的设置有问题。` +
               `一直这样的话，换一个不那么挤的模型：把 GEMINI_MODEL 设成 ` +
-              `gemini-flash-lite-latest 之类再部署。`,
+              `gemini-flash-lite-latest 之类再部署。` +
+              `（AI Studio 的 Rate limit 页能看到每个模型自己的额度——` +
+              `越新的模型免费额度越紧、也越挤。）`,
           },
           { status: 503 },
         );
@@ -382,7 +386,13 @@ export async function POST(request: Request) {
     const payload = (await r.json()) as {
       candidates?: { content?: { parts?: { text?: string }[] }; finishReason?: string }[];
       promptFeedback?: { blockReason?: string };
+      /** 别名（`*-latest`）实际解析到的模型。**这是把猜变成事实的那个字段。** */
+      modelVersion?: string;
     };
+    // 2026-09-21：`gemini-flash-latest` 解析到了 Gemini 3.8 Flash（免费层 5 RPM /
+    // 20 RPD，最挤的那一个）。在那之前「别名指向谁」只能靠翻 AI Studio 的额度页去倒推。
+    // 记下来之后它是一个查得出来的事实。
+    resolvedModel = payload.modelVersion ?? null;
 
     if (payload.promptFeedback?.blockReason) {
       await track(textMapped({ ok: false, failure: "refusal" }));
@@ -474,6 +484,10 @@ export async function POST(request: Request) {
     JSON.stringify({
       event: "style_text_mapped",
       call: TEXT_ARM_CALL,
+      // **配置的那个 id 与实际跑的那个模型分开记。** 用别名时两者必然不同，
+      // 合成一个字段的话，「我以为在用 lite，其实跑的是最新的那个」这件事
+      // 从数据里看不出来。
+      resolved_model: resolvedModel,
       ok: true,
       axes_from_text: axesFromText,
       axes_from_default: axesFromDefault,
@@ -481,5 +495,5 @@ export async function POST(request: Request) {
     }),
   );
 
-  return NextResponse.json({ config, axes, call: TEXT_ARM_CALL });
+  return NextResponse.json({ config, axes, call: TEXT_ARM_CALL, resolved_model: resolvedModel });
 }

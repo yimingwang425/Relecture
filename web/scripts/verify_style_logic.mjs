@@ -2005,6 +2005,16 @@ console.log("\n\x1b[1m十九 · 连不上讲解服务时说什么\x1b[0m");
     "重试不换模型不改参数",
     "← 换了的话响应里的 call 会说着一套、实际用了另一套");
 
+  // -------- 19.3c 别名实际解析到谁，**记下来**
+  //
+  // 2026-09-21：默认从 gemini-flash-latest 换成 lite 的别名，就是因为前者解析到了
+  // Gemini 3.8 Flash（5 RPM / 20 RPD，最挤的那一个）——而**在记下 modelVersion
+  // 之前，这件事只能靠翻 AI Studio 的额度页倒推**。
+  check(/resolved_model: resolvedModel/.test(route2), "实际跑的模型记进日志与响应");
+  check(/call: TEXT_ARM_CALL/.test(route2) && /resolved_model/.test(route2),
+    "配置的 id 与实际跑的模型**分开**记",
+    "← 合成一个字段的话，「我以为在用 lite、其实跑的是最新那个」从数据里看不出来");
+
   // -------- 19.4 叫醒要真的重试，而且**不报喜**
   check(/BACKOFF_MS/.test(warmup) && /BACKOFF_MS\.length/.test(warmup),
     "叫醒按递增间隔重试", "← 冷启动实测几十秒，密集重试只是白发请求");

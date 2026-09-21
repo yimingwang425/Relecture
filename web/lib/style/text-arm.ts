@@ -34,12 +34,20 @@ export const TEXT_ARM_CALL = {
    * 整条矫正静默不可用——而 Google 返回的 404 会被我们翻译成「模型调用失败」，
    * 看起来像网络问题。改一个环境变量比改代码再部署快得多。
    *
-   * **默认值本身是一个猜测，而且已经猜错过一次**（2026-09-21：`gemini-2.5-flash`
-   * 对用户那把 key 返回 404）。所以真正的答案不靠这一行：route 在 404 那一支会
-   * 问一次 ListModels，把**这把 key 真的能用**的模型列进错误信息里。
-   * 这一行只决定「运气好的时候不用走那一步」。
+   * ## 默认值猜错过**两次**，所以现在不猜带版本号的 id 了
+   *
+   * 2026-09-21：`gemini-2.5-flash` → 404；换 `gemini-2.0-flash` → 404，
+   * 而 ListModels 报回来的阵容是 2.5 / 3.x / 3.5–3.8——**那一代编号早就换过了**。
+   * 根因不是「挑错了型号」，是**拿训练数据里的版本号当事实**。
+   *
+   * 所以默认值换成**别名** `gemini-flash-latest`：它跟着 Google 走，
+   * 不会因为某个编号退役而失效。代价是「最新」的具体行为会变——
+   * 对一次四条轴的分类来说可以接受，而且 schema 与取值域校验都还在。
+   *
+   * 真正的答案仍然不靠这一行：route 在 404 那一支会问一次 ListModels，
+   * 把**这把 key 真的能用**的模型列进错误信息。这一行只决定运气好时不用走那一步。
    */
-  model: process.env.GEMINI_MODEL?.trim() || "gemini-2.0-flash",
+  model: process.env.GEMINI_MODEL?.trim() || "gemini-flash-latest",
   /** 分类任务要稳定：同一句话两次映射到不同的轴，用户会以为是随机的。 */
   temperature: 0,
   max_output_tokens: 1500,
@@ -47,6 +55,24 @@ export const TEXT_ARM_CALL = {
 
 export type TextArmCall = typeof TEXT_ARM_CALL;
 
+/**
+ * API 版本。**也做成可配的**（`GEMINI_API_VERSION`）。
+ *
+ * 2026-09-21 撞到一个解释不了的现象：`gemini-2.5-flash` 在 ListModels（v1beta）
+ * 里列得出来，但对它调 `:generateContent` 返回 404。最可能的解释是这个模型的
+ * generateContent 已经不在 v1beta 上了——而**这件事我没法在本地验证**（没有 key）。
+ *
+ * 与其再猜一次，不如把版本也变成一个改环境变量就能试的东西：
+ * 下一次撞到 404，换 `v1` 再试一次比改代码再部署快得多。
+ */
+export const GEMINI_API_VERSION = process.env.GEMINI_API_VERSION?.trim() || "v1beta";
+
 /** Gemini 的 REST 端点。key 走查询参数（Google 的标准用法）。 */
 export const GEMINI_ENDPOINT =
-  `https://generativelanguage.googleapis.com/v1beta/models/${TEXT_ARM_CALL.model}:generateContent`;
+  `https://generativelanguage.googleapis.com/${GEMINI_API_VERSION}` +
+  `/models/${TEXT_ARM_CALL.model}:generateContent`;
+
+/** ListModels。与上面同一个版本——**列出来的和调用的必须是同一个 API 版本**，
+ *  否则「列表里有它却调不通」这种现象会一直说不清楚。 */
+export const GEMINI_LIST_ENDPOINT =
+  `https://generativelanguage.googleapis.com/${GEMINI_API_VERSION}/models`;

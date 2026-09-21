@@ -12,7 +12,12 @@ import {
   type StyleConfig,
 } from "@/lib/style/axes";
 import { recordEvent, textMapped } from "@/lib/style/events";
-import { GEMINI_ENDPOINT, TEXT_ARM_CALL } from "@/lib/style/text-arm";
+import {
+  GEMINI_API_VERSION,
+  GEMINI_ENDPOINT,
+  GEMINI_LIST_ENDPOINT,
+  TEXT_ARM_CALL,
+} from "@/lib/style/text-arm";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -131,7 +136,7 @@ function buildSystem(): string {
 async function listModels(apiKey: string): Promise<string[]> {
   try {
     const r = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}&pageSize=200`,
+      `${GEMINI_LIST_ENDPOINT}?key=${encodeURIComponent(apiKey)}&pageSize=200`,
       { cache: "no-store" },
     );
     if (!r.ok) return [];
@@ -290,17 +295,20 @@ export async function POST(request: Request) {
         console.error(JSON.stringify({
           event: "gemini_model_not_found",
           tried: TEXT_ARM_CALL.model,
+          api_version: GEMINI_API_VERSION,
           available,
         }));
         return NextResponse.json(
           {
             error:
-              `模型 ${TEXT_ARM_CALL.model} 对这把 key 不可用。` +
+              `模型 ${TEXT_ARM_CALL.model} 在 ${GEMINI_API_VERSION} 上调不通（404）。` +
               (available.length > 0
                 ? `这把 key 能用的是：${available.join("、")}。` +
                   `把其中一个填进 Vercel 的 GEMINI_MODEL 再重新部署一次。`
-                : `而且列不出可用模型（${available.length === 0 ? "返回为空" : ""}）——` +
-                  `多半是这把 key 本身有问题，或者 Generative Language API 还没启用。`),
+                : `而且列不出可用模型——多半是这把 key 本身有问题，` +
+                  `或者 Generative Language API 还没启用。`) +
+              `（如果它就在上面这份列表里却仍然调不通，说明这个模型的 generateContent ` +
+              `不在 ${GEMINI_API_VERSION} 上：把 GEMINI_API_VERSION 设成 v1 再试。）`,
             available_models: available,
           },
           { status: 502 },

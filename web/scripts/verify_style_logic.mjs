@@ -1988,6 +1988,23 @@ console.log("\n\x1b[1m十九 · 连不上讲解服务时说什么\x1b[0m");
   check(/"cors_allow_origins"/.test(mainPy), "/health 报出 cors_allow_origins",
     "← 这些来源本来就是公开网址，说出来换到的是一个事实而不是一道猜谜");
 
+  // -------- 19.3b 瞬时错误要退避重试，客户端错误**一次都不重试**
+  //
+  // Google 官方排错文档：503 UNAVAILABLE 是「后端临时过载」的瞬时错误，
+  // 处置是指数退避 + 抖动；而 400 / 404 是客户端错误，重试多少次都一样。
+  // 2026-09-21 实测撞到 503，而当时我们的处置是**直接放弃**——那是错的。
+  const route2 = stripComments(readFileSync(join(WEB, "app/api/style/from-text/route.ts"), "utf8"));
+  check(/const RETRY_MS = \[/.test(route2), "瞬时错误按指数退避重试");
+  check(/Math\.random\(\) \* 400/.test(route2), "退避带随机抖动",
+    "← 多个客户端同时撞上过载时，不要在同一毫秒一起回来");
+  check(/status >= 500 && status < 600/.test(route2), "只有 5xx 算瞬时");
+  check(!/isTransient\(429\)/.test(route2) && /429/.test(route2),
+    "429 不走重试（那是配额，1 秒后还是同一个配额），但仍然单独有话说");
+  check(/重试不换模型、不改参数|重试的是\*\*同一个请求\*\*/.test(
+      readFileSync(join(WEB, "app/api/style/from-text/route.ts"), "utf8")),
+    "重试不换模型不改参数",
+    "← 换了的话响应里的 call 会说着一套、实际用了另一套");
+
   // -------- 19.4 叫醒要真的重试，而且**不报喜**
   check(/BACKOFF_MS/.test(warmup) && /BACKOFF_MS\.length/.test(warmup),
     "叫醒按递增间隔重试", "← 冷启动实测几十秒，密集重试只是白发请求");

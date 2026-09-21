@@ -133,6 +133,64 @@ function buildSystem(): string {
  * 而空数组会让上面那句话改口说「列不出来，多半是 key 或 API 没启用」——
  * **那也是一条有用的信息**，不是沉默。
  */
+/**
+ * 瞬时错误的重试间隔（毫秒）。**只对 5xx 用**。
+ *
+ * 取自 Google 官方的排错文档：503 UNAVAILABLE 是「后端临时过载」的瞬时错误，
+ * 处置是**指数退避**（先等 1s，再 2s、4s…）并加随机抖动避免多个客户端同步重试。
+ * 而 400 / 404 是客户端错误，**重试多少次都一样**——那两类在下面按状态码分支，
+ * 一次都不重试。
+ *
+ * 只重试两次：用户正在对话框里等，第三次失败时告诉他「Google 那边忙」
+ * 比让他再等 8 秒有用。
+ */
+const RETRY_MS = [1000, 2000];
+
+/** 5xx 才重试。429 不在里面——那是配额，1 秒后重试还是同一个配额。 */
+function isTransient(status: number): boolean {
+  return status >= 500 && status < 600;
+}
+
+/**
+ * 发那一次 generateContent，瞬时失败时按指数退避重试。
+ *
+ * ⚠️ **重试不换模型、不改参数**：换了的话响应里那个 `call: TEXT_ARM_CALL`
+ * 就会说着一套、实际用了另一套（「说谎的字段」）。这里重试的是**同一个请求**。
+ */
+async function callWithBackoff(apiKey: string, description: string): Promise<Response> {
+  let last: Response | null = null;
+  for (let i = 0; i <= RETRY_MS.length; i++) {
+    if (i > 0) {
+      // 抖动：多个用户同时撞上过载时，不要在同一毫秒一起回来。
+      const jitter = Math.floor(Math.random() * 400);
+      await new Promise((r) => setTimeout(r, RETRY_MS[i - 1] + jitter));
+    }
+    last = await fetch(`${GEMINI_ENDPOINT}?key=${encodeURIComponent(apiKey)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: buildSystem() }] },
+        contents: [{ role: "user", parts: [{ text: description }] }],
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseSchema: SCHEMA,
+          temperature: TEXT_ARM_CALL.temperature,
+          maxOutputTokens: TEXT_ARM_CALL.max_output_tokens,
+        },
+      }),
+    });
+    if (last.ok || !isTransient(last.status)) return last;
+    console.warn(JSON.stringify({
+      event: "gemini_transient_retry",
+      status: last.status,
+      attempt: i + 1,
+      of: RETRY_MS.length + 1,
+      model: TEXT_ARM_CALL.model,
+    }));
+  }
+  return last!;
+}
+
 async function listModels(apiKey: string): Promise<string[]> {
   try {
     const r = await fetch(
@@ -250,20 +308,7 @@ export async function POST(request: Request) {
     //
     // 用 fetch 直接打 REST，不引 SDK：这里只需要一次 generateContent，
     // 而多一个依赖就多一份要跟着升级的东西（何况 bundle 也要装它）。
-    const r = await fetch(`${GEMINI_ENDPOINT}?key=${encodeURIComponent(apiKey)}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: buildSystem() }] },
-        contents: [{ role: "user", parts: [{ text: description }] }],
-        generationConfig: {
-          responseMimeType: "application/json",
-          responseSchema: SCHEMA,
-          temperature: TEXT_ARM_CALL.temperature,
-          maxOutputTokens: TEXT_ARM_CALL.max_output_tokens,
-        },
-      }),
-    });
+    const r = await callWithBackoff(apiKey, description);
 
     if (!r.ok) {
       // 失败分支各记一条 `ok: false` 的事件。**`failure` 是分类不是文案**——
@@ -316,6 +361,21 @@ export async function POST(request: Request) {
       }
       await track(textMapped({ ok: false, failure: "api_error" }));
       console.error(JSON.stringify({ event: "gemini_http_error", status: r.status, body: body.slice(0, 400) }));
+      if (isTransient(r.status)) {
+        // **说清是对方忙、我们已经退避重试过**，而不是一句「调用失败」。
+        // 用户据此知道该做的是等一会儿再点一次，不是去改什么设置。
+        return NextResponse.json(
+          {
+            error:
+              `Google 那边暂时忙不过来（HTTP ${r.status}），已经按官方建议退避重试 ` +
+              `${RETRY_MS.length + 1} 次仍然没成。等一会儿再点一次「应用」就行——` +
+              `这是他们服务的临时过载，不是你的设置有问题。` +
+              `一直这样的话，换一个不那么挤的模型：把 GEMINI_MODEL 设成 ` +
+              `gemini-flash-lite-latest 之类再部署。`,
+          },
+          { status: 503 },
+        );
+      }
       return NextResponse.json({ error: `模型调用失败（HTTP ${r.status}）` }, { status: 502 });
     }
 

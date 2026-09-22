@@ -443,11 +443,9 @@ export async function POST(request: Request) {
     const reason = typeof entry?.reason === "string" ? entry.reason : "";
 
     if (value === UNSPECIFIED) {
-      // `source: "default"` 这个名字是**历史的**：它现在的含义是
-      // 「这一轴描述里没提到，所以保持原样」，而不是「回落到默认档」。
-      // 名字没改是因为它已经进了 `style_text_mapped` 事件的必需字段
-      // （改名要连迁移与两处镜像一起动）。**登记为待清理**，
-      // 在那之前读这个字段的人要知道它说的是「没提到」，不是「用了默认值」。
+      // `source: "default"` 只是这个函数内部的标记，含义是「描述里没提到」。
+      // 事件里那个字段 2026-09-22 已经改名 `axes_kept`——旧名 `axes_from_default`
+      // 说的是「回落默认档」，而事实是「一个字没动」（口径 F84）。
       axes[axis] = { value: base[axis], source: "default", reason };
       continue;
     }
@@ -470,10 +468,10 @@ export async function POST(request: Request) {
   // 存成两个列表而不是一个 map，是因为分析时问的就是「几条来自描述」——
   // 存 map 的话每次都要在查询里数一遍。
   const axesFromText = AXIS_IDS.filter((a) => axes[a]?.source === "text");
-  const axesFromDefault = AXIS_IDS.filter((a) => axes[a]?.source === "default");
+  const axesKept = AXIS_IDS.filter((a) => axes[a]?.source === "default");
 
   const written = await track(
-    textMapped({ ok: true, axesFromText, axesFromDefault }),
+    textMapped({ ok: true, axesFromText, axesKept }),
   );
 
   // 结构化日志保留：事件表要靠 SQL 才看得到，而 Vercel 日志是部署当场就能看的
@@ -490,7 +488,7 @@ export async function POST(request: Request) {
       resolved_model: resolvedModel,
       ok: true,
       axes_from_text: axesFromText,
-      axes_from_default: axesFromDefault,
+      axes_kept: axesKept,
       event_written: written,
     }),
   );

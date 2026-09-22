@@ -147,7 +147,6 @@ try {
       "tsc",
       "lib/style/axes.ts",
       "lib/style/feedback.ts",
-      "lib/style/flow.ts",
       "lib/style/taste.ts",
       "lib/style/text-arm.ts",
       "lib/style/events.ts",
@@ -207,9 +206,6 @@ try {
 const require_ = createRequire(import.meta.url);
 const { AXES, DEFAULTS, DETAIL_LADDER, DEPTH_LADDER } = require_(join(out, "axes.js"));
 const { applyFeedback, FEEDBACK_KINDS } = require_(join(out, "feedback.js"));
-const { stepAt, configFromPicks, TOTAL_STEPS, REACHABLE_PAIR_IDS, makeFlips } = require_(
-  join(out, "flow.js"),
-);
 
 const cfg = (over = {}) => ({ ...DEFAULTS, ...over });
 
@@ -313,54 +309,14 @@ console.log("\n\x1b[1m三 · F07 · 端点不静默吞掉\x1b[0m");
 
 // ---------------------------------------------------------------- 比较树
 
-console.log("\n\x1b[1m四 · 6 次固定顺序的比较树\x1b[0m");
-{
-  // 穷举 2^6 条路径：每步都有 a/b 两种选择。
-  const seenPairs = new Set();
-  const results = [];
-  let brokeSomewhere = null;
-
-  for (let mask = 0; mask < 1 << TOTAL_STEPS; mask++) {
-    const picks = {};
-    try {
-      for (let i = 1; i <= TOTAL_STEPS; i++) {
-        const step = stepAt(i, picks);
-        seenPairs.add(step.pairId);
-        // 用取值域里「第 (bit) 个」取值近似 a/b：真实取值由 pairs.json 的 variant_label 给，
-        // 这里只需要一个合法取值来驱动分支。
-        const domain = AXES[step.axis];
-        const bit = (mask >> (i - 1)) & 1;
-        picks[step.axis] = domain[bit % domain.length];
-      }
-      results.push(configFromPicks(picks));
-    } catch (err) {
-      brokeSomewhere = err.message;
-      break;
-    }
-  }
-
-  check(brokeSomewhere === null, "64 条路径都走得通并产出完整配置", brokeSomewhere ?? "");
-  check(results.length === 1 << TOTAL_STEPS, `产出 ${1 << TOTAL_STEPS} 份配置`, `实得 ${results.length}`);
-  check(
-    eq([...seenPairs].sort(), [...REACHABLE_PAIR_IDS].sort()),
-    "走到的对 == REACHABLE_PAIR_IDS",
-    `${seenPairs.size} 个`,
-  );
-
-  // 每条轴都必须被 6 步覆盖到——漏一条的表现是那条轴永远是默认值，
-  // 而默认值和「用户选的恰好等于默认值」在库里长得一模一样。
-  const covered = Object.keys(AXES).every((axis) => results.every((r) => r[axis] !== undefined));
-  check(covered, "四条轴都被 6 步覆盖，没有一条靠默认值兜底");
-
-  // 缺一条轴时 configFromPicks 必须抛异常，而不是补默认值。
-  let threw = false;
-  try {
-    configFromPicks({ detail_level: "P0" });
-  } catch {
-    threw = true;
-  }
-  check(threw, "反向控制：picks 缺轴 → 抛异常，不静默补默认值");
-}
+// 「四 · 6 次固定顺序的比较树」**整节删除**（2026-09-22）。
+//
+// 它穷举 2^6 条路径，验的是比较树的覆盖、无死路、以及「picks 缺轴 → 抛异常」。
+// 成对比较 2026-09-20 撤掉之后（口径 F83），被验的那棵树和那几个函数都没了。
+//
+// **这不是把判据关掉**：判据要验的东西不存在了，留着它就是在验一段没人跑的代码，
+// 而一条永远绿的断言比没有断言更危险——它让人以为验过了。
+// 标签 → 配置这条新路径的护栏在第十八节。
 
 // ---------------------------------------------------------------- 接线
 
@@ -368,7 +324,6 @@ console.log("\n\x1b[1m五 · 两处「一处出处」的接线\x1b[0m");
 {
   const { TEXT_ARM_CALL } = require_(join(out, "text-arm.js"));
   const routeSrc = readFileSync(join(WEB, "app/api/style/from-text/route.ts"), "utf8");
-  const pairSrc = readFileSync(join(WEB, "app/onboarding/style/pairwise-client.tsx"), "utf8");
 
   // --- 对照臂：发出去的参数与记进事件的必须同源
   check(
@@ -425,9 +380,12 @@ console.log("\n\x1b[1m五 · 两处「一处出处」的接线\x1b[0m");
   check(clientFiles.length >= 3, "扫到客户端组件", `${clientFiles.length} 个`);
 
   const randomSources = randomSourceNames(join(WEB, "lib", "style"));
+  // 2026-09-22：原来断的是「名单含 makeFlips」。那个函数随比较页一起删了，
+  // 而这条断言真正要保的是**名单是扫出来的、不是写死的**——所以改成断它非空，
+  // 并把内容打出来。写死一个具体名字，下一次那个函数改名它就变成一条空转的断言。
   check(
-    randomSources.includes("makeFlips"),
-    "推导出的随机源名单含 makeFlips",
+    randomSources.length > 0,
+    "随机源名单是扫 lib/style 推导出来的，且非空",
     randomSources.join(" / ") + "  ← 名单是推导的，不是写死的",
   );
   // 阶段 4：session_id 也必须在服务端抽。它进名单是**自动**的（函数体里有
@@ -447,26 +405,22 @@ console.log("\n\x1b[1m五 · 两处「一处出处」的接线\x1b[0m");
       : randomInClient.join("；"),
   );
 
-  // 允许控制：随机**必须还在**，只是搬到了服务端。
-  // 少了这条，把随机整个删掉也会让上一条全绿——而那正是最坏的结果（位置恒定）。
-  const pageSrc = readFileSync(join(WEB, "app/onboarding/style/page.tsx"), "utf8");
-  check(
-    /makeFlips\(\s*TOTAL_STEPS\s*\)/.test(pageSrc) && /flips=\{/.test(pageSrc),
-    "服务端页面抽随机并作为 prop 传下去",
-    "← 只删不搬的话，位置会恒定而上一条照样绿",
-  );
-  check(
-    /flips:\s*\(0 \| 1\)\[\]/.test(pairSrc),
-    "客户端组件把 flips 作为 prop 接收",
-  );
+  // 「左右位置随机化」那一组断言**已删除**（2026-09-22）：makeFlips / flips prop /
+  // leftVariant / data-left-variant / 「记档位不记位置」，连同它们的反向控制。
+  // 它们全部只为成对比较的两栏而存在，比较撤掉之后（F83）没有被测对象了。
+  //
+  // ⚠️ 下面「客户端组件里没有随机源」那一条**保留**：它管的是所有客户端组件
+  // （React #418 与 hydrate 分叉），不是比较页专有的纪律。
 
   // 允许控制（阶段 4）：三个服务端页面**必须**各自抽一个 session_id 并传下去。
   // 少了这条，把 newSessionId 整个删掉也会让「客户端没有随机源」全绿——
   // 而那时事件全部落在 undefined/空 session 上，弃流点分析直接没了。
   for (const rel of [
-    "app/onboarding/style/page.tsx",
-    "app/onboarding/style-text/page.tsx",
+    // 2026-09-22：原来列的是比较臂与文字臂那两页，它们已经删了。
+    // 现存**会把 sessionId 传给客户端组件**的服务端页面就这两个。
+    "app/onboarding/taste/page.tsx",
     "app/settings/style/page.tsx",
+    "app/courses/[id]/page.tsx",
   ]) {
     const src = readFileSync(join(WEB, rel), "utf8");
     check(
@@ -489,53 +443,27 @@ console.log("\n\x1b[1m五 · 两处「一处出处」的接线\x1b[0m");
     sessionDetected.length > 0 ? `报出 ${sessionDetected.length} 条` : "没报出 —— 这条是空转的",
   );
 
-  // 判据自身的分辨力：把修复前的写法塞回去，这条**必须**报出问题。
-  const preFix = pairSrc.replace(
-    "const [frozenFlips] = useState<(0 | 1)[]>(flips);",
-    "const [frozenFlips] = useState<(0 | 1)[]>(() => makeFlips(TOTAL_STEPS));",
-  );
+  // 判据自身的分辨力：造一个在客户端组件里取随机的写法，这条**必须**报出问题。
+  //
+  // 2026-09-22：原来是拿 pairwise-client 的「修复前版本」当样本（2026-09-10 那次
+  // React #418 的真实写法）。那个文件删了，所以改成**自造**一段同形的源码——
+  // 反向控制要的是「判据认不认得出这种写法」，不是那一个具体文件。
   const detected = clientRandomnessProblems(
-    [{ path: "pairwise-client.tsx(修复前)", src: preFix }],
+    [{
+      path: "某个客户端组件(渲染期取随机)",
+      // **包在 useState 里**——那才是 2026-09-10 真实踩到的形态（随机藏在一层
+      // 函数调用后面，肉眼扫不出来）。用一个**现存**的随机源：写一个已经删掉的
+      // 函数名，判据认不出来，这条反向控制自己就空转了（刚才真的空转了一次）。
+      src: '"use client";\nconst [f] = useState(() => newSessionId());\n',
+    }],
     randomSources,
   );
   check(
     detected.length > 0,
-    "反向控制：把修复前的写法塞回去，判据变红",
+    "反向控制：客户端组件渲染期取随机 → 判据变红",
     detected.length > 0 ? `报出 ${detected.length} 条` : "没报出 —— 这条护栏是空转的",
   );
 
-  // --- 主臂：记下了谁在左
-  // 两个分支都要真的可达。写成 `rng() < 0` 时位置会恒定，而页面看起来完全正常——
-  // 与 f1_assign_arm 那条「两个臂都要被断言碰到」是同一个形态（通则七 #7）。
-  const flipDist = makeFlips(400).reduce((m, f) => ((m[f] = (m[f] ?? 0) + 1), m), {});
-  check(
-    (flipDist[0] ?? 0) > 0 && (flipDist[1] ?? 0) > 0,
-    "左右两种顺序都可达",
-    `400 次 → 左 ${flipDist[0] ?? 0} / 右 ${flipDist[1] ?? 0}`,
-  );
-  // 注入可控 rng，把两个分支各钉一次——不依赖真随机碰巧覆盖到。
-  check(
-    JSON.stringify(makeFlips(3, () => 0.1)) === "[0,0,0]" &&
-      JSON.stringify(makeFlips(3, () => 0.9)) === "[1,1,1]",
-    "rng 的两侧分别落到 0 与 1",
-  );
-  check(pageSrc.includes("makeFlips(TOTAL_STEPS)"), "页面用的是被测过的那个函数");
-  check(
-    pairSrc.includes("leftVariant"),
-    "记录了 leftVariant",
-    "← 没有它，位置效应事后无法从数据里分离",
-  );
-  check(
-    pairSrc.includes("data-left-variant"),
-    "页面上暴露 data-left-variant",
-    "← 人工/回归要能确认随机化真的在发生",
-  );
-  // 选中记的是档位下标而不是左右位置——位置随机之后这是唯一稳定的东西。
-  check(
-    pairSrc.includes("pair.samples[selected].variantLabel"),
-    "记的是档位而非左右位置",
-    "← 记位置的话，随机化会直接把选择弄错",
-  );
 }
 
 // ---------------------------------------------------------------- 样例渲染
@@ -757,14 +685,13 @@ console.log("\n\x1b[1m七 · 埋点五事件（阶段 4）\x1b[0m");
   // 「缺一个字段」是这套埋点最容易发生也最安静的坏法：数据库会拒，用户无感，
   // 报表里那一列就是空的。所以每个事件都真的构造一次再逐字段核。
   const cfg0 = cfg();
+  // ⚠️ 2026-09-22：`style_pair_shown` / `style_pair_chosen` **不在这张表里了**——
+  // 它们的构造函数随成对比较一起删了（F83）。数据库里那两个事件类型与历史行
+  // 都留着（F10），只是前端不再发。所以下面的循环遍历的是**这张表**，
+  // 不是 SQL 里那 14 个类型：验的是「我们会发的每一个事件字段齐全」。
   const built = {
-    style_pair_shown: ev.pairShown({ step: 1, axis: "detail_level", pairId: "detail_p0_p3", leftVariant: "P0" }),
-    style_pair_chosen: ev.pairChosen({
-      step: 1, axis: "detail_level", pairId: "detail_p0_p3",
-      leftVariant: "P0", chosenVariant: "P3", dwellMs: 1234, hiddenMs: 0,
-    }),
-    style_onboarding_completed: ev.onboardingCompleted({ config: cfg0, stepsCompleted: 6, totalMs: 42000 }),
-    style_text_mapped: ev.textMapped({ ok: true, axesFromText: ["detail_level"], axesFromDefault: ["depth"] }),
+    style_onboarding_completed: ev.onboardingCompleted({ config: cfg0, stepsCompleted: 2, totalMs: 42000 }),
+    style_text_mapped: ev.textMapped({ ok: true, axesFromText: ["detail_level"], axesKept: ["depth"] }),
     style_config_changed: ev.manualChange(cfg0, { ...cfg0, depth: "derivation" }),
     style_taste_shown: ev.tasteShown({ board: "tone", tagIds: ["tone_peer", "tone_written"] }),
     style_taste_chosen: ev.tasteChosen({
@@ -772,7 +699,18 @@ console.log("\n\x1b[1m七 · 埋点五事件（阶段 4）\x1b[0m");
       priors: { depth: "why" }, totalMs: 18000,
     }),
   };
-  for (const t of ev.EVENT_TYPES) {
+  // 遍历的是**我们真能构造的那些**，不是 `EVENT_TYPES` 全集。
+  // `EVENT_TYPES` 镜像的是数据库契约，里面还留着两个**前端不再发**的历史类型。
+  const constructible = Object.keys(built);
+  const retired = ev.EVENT_TYPES.filter((t) => !constructible.includes(t));
+  // **把缺口显式断出来。** 不断的话，哪天有人不小心删掉一个还在用的构造器，
+  // 这个循环会安静地少验一个事件，而没有任何东西会红。
+  check(
+    eq(sorted_(retired), ["style_pair_chosen", "style_pair_shown"]),
+    "前端不再发的事件类型正好是成对比较那两个",
+    retired.join(" / ") + "  ← 数据库里它们与历史行都留着（F10），只是没人再发",
+  );
+  for (const t of constructible) {
     const payload = built[t].payload;
     const missing = ev.REQUIRED_PAYLOAD_KEYS[t].filter(
       (k) => payload[k] === undefined || payload[k] === null || payload[k] === "",
@@ -782,13 +720,16 @@ console.log("\n\x1b[1m七 · 埋点五事件（阶段 4）\x1b[0m");
   }
 
   // 反向控制：构造函数自己也要会拒。少了这条，`complete()` 可以是个恒真的空壳。
+  //
+  // 2026-09-22：原来用的是 `pairShown({..., leftVariant: "" })`，那个构造器删了。
+  // 换成一个**还活着**的：标签页的 `tasteShown`，空 board 同样该被点名拒掉。
   let refused = false;
   try {
-    ev.pairShown({ step: 1, axis: "detail_level", pairId: "detail_p0_p3", leftVariant: "" });
+    ev.tasteShown({ board: "", tagIds: ["tone_peer"] });
   } catch (e) {
-    refused = /left_variant/.test(e.message);
+    refused = /board/.test(e.message);
   }
-  check(refused, "反向控制：left_variant 为空时构造函数抛异常且点名字段");
+  check(refused, "反向控制：board 为空时构造函数抛异常且点名字段");
 
   // -------- 7.3 `dwell_ms` / `hidden_ms`：只采集不判读（口径 F38）
   //
@@ -848,7 +789,7 @@ console.log("\n\x1b[1m七 · 埋点五事件（阶段 4）\x1b[0m");
   const trackedFiles = [
     "lib/style/events.ts",
     "lib/style/dwell.ts",
-    "app/onboarding/style/pairwise-client.tsx",
+    "app/onboarding/taste/taste-client.tsx",
     "app/settings/style/settings-client.tsx",
   ];
   const thresholdProblems = trackedFiles.flatMap((rel) =>
@@ -919,7 +860,7 @@ console.log("\n\x1b[1m七 · 埋点五事件（阶段 4）\x1b[0m");
   check(manualSame.config_changed === false, "手动保存但一个字段都没改 → config_changed=false");
 
   // -------- 7.5 `call` 必须从 text-arm.ts 读，描述原文不得进事件
-  const mapped = ev.textMapped({ ok: true, axesFromText: ["detail_level"], axesFromDefault: [] }).payload;
+  const mapped = ev.textMapped({ ok: true, axesFromText: ["detail_level"], axesKept: [] }).payload;
   check(eq(mapped.call, TEXT_ARM_CALL), "事件里的 call 与 TEXT_ARM_CALL 逐字段相同", JSON.stringify(mapped.call));
 
   const eventsSrc = readFileSync(join(WEB, "lib/style/events.ts"), "utf8");
@@ -933,7 +874,7 @@ console.log("\n\x1b[1m七 · 埋点五事件（阶段 4）\x1b[0m");
   // 行为上也核一次：喂一段 canary，它不该出现在任何字段里。
   const CANARY = "我希望讲得细一点并且多举例子ZZCANARYZZ";
   const canaryJson = JSON.stringify(
-    ev.textMapped({ ok: true, axesFromText: ["detail_level"], axesFromDefault: [] }).payload,
+    ev.textMapped({ ok: true, axesFromText: ["detail_level"], axesKept: [] }).payload,
   );
   check(!canaryJson.includes("ZZCANARYZZ") && !canaryJson.includes(CANARY), "事件 payload 里不含描述原文");
 
@@ -941,7 +882,7 @@ console.log("\n\x1b[1m七 · 埋点五事件（阶段 4）\x1b[0m");
   // 而失败率恰恰是这条臂最该看的数字之一。
   const failed_ = ev.textMapped({ ok: false, failure: "rate_limited" }).payload;
   check(
-    failed_.ok === false && Array.isArray(failed_.axes_from_text) && Array.isArray(failed_.axes_from_default),
+    failed_.ok === false && Array.isArray(failed_.axes_from_text) && Array.isArray(failed_.axes_kept),
     "ok=false 时两个轴列表仍在（空数组），事件仍能落库",
     `failure=${failed_.failure}`,
   );
@@ -950,20 +891,26 @@ console.log("\n\x1b[1m七 · 埋点五事件（阶段 4）\x1b[0m");
   //
   // 单测能证明构造函数会算，证明不了页面调了它（F3a 那次 59 条全绿而
   // request_signature 被改名没人发现，就是这个形态，通则七 #7）。
-  const pairSrc = readFileSync(join(WEB, "app/onboarding/style/pairwise-client.tsx"), "utf8");
+  const tasteSrc = readFileSync(join(WEB, "app/onboarding/taste/taste-client.tsx"), "utf8");
   const settingsSrc = readFileSync(join(WEB, "app/settings/style/settings-client.tsx"), "utf8");
   const textRouteSrc = readFileSync(join(WEB, "app/api/style/from-text/route.ts"), "utf8");
 
-  check(/pairShown\(\{/.test(pairSrc) && /pairChosen\(\{/.test(pairSrc), "成对比较页两个事件都发（一步一个事件，口径 F37）");
-  check(/leftVariant,/.test(pairSrc), "两个事件都带上 leftVariant", "← 阶段 3 那次位置随机化靠它才有意义");
-  check(/onboardingCompleted\(\{/.test(pairSrc), "主臂收尾屏发 style_onboarding_completed");
-  // **对照臂也必须发。** onboarding 完成率是 A5 预登记的三个指标之一，按臂分组读——
-  // 这条臂不发，那条曲线就只有一半，而少的那一半不会以任何形式报错。
-  const textClientSrc = readFileSync(join(WEB, "app/onboarding/style-text/text-client.tsx"), "utf8");
+  check(/tasteShown\(\{/.test(tasteSrc) && /tasteChosen\(\{/.test(tasteSrc),
+    "标签页两个事件都发（呈现与选择各一条）");
+
+  // ⚠️ **这一条 2026-09-20 到 09-22 之间断过，而且是静默断的。**
+  //
+  // `style_onboarding_completed` 原来由成对比较臂与文字臂的收尾屏发。把开场
+  // 改成只剩标签页之后，**没有人再发它了**——而 onboarding 完成率是 A5 预登记
+  // 的三个指标之一，它的分子从此恒为 0，不会有任何东西报错。
+  // 清理废弃代码时才发现：原来那两条断言指着的文件正要被删，而新页面没接上。
+  //
+  // 教训：**判据指向「哪个文件发了这个事件」时，文件一换它就跟着失效**——
+  // 而失效的样子是「那条断言随文件一起消失」，不是红。
   check(
-    /onboardingCompleted\(\{/.test(textClientSrc),
-    "对照臂收尾也发 style_onboarding_completed",
-    "← 不发的话，text 臂的 onboarding 完成率根本算不出来",
+    /onboardingCompleted\(\{/.test(tasteSrc),
+    "开场页发 style_onboarding_completed",
+    "← 不发的话 A5 的 onboarding 完成率分子恒为 0，而且不报错",
   );
   check(/textMapped\(\{\s*ok:\s*true/.test(textRouteSrc), "route.ts 成功路径发 style_text_mapped");
   check(
@@ -1040,9 +987,9 @@ console.log("\n\x1b[1m八 · 事件写入失败之后（2026-09-11 人工验收�
       _dump: () => m,
     };
   };
-  const CTX = { userId: "u1", arm: "pairwise", sessionId: "s1" };
-  const anEvent = () =>
-    ev.pairShown({ step: 1, axis: "detail_level", pairId: "detail_p0_p3", leftVariant: "P0" });
+  const CTX = { userId: "u1", arm: "taste", sessionId: "s1" };
+  // 队列本身不认事件类型，随便拿一个**还活着**的构造器就行。
+  const anEvent = () => ev.tasteShown({ board: "tone", tagIds: ["tone_peer"] });
 
   // -------- 8.1 分类：什么算瞬时
   check(ev.classifyInsertFailure({ code: "" }) === "transient", "没有错误码 → 瞬时", "← fetch 被网络层拒掉时就是这样，实测那条正是它");
@@ -1062,7 +1009,11 @@ console.log("\n\x1b[1m八 · 事件写入失败之后（2026-09-11 人工验收�
     await q.flush();
     check(sink.seen.length === 1, "前两次网络失败后，第三次真的写进去了", `尝试 ${sink.calls()} 次，落库 ${sink.seen.length} 条`);
     check(q.state().pending === 0 && q.state().dropped === 0, "落库后队列清空、无丢弃", JSON.stringify(q.state()));
-    check(sink.seen[0]?.payload?.left_variant === "P0", "落库的那条带着 left_variant", "← 缺 shown 的那一步位置效应无从算起");
+    // 断的是**payload 原样带过去了**，不是某一个具体字段。
+    // 原来断的是 `left_variant`（成对比较那一步的位置），那个事件已经不发了；
+    // 而这条真正要保的是「重试不会把内容弄丢」——换个字段一样成立。
+    check(sink.seen[0]?.payload?.board === "tone", "落库的那条 payload 原样带过去了",
+      "← 重试路径上把内容弄丢的话，事件写进去了但内容是空的，比没写更难查");
   }
 
   // -------- 8.3 瞬时失败用尽重试 → **留在队列里，不算丢**
@@ -1098,17 +1049,14 @@ console.log("\n\x1b[1m八 · 事件写入失败之后（2026-09-11 人工验收�
     const sink = fakeSink([NET, null, null]);
     const q = ev.createEventQueue(sink, CTX, { delaysMs: [1], sleep: noSleep, storage: memStorage() });
     q.enqueue(anEvent());
-    q.enqueue(
-      ev.pairChosen({
-        step: 1, axis: "detail_level", pairId: "detail_p0_p3",
-        leftVariant: "P0", chosenVariant: "P3", dwellMs: 1, hiddenMs: 0,
-      }),
-    );
+    q.enqueue(ev.tasteChosen({
+      tags: ["tone_peer"], tone: "spoken", priors: { depth: "why" }, totalMs: 100,
+    }));
     await q.flush();
     check(
       sink.seen.length === 2 &&
-        sink.seen[0].event_type === "style_pair_shown" &&
-        sink.seen[1].event_type === "style_pair_chosen",
+        sink.seen[0].event_type === "style_taste_shown" &&
+        sink.seen[1].event_type === "style_taste_chosen",
       "shown 先于 chosen 落库，即使 shown 失败过一次",
       sink.seen.map((r) => r.event_type).join(" → "),
     );
@@ -1143,11 +1091,13 @@ console.log("\n\x1b[1m八 · 事件写入失败之后（2026-09-11 人工验收�
     check(r2.ok === false && r2.kind === "permanent" && sink2.calls() === 1, "永久失败不重试并报出 kind", `${sink2.calls()} 次，kind=${r2.kind}`);
   }
 
-  // -------- 8.8 接线：三个页面用的是队列，不是裸插入
-  const pairSrc2 = readFileSync(join(WEB, "app/onboarding/style/pairwise-client.tsx"), "utf8");
+  // -------- 8.8 接线：发事件的页面用的是队列，不是裸插入
+  //
+  // 2026-09-22：原来列的是「主臂 / 设置页 / 对照臂」三页，其中两页随成对比较
+  // 一起删了。现存**会发埋点事件**的客户端页面就这两个。
+  const tasteSrc2 = readFileSync(join(WEB, "app/onboarding/taste/taste-client.tsx"), "utf8");
   const settingsSrc2 = readFileSync(join(WEB, "app/settings/style/settings-client.tsx"), "utf8");
-  const textSrc2 = readFileSync(join(WEB, "app/onboarding/style-text/text-client.tsx"), "utf8");
-  for (const [name, src] of [["主臂", pairSrc2], ["设置页", settingsSrc2], ["对照臂", textSrc2]]) {
+  for (const [name, src] of [["标签页", tasteSrc2], ["设置页", settingsSrc2]]) {
     const code = stripComments(src);
     check(/createEventQueue\(/.test(code), `${name} 用 createEventQueue`);
     check(/\.flush\(\)/.test(code), `${name} 挂载时冲一次队列`, "← 上一次页面加载没发完的靠它出去");
@@ -1738,10 +1688,9 @@ console.log("\n\x1b[1m十五 · 讲解页 · 兜底判断提示与出处（UI �
 }
 
 // ================================================================ 十六 · 开场标签（2026-09-19）
-console.log("\n\x1b[1m十六 · 开场标签 → 语气 / 领域 / 先验\x1b[0m");
+console.log("\n\x1b[1m十六 · 开场标签 → 语气 / 先验（2026-09-20 起它就是开场的全部）\x1b[0m");
 {
   const T = require_(join(out, "taste.js"));
-  const F = require_(join(out, "flow.js"));
   const A = require_(join(out, "axes.js"));
 
   // -------- 16.1 标签表本身：**没有装饰标签**
@@ -1782,63 +1731,19 @@ console.log("\n\x1b[1m十六 · 开场标签 → 语气 / 领域 / 先验\x1b[0m
     return r;
   }).length > 0, "反向控制：同轴矛盾时替用户猜一个 → 判据红");
 
-  // -------- 16.3 排步：先验用来挑更有信息量的一对，**不用来跳过**
-  function planProblems(planFn) {
-    const p = [];
-    const cases = [{}, { detail_level: "P0" }, { depth: "what" },
-      { detail_level: "P3", depth: "derivation", use_examples: "more", structure: "buildup_first" }];
-    for (const priors of cases) {
-      let steps;
-      try { steps = planFn(priors); } catch (e) { p.push(`${JSON.stringify(priors)} 抛了 ${e.message}`); continue; }
-      if (steps.length !== F.TOTAL_STEPS) p.push(`${JSON.stringify(priors)} 排出 ${steps.length} 步`);
-      const axes = new Set(steps.map((s) => s.axis));
-      for (const axis of Object.keys(A.AXES)) {
-        if (!axes.has(axis)) p.push(`${JSON.stringify(priors)} 少问了 ${axis}`);
-      }
-    }
-    const withPrior = planFn({ detail_level: "P0" });
-    const firstDetail = withPrior.findIndex((s) => s.axis === "detail_level");
-    const firstOther = withPrior.findIndex((s) => s.axis !== "detail_level");
-    if (firstOther > firstDetail) p.push("有先验的轴没被排到没有先验的轴后面");
-    return p;
-  }
-  const planReal = planProblems(T.plan);
-  check(planReal.length === 0, "plan：恒 6 步 · 四条轴一条不少 · 有先验的轴排后面", planReal.join("；"));
-  check(planProblems((priors) => T.plan(priors).filter((s) => priors[s.axis] === undefined)).length > 0,
-    "反向控制：拿先验跳过比较 → 判据红",
-    "← 跳过等于让「他说的」直接变成配置，而那正是不可信的那一半");
-
-  // -------- 16.35 空先验时必须与旧的固定顺序**逐步相同**
+  // -------- 16.3–16.5 **已删除**（2026-09-22）
   //
-  // 对照臂（pairwise）走的就是这条路径。两者一旦不一致，A5 比的就不再是
-  // 「标签先验有没有用」，而是「两套不同的提问顺序」——而这不会报错。
-  {
-    const picksCases = [{}, { detail_level: "P0" }, { detail_level: "P3" },
-      { depth: "what" }, { depth: "derivation" }];
-    const diffs = [];
-    for (let i = 1; i <= F.TOTAL_STEPS; i++) {
-      for (const picks of picksCases) {
-        const legacy = F.stepAt(i, picks);
-        const adaptive = T.stepAtWithPriors(i, picks, {});
-        if (legacy.pairId !== adaptive.pairId || legacy.axis !== adaptive.axis) {
-          diffs.push(`第 ${i} 步 picks=${JSON.stringify(picks)}：固定 ${legacy.pairId} vs 自适应 ${adaptive.pairId}`);
-        }
-      }
-    }
-    check(diffs.length === 0, "空先验 → 与旧的固定顺序逐步相同（对照臂体验没变）", "", diffs.join("；"));
-  }
-
-  // -------- 16.4 覆盖的样例集合必须与固定顺序**完全相同**（pairs.json 就那 8 对）
-  const reach = T.reachablePairIds();
-  check(eq(sorted_(reach), sorted_([...F.REACHABLE_PAIR_IDS])),
-    "自适应排法覆盖的 pair_id 与旧的固定顺序一致", `${reach.length} 对`,
-    `${JSON.stringify(reach)}\n      vs ${JSON.stringify([...F.REACHABLE_PAIR_IDS])}`);
-
-  // -------- 16.5 先验不进配置
-  let threw = false;
-  try { T.configFromPicksAndTone({ detail_level: "P0" }, "spoken"); } catch { threw = true; }
-  check(threw, "6 步没走完就取配置 → 抛异常，不拿先验补齐",
-    "← 补齐会让「他选的」与「他说的」在库里长得一模一样");
+  // 原来这里验的是排步（`plan` / `stepAtWithPriors` / `reachablePairIds`）与
+  // 「先验不许进配置」（`configFromPicksAndTone` 缺轴要抛）。
+  // 成对比较撤掉之后（口径 F83）那些函数全删了，这几条没有被测对象。
+  //
+  // ⚠️ 其中「拿先验跳过比较 → 判据红」曾经是一条重要纪律，它的前提是
+  // **比较是可信的那一半**。比较没了，前提也没了——现在标签就是配置的来源
+  // （`configFromTaste`），它的护栏在第十八节（标签真的变成四条轴、
+  // 没覆盖的轴回落默认且报出来）。
+  //
+  // 16.1 / 16.2（标签表本身、`resolveTaste` 的多数票与同轴矛盾）**全部保留**：
+  // 那两块现在是开场的全部，比以前更要紧。
 }
 
 // ================================================================ 十七 · 会话工作区（2026-09-20）

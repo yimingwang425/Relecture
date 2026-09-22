@@ -170,13 +170,14 @@ function readTs(overrideAxesSrc) {
     /(\w+)\s*:\s*(true|false)/g,
   );
 
-  const flowSrc = readFileSync(join(WEB, "lib", "style", "flow.ts"), "utf8");
-  const reachableBlock = blockAfter(flowSrc, /REACHABLE_PAIR_IDS[^=]*=/, "[", "]") ?? "";
-  const reachable = [...reachableBlock.matchAll(STRINGS)].map((m) => m[1]);
+  // 2026-09-22：`flow.ts` 的 `REACHABLE_PAIR_IDS` 没了（成对比较撤掉，口径 F83）。
+  // 原来这里是**三方**一致：Python 的 PAIRS ↔ TS 的可达对 ↔ pairs.json。
+  // TS 那一边当初存在是因为前端要走那棵比较树；前端不走了，那一边也就不存在了。
+  // **剩下的两方仍然要比**——样例生成链路（generate_pairs / verify_pairs）还在用。
 
   const promptVersion = /export const PROMPT_TEMPLATE_VERSION\s*=\s*["']([^"']+)["']/.exec(src)?.[1] ?? null;
 
-  return { axes, defaults, enforced, reachable, promptVersion };
+  return { axes, defaults, enforced, promptVersion };
 }
 
 // -------- pairs.json
@@ -224,11 +225,10 @@ function compare(py, sql, ts, pairsJson) {
     );
   }
 
-  // 比较树能走到的对，必须与 style_axes.PAIRS、pairs.json 三方一致。
+  // style_axes.PAIRS 与 pairs.json 必须是同一批对。
+  // （2026-09-22 起是两方，不是三方——TS 那一边随比较页删了，见上。）
   const pyIds = sorted(py.pairs.map((p) => p.id));
   const jsonIds = sorted(pairsJson.map((p) => p.id));
-  const tsIds = sorted(ts.reachable);
-  if (!eq(pyIds, tsIds)) problems.push(`pair_id：Python ${JSON.stringify(pyIds)} ≠ flow.ts ${JSON.stringify(tsIds)}`);
   if (!eq(pyIds, jsonIds)) problems.push(`pair_id：Python ${JSON.stringify(pyIds)} ≠ pairs.json ${JSON.stringify(jsonIds)}`);
 
   // B 类措辞版本（阶段 4）。它是 prompt_profile_id 的构成字段之一（口径 F39），
@@ -266,7 +266,6 @@ console.log("\n\x1b[1m一 · 判据自身的分辨力（先验，再读结论）
   check(py.pairs.length === 8, "style_axes.py 解析出 8 对", `实得 ${py.pairs.length}`);
   check(py.detailLadder.length > 0, "style_axes.py 解析出 DETAIL_LADDER", py.detailLadder.join(" → "));
   check(Object.keys(ts.axes).length === 4, "axes.ts 解析出 4 条轴", `实得 ${Object.keys(ts.axes).length}`);
-  check(ts.reachable.length === 8, "flow.ts 解析出 8 个 pair_id", `实得 ${ts.reachable.length}`);
   check(Object.keys(sql.checks).length >= 4, "迁移里解析出 ≥4 条 CHECK", `实得 ${Object.keys(sql.checks).length}`);
   check(sql.files.length > 0, "扫到迁移文件", `${sql.files.length} 个：${sql.files.join(", ")}`);
   check(pairsJson.length === 8, "pairs.json 解析出 8 对", `实得 ${pairsJson.length}`);

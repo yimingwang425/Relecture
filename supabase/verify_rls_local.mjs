@@ -650,7 +650,7 @@ async function main() {
     },
     style_text_mapped: {
       call: { model: "claude-sonnet-5", effort: "low", thinking: "disabled", max_tokens: 1500 },
-      axes_from_text: ["detail_level"], axes_from_default: ["depth"], ok: true,
+      axes_from_text: ["detail_level"], axes_kept: ["depth"], ok: true,
       prompt_template_version: "b1",
     },
     style_config_changed: {

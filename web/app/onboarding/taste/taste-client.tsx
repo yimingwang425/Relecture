@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import type { Arm } from "@/lib/style/axes";
 import {
   createEventQueue,
+  onboardingCompleted,
   tasteChosen,
   tasteShown,
   type EventQueue,
@@ -178,6 +179,25 @@ export function TasteBoards({
         totalMs: Math.round(performance.now() - (startedAtRef.current ?? performance.now())),
       }),
     );
+    // ---- A5 预登记的「onboarding 完成率」（2026-09-22 补上）。
+    //
+    // ⚠️ **这条事件断过一次，而且是静默断的。** 它原来由成对比较臂的收尾屏发；
+    // 2026-09-20 把开场改成只剩这一页之后，**没有人再发它了**——完成率的分子
+    // 从此恒为 0，而不会有任何东西报错。清理废弃代码时才发现。
+    //
+    // `steps_completed` 在不同版本上含义不同（见 `events.ts` 那条注释）。
+    // 这一版记的是**用户真的动过的板块数**（0–2），不是板块总数：
+    // 总数是个常量，记一个常量等于记了个寂寞。
+    const touched = BOARDS.filter((b) => selected.some((id) => b.tags.some((t) => t.id === id)));
+    send(
+      onboardingCompleted({
+        config,
+        stepsCompleted: touched.length,
+        tone: config.tone,
+        totalMs: Math.round(performance.now() - (startedAtRef.current ?? performance.now())),
+      }),
+    );
+
     if (fellBack.length > 0) {
       // 标签没定下来的轴。**查得出来的数**，不是一句感觉——
       // 如果它长期是 3 条、4 条，说明这两块标签没在做事。

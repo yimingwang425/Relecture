@@ -72,7 +72,7 @@ export const REQUIRED_PAYLOAD_KEYS: Record<EventType, readonly string[]> = {
     "hidden_ms",
   ],
   style_onboarding_completed: ["config", "steps_completed", "total_ms", "prompt_template_version"],
-  style_text_mapped: ["call", "axes_from_text", "axes_from_default", "ok", "prompt_template_version"],
+  style_text_mapped: ["call", "axes_from_text", "axes_kept", "ok", "prompt_template_version"],
   style_config_changed: [
     "before",
     "after",
@@ -135,47 +135,14 @@ function complete(event_type: EventType, payload: EventPayload): StyleEvent {
   return { event_type, payload };
 }
 
-/** 成对比较每一步渲染时。`left_variant` 是**这一步谁在左**，位置效应靠它分离。 */
-export function pairShown(args: {
-  step: number;
-  axis: AxisId;
-  pairId: string;
-  leftVariant: string;
-}): StyleEvent {
-  return complete("style_pair_shown", {
-    step: args.step,
-    axis: args.axis,
-    pair_id: args.pairId,
-    left_variant: args.leftVariant,
-  });
-}
-
-/**
- * 成对比较每一步点选时。
+/*
+ * 2026-09-22 删除：`pairShown()` / `pairChosen()`（`style_pair_shown` /
+ * `style_pair_chosen`）。成对比较撤掉之后（口径 F83）没有调用方了。
  *
- * `chosen_variant` 存**档位**不存左右（位置随机后只有档位稳定），
- * 但 `left_variant` 必须一起记——只有两个都在，「他选的是右边那个」与
- * 「他选的是 P3」才能同时还原出来。
+ * **数据库里那两个事件类型留着，历史行也留着**——它们记录的是那批用户当时
+ * 真的走过的步骤（F10：已有数据不回改）。删的只是「再发一条」的能力。
  */
-export function pairChosen(args: {
-  step: number;
-  axis: AxisId;
-  pairId: string;
-  leftVariant: string;
-  chosenVariant: string;
-  dwellMs: number;
-  hiddenMs: number;
-}): StyleEvent {
-  return complete("style_pair_chosen", {
-    step: args.step,
-    axis: args.axis,
-    pair_id: args.pairId,
-    left_variant: args.leftVariant,
-    chosen_variant: args.chosenVariant,
-    dwell_ms: args.dwellMs,
-    hidden_ms: args.hiddenMs,
-  });
-}
+
 
 /**
  * 收尾屏**落库成功之后**才发——不是「点了完成」，是「那一行真的变了」。
@@ -249,13 +216,20 @@ export function onboardingCompleted(args: {
 export function textMapped(args: {
   ok: boolean;
   axesFromText?: readonly AxisId[];
-  axesFromDefault?: readonly AxisId[];
+  /**
+   * 描述里**没有提到**的那几条轴。
+   *
+   * ⚠️ 2026-09-22 由 `axesFromDefault` 改名。旧名说的是「回落到默认档」，
+   * 而矫正搬进讲解之后处置变成了「**保持用户当前的值**」（口径 F84）——
+   * 旧名的含义已经反了。历史行仍是旧键，分析时要并起来读（见那个迁移）。
+   */
+  axesKept?: readonly AxisId[];
   failure?: string;
 }): StyleEvent {
   return complete("style_text_mapped", {
     call: TEXT_ARM_CALL,
     axes_from_text: args.axesFromText ?? [],
-    axes_from_default: args.axesFromDefault ?? [],
+    axes_kept: args.axesKept ?? [],
     ok: args.ok,
     prompt_template_version: PROMPT_TEMPLATE_VERSION,
     ...(args.failure ? { failure: args.failure } : {}),

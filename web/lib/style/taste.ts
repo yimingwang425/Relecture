@@ -39,7 +39,6 @@
  */
 
 import { AXES, DEFAULTS, type AxisId, type StyleConfig } from "./axes";
-import { REACHABLE_PAIR_IDS, TOTAL_STEPS, type Picks, type Step } from "./flow";
 
 // ---------------------------------------------------------------- 语气（新维度）
 
@@ -187,135 +186,24 @@ export function priorsAreValid(priors: Partial<Record<AxisId, string>>): boolean
 
 // ---------------------------------------------------------------- 自适应的 6 步
 
-/**
- * 按先验排出这 6 步的顺序。
+/*
+ * ---------------------------------------------------------------- 删掉了什么
  *
- * 两条规则，都是「把轮次花在不确定的地方」：
+ * 2026-09-22 删除：`plan()` / `stepAtWithPriors()` / `reachablePairIds()` /
+ * `configFromPicksAndTone()` / `LEGACY_REACHABLE` / `Step` / `Picks`。
  *
- * 1. **没有先验的轴排在前面。** 那里我们一无所知，一次比较的信息量最大。
- * 2. **有先验的轴仍然要问**，但问的是**细分那一对**：先验说「要细」就直接
- *    P0 vs P2（P0 vs P3 的答案几乎已知，问了等于浪费一轮）。
+ * 它们全部只为**成对比较的排序**存在——哪一轴先问、有先验时直接问细分那一对、
+ * 6 步走完怎么拼成配置。成对比较 2026-09-20 撤掉之后（口径 F83），
+ * 这些函数一个调用方都没有了。
  *
- * 详细程度与深度各两步（二分），举例与结构各一步——总数仍是 6，
- * 与 A5 预登记的「onboarding 完成率 / 平均步数」可比。
+ * ⚠️ 连同删掉的还有它们的护栏（`verify:logic` 原第十六节的一批断言）。
+ * **那不是「把判据关掉」**：判据测的东西没了，留着它就是在验一段没人跑的代码，
+ * 而一条永远绿的断言比没有断言更危险（它让人以为验过了）。
+ *
+ * 标签 → 配置现在走 `configFromTaste()`（下面那个），它的护栏在第十八节。
  */
-export function plan(priors: Partial<Record<AxisId, string>>): Step[] {
-  const groups: { axis: AxisId; steps: (picks: Picks) => { pairId: string }[] }[] = [
-    {
-      axis: "detail_level",
-      steps: (picks) => {
-        // 先验 P0 / P3 → 第一问就是细分那一对；无先验 → 先问跨度最大的 P0 vs P3。
-        const first =
-          priors.detail_level === "P0" ? "detail_p0_p2"
-          : priors.detail_level === "P3" ? "detail_p2_p3"
-          : "detail_p0_p3";
-        const second =
-          first !== "detail_p0_p3" ? "detail_p0_p3"
-          : picks.detail_level === "P0" ? "detail_p0_p2"
-          : "detail_p2_p3";
-        return [{ pairId: first }, { pairId: second }];
-      },
-    },
-    { axis: "use_examples", steps: () => [{ pairId: "examples_more_fewer" }] },
-    { axis: "structure", steps: () => [{ pairId: "structure_conclusion_buildup" }] },
-    {
-      axis: "depth",
-      steps: (picks) => {
-        const first =
-          priors.depth === "what" ? "depth_what_why"
-          : priors.depth === "derivation" ? "depth_why_derivation"
-          : "depth_what_derivation";
-        const second =
-          first !== "depth_what_derivation" ? "depth_what_derivation"
-          : picks.depth === "what" ? "depth_what_why"
-          : "depth_why_derivation";
-        return [{ pairId: first }, { pairId: second }];
-      },
-    },
-  ];
 
-  // 规则 1：没有先验的轴排前面。同类之间保持声明顺序，**不引入随机**——
-  // 顺序随机会让「第几步弃流」在用户之间不可比。
-  const ordered = [...groups].sort((a, b) => {
-    const pa = priors[a.axis] === undefined ? 0 : 1;
-    const pb = priors[b.axis] === undefined ? 0 : 1;
-    return pa - pb;
-  });
 
-  const out: Step[] = [];
-  for (const g of ordered) {
-    for (const s of g.steps({})) {
-      out.push({ index: out.length + 1, pairId: s.pairId, axis: g.axis });
-    }
-  }
-  if (out.length !== TOTAL_STEPS) {
-    throw new Error(`排出了 ${out.length} 步，应为 ${TOTAL_STEPS} 步`);
-  }
-  return out;
-}
-
-/**
- * 第 `index` 步展示哪一对。二分的第二步要看**已经选过的那条轴**，
- * 所以这里重算一遍（同 `flow.stepAt` 的性质：刷新重放同一串选择得到同一串比较）。
- */
-export function stepAtWithPriors(
-  index: number,
-  picks: Picks,
-  priors: Partial<Record<AxisId, string>>,
-): Step {
-  const base = plan(priors);
-  const slot = base[index - 1];
-  if (!slot) throw new Error(`第 ${index} 步不存在，共 ${TOTAL_STEPS} 步`);
-
-  // 同一条轴的第二步：第一步选完之后才知道问哪一对。
-  const sameAxisBefore = base.slice(0, index - 1).filter((s) => s.axis === slot.axis).length;
-  if (sameAxisBefore === 1 && priors[slot.axis] === undefined) {
-    const picked = picks[slot.axis];
-    if (slot.axis === "detail_level") {
-      return { ...slot, pairId: picked === "P0" ? "detail_p0_p2" : "detail_p2_p3" };
-    }
-    if (slot.axis === "depth") {
-      return { ...slot, pairId: picked === "what" ? "depth_what_why" : "depth_why_derivation" };
-    }
-  }
-  return slot;
-}
-
-/** 这套排法可能走到的全部 `pair_id` —— 必须仍是 `pairs.json` 里那 8 对，不多不少。 */
-export function reachablePairIds(): string[] {
-  const ids = new Set<string>();
-  const axisValues: Record<string, (string | undefined)[]> = {
-    detail_level: [undefined, "P0", "P3"],
-    depth: [undefined, "what", "derivation"],
-    use_examples: [undefined, "more", "fewer"],
-    structure: [undefined, "conclusion_first", "buildup_first"],
-  };
-  for (const d of axisValues.detail_level) {
-    for (const dep of axisValues.depth) {
-      const priors: Partial<Record<AxisId, string>> = {};
-      if (d) priors.detail_level = d;
-      if (dep) priors.depth = dep;
-      for (let i = 1; i <= TOTAL_STEPS; i++) {
-        for (const picks of [{}, { detail_level: "P0" }, { detail_level: "P3" }, { depth: "what" }, { depth: "derivation" }] as Picks[]) {
-          ids.add(stepAtWithPriors(i, picks, priors).pairId);
-        }
-      }
-    }
-  }
-  return [...ids].sort();
-}
-
-/** 6 步走完 → 配置。**先验不参与**：没被比较选中的值不许进配置（同 `configFromPicks`）。 */
-export function configFromPicksAndTone(picks: Picks, tone: Tone): StyleConfig & { tone: Tone } {
-  const missing = (Object.keys(AXES) as AxisId[]).filter((axis) => picks[axis] === undefined);
-  if (missing.length > 0) {
-    throw new Error(`成对比较未走完，缺少轴：${missing.join(", ")}`);
-  }
-  return { ...DEFAULTS, ...picks, tone } as StyleConfig & { tone: Tone };
-}
-
-/** 护栏用：这套排法与旧的固定顺序必须覆盖同一批样例。 */
-export const LEGACY_REACHABLE = REACHABLE_PAIR_IDS;
 
 /**
  * 标签 → 配置（2026-09-20）。**成对比较去掉之后，标签就是配置的来源。**

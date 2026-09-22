@@ -27,22 +27,17 @@ const debugRoutes = process.env.NEXT_PUBLIC_ENABLE_DEBUG_ROUTES === "1";
 // 会让比对有东西可比，然后永远不相等或永远相等——两种都不是判据（同 F16）。
 const commitSha = process.env.VERCEL_GIT_COMMIT_SHA;
 
-// 解析根目录上提一层到仓库根（阶段 3）。
+// 2026-09-22：**解析根目录上提那一行已经删掉了。**
 //
-// 理由只有一个：`lib/style/pairs.ts` 要 import `f1_samples/pairs.json`，而那是**生产资产**，
-// 住在仓库根下（`explain` 运行时读的就是那一份）。Turbopack 默认把 `web/` 当根，
-// 根以外的模块一律不解析——不上提就只能在 `web/` 里放第二份 pairs.json，
-// 而第二份迟早与 `explain` 读的那份漂开（约束 3 的同一个坑）。
+// 它当初只为一件事存在：`lib/style/pairs.ts` 要 import 仓库根下的
+// `f1_samples/pairs.json`（成对比较要读那 16 个样例）。成对比较撤掉之后
+// （口径 F83）那个文件删了，这一行也就没有理由了。
 //
-// **代价（登记，不掩饰）**：
-// ① 解析与文件监视的范围扩大到整个仓库，`next dev` 会更重一些
-//    （`retrieval/cache/` 有 54M / 1586 个文件，虽然没有模块会解析到那里）；
-// ② 部署时依赖 Vercel 的 **Include files outside the Root Directory** 保持开启。
-//    这一条**关掉时构建会直接失败**（Module not found），不是静默降级——
-//    属于「配错了会报错」那一类，所以只登记进 README 的部署前提，不额外加护栏。
+// 连带去掉了两项代价，记在这里免得以后有人「顺手加回来」：
+// ① 解析与文件监视的范围不再是整个仓库（`retrieval/cache/` 有 54M / 1586 个文件）；
+// ② **部署不再依赖 Vercel 的 Include files outside the Root Directory**。
+//    那是一条隐形前提——关掉它构建会 Module not found，而没人会想到去看那个开关。
 const nextConfig: NextConfig = {
-  turbopack: { root: path.join(__dirname, "..") },
-
   pageExtensions: ["tsx", "ts", "jsx", "js", ...(debugRoutes ? ["debug.tsx"] : [])],
 
   async headers() {

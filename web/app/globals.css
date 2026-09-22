@@ -1123,6 +1123,234 @@ body {
     padding-top: 6px;
   }
 
+  /* ---------------------------------------------------------------- 上手引导
+   *
+   * 2026-09-22：替掉「压暗整屏 + 弹一条提示」那一版。压暗太突兀——用户刚读完
+   * 一段讲解，屏幕突然暗下来，第一反应是「出什么事了」而不是「哦可以调」。
+   *
+   * 现在改成进提问页时弹一次，三步动图讲清「调整讲法在哪、怎么用」。
+   * **动图是用 div 画的，不是图片**：三张 GIF 要 ~1MB，而且改一次 UI 就全部过期，
+   * 没人会记得回来重录。用 div 画的会跟着设计 token 走。
+   */
+
+  .tour-stage {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--c-border-row);
+    border-radius: 12px;
+    background: var(--c-surface-page);
+    aspect-ratio: 16 / 10;
+  }
+
+  /* 被放大的那一层。`transform-origin` 与倍数由每一步用变量给。 */
+  .tour-zoom {
+    position: absolute;
+    inset: 0;
+    transform-origin: var(--zx) var(--zy);
+    animation: tour-zoom 5s var(--ease-settle) infinite;
+  }
+
+  @keyframes tour-zoom {
+    0%,
+    26% {
+      transform: scale(1);
+    }
+    58%,
+    92% {
+      transform: scale(var(--zs));
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  /* 鼠标。只在放大之后出现，按一下。 */
+  .tour-cursor {
+    position: absolute;
+    left: var(--cx);
+    top: var(--cy);
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--c-ink);
+    border-radius: 50%;
+    background: rgb(255 255 255 / 0.6);
+    opacity: 0;
+    animation: tour-click 5s var(--ease-settle) infinite;
+  }
+
+  @keyframes tour-click {
+    0%,
+    62% {
+      opacity: 0;
+      transform: scale(1);
+    }
+    68% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    74% {
+      transform: scale(0.72);
+    }
+    80% {
+      transform: scale(1);
+    }
+    92% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+
+  /* ---- 画出来的假界面 ---- */
+
+  .mk {
+    display: flex;
+    height: 100%;
+    font-size: 5px;
+    line-height: 1.5;
+  }
+
+  .mk__side {
+    display: flex;
+    width: 26%;
+    flex-direction: column;
+    gap: 4px;
+    border-right: 1px solid var(--c-border-row);
+    background: var(--c-surface-card);
+    padding: 7px 5px;
+  }
+
+  .mk__main {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 5px;
+    padding: 8px 9px;
+  }
+
+  .mk__bar {
+    height: 4px;
+    border-radius: 2px;
+    background: var(--c-border-row);
+  }
+
+  .mk__bubble {
+    align-self: flex-end;
+    width: 42%;
+    height: 9px;
+    border-radius: 5px;
+    background: var(--c-surface-card);
+  }
+
+  .mk__ans {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin-bottom: auto;
+  }
+
+  .mk__box {
+    border: 1px solid var(--c-border-strong);
+    border-radius: 6px;
+    padding: 5px 6px;
+  }
+
+  .mk__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+  }
+
+  .mk__chip {
+    border: 1px solid var(--c-border-strong);
+    border-radius: 999px;
+    padding: 1.5px 5px;
+    white-space: nowrap;
+    color: var(--c-ink-soft);
+  }
+
+  /* 这一步要看的那个东西：描边加重，放大后一眼认得出。 */
+  .mk__chip--target {
+    border-color: var(--c-accent-band);
+    box-shadow: 0 0 0 2px var(--c-accent-wash);
+    color: var(--c-ink);
+  }
+
+  .mk__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+  }
+
+  /* 被点中的标签。延迟由内联 style 给，两个标签先后亮起来。 */
+  .mk__chip--pick {
+    animation: tour-pick 5s var(--ease-settle) infinite both;
+  }
+
+  @keyframes tour-pick {
+    0%,
+    66% {
+      background: transparent;
+      color: var(--c-ink-soft);
+      border-color: var(--c-border-strong);
+    }
+    72%,
+    92% {
+      background: var(--c-ink);
+      color: var(--c-on-dark);
+      border-color: var(--c-ink);
+    }
+    100% {
+      background: transparent;
+      color: var(--c-ink-soft);
+      border-color: var(--c-border-strong);
+    }
+  }
+
+  /* 打字：一条从 0 长到满的线 + 闪烁的光标。 */
+  .mk__typing {
+    height: 4px;
+    border-radius: 2px;
+    background: var(--c-ink-soft);
+    animation: tour-type 5s steps(14) infinite both;
+  }
+
+  @keyframes tour-type {
+    0%,
+    62% {
+      width: 0;
+    }
+    90%,
+    100% {
+      width: 72%;
+    }
+  }
+
+  /* ---- 底部的进度点 ---- */
+
+  .tour-dots {
+    display: flex;
+    justify-content: center;
+    gap: 7px;
+  }
+
+  .tour-dot {
+    width: 7px;
+    height: 7px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--c-muted);
+    padding: 0;
+    cursor: pointer;
+  }
+
+  .tour-dot[aria-current="true"] {
+    background: var(--c-ink);
+  }
+
   /* ---------------------------------------------------------------- 讲法引导
    *
    * 第一次拿到讲解之后弹一次。**背景压暗、提示保持正常亮度**——

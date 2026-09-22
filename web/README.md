@@ -5,11 +5,20 @@
 
 | 路由 | 做什么 |
 | --- | --- |
-| `/onboarding` | 按数据库里的 `f1_arm` 把用户分流到下面两条臂之一（前端不算分组，口径 F08） |
-| `/onboarding/style` | 主臂：6 次固定顺序的成对比较，走完一次写库 |
-| `/onboarding/style-text` | 对照臂：文字描述 → 服务端分类 → 只读确认屏 → 写库（口径 F32） |
+| `/welcome` · `/login` | 欢迎页与登录。**没有顶栏** |
+| `/` | 我的课程：课程列表 + 建课。没走过开场的人直接送去 `/onboarding` |
+| `/onboarding` | **一律重定向到 `/onboarding/taste`**（2026-09-20 起不再按臂分流） |
+| `/onboarding/taste` | **开场的全部**：两块标签 → 写四条轴 + `onboarded_at` → 进我的课程 |
+| `/courses/[id]` | **产品主界面**：侧栏（我的课件弹窗 + 会话列表）+ 聊天 + 输入框 |
+| `/settings` | 设置：讲解风格入口、账号、退出登录（顶栏拆掉之后它接住了那两样） |
 | `/settings/style` | 四条轴直接改 + 四个反馈按钮（口径 F05–F07） |
-| `/api/style/from-text` | 对照臂的服务端分类调用。**模型 API key 只在这里，不进 bundle** |
+| `/api/style/from-text` | 「说一句想要的讲法」→ 四条轴。**模型 API key 只在这里，不进 bundle** |
+| `/courses` | 旧的跨课上传页，**已退役**，重定向到 `/`（不删文件：旧链接变 404 读起来像功能没了） |
+| `/onboarding/style`<br>`/onboarding/style-text` | 成对比较臂与文字描述臂，**已无入口**。文件还在（清掉要同时删 5 处守卫段落），手打 URL 仍进得去 |
+
+> **2026-09-20：成对比较撤掉了。** 理由与连带后果见 PRD §6 的「再修订（2026-09-20）」
+> 与 `f1_samples/README.md` 的 F83 / F84。一句话：开场只留标签，
+> 风格矫正搬到**读完一段真实讲解之后**——那时用户才有具体的东西可以反应。
 
 ```bash
 cp .env.example .env.local && $EDITOR .env.local

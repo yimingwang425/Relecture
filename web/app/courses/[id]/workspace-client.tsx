@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { ApiWarmup } from "@/app/components/api-warmup";
+import { Tour } from "@/app/components/tour";
 import { ExplainClient } from "@/app/explain/explain-client";
 import { CourseUpload } from "@/app/courses/upload-client";
 import { StatusDot } from "@/app/components/status-dot";
@@ -172,6 +173,9 @@ export function Workspace({
 
   return (
     <div className="ws" data-course-id={course.id}>
+      {/* 进提问页时弹一次，讲清「调整讲法在哪、两种用法各是什么」。
+          它自己判断看没看过，看过就什么都不渲染。 */}
+      <Tour />
       {/* ============================================================ 侧栏 */}
       <aside className="ws-side">
         <div className="flex items-center justify-between gap-2 px-2">

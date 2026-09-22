@@ -1944,12 +1944,24 @@ console.log("\n\x1b[1m十八 · 讲法矫正 · 搬进讲解之后\x1b[0m");
     "标签先写库，那句话后调",
     "← 反了的话那句话以旧配置为基线，刚点的标签当场被盖掉");
 
-  // -------- 18.5 看过讲解才提示
-  check(/answered >= 1/.test(nudge), "第一次拿到讲解之后才提示",
-    "← 没看过讲解就没有可反应的东西，那正是成对比较被撤掉的理由");
-  check(/localStorage/.test(nudge) && /catch/.test(nudge),
-    "「已看过」记在本地且读写都包了 try/catch",
-    "← 隐私模式下 localStorage 会抛；抛了就再提示一次，不该白屏");
+  // -------- 18.5 「这个功能在哪」由进页面时的引导讲，不再压暗整屏
+  //
+  // 2026-09-22 换了实现：原来是第一次拿到讲解之后压暗背景弹一条提示，
+  // **太突兀**（用户刚读完正文，屏幕突然暗下来像是出事了）。
+  // 纪律没变——只弹一次、localStorage 读写都要包 try/catch——**承载它的组件变了**。
+  const tour = stripComments(readFileSync(join(WEB, "app/components/tour.tsx"), "utf8"));
+  check(!/nudge__backdrop/.test(nudge), "压暗整屏那一版已经去掉");
+  check(/data-field="style-adjust-entry"/.test(nudge),
+    "「调整讲法」是常驻入口", "← 用户想改的时候它一直在输入框旁边");
+  check(/localStorage/.test(tour) && /catch/.test(tour),
+    "引导「已看过」记在本地且读写都包了 try/catch",
+    "← 隐私模式下 localStorage 会抛；抛了就再弹一次，不该白屏");
+  check(/useSyncExternalStore/.test(tour),
+    "读那个标记不在 effect 里 setState", "← 会触发级联渲染（eslint 拦它）");
+  check(/STEPS\.length - 1/.test(tour) && /tour-dot/.test(tour),
+    "三步之间能来回，且底部有进度点");
+  check(/onCancel/.test(tour), "Esc 关掉也算看过",
+    "← 否则每次进页面都再弹一次");
 
   // -------- 18.6 开场只剩标签页，且它自己写完 onboarded_at
   check(/redirect\("\/onboarding\/taste"\)/.test(onboarding), "开场一律进标签页");

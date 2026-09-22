@@ -368,9 +368,7 @@ export function ExplainClient({
                 </Link>
               </span>
               <span className="flex items-center gap-3">
-                {userId && (
-                  <StyleNudge userId={userId} sessionId={sessionId} answered={answeredCount(turns)} />
-                )}
+                {userId && <StyleNudge userId={userId} sessionId={sessionId} />}
                 <span className="t-caption kbd-count">{question.length} / 500</span>
                 <button
                   data-field="ask"

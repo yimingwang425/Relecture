@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useSyncExternalStore } from "react";
+import { useRef, useState } from "react";
 
 import { BOARDS, resolveTaste } from "@/lib/style/taste";
 import { createClient } from "@/lib/supabase/client";
@@ -19,11 +19,14 @@ import { createClient } from "@/lib/supabase/client";
  *
  * 所以：开场只留标签（快、无需阅读理解），矫正放在第一次拿到讲解之后。
  *
- * ## 只弹一次，且**记在这台设备上**
+ * ## 2026-09-22：压暗整屏那一版去掉了
  *
- * 弹第二次就成了骚扰。用 localStorage 记——它可能丢（隐私模式、清数据），
- * 丢了就再弹一次，代价是一次多余的提示，**不是一次错误的配置**。
- * 不记进数据库是因为这件事没必要占一次写入，也没必要跨设备一致。
+ * 原来第一次拿到讲解之后会压暗背景弹一条提示。**太突兀**——用户刚读完一段讲解，
+ * 屏幕突然暗下来，第一反应是「出什么事了」，而且那一刻注意力正在正文上，
+ * 挡住它只会被急着关掉。
+ *
+ * 「这个功能在哪」改由进页面时的三步引导讲（`app/components/tour.tsx`），
+ * 这里只留一个**常驻在输入框旁边**的入口——用户想改的时候它一直在。
  *
  * ## 两条路都通向同一份配置
  *
@@ -32,94 +35,18 @@ import { createClient } from "@/lib/supabase/client";
  * 反过来的话，那句话会以旧配置为基线，用户刚点的标签当场被盖掉。
  */
 
-const SEEN_KEY = "relecture.style-nudge.seen";
-
 export function StyleNudge({
   userId,
   sessionId,
-  /** 这个会话里已经答出来的轮数。**≥1 才提示**——没看过讲解就没有可反应的东西。 */
-  answered,
 }: {
   userId: string;
   sessionId: string;
-  answered: number;
 }) {
-  /**
-   * 「之前提示过了吗」——**用 `useSyncExternalStore` 读，不在 effect 里 setState**。
-   *
-   * 在 effect 里同步 setState 会触发级联渲染（eslint 的 set-state-in-effect 拦它）。
-   * 这个 API 正是为「读一个 React 之外的值」准备的：
-   *   · subscribe 是空的 —— localStorage 不会自己变，只在本组件里被写；
-   *   · 服务端快照返回 `true`（当作看过），所以 SSR 不渲染提示，
-   *     hydrate 时再按真实值决定，两侧不会分叉。
-   *
-   * localStorage **可能抛**（隐私模式、站点数据被禁）。抛了就当没看过——
-   * 代价是多提示一次，不是一次错误的配置。
-   */
-  const stored = useSyncExternalStore(
-    () => () => {},
-    () => {
-      try {
-        return window.localStorage.getItem(SEEN_KEY) === "1";
-      } catch {
-        return false;
-      }
-    },
-    () => true,
-  );
-  /** 本次会话里点掉了。**由事件设置**，不由 effect 设置。 */
-  const [dismissed, setDismissed] = useState(false);
-  const seen = stored || dismissed;
-  const [open, setOpen] = useState(false);
+  const [, setOpen] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
-
-  function dismiss() {
-    setDismissed(true);
-    try {
-      window.localStorage.setItem(SEEN_KEY, "1");
-    } catch {
-      // 存不进去只意味着下次还会提示一次，不影响任何配置。
-    }
-  }
-
-  const showNudge = answered >= 1 && !seen && !open;
 
   return (
     <>
-      {showNudge && (
-        <div className="nudge" data-field="style-nudge">
-          {/* 背景压暗，提示保持正常亮度——用户的注意力此刻在刚读完的那段讲解上，
-              不压暗的话这条提示会被当成页面的一部分而略过。 */}
-          <button
-            type="button"
-            className="nudge__backdrop"
-            aria-label="先不调整"
-            onClick={dismiss}
-          />
-          <div className="nudge__card" role="dialog" aria-label="调整讲解风格">
-            <p className="t-title text-[16px]">需要调整讲解风格？</p>
-            <p className="t-meta mt-1">刚读完一段，这时候最说得清想要什么。</p>
-            <div className="mt-4 flex gap-2">
-              <button
-                type="button"
-                className="btn btn--primary btn--sm"
-                data-field="open-style-adjust"
-                onClick={() => {
-                  dismiss();
-                  setOpen(true);
-                  dialogRef.current?.showModal();
-                }}
-              >
-                调整讲法
-              </button>
-              <button type="button" className="btn btn--ghost btn--sm" onClick={dismiss}>
-                先不用
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       <button
         type="button"
         className="btn btn--ghost btn--sm"

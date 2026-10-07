@@ -539,27 +539,21 @@ class SupabaseClient:
             "&order=created_at.asc", token)
         return out if isinstance(out, list) else []
 
-    def match_slices(self, *, token: str, course_id: str, query: list[float],
-                     model: str, ruleset: str, limit: int) -> list[dict[str, Any]]:
-        """调 `match_slices` RPC。返回 `[{document_id, slice_id, similarity}]`，**已按相似度降序**。
-
-        ⚠️ **`p_query` 直接传 JSON 数组。** 这不是推断：
-        `supabase/verify_corpus_prod.py` 第 1 步对真库观测过，
-        JSON 数组与 pgvector 文本 `'[...]'` 两种形状**都被接受**（2026-09-12）。
-
-        作用域是**一门课**（口径 F47），且函数体里另有 `owner = auth.uid()` 过滤——
-        与 RLS 两层，任一层被误改另一层还在。
-        """
-        out = self._post("/rpc/match_slices", token, {
-            "p_course_id": course_id, "p_query": query,
-            "p_model": model, "p_ruleset": ruleset, "p_limit": limit,
-        })
-        return out if isinstance(out, list) else []
-
     def match_slices_indexed(self, *, token: str, course_id: str, query: list[float],
                              model: str, limit: int) -> list[dict[str, Any]]:
         """混合检索的向量一路（口径 F97）。与 `match_slices` 相同，但**按每份文档自己的
-        `index_ruleset` 取向量**，所以不收 ruleset 参数——见迁移 `20261007100100`。"""
+        `index_ruleset` 取向量**，所以不收 ruleset 参数——见迁移 `20261007100100`。
+
+        ⚠️ **`p_query` 直接传 JSON 数组。** 这不是推断：
+        `supabase/verify_corpus_prod.py` 第 1 步对真库观测过（对 `match_slices`，
+        同一个 `vector(1024)` 参数类型），JSON 数组与 pgvector 文本 `'[...]'`
+        两种形状**都被接受**（2026-09-12）。
+
+        作用域是**一门课**（口径 F47），且函数体里另有 `owner = auth.uid()` 过滤——
+        与 RLS 两层，任一层被误改另一层还在。
+
+        （2026-10-07 删掉了客户端的 `match_slices` 方法：检索改走本方法后它零调用方。
+        数据库里的 `match_slices` 函数**原样保留**——真库验收脚本直接调它。）"""
         out = self._post("/rpc/match_slices_indexed", token, {
             "p_course_id": course_id, "p_query": query, "p_model": model, "p_limit": limit,
         })

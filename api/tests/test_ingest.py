@@ -495,6 +495,6 @@ class TestUploadRoute:
     def test_upload_limit_comes_from_parse_service(self):
         """体积上限不在这里写第二个数字。"""
         from api.main import _max_upload_bytes
-        from parse_service.app import MAX_UPLOAD_BYTES
+        from parse_service.limits import MAX_UPLOAD_BYTES
 
         assert _max_upload_bytes() == MAX_UPLOAD_BYTES

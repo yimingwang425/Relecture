@@ -96,12 +96,6 @@ export function isAxisValue<A extends AxisId>(axis: A, value: unknown): value is
   return typeof value === "string" && (AXES[axis] as readonly string[]).includes(value);
 }
 
-export function isStyleConfig(value: unknown): value is StyleConfig {
-  if (typeof value !== "object" || value === null) return false;
-  const v = value as Record<string, unknown>;
-  return AXIS_IDS.every((axis) => isAxisValue(axis, v[axis]));
-}
-
 // ---------------------------------------------------------------- 文案
 
 /** 轴的展示名。回归工具按 `data-axis` 定位，不按这些中文字（改文案不该让断言静默变绿）。 */

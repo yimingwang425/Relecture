@@ -150,7 +150,6 @@ try {
       "lib/style/taste.ts",
       "lib/style/text-arm.ts",
       "lib/style/events.ts",
-      "lib/style/dwell.ts",
       "lib/style/markdown.tsx",
       "--module", "commonjs",
       "--target", "es2020",
@@ -568,7 +567,6 @@ function parseSqlRequiredKeys(sql) {
 console.log("\n\x1b[1m七 · 埋点五事件（阶段 4）\x1b[0m");
 {
   const ev = require_(join(out, "events.js"));
-  const { createDwellClock } = require_(join(out, "dwell.js"));
   const { TEXT_ARM_CALL } = require_(join(out, "text-arm.js"));
 
   // -------- 7.1 TS 的必需字段表 vs 迁移里的 f1_event_required_keys
@@ -731,46 +729,12 @@ console.log("\n\x1b[1m七 · 埋点五事件（阶段 4）\x1b[0m");
   }
   check(refused, "反向控制：board 为空时构造函数抛异常且点名字段");
 
-  // -------- 7.3 `dwell_ms` / `hidden_ms`：只采集不判读（口径 F38）
+  // -------- 7.3（2026-10-07 删除）`createDwellClock` 的四条断言
   //
-  // 注入一个可控时钟，把两个数各钉一次。用真时间的话这几条会变成薛定谔的绿。
-  {
-    let t = 0;
-    const clock = createDwellClock(() => t);
-    t = 100; clock.markHidden();
-    t = 400; clock.markVisible();   // 隐藏 300ms
-    t = 1000;
-    const r = clock.read();
-    check(r.dwell_ms === 1000, "dwell_ms 是墙钟时长，切走的时间**照算**", `${r.dwell_ms}ms`);
-    check(r.hidden_ms === 300, "hidden_ms 单独累计页面不可见时长", `${r.hidden_ms}ms`);
-    check(r.hidden_ms <= r.dwell_ms, "hidden_ms ≤ dwell_ms");
-
-    // 两个数分开的意义：只记一个总数的话，「读了 40 秒」与「挂着 40 秒」不可分。
-    let t2 = 0;
-    const c2 = createDwellClock(() => t2);
-    t2 = 1000;
-    const r2 = c2.read();
-    check(
-      r2.dwell_ms === r.dwell_ms && r2.hidden_ms !== r.hidden_ms,
-      "两次同样长的停留，靠 hidden_ms 才分得开",
-      `都是 ${r2.dwell_ms}ms，hidden ${r.hidden_ms} vs ${r2.hidden_ms}`,
-    );
-
-    // 换步要归零，否则第 2 步的时长里混着第 1 步的。
-    let t3 = 0;
-    const c3 = createDwellClock(() => t3);
-    t3 = 5000; c3.reset();
-    t3 = 5200;
-    check(c3.read().dwell_ms === 200, "reset() 后计时归零", `${c3.read().dwell_ms}ms`);
-
-    // 重复调用不该重复累加（visibilitychange 在某些浏览器上会连发）。
-    let t4 = 0;
-    const c4 = createDwellClock(() => t4);
-    t4 = 100; c4.markHidden(); c4.markHidden();
-    t4 = 300; c4.markVisible(); c4.markVisible();
-    t4 = 500;
-    check(c4.read().hidden_ms === 200, "markHidden / markVisible 重复调用不重复累加", `${c4.read().hidden_ms}ms`);
-  }
+  // `lib/style/dwell.ts` 只服务于成对比较的每一步停留时长；比较在 F83 撤掉之后
+  // **没有任何页面再 import 它**，它只剩这四条断言在验它自己。按 F90：
+  // 被测对象不存在了，判据跟着删——留着就是一组永远绿、什么都不证明的断言。
+  // 「只采集不判读、不许有毫秒阈值」那条纪律还在，下面的阈值扫描照旧盯着 events.ts。
 
   // **代码里不许出现毫秒阈值常量**（口径 F38 / F29）。
   //
@@ -788,7 +752,6 @@ console.log("\n\x1b[1m七 · 埋点五事件（阶段 4）\x1b[0m");
   }
   const trackedFiles = [
     "lib/style/events.ts",
-    "lib/style/dwell.ts",
     "app/onboarding/taste/taste-client.tsx",
     "app/settings/style/settings-client.tsx",
   ];

@@ -383,7 +383,7 @@ class TestFailuresAreClassifiedNotCollapsed:
         assert len(set(kinds)) == len(kinds), kinds
 
     def test_too_large_is_its_own_kind(self, jwks, keypair):
-        from parse_service.app import MAX_UPLOAD_BYTES
+        from parse_service.limits import MAX_UPLOAD_BYTES
 
         rest = RecordingRest()
         r = post_file(client(jwks, rest), keypair, name="大.pdf",

@@ -9,7 +9,8 @@
             ↑
          slicer            消费契约
             ↑
-    parse_service.app      编排：parse → slice → 一次返回
+    api.ingest             编排：parse → slice → 组文本 → 嵌入 → 落库
+                           （独立的 parse_service.app 已于 2026-10-07 删除，见 parse-service/README）
 """
 
 from .core import slice_document

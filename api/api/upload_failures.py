@@ -68,7 +68,7 @@ FAILURE_KINDS: tuple[str, ...] = (
     "unsupported_format",      # 不是 .pdf / .pptx
     "pptx_not_implemented",    # .pptx：schema 已定，解析器未交付。**不是「不支持」**
     "empty_file",              # 0 字节
-    "too_large",               # 超过 parse_service.app.MAX_UPLOAD_BYTES
+    "too_large",               # 超过 parse_service.limits.MAX_UPLOAD_BYTES
     "duplicate_in_course",     # 这门课里已有同一份文件（唯一索引带 course_id）
     "unparsable",              # 解析器打不开 / 抛异常
     # ⚠️ **与 `unparsable` 分开，理由与 `pptx_not_implemented` 那条完全一样**：

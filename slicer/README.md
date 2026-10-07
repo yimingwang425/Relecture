@@ -15,18 +15,20 @@ parsed = parse_pdf(data, "lecture.pdf")
 slices = slice_document(parsed)            # split_threshold_chars 由 2b 注入
 ```
 
-实际调用方是 parse-service：`POST /parse` 一次返回 `ParseResult + SliceSet`，
-不单开端点。分层单向无环：
+实际调用方是 `api/api/ingest.py`（摄入：parse → slice → 组文本 → 嵌入 → 落库）。
+分层单向无环：
 
 ```
 parse_service.schema   契约，无依赖
         ↑
      slicer            消费契约
         ↑
-parse_service.response 组合两者
-        ↑
-parse_service.app      编排
+api.ingest             编排
 ```
+
+> 2026-10-07：原来的编排层 `parse_service.app`（独立的 `POST /parse` 服务）与它的
+> `parse_service.response` 已删除——2026-09-11 起解析并进了 `api/`，那个服务不再部署，
+> 而它是一个**无鉴权**端点。S19 那条「切片不单开端点」的理由在 `api/` 里照样成立。
 
 安装（两个包互为本地兄弟，都不发布到 PyPI，故彼此不写进 `dependencies`）：
 

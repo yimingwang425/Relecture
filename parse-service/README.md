@@ -8,6 +8,12 @@ AI 课件讲解助手 · **F2**：把课件解析为**保留版面信息**的结
 
 **服务无状态**：不写盘、不缓存、不做跨用户去重（口径表 P23 / P24）。
 
+> ⚠️ **2026-10-07：独立的 HTTP 服务已删除，本目录现在是一个库。**
+> 2026-09-11 起解析并进了 `api/`（`api/api/ingest.py` 直接调 `parse_pdf`），
+> 下面那个 `POST /parse` 不再部署，而它**无鉴权**——留着只是留着一个随时可能被误部署的口子。
+> 删掉的是 `app.py` / `response.py` / `tests/test_api.py`；上传上限搬进 `limits.py`。
+> 下文对 `/parse` 的描述是那几次交付**当时**的真实形态（同 F25：结论锚定它所依据的那一版），不回改。
+
 | 路径 | 状态 |
 | --- | --- |
 | PDF（PyMuPDF） | ✅ 本次交付 |
@@ -243,7 +249,6 @@ python -m venv .venv && ./.venv/bin/pip install -e ".[dev]"
 ./.venv/bin/python -m scripts.probe_corpus          # 语料验证报告
 ./.venv/bin/python -m scripts.probe_corpus --write-golden --compare-grid
 ./.venv/bin/python -m parse_service.schema > schema.json   # 导出 JSON Schema 供 TS 侧生成类型
-./.venv/bin/uvicorn parse_service.app:app --reload
 ```
 
 **解析耗时实测**：11.201 5.1 ms/页、22.081J 7.2 ms/页、14.129 70.3 ms/页（228 张图）、
@@ -258,5 +263,5 @@ python -m venv .venv && ./.venv/bin/pip install -e ".[dev]"
 | `geometry.py` | 矩形、精确并集、邻接度量。不依赖任何解析库，两条来源路径共用 |
 | `scanned.py` | 扫描件判据。**不 import PyMuPDF**——输入是数字，可脱离文件单测与重算 |
 | `pdf.py` | PyMuPDF 路径：只负责把数字取出来，不含判据逻辑 |
-| `response.py` | `ParseResponse`（解析 + 切片的组合）。**刻意不放在 `schema.py`**——放进去会形成 `parse_service.schema → slicer.schema → parse_service.schema` 的循环导入 |
-| `app.py` | FastAPI `POST /parse`。编排层：parse → slice → 一次返回 |
+| `limits.py` | 上传上限（`MAX_UPLOAD_BYTES`）。`api/` 的上传路由从这里读 |
+| ~~`response.py`~~ ~~`app.py`~~ | 2026-10-07 删除（独立 `/parse` 服务不再部署，见文件头） |

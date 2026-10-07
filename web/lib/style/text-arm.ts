@@ -63,8 +63,6 @@ export const TEXT_ARM_CALL = {
   max_output_tokens: 1500,
 } as const;
 
-export type TextArmCall = typeof TEXT_ARM_CALL;
-
 /**
  * API 版本。**也做成可配的**（`GEMINI_API_VERSION`）。
  *

@@ -1,0 +1,126 @@
+# 提交前的三道验证，搬到 CI 上再跑一遍（2026-10-07，口径 F101）。
+#
+# CLAUDE.md 一·「代价说清楚」：只用 main、不走 PR 之后，**合并前的关卡没了**，
+# 换成「验证套件必须在 git commit 之前全绿」。那一道关卡此前只靠人自觉——
+# 而它失守时不报错：推上去就是 main，Vercel / Render 照样自动部署。
+#
+# 这份 workflow **不替代**提交前本地跑那三行，它是事后的第二道：
+#   · 本地漏跑了，这里会红，至少在下一次部署之前有人看得见；
+#   · 「我本地是绿的」与「干净环境里是绿的」是两件事（依赖、路径、没提交的文件）。
+#
+# 三个 job 与 CLAUDE.md 的三行**一一对应、分开报、不合计**（口径 F34）：
+#   api       ← cd api && pytest（外加兄弟包各自的 pytest）
+#   supabase  ← cd supabase && npm run verify
+#   web       ← cd web && npm run verify:guards
+#
+# ⚠️ **它不跑真库 / 真服务的脚本**（verify_*_prod.py、ingest_real.py、
+# acceptance_p0_p3.py、eval_retrieval_prod.py）：那些要钱、要部署地址、要账号，
+# 是**部署后**的验收（CLAUDE.md 同一节），不是提交的门。
+#
+# ⚠️ CI 绿 ≠ 部署了 ≠ 部署的是这一版（口径 F17）。验收第 0 步仍然是核对 /health 的 build_commit。
+
+name: verify
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  api:
+    name: api · pytest
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"   # 与 api/Dockerfile 的 python:3.13-slim 同一个版本
+      - name: 建 api/.venv（依赖与 Dockerfile 同一份清单）
+        run: |
+          python -m venv api/.venv
+          api/.venv/bin/pip install -q -e "api[dev]" anthropic numpy openai pymupdf python-multipart \
+            -e slicer -e parse-service
+      - name: api
+        working-directory: api
+        run: .venv/bin/python -m pytest
+      # 兄弟包各自的测试。**逐个跑、逐个报**：一个包 import 失败时 pytest 仍可能退出 0
+      # 并报「N passed」——所以失败要落在具体哪个包上，不合成一行。
+      - name: explain
+        working-directory: explain
+        run: ../api/.venv/bin/python -m pytest
+      - name: retrieval
+        working-directory: retrieval
+        run: ../api/.venv/bin/python -m pytest
+      - name: slicer
+        working-directory: slicer
+        run: ../api/.venv/bin/python -m pytest
+      - name: parse-service
+        working-directory: parse-service
+        run: ../api/.venv/bin/python -m pytest
+      - name: glossary
+        working-directory: glossary
+        run: ../api/.venv/bin/python -m pytest
+
+  supabase:
+    name: supabase · verify（PGlite 跑迁移原文 + 反向控制）
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: supabase/package-lock.json
+      - run: npm ci
+        working-directory: supabase
+      - run: npm run verify
+        working-directory: supabase
+
+  web:
+    name: web · verify:guards
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # verify:identity 用 gh 查「HEAD 的作者能不能反查到 GitHub 账号」——Vercel 用的是同一个信号。
+      # **不加 --allow-offline**：查不了就是红，同那份脚本的纪律。
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # PR 事件下默认检出的是 GitHub 造的合并提交，作者是 GitHub——
+          # 身份检查会对着一个不会被部署的提交说话。检出 PR 的头提交。
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      # verify:guards 里的 verify:api 要 api/.venv（「没有就判红，不跳过」），
+      # 所以这里再建一次。api 的 pytest 因此会跑两遍——**不为省这一分钟去改那道门的定义**：
+      # verify:guards 是 CLAUDE.md 写下的门，CI 照它原样跑。
+      - name: 建 api/.venv
+        run: |
+          python -m venv api/.venv
+          api/.venv/bin/pip install -q -e "api[dev]" anthropic numpy openai pymupdf python-multipart \
+            -e slicer -e parse-service
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+        working-directory: web
+      - name: 身份检查的本地那一半
+        # CI 里没有「开发者自己的 git 配置」，本地那条（配置 == HEAD 作者）在这里**退化成恒等**，
+        # 所以显式设成 HEAD 的作者——它不证明任何事，主检查是下一步里 gh 那一条活信号。
+        run: git config user.email "$(git log -1 --format=%ae)"
+      - run: npm run verify:guards
+        working-directory: web

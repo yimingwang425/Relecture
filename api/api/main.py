@@ -147,11 +147,11 @@ class MarkRequest(BaseModel):
     course_id: str | None = None
 
 
-#: 上传体积上限。沿用 `parse_service.app.MAX_UPLOAD_BYTES` 的那个数与它的来源说明
+#: 上传体积上限。沿用 `parse_service.limits.MAX_UPLOAD_BYTES` 的那个数与它的来源说明
 #: （**占位待定**，现值是测试集最大文件的近 30 倍，不会误伤）——
 #: 不在这里写第二个数字。
 def _max_upload_bytes() -> int:
-    from parse_service.app import MAX_UPLOAD_BYTES
+    from parse_service.limits import MAX_UPLOAD_BYTES
 
     return MAX_UPLOAD_BYTES
 

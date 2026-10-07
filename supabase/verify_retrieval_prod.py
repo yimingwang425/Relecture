@@ -587,15 +587,22 @@ def main() -> int:
             "p_course_id": course_id, "p_query": vec, "p_model": MODEL_ID, "p_limit": limit})
         return s, (rows if isinstance(rows, list) else []), raw
 
+    # 课程 A 的文档现在在哪个口径上——**这条判据验的是哪一种情形取决于它**。
+    # 2026-10-07 第二次跑时课程 A 已被 /reindex 升级，而标签还写着「老口径」：
+    # 绿得对，说的却是另一件事。所以标签按现查的口径打印，不写死。
+    _, docs_a_rs, _ = rest("GET", f"/rest/v1/documents?select=index_ruleset&course_id=eq.{course_a}", tok_a)
+    rs_a = sorted({d.get("index_ruleset") for d in (docs_a_rs or [])})
+    which = "老口径" if rs_a == ["embed-text-1.0"] else ("新口径" if "embed-text-1.0" not in rs_a else "新旧混合")
     s, rows, raw = match_indexed(tok_a, course_a, v_energy, 30)
-    check("作用域", "match_slices_indexed 对老口径文档照样召回",
+    check("作用域", f"match_slices_indexed 对{which}文档召回得到（课程 A：{rs_a}）",
           s == 200 and len(rows) > 0,
           f"HTTP {s} · {len(rows)} 行 {raw[:120] if s != 200 else ''} "
-          "← ingest_real 那批文档是 2026-10-07 之前传的（index_ruleset 默认 embed-text-1.0）；"
-          "0 行说明按文档口径取行那一步没对上，老课会整门召不回")
+          "← 0 行说明按文档口径取行那一步没对上，这门课会整门召不回")
     keys = [(r["document_id"], r["slice_id"]) for r in rows]
     check("作用域", "同一片不重复出现（新旧两口径不混用）",
-          len(keys) == len(set(keys)), f"{len(keys)} 行 / {len(set(keys))} 个不同的片")
+          len(keys) == len(set(keys)), f"{len(keys)} 行 / {len(set(keys))} 个不同的片"
+          + ("  ⚠️ 课程 A 全在老口径上——没有一片有两套向量，这一条此刻是平凡通过"
+             if which == "老口径" else "  ← 升级过的文档每片都有新旧两套向量，这一条有分辨力"))
     s, rows_b, _ = match_indexed(tok_b, course_a, v_energy, 30)
     check("RLS", "B 用 A 的 course_id 调 match_slices_indexed → 0 行",
           s == 200 and rows_b == [], f"HTTP {s} · {len(rows_b)} 行")

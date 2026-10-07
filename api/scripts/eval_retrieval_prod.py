@@ -68,7 +68,15 @@ CONDITIONS: dict[str, list[str]] = {
     "C1 +改写": ["lexical", "rerank"],
     "C2 +改写+词法": ["rerank"],
     "C3 全开": [],
+    # 2026-10-07 第一次实测后加：C3 在两轮都是满分，而 C1→C2（加词法）在新索引上是 −1 题。
+    # 只有这一组能回答「完整流程里词法一路到底有没有贡献」——C2 没有重排，C3 有词法，
+    # 两者之差混着两个变量。
+    "C4 全开但关词法": ["lexical"],
 }
+
+#: ⚠️ **C1 与 C0 在单轮题上结构性相同**：没有历史时向量一路嵌入的是原问题（改写只产出
+#: 关键词，而关键词只给词法一路用），C1 又关了词法。所以评测集全是单轮题时 C1 == C0
+#: **不是「改写没用」**，是这份评测集测不到改写——改写的价值在多轮追问的指代消解。
 
 #: 结构上恒为 0 的 tag（gold 页是图片页，老索引里不产生切片）。
 #: 新索引带看图转写时它**可能不再是 0**——那正是 F100 要测的东西，所以只标注不剔除。
@@ -96,6 +104,8 @@ def run_round(base: str, token: str, course_id: str, questions: list[dict]) -> d
             for t, v in sorted(summ.items())
         }
         print(f"\n  \033[1m{name}\033[0m（关掉：{', '.join(ablate) or '无'}）")
+        if name.startswith("C1"):
+            print("    \033[2m（单轮题上与 C0 结构性相同：改写只影响有历史时的嵌入与词法一路的关键词）\033[0m")
         for t, v in out[name].items():
             note = "  ← 老索引上结构性为 0" if v["ceiling_zero"] else ""
             print(f"    {t:<16} n={v['n']:<3} full-hit {v['full_hit']:<3} "

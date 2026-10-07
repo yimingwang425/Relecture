@@ -331,9 +331,22 @@ def main() -> int:
           f"{len(rows)} 行，外来 {sum(1 for r in rows if r['document_id'] not in {a1, a2})} 行")
 
     s, rows_b, raw = match(tok_a, course_b, v_planning, 30)
-    check("作用域", "同一个提问查课程 B → 全部来自 B，**A2 一行都不出现**",
-          s == 200 and len(rows_b) > 0 and all(r["document_id"] == b1 for r in rows_b),
-          f"{len(rows_b)} 行；含 A2 的 {sum(1 for r in rows_b if r['document_id'] == a2)} 行  "
+    # ⚠️ 2026-10-07 改：原判据是「每一行都是 B1」——它把「课程 B 只有 B1 一份文档」当成了
+    # 恒真的前提。真库上课程 B 在 2026-09-12 12:19 多了一份 22.081J（不是 ingest_real 传的），
+    # 于是这条在作用域完全正确时红了：30 行、含 A2 的 0 行。**它要守的是「课程 A 的文档
+    # 一行都不混进来」**，所以改成：课程 B 的文档清单**现查**，召回 ⊆ 它，且 A2 不出现。
+    # 两端仍不同源：A2 的 id 来自 state 文件（摄入时记的），B 的清单来自数据库（现查）。
+    s_docs, docs_b_live, _ = rest("GET", f"/rest/v1/documents?select=id,filename&course_id=eq.{course_b}", tok_a)
+    b_ids = {d["id"] for d in (docs_b_live or [])} if s_docs == 200 else set()
+    extra = [d for d in (docs_b_live or []) if d["id"] != b1]
+    if extra:
+        print(f"  \033[2m· [观察] 课程 B 里有 state 文件没记的文档：{[(d['id'][:8], d['filename']) for d in extra]}"
+              "  ← 验收夹具漂了（不是 ingest_real 传的）；不影响判据，但「B 只有一份」不再成立\033[0m")
+    check("作用域", "同一个提问查课程 B → 全部来自课程 B 的文档，**A2 一行都不出现**",
+          s == 200 and len(rows_b) > 0 and b1 in b_ids and a2 not in b_ids
+          and all(r["document_id"] in b_ids for r in rows_b),
+          f"{len(rows_b)} 行；含 A2 的 {sum(1 for r in rows_b if r['document_id'] == a2)} 行；"
+          f"课程 B 外的 {sum(1 for r in rows_b if r['document_id'] not in b_ids)} 行  "
           "← B1 与 A2 是逐字节同一份文件，所以只有作用域能把它们分开")
 
     # 能源那份只在课程 A 里。查课程 B 时它**不该**出现——

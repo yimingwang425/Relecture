@@ -66,6 +66,7 @@ class RoutedRest:
         documents: dict[str, list[dict[str, Any]]] | None = None,
         slices: dict[str, list[dict[str, Any]]] | None = None,
         matches: dict[str, list[dict[str, Any]]] | None = None,
+        lexical: dict[str, list[dict[str, Any]]] | None = None,
     ) -> None:
         self.style_rows = style_rows
         #: `course_id -> {"id", "name", "owner"}`
@@ -76,6 +77,8 @@ class RoutedRest:
         self.slices = slices or {}
         #: `course_id -> [{document_id, slice_id, similarity}, ...]`
         self.matches = matches or {}
+        #: `course_id -> [{document_id, slice_id, rank}, ...]`（词法一路，默认空）
+        self.lexical = lexical or {}
 
         #: 「表」。断言直接读它们 —— 埋点那条守卫要的是**行数增加**，
         #: 不是「函数被调用」（后者在写库失败时照样绿）。
@@ -126,7 +129,14 @@ class RoutedRest:
             self.marks.append(row)
             return None
 
-        if path.startswith("/rpc/match_slices"):
+        # ⚠️ **先认词法那一路**：`/rpc/match_slices_lexical` 也以 `/rpc/match_slices`
+        # 开头，按前缀分发的话它会被当成向量一路、拿到向量的结果——
+        # 于是「词法一路有没有贡献」在这里永远是「有」，而那是假的。
+        if path.startswith("/rpc/match_slices_lexical"):
+            cid = body.get("p_course_id")
+            return list(self.lexical.get(cid, []))[: body.get("p_limit", 20)]
+
+        if path.startswith("/rpc/match_slices"):   # match_slices / match_slices_indexed
             cid = body.get("p_course_id")
             return list(self.matches.get(cid, []))[: body.get("p_limit", 5)]
 

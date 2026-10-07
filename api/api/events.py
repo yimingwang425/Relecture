@@ -229,6 +229,9 @@ def build_explain_events(
         "wall_ms": result.wall_ms,
         # 投机生成被作废的次数（0 或 1）。它花的钱已计入上面的 `cost_usd`。
         "speculative_discarded": len(result.discarded),
+        # 检索时的改写 + 重排（口径 F96 / F98）。**已计入 `cost_usd`**，单列是为了分得开。
+        # None = 有一次超时（可能已计费，金额未知）——取自 meta 原值，不取上面那个按 0 加的。
+        "retrieval_llm_cost_usd": (result.context.meta or {}).get("llm_cost_usd", 0.0),
         "accepted": result.accepted,
         "regenerations": result.regenerations,
         # F04 的两个标识各管一件事：前者管「阈值变没变」，后者管「指标集是不是同一个」。

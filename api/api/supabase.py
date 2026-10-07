@@ -314,6 +314,71 @@ class SupabaseClient:
         if rows:
             self._post("/slice_embeddings", token, rows)
 
+    def insert_lexicon(self, *, token: str, rows: list[dict[str, Any]]) -> None:
+        """写词法索引（`slice_lexicon`，口径 F97）。与向量同一个形状：一片一行、主键带口径。"""
+        if rows:
+            self._post("/slice_lexicon", token, rows)
+
+    def _delete(self, path: str, token: str) -> None:
+        """DELETE 一批行。注入的 transport 收到 `x-method: DELETE`（同 `update_document`）。"""
+        headers = {"apikey": self._apikey, "Authorization": f"Bearer {token}"}
+        url = f"{self._rest}{path}"
+        if self._transport is not None:
+            self._transport(url, {**headers, "x-method": "DELETE"}, {})
+            return
+
+        import httpx
+
+        try:
+            resp = httpx.delete(url, headers=headers, timeout=30.0)
+        except Exception as exc:  # noqa: BLE001
+            raise SupabaseError(f"连不上数据库：{exc}", status=504) from exc
+        if resp.status_code >= 400:
+            raise SupabaseError(f"数据库返回 {resp.status_code}：{resp.text[:300]}", status=502)
+
+    def delete_index_rows(self, *, token: str, document_id: str, ruleset: str) -> None:
+        """删掉一份文档在**某一个口径**下的向量与词条。重建索引的幂等前提（`reindex.py`）。
+
+        只删这一个口径：老口径的行原样留着，切换完成之前检索仍在用它们。
+        """
+        from urllib.parse import quote
+
+        rs = quote(ruleset, safe="")
+        self._delete(f"/slice_embeddings?document_id=eq.{document_id}&embed_ruleset=eq.{rs}", token)
+        self._delete(f"/slice_lexicon?document_id=eq.{document_id}&ruleset=eq.{rs}", token)
+
+    def slices_for_reindex(self, token: str, document_id: str) -> list[dict[str, Any]]:
+        """重建索引要的切片列：比讲解多一个 `units`（T0 组文本的输入）。"""
+        out = self._get(
+            f"/slices?select=document_id,slice_id,page_indices,title,text,units"
+            f"&document_id=eq.{document_id}&order=ordinal.asc", token)
+        return out if isinstance(out, list) else []
+
+    def update_document(self, *, token: str, document_id: str, fields: dict[str, Any]) -> None:
+        """PATCH 一行 `documents`。**只给重建索引用**（切换 `index_ruleset`）。
+
+        注入的 `transport` 收到的 headers 多一个 `x-method: PATCH`——假 PostgREST
+        靠它把这一发与 POST 分开（真请求走 httpx.patch，不带这个头）。
+        """
+        headers = {
+            "apikey": self._apikey,
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        }
+        url = f"{self._rest}/documents?id=eq.{document_id}"
+        if self._transport is not None:
+            self._transport(url, {**headers, "x-method": "PATCH"}, fields)
+            return
+
+        import httpx
+
+        try:
+            resp = httpx.patch(url, headers=headers, json=fields, timeout=30.0)
+        except Exception as exc:  # noqa: BLE001
+            raise SupabaseError(f"连不上数据库：{exc}", status=504) from exc
+        if resp.status_code >= 400:
+            raise SupabaseError(f"数据库返回 {resp.status_code}：{resp.text[:300]}", status=502)
+
     def create_course(self, *, token: str, owner: str, name: str) -> dict[str, Any]:
         out = self._post("/courses", token, {"owner": owner, "name": name},
                          prefer="return=representation")
@@ -460,7 +525,11 @@ class SupabaseClient:
     #: `documents` 上检索要用到的列。**`unusable_pages` 在里面**：口径 X07 要求
     #: 「哪些页读不出来」一路带到检索层，少了它，模型面对一个内容在图里的提问
     #: 最可能的行为是基于标题编一段像样的讲解（PRD §6.2：更高危险——它看起来成功了）。
-    DOCUMENT_COLUMNS = "id,filename,verdict,unusable_pages,page_count"
+    #:
+    #: 2026-10-07 加 `index_ruleset`（检索按每份文档自己的口径取行，口径 F97）与
+    #: `vision_pages`（转写救回的页不再算「读不了的页」，口径 F100）。
+    #: ⚠️ 迁移 `20261007100000` 没跑的库上，这个 select 会 400 —— 迁移必须先于构建。
+    DOCUMENT_COLUMNS = "id,filename,verdict,unusable_pages,page_count,index_ruleset,vision_pages"
 
     def documents_in_course(self, token: str, course_id: str) -> list[dict[str, Any]]:
         """一门课的全部文档。**整门课，不是「与问题相关的那几份」**——
@@ -484,6 +553,24 @@ class SupabaseClient:
         out = self._post("/rpc/match_slices", token, {
             "p_course_id": course_id, "p_query": query,
             "p_model": model, "p_ruleset": ruleset, "p_limit": limit,
+        })
+        return out if isinstance(out, list) else []
+
+    def match_slices_indexed(self, *, token: str, course_id: str, query: list[float],
+                             model: str, limit: int) -> list[dict[str, Any]]:
+        """混合检索的向量一路（口径 F97）。与 `match_slices` 相同，但**按每份文档自己的
+        `index_ruleset` 取向量**，所以不收 ruleset 参数——见迁移 `20261007100100`。"""
+        out = self._post("/rpc/match_slices_indexed", token, {
+            "p_course_id": course_id, "p_query": query, "p_model": model, "p_limit": limit,
+        })
+        return out if isinstance(out, list) else []
+
+    def match_slices_lexical(self, *, token: str, course_id: str, query: str,
+                             limit: int) -> list[dict[str, Any]]:
+        """混合检索的词法一路（口径 F97）。`query` 是 `retrieval.lexical.tsquery()` 的产出。
+        返回 `[{document_id, slice_id, rank}]`，已按 `ts_rank_cd` 降序。"""
+        out = self._post("/rpc/match_slices_lexical", token, {
+            "p_course_id": course_id, "p_query": query, "p_limit": limit,
         })
         return out if isinstance(out, list) else []
 

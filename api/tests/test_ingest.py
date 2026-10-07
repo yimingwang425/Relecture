@@ -58,6 +58,7 @@ class StoreSpy:
         self.document: dict | None = None
         self.slices: list[dict] = []
         self.embeddings: list[dict] = []
+        self.lexicon: list[dict] = []
 
     def insert_document(self, *, token, row):
         self.document = row
@@ -68,6 +69,9 @@ class StoreSpy:
 
     def insert_embeddings(self, *, token, rows):
         self.embeddings = rows
+
+    def insert_lexicon(self, *, token, rows):
+        self.lexicon = rows
 
 
 @pytest.fixture

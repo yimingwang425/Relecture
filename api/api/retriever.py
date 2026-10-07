@@ -43,7 +43,22 @@ JWT 是分界线。`explain` 是一个无状态的生成库，它不该知道「
 所以同名时在标签后缀上一截 `document_id`。不同名时不加——
 那一截会原样进 prompt 给学生看（`build_user_turn` 拿它当出处标签）。
 
-决策日期：2026-09-12
+## 混合检索（2026-10-07，口径 F96–F98）
+
+    提问 ─┬─ 查询改写（Haiku：指代消解 + 课件语言关键词）
+          ├─ 向量一路：嵌入（改写后的问题）→ match_slices_indexed（每份文档自己的口径）
+          └─ 词法一路：关键词 → tsquery → match_slices_lexical
+       → RRF 融合（k=60）→ 候选池 → 重排（Haiku）→ 预算 B 片
+
+- **每一个模型环节失败都回落**：改写失败用原问题（且词法一路用原问题的词条）、
+  重排失败用融合排名、词法一路报错就只剩向量一路。回落写进 `meta`，不静默。
+- **预算 B=5 不变**（R06：换预算等于换口径）。候选池 `pool` 只是重排的输入规模。
+- **第一轮没有历史时**，改写与嵌入原问题**并行**：那时向量一路不需要改写结果，
+  只有词法一路要等关键词。有历史时必须先改写再嵌入（要嵌的是改写后的那句）。
+
+⚠️ **召回收益未测**——见 `explain/rag.py` 模块说明末尾的登记与触发条件。
+
+决策日期：2026-09-12（阶段 5）· 2026-10-07（混合检索）
 """
 
 from __future__ import annotations
@@ -128,6 +143,20 @@ class SupabaseRetriever:
     #: 这门课的文档清单。不传则 `fetch()` 时现取。
     #: 传进来是为了让调用方能在一次请求里复用（`/explain` 要用课程名做 course_label）。
     documents: list[dict[str, Any]] | None = field(default=None, repr=False)
+    #: 会话历史（F5）。查询改写用它做指代消解；**不进检索结果**。
+    history: list[dict[str, Any]] = field(default_factory=list, repr=False)
+    #: `explain.rag.QueryRewriter`。`None` = 不改写（测试与没配 key 的环境）。
+    rewriter: Any | None = field(default=None, repr=False)
+    #: `explain.rag.LlmReranker`。`None` = 不重排，直接取融合排名的前 B 片。
+    reranker: Any | None = field(default=None, repr=False)
+    #: 每一路各取多少个候选、融合后保留多少个交给重排。
+    #: **是重排的输入规模，不是召回口径**：实测每门课 15–46 片（迁移 20260911100100），
+    #: 20 覆盖小课的全部、大课的一半；重排输入约 20×600 字，与兜底判断的输入同一量级。
+    pool: int = 20
+    #: **只给评测端点用**（`POST /courses/{id}/retrieve`）：关掉哪几环，
+    #: 取值 `rewrite` / `lexical` / `rerank`。生产的 `/explain` 从不设它——
+    #: 它不是开关（F70），是 R17 要求的「多条件同向重复」所需的对照组。
+    ablate: frozenset[str] = frozenset()
 
     def __post_init__(self) -> None:
         from retrieval.selection import SELECTED_MODE
@@ -174,9 +203,14 @@ class SupabaseRetriever:
         skipped: list[SkippedPageRef] = []
         unusable: list[str] = []
         for d in sorted(documents, key=lambda x: labels[x["id"]]):
-            if d.get("verdict") == "unusable":
+            # 转写救回的页（口径 F100）**不再是读不了的页**：它们有切片、检索得到。
+            # 仍报成跳过页的话，模型会被告知「这一页读不了」，而片段里明明有它。
+            rescued = {int(v["index"]) for v in (d.get("vision_pages") or [])}
+            if d.get("verdict") == "unusable" and not rescued:
                 unusable.append(labels[d["id"]])
             for p in d.get("unusable_pages") or []:
+                if int(p["index"]) in rescued:
+                    continue
                 kind = str(p.get("kind", "unknown"))
                 skipped.append(SkippedPageRef(
                     source_file=labels[d["id"]],
@@ -189,8 +223,15 @@ class SupabaseRetriever:
     # ---------------------------------------------------------------- 协议
 
     def fetch(self, question: str):
-        """协议要求的唯一方法。检索 query = **本轮提问原文**（口径 X01）。"""
-        from retrieval.compose import EMBED_TEXT_RULESET_VERSION
+        """协议要求的唯一方法。
+
+        检索 query **不再恒等于提问原文**（口径 F96 推翻 X01 的一半）：有改写器时
+        向量一路嵌入改写后的独立问题、词法一路用改写给的关键词。`ContextPack.question`
+        仍是提问原文——它进签名，而签名回答的是「两组拿到的是不是同一份上下文」。
+        """
+        import threading
+
+        from retrieval.lexical import rrf_fuse, tsquery
         from retrieval.selection import (
             SELECTED_DIMENSIONS,
             SELECTED_MODE,
@@ -199,42 +240,99 @@ class SupabaseRetriever:
         )
 
         from explain.context import ContextPack, ContextSlice
+        from explain.rag import RewriteResult
 
         t0 = time.monotonic()
         documents = self._documents()
         labels = label_documents(documents)
         skipped, unusable = self._skipped_and_unusable(documents, labels)
 
-        # ---- 嵌入。**这是 PRD §13.3 的第一次出境在检索侧的那一半**：
-        #      出去的是提问原文，不是课件（课件在摄入时已经出去过一次）。
-        vector = [float(x) for x in self.embedder.embed([question])[0]]
-        if len(vector) != SELECTED_DIMENSIONS:
-            # 与摄入那一侧同一条判据：断**实际返回**的长度，不是嵌入器自称的
-            # （口径 F16 —— 拿嵌入器跟它自己比永远不会失败）。
-            # 维度不符时 `match_slices` 会报一个 pgvector 的类型错误，
-            # 那句话读起来像「数据库坏了」，而其实是选型与 schema 不一致。
-            raise ValueError(
-                f"嵌入实际返回 {len(vector)} 维，而 match_slices 的 p_query 是 "
-                f"vector({SELECTED_DIMENSIONS})（retrieval.selection 是唯一出处）"
-            )
+        # ---- 改写 ∥ 嵌入原问题（无历史时并行；有历史时必须先改写）
+        box: dict[str, Any] = {}
+
+        rewriter = None if "rewrite" in self.ablate else self.rewriter
+        reranker = None if "rerank" in self.ablate else self.reranker
+
+        def do_rewrite() -> None:
+            box["rw"] = (rewriter.rewrite(question, self.history)
+                         if rewriter is not None
+                         else RewriteResult(query=question, implementation="none"))
+
+        if self.history or rewriter is None:
+            do_rewrite()
+            rw: Any = box["rw"]
+            vector = self._embed(rw.query, SELECTED_DIMENSIONS)
+        else:
+            th = threading.Thread(target=do_rewrite, daemon=True)
+            th.start()
+            vector = self._embed(question, SELECTED_DIMENSIONS)
+            th.join()
+            rw = box["rw"]
         embed_ms = (time.monotonic() - t0) * 1000
 
-        # ---- 检索
+        # ---- 两路检索
         t1 = time.monotonic()
-        rows = self.store.match_slices(
+        vec_rows = self.store.match_slices_indexed(
             token=self.token, course_id=self.course_id, query=vector,
-            model=EMBED_MODEL_ID(), ruleset=EMBED_TEXT_RULESET_VERSION,
-            limit=self.budget,
+            model=EMBED_MODEL_ID(), limit=self.pool,
         )
+        lex_rows: list[dict[str, Any]] = []
+        lex_error: str | None = None
+        # 关键词 + 改写后的问题 + 原问题，一起切词。**原问题一定在里面**：
+        # 改写失败时关键词为空，那时词法一路仍然能对中文课件起作用。
+        tsq = "" if "lexical" in self.ablate else tsquery(" ".join(rw.keywords), rw.query, question)
+        if tsq:
+            try:
+                lex_rows = self.store.match_slices_lexical(
+                    token=self.token, course_id=self.course_id, query=tsq, limit=self.pool)
+            except Exception as exc:  # noqa: BLE001 —— 词法一路坏了，向量一路照常
+                lex_error = f"{type(exc).__name__}: {str(exc)[:200]}"
         match_ms = (time.monotonic() - t1) * 1000
+
+        similarity = {(r["document_id"], r["slice_id"]): float(r["similarity"]) for r in vec_rows}
+        lex_rank = {(r["document_id"], r["slice_id"]): i + 1 for i, r in enumerate(lex_rows)}
+        fused = rrf_fuse(
+            [(r["document_id"], r["slice_id"]) for r in vec_rows],
+            [(r["document_id"], r["slice_id"]) for r in lex_rows],
+        )[: self.pool]
 
         # ---- 补原文。键是 `(document_id, slice_id)` **两段**，不是 slice_id 一段：
         #      slice_id 是文档内局部 id，一门课两份讲义都有 's001'。
         by_key: dict[tuple[str, str], dict[str, Any]] = {}
-        if rows:
+        if fused:
             for s in self.store.slices_in_documents(
-                    self.token, [r["document_id"] for r in rows]):
+                    self.token, sorted({k[0] for k, _ in fused})):
                 by_key[(s["document_id"], s["slice_id"])] = s
+
+        candidates: list[tuple[tuple[str, str], dict[str, Any]]] = []
+        missing: list[str] = []
+        for key, _score in fused:
+            src = by_key.get(key)
+            if src is None:
+                # 索引在、切片不在。**不静默跳过**——它意味着两张表不一致
+                # （外键本应挡住），记进 meta 让它可被看见。
+                missing.append(f"{key[0][:8]}#{key[1]}")
+                continue
+            candidates.append((key, src))
+
+        # ---- 重排 → 至多 B 片；不足 B 片按融合排名回填（R07 第 5 条的同一个理由）
+        t2 = time.monotonic()
+        rr: Any = None
+        order: list[int] = []
+        if reranker is not None and candidates:
+            rr = reranker.rerank(
+                rw.query,
+                [(src.get("title"), list(src.get("page_indices") or ()), src.get("text") or "")
+                 for _, src in candidates],
+                top_n=self.budget)
+            if rr.order is not None:
+                order = list(rr.order)
+        for i in range(len(candidates)):
+            if len(order) >= self.budget:
+                break
+            if i not in order:
+                order.append(i)
+        rerank_ms = (time.monotonic() - t2) * 1000
 
         slices: list[ContextSlice] = []
         #: 与 `slices` **逐项对齐**的 `(document_id, slice_id)`。
@@ -242,36 +340,29 @@ class SupabaseRetriever:
         #: ⚠️ **为什么必须有这个，而不能用 `source_file` 代替。**
         #: `source_file` 是**文件名**，而同一份文件可以挂在不同课程下
         #: （唯一索引是 `(owner, course_id, content_sha256)`，口径 F47 明确要支持
-        #: 「同一份导论讲义用于两个学期」）。真库上就有这个形态：
-        #: `MIT11_201F07_slides2.pdf` 同时在课程 A 和课程 B 里。
-        #:
+        #: 「同一份导论讲义用于两个学期」）。真库上就有这个形态。
         #: 于是「召回的切片来自课程 A 的文件」这条判据**在真的召回了课程 B 时
-        #: 同样成立**——两边文件名一模一样。那不是判据（同 F48：判据在它要区分的
-        #: 两种情况下取值相同，就不是判据）。`document_id` 是唯一能分开的东西。
-        #:
-        #: 2026-09-12 记：上一版的验收判据就是按文件名写的，这个洞是真的。
+        #: 同样成立**——那不是判据（同 F48）。`document_id` 是唯一能分开的东西。
         hit_documents: list[dict[str, str]] = []
-        missing: list[str] = []
-        for r in rows:
-            key = (r["document_id"], r["slice_id"])
-            src = by_key.get(key)
-            if src is None:
-                # 向量在、切片不在。**不静默跳过**——它意味着两张表不一致
-                # （外键本应挡住），记进 meta 让它可被看见。
-                missing.append(f"{key[0][:8]}#{key[1]}")
-                continue
+        for i in order[: self.budget]:
+            key, src = candidates[i]
+            sim = similarity.get(key)
             slices.append(ContextSlice(
-                source_file=labels.get(r["document_id"], r["document_id"][:8]),
-                slice_id=r["slice_id"],
+                source_file=labels.get(key[0], key[0][:8]),
+                slice_id=key[1],
                 page_indices=tuple(src.get("page_indices") or ()),
                 title=src.get("title"),
                 text=src.get("text") or "",
                 char_count=int(src.get("char_count") or 0),
-                score=float(r["similarity"]),
-                via="hit",
+                # 只有词法一路命中的片没有余弦相似度——**写 None，不编一个分数**。
+                score=sim,
+                via="hit" if sim is not None else "lexical",
             ))
-            hit_documents.append({"document_id": r["document_id"],
-                                  "slice_id": r["slice_id"]})
+            hit_documents.append({"document_id": key[0], "slice_id": key[1]})
+
+        rulesets = sorted({str(d.get("index_ruleset") or "embed-text-1.0") for d in documents})
+        costs = [rw.cost_usd, rr.cost_usd if rr is not None else 0.0]
+        llm_cost = None if any(c is None for c in costs) else sum(costs)
 
         return ContextPack(
             question=question,
@@ -283,24 +374,56 @@ class SupabaseRetriever:
                 "course_id": self.course_id,
                 "budget": self.budget,
                 "mode": SELECTED_MODE,
+                "fusion": "rrf",
+                "pool": self.pool,
+                "ablate": sorted(self.ablate),
                 # §13.0 的 `retrieval_executed` 要这几样，见 PRD。
                 "embed_model": SELECTED_MODEL,
                 "embed_dimensions": SELECTED_DIMENSIONS,
                 "embed_variant": SELECTED_VARIANT,
-                "embed_text_ruleset": EMBED_TEXT_RULESET_VERSION,
+                # 每份文档各自的口径；一门课里新旧并存时这里有两个值（口径 F97）。
+                "embed_text_ruleset": ",".join(rulesets),
                 "document_count": len(documents),
-                # 与 `slices` 逐项对齐。验收断的是这个，不是 source_file —— 见上面
-                # `hit_documents` 那段：同一份文件可以挂在两门课下，文件名分不开。
+                # 与 `slices` 逐项对齐。验收断的是这个，不是 source_file。
                 "hit_documents": hit_documents,
-                # 这门课有哪些文档。让「召回的 document_id 属于这门课」这条判据
-                # 的**两端都来自服务端的同一次请求**之外还有一端可比：
-                # 脚本手里有 ingest 时记下的 id（另一个来源），两边都能对。
                 "course_document_ids": [str(d["id"]) for d in documents],
+                "rewrite": rw.to_dict(),
+                "rerank": rr.to_dict() if rr is not None else {"implementation": "none"},
+                "channels": {
+                    "vector": len(vec_rows),
+                    "lexical": len(lex_rows),
+                    "lexical_query_terms": tsq.count("|") + 1 if tsq else 0,
+                    "lexical_error": lex_error,
+                    # 每个最终片在两路里各排第几（None = 那一路没命中）。
+                    # **融合有没有起作用**要靠它看：全部 lexical=None 说明词法一路从没贡献。
+                    "final": [
+                        {"vector_rank": next((i + 1 for i, r in enumerate(vec_rows)
+                                              if (r["document_id"], r["slice_id"]) == (h["document_id"], h["slice_id"])), None),
+                         "lexical_rank": lex_rank.get((h["document_id"], h["slice_id"]))}
+                        for h in hit_documents
+                    ],
+                },
+                # 改写 + 重排的模型成本。**计入单轮**（`pipeline.RoundResult.cost_usd`），
+                # None = 有一次超时（可能已计费，金额未知，F73 同一条）。
+                "llm_cost_usd": llm_cost,
                 "embed_latency_ms": round(embed_ms, 1),
                 "match_latency_ms": round(match_ms, 1),
+                "rerank_latency_ms": round(rerank_ms, 1),
                 "retrieval_latency_ms": round((time.monotonic() - t0) * 1000, 1),
-                # 空列表是常态；非空表示 slice_embeddings 有行而 slices 没有，
+                # 空列表是常态；非空表示索引有行而 slices 没有，
                 # 那是外键本应挡住的状态。留在这里，不吞掉。
                 "slices_missing_text": missing,
             },
         )
+
+    def _embed(self, text: str, dims: int) -> list[float]:
+        """嵌入一句查询。**这是 PRD §13.3 的第一次出境在检索侧的那一半**：
+        出去的是提问（或改写后的提问），不是课件。"""
+        vector = [float(x) for x in self.embedder.embed([text])[0]]
+        if len(vector) != dims:
+            # 断**实际返回**的长度，不是嵌入器自称的（口径 F16）。
+            raise ValueError(
+                f"嵌入实际返回 {len(vector)} 维，而 match_slices 的 p_query 是 "
+                f"vector({dims})（retrieval.selection 是唯一出处）"
+            )
+        return vector

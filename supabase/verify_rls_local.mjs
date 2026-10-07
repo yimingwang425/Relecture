@@ -38,6 +38,12 @@ const SUPABASE_STUBS = `
   -- auth_admin_sim 要能进 auth schema 才谈得上「往 auth.users 插行」。
   -- 这是环境搭建，不是断言的一部分——它对 public.style_config 仍然一无所有。
   grant usage on schema auth to auth_admin_sim;
+  -- 与 Supabase 一致：anon / authenticated 对 auth schema 有 usage（调 auth.uid() 要它）。
+  -- 2026-10-07 补：此前本地没有任何**以用户身份调用、且函数体里写了 auth.uid()** 的
+  -- SQL 函数被执行过（match_slices 要 pgvector，本地跳过），所以缺这一条从没暴露。
+  -- 第一个在本地跑的这类函数（match_slices_lexical）在内联时报
+  -- 「permission denied for schema auth」——那是桩缺了真库有的授权，不是函数写错。
+  grant usage on schema auth to anon, authenticated;
   -- 与 Supabase 的 auth.uid() 同形：读 JWT claim。
   create or replace function auth.uid() returns uuid
   language sql stable as $$
@@ -211,7 +217,11 @@ const CHECKS = {
  * ⚠️ 刻意不给本地造一个假的 `<=>` 来让它「跑得起来」：假的排序语义会让召回类
  * 断言全部失去意义，而那正是 `InMemoryRetriever` 文档里那句话的同一条。
  */
-const NOT_VERIFIABLE_LOCALLY = ["20260911100100_f2_embeddings.sql"];
+const NOT_VERIFIABLE_LOCALLY = [
+  "20260911100100_f2_embeddings.sql",
+  // 2026-10-07：混合检索的向量一路（match_slices_indexed）。同一个理由：要 pgvector。
+  "20261007100100_f2_match_indexed.sql",
+];
 
 function allMigrationFiles() {
   const files = readdirSync(MIGRATIONS).filter((f) => f.endsWith(".sql")).sort();
@@ -2140,11 +2150,139 @@ async function main() {
     await db.close();
   }
 
+  // ============================================================ 混合检索 · 词法一路（2026-10-07，口径 F97）
+  //
+  // slice_lexicon + match_slices_lexical + documents.index_ruleset / vision_pages。
+  // 八组：①允许控制 ②跨用户 ③口径不混用 ④排序方向 ⑤owner 一致性（RLS 挡不住的那类）
+  // ⑥不给 update ⑦cascade ⑧vision_pages 必须是数组。每条「拒绝」都配一条「允许」。
+  console.log("\n\x1b[1m混合检索 · 词法一路（slice_lexicon / match_slices_lexical）\x1b[0m");
+  {
+    const db = await freshDb();
+    const mkCourseL = async (uid, name) => asUser(db, uid, async () =>
+      (await db.query("insert into public.courses (owner, name) values ($1,$2) returning id", [uid, name])).rows[0].id);
+    const mkDocL = async (uid, courseId, sha, ruleset = null) => asUser(db, uid, async () =>
+      (await db.query(
+        `insert into public.documents
+           (owner, course_id, filename, source_format, content_sha256, page_count, usable_page_count,
+            verdict, parser, parse_schema_version, slice_schema_version, slicer_version, slice_ruleset_version
+            ${ruleset ? ", index_ruleset" : ""})
+         values ($1,$2,'lec.pdf','pdf',$3,10,9,'usable','{}'::jsonb,'1.0','1.0','0.1.0','slice-1.0'
+            ${ruleset ? ", $4" : ""}) returning id`,
+        ruleset ? [uid, courseId, sha, ruleset] : [uid, courseId, sha])).rows[0].id);
+    const mkSliceL = async (uid, docId, sid) => asUser(db, uid, () => db.query(
+      `insert into public.slices (document_id, slice_id, owner, ordinal, page_indices, text, char_count, units)
+       values ($1,$2,$3,1,'{1}','片段正文',5,'[]'::jsonb)`, [docId, sid, uid]));
+    const mkLex = (uid, docId, sid, ruleset, text, owner = uid) => errorOf(() => asUser(db, uid, () => db.query(
+      `insert into public.slice_lexicon (document_id, slice_id, owner, ruleset, context, lexical_text)
+       values ($1,$2,$3,$4,'定位语',$5)`, [docId, sid, owner, ruleset, text])));
+    const lex = (uid, courseId, q) => asUser(db, uid, async () =>
+      (await db.query("select * from public.match_slices_lexical($1, $2, 20)", [courseId, q])).rows);
+
+    const RS = "embed-text-1.0+ctx-1+lex-1";
+    const cA = await mkCourseL(UID_A, "22.081J");
+    const dA = await mkDocL(UID_A, cA, "sha-lex-a", RS);
+    await mkSliceL(UID_A, dA, "s001");
+    await mkSliceL(UID_A, dA, "s002");
+    const e1 = await mkLex(UID_A, dA, "s001", RS, "carnot efficiency heat engine 热机 机效 效率");
+    const e2 = await mkLex(UID_A, dA, "s002", RS, "waste heat condenser");
+
+    // ---- ① 允许控制
+    e1 === null && e2 === null
+      ? ok("A 给自己的切片写词条", "← 允许控制：没有它，下面的「被拒」不携带信息")
+      : bad("A 写不了自己的词条", (e1 ?? e2)?.code);
+    const hits = await lex(UID_A, cA, "'carnot' | '效率'");
+    hits.length === 1 && hits[0].slice_id === "s001"
+      ? ok("词法检索命中带这个词的那一片", `${hits.length} 行 → ${hits.map((r) => r.slice_id)}`)
+      : bad("词法检索命中不对", JSON.stringify(hits));
+    const cjk = await lex(UID_A, cA, "'机效'");
+    cjk.length === 1
+      ? ok("中文二元组词条照样命中", "← 'simple' 配置按空格切，二元组是 Python 侧切好的")
+      : bad("中文词条没命中", JSON.stringify(cjk));
+
+    // ---- ② 跨用户
+    const cB = await mkCourseL(UID_B, "B 的课");
+    const dB = await mkDocL(UID_B, cB, "sha-lex-b", RS);
+    await mkSliceL(UID_B, dB, "s001");
+    await mkLex(UID_B, dB, "s001", RS, "carnot cycle");
+    const crossed = await lex(UID_B, cA, "'carnot'");
+    const own = await lex(UID_B, cB, "'carnot'");
+    crossed.length === 0 && own.length === 1
+      ? ok("B 拿 A 的 course_id 查 → 0 行；B 查自己的课 → 1 行", "← 后一条是允许控制")
+      : bad("跨用户隔离不对", `crossed=${crossed.length} own=${own.length}`);
+
+    // ---- ③ 口径不混用：文档在老口径上时，新口径的词条不出现
+    const dOld = await mkDocL(UID_A, cA, "sha-lex-old");   // 默认 index_ruleset = embed-text-1.0
+    await mkSliceL(UID_A, dOld, "s001");
+    await mkLex(UID_A, dOld, "s001", RS, "turbine");
+    const before = await lex(UID_A, cA, "'turbine'");
+    before.length === 0
+      ? ok("文档口径与词条口径不同 → 不召回", "← 老文档在新口径下的词条不混进来")
+      : bad("口径混用了", JSON.stringify(before));
+    await asUser(db, UID_A, () => db.query("update public.documents set index_ruleset=$1 where id=$2", [RS, dOld]));
+    const after = await lex(UID_A, cA, "'turbine'");
+    after.length === 1
+      ? ok("把文档切到这个口径之后 → 召回（允许控制）", "← 少了它，「一律召不回」也会让上一条全绿")
+      : bad("切换口径之后仍召不回", JSON.stringify(after));
+    const defRs = (await db.query("select index_ruleset from public.documents where content_sha256='sha-lex-a'")).rows[0];
+    const defOld = (await db.query(
+      "select column_default from information_schema.columns where table_name='documents' and column_name='index_ruleset'")).rows[0];
+    /'embed-text-1\.0'/.test(defOld?.column_default ?? "") && defRs.index_ruleset === RS
+      ? ok("index_ruleset 默认是 embed-text-1.0", "← 已有行不需回填：它们的向量确实是按那个口径建的")
+      : bad("index_ruleset 默认值不对", JSON.stringify(defOld));
+
+    // ---- ④ 排序方向：命中两个词的排在只命中一个词的前面
+    await mkSliceL(UID_A, dA, "s003");
+    await mkLex(UID_A, dA, "s003", RS, "carnot");
+    const ranked = await lex(UID_A, cA, "'carnot' | 'efficiency'");
+    ranked.length >= 2 && ranked[0].slice_id === "s001" && ranked[0].rank > ranked[1].rank
+      ? ok("命中更多词的片排在前面", ranked.map((r) => `${r.slice_id}:${Number(r.rank).toFixed(3)}`).join(" "))
+      : bad("排序方向不对", JSON.stringify(ranked));
+
+    // ---- ⑤ owner 一致性：B 给 A 的切片挂一行 B 的词条
+    const hijack = await mkLex(UID_B, dA, "s002", "other-ruleset", "x", UID_B);
+    hijack?.code === "42501"
+      ? ok("B 给 A 的切片挂词条 → 42501", "← RLS 挡不住这一类：with check 只问这一行的 owner")
+      : bad("别人的切片被挂上了词条", hijack?.code ?? "写进去了");
+    // R21 · 反向：拆掉触发器，同一次挂靠必须成功——证明拒它的是触发器
+    await db.exec("drop trigger slice_lexicon_owner_check on public.slice_lexicon;");
+    const hijack2 = await mkLex(UID_B, dA, "s002", "other-ruleset-2", "x", UID_B);
+    hijack2 === null
+      ? ok("R21 · 拆掉触发器后同一次挂靠成功", "← 触发器在承重，不是装饰")
+      : bad("R21 · 拆掉触发器后仍被拒——拒它的不是触发器", hijack2?.code);
+
+    // ---- ⑥ 不给 update
+    const upd = await errorOf(() => asUser(db, UID_A, () => db.query(
+      "update public.slice_lexicon set lexical_text='x' where document_id=$1", [dA])));
+    upd?.code === "42501"
+      ? ok("改词条 → 42501", "← 词条是切片 + 口径的函数，要变就换一行")
+      : bad("词条被改掉了", upd?.code ?? "未报错");
+
+    // ---- ⑦ cascade：删文档 → 切片 → 词条
+    const n0 = (await db.query("select count(*)::int c from public.slice_lexicon where document_id=$1", [dA])).rows[0].c;
+    await asUser(db, UID_A, () => db.query("delete from public.documents where id=$1", [dA]));
+    const n1 = (await db.query("select count(*)::int c from public.slice_lexicon where document_id=$1", [dA])).rows[0].c;
+    const nB = (await db.query("select count(*)::int c from public.slice_lexicon where document_id=$1", [dB])).rows[0].c;
+    n0 > 0 && n1 === 0 && nB === 1
+      ? ok("删文档 → 它的词条一起没了；B 的还在", `${n0} → ${n1}，B 仍 ${nB} 行 ← 不是整表清空`)
+      : bad("cascade 不对", `${n0} → ${n1}，B ${nB}`);
+
+    // ---- ⑧ vision_pages 必须是数组
+    const badVision = await errorOf(() => asUser(db, UID_A, () => db.query(
+      "update public.documents set vision_pages='{\"index\": 3}'::jsonb where id=$1", [dOld])));
+    const okVision = await errorOf(() => asUser(db, UID_A, () => db.query(
+      "update public.documents set vision_pages='[{\"index\": 3, \"chars\": 120}]'::jsonb where id=$1", [dOld])));
+    badVision?.code === "23514" && okVision === null
+      ? ok("vision_pages 写对象 → 23514；写数组 → 成功", "← 后一条是允许控制")
+      : bad("vision_pages 的 CHECK 不对", `${badVision?.code} / ${okVision?.code}`);
+
+    await db.close();
+  }
+
   console.log(`\n\x1b[1m本地\x1b[0m  绿 ${passed} · 红 ${failed}`);
   console.log(
     `\x1b[1m待真库验证\x1b[0m  ${NOT_VERIFIABLE_LOCALLY.join(", ")} ` +
-      `的全部行为（slice_embeddings 的 RLS/cascade、match_slices 的作用域与排序语义、` +
-      `vector(1024) 经 JSON 传参）\n` +
+      `的全部行为（slice_embeddings 的 RLS/cascade、match_slices / match_slices_indexed 的作用域与排序语义、` +
+      `按文档口径取向量、vector(1024) 经 JSON 传参）\n` +
       `  \x1b[2m两行分开报，不合计——两种证据不得互相顶替（同 F34）。\x1b[0m\n`,
   );
   process.exit(failed === 0 ? 0 : 1);

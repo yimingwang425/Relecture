@@ -67,6 +67,13 @@ type Item = {
     /** **null = 未检查**（口径 F69）：用户上传不做受限页排除。不要把 null 渲染成 0。 */
     restricted_pages_excluded: number | null;
     verdict: string;
+    /**
+     * 读不出文字、但**看图转写**救回来的页数（口径 F100）。旧构建没有这个字段 → 当 0。
+     * `skipped_pages` 仍是解析器的结论（包含这些页），所以「还读不了」= 两者之差。
+     */
+    vision_page_count?: number;
+    /** 超过转写上限、没送去转写的页数。非 0 要说出来。 */
+    vision_skipped_over_cap?: number;
   };
   /** 失败时的分类与服务端原文。 */
   failure?: { kind: FailureKind; detail: string; matched: boolean; retryable: boolean };
@@ -76,7 +83,9 @@ function dotFor(it: Item): DotKind {
   if (it.state === "queued") return "idle";
   if (it.state === "uploading") return "busy";
   if (it.state === "failed") return "bad";
-  return it.result?.verdict === "unusable" || (it.result?.skipped_pages ?? 0) > 0 ? "warn" : "ok";
+  const r = it.result;
+  const stillUnreadable = (r?.skipped_pages ?? 0) - (r?.vision_page_count ?? 0);
+  return stillUnreadable > 0 || (r?.vision_skipped_over_cap ?? 0) > 0 ? "warn" : "ok";
 }
 
 export function CourseUpload({
@@ -490,16 +499,23 @@ export function CourseUpload({
                       {it.state === "done" && it.result && (
                         <p className="row__sub text-[var(--c-ok)]" data-field="upload-ok">
                           已入库：{it.result.slice_count} 个切片 · {it.result.embedded_count} 条向量
-                          {it.result.skipped_pages > 0 && (
+                          {(it.result.vision_page_count ?? 0) > 0 && (
                             <>
                               {" · "}
-                              <span className="text-[var(--c-warn)]">{it.result.skipped_pages} 页读不出文字</span>
+                              <span data-field="vision-pages">
+                                {it.result.verdict === "unusable" ? "整份是扫描件，" : ""}
+                                {it.result.vision_page_count} 页是图，已看图转写成文字（转写可能有误，讲解里会标出来）
+                              </span>
                             </>
                           )}
-                          {it.result.verdict === "unusable" && (
+                          {it.result.skipped_pages - (it.result.vision_page_count ?? 0) > 0 && (
                             <>
                               {" · "}
-                              <span className="text-[var(--c-warn)]">整份判为不可用（可能是扫描件）</span>
+                              <span className="text-[var(--c-warn)]">
+                                {it.result.skipped_pages - (it.result.vision_page_count ?? 0)} 页读不出文字
+                                {(it.result.vision_skipped_over_cap ?? 0) > 0 &&
+                                  `（其中 ${it.result.vision_skipped_over_cap} 页超过单份转写上限，没有转写）`}
+                              </span>
                             </>
                           )}
                         </p>

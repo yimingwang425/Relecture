@@ -124,7 +124,19 @@ class RoundResult:
     @property
     def cost_usd(self) -> float:
         return (sum(a.completion.cost for a in self.attempts)
-                + sum(d.cost for d in self.discarded) + self.gap.cost_usd)
+                + sum(d.cost for d in self.discarded) + self.gap.cost_usd
+                + self.retrieval_llm_cost_usd)
+
+    @property
+    def retrieval_llm_cost_usd(self) -> float:
+        """检索时的模型调用（查询改写 + 重排，口径 F96 / F98）。**计入单轮**（F71 同一条）。
+
+        由检索后端写在 `context.meta["llm_cost_usd"]`；替身检索没有这一项，是 0。
+        后端写 None（有一次超时，金额未知）时这里按 0 加——与判断失败时的处置相同，
+        未知的那一格由 meta 原样带到事件里，不在这里编一个数。
+        """
+        meta = self.context.meta or {}
+        return float(meta.get("llm_cost_usd") or 0.0)
 
     @property
     def latency_ms(self) -> float:

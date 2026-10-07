@@ -562,6 +562,52 @@ def main() -> int:
         check("服务", "不存在的 course_id → 404（与上一条同一句话）",
               s == 404, f"HTTP {s} {raw[:160]}")
 
+    # ============================================================ 5 · 混合检索（2026-10-07）
+    #
+    # 迁移 20261007100100 的 `match_slices_indexed` 在本地验不了（要 pgvector），
+    # 这里是它的三条真库观测；外加 `/retrieve` 证明四个环节**真的在线上跑**——
+    # 「接上了」与「有用」是两句话，后者在 `api/scripts/eval_retrieval_prod.py`。
+    print("\n\033[1m5 · 混合检索（match_slices_indexed + /retrieve）\033[0m")
+
+    def match_indexed(token: str, course_id: str, vec: list[float], limit: int):
+        s, rows, raw = rest("POST", "/rest/v1/rpc/match_slices_indexed", token, {
+            "p_course_id": course_id, "p_query": vec, "p_model": MODEL_ID, "p_limit": limit})
+        return s, (rows if isinstance(rows, list) else []), raw
+
+    s, rows, raw = match_indexed(tok_a, course_a, v_energy, 30)
+    check("作用域", "match_slices_indexed 对老口径文档照样召回",
+          s == 200 and len(rows) > 0,
+          f"HTTP {s} · {len(rows)} 行 {raw[:120] if s != 200 else ''} "
+          "← ingest_real 那批文档是 2026-10-07 之前传的（index_ruleset 默认 embed-text-1.0）；"
+          "0 行说明按文档口径取行那一步没对上，老课会整门召不回")
+    keys = [(r["document_id"], r["slice_id"]) for r in rows]
+    check("作用域", "同一片不重复出现（新旧两口径不混用）",
+          len(keys) == len(set(keys)), f"{len(keys)} 行 / {len(set(keys))} 个不同的片")
+    s, rows_b, _ = match_indexed(tok_b, course_a, v_energy, 30)
+    check("RLS", "B 用 A 的 course_id 调 match_slices_indexed → 0 行",
+          s == 200 and rows_b == [], f"HTTP {s} · {len(rows_b)} 行")
+
+    if not args.skip_explain:
+        s, out, raw = call("POST", f"{base}/courses/{course_a}/retrieve", token=tok_a,
+                           payload={"question": Q_ENERGY})
+        meta = (out or {}).get("retrieval", {}).get("meta", {}) if isinstance(out, dict) else {}
+        check("服务", "/retrieve → 200 且 fusion = rrf", s == 200 and meta.get("fusion") == "rrf",
+              f"HTTP {s} {raw[:160] if s != 200 else ''}")
+        rw = (meta.get("rewrite") or {}).get("implementation")
+        rr = (meta.get("rerank") or {}).get("implementation")
+        check("服务", "查询改写在线上真的跑了（implementation = model）", rw == "model",
+              f"rewrite = {rw!r} {meta.get('rewrite', {}).get('error') or ''} "
+              "← none 说明线上没拿到检索助手（key？），error/invalid 看 error 字段")
+        check("服务", "重排在线上真的跑了（implementation = model）", rr in ("model", "skipped"),
+              f"rerank = {rr!r}")
+        ch = meta.get("channels") or {}
+        print(f"  \033[2m观察项（不计入绿数）：向量 {ch.get('vector')} 行 · 词法 {ch.get('lexical')} 行"
+              f" · 词法查询词 {ch.get('lexical_query_terms')} 个 · 词法报错 {ch.get('lexical_error')!r}"
+              f" · 检索模型成本 {meta.get('llm_cost_usd')} · 改写后的问题 "
+              f"{(meta.get('rewrite') or {}).get('query')!r}\033[0m")
+        print("  \033[2m老文档在升级索引（/courses/{id}/reindex）之前词法一路必然是 0 行——"
+              "那是预期，不是故障。\033[0m")
+
     print(f"\n\033[1m合计\033[0m  绿 {PASSED} · 红 {FAILED}")
     print("\033[2m这批是真库观测，与 api/tests 的本地 pytest 数**不相加**（口径 F34）。"
           "观察项不计入绿数。\033[0m\n")

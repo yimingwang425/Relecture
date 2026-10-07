@@ -38,6 +38,7 @@ __all__ = [
     "BOILERPLATE_PAGE_RATIO",
     "VARIANTS",
     "compose",
+    "compose_t0",
     "boilerplate_keys",
 ]
 
@@ -107,6 +108,17 @@ def _doc_prefix(sliceset: SliceSet) -> str:
     return (sliceset.slices[0].title or "").strip()
 
 
+def compose_t0(unit_texts: list[str], raw_text: str, slice_id: str) -> str:
+    """单片的 T0 组文本。**`compose(..., "T0")` 对每一片调的就是它**。
+
+    拆出来是为了重建索引（`api/api/main.py` 的 `/courses/{id}/reindex`）：那时手里
+    没有 PDF、没有 SliceSet，只有落库的 `slices.units`。T0 不做样板去除（那要看
+    整份文档），所以单片就能算——**同一个函数，不是第二份实现**（F13）。
+    """
+    body = _JOIN.join(p for p in (_clean(t) for t in unit_texts) if p.strip())
+    return body.strip() or _clean(raw_text).strip() or slice_id
+
+
 def compose(sliceset: SliceSet, variant: str = "T0") -> dict[str, str]:
     """返回 ``{slice_id: embedding_text}``。
 
@@ -123,6 +135,9 @@ def compose(sliceset: SliceSet, variant: str = "T0") -> dict[str, str]:
 
     out: dict[str, str] = {}
     for s in sliceset.slices:
+        if variant == "T0":
+            out[s.slice_id] = compose_t0([u.text for u in s.units], s.text, s.slice_id)
+            continue
         parts = [_clean(u.text) for u in s.units if _key(u.text) not in drop]
         body = _JOIN.join(p for p in parts if p.strip())
 

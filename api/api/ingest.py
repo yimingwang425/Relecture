@@ -23,7 +23,24 @@
 **真解析、真切片、假嵌入**——省掉的只有那次网络调用与那笔钱，
 解析与切片走的是生产的同一份代码。
 
-决策日期：2026-09-12
+## 2026-10-07 加了三步（口径 F99 / F100）
+
+    解析 → 查重 → **图片页转写** → 切片 → **定位语** → 嵌入 + **词条** → 落库
+
+- **图片页转写**（`explain.rag.VisionTranscriber`）：`image_only` / `scanned_ocr` 页
+  渲染成 PNG 交给 Haiku 转写，转写成功的页变成切片（`slice_id = v###`，标题写明
+  「图像转写，可能有误」）。**这是 PRD §13.3 的又一次出境**：页面图像 → Anthropic。
+- **定位语**（`explain.rag.Contextualizer`）：每片一两句「在整份课件里的位置」，
+  进嵌入文本（前缀）与词条。英文课件的定位语带中文括注——中文提问在英文课件上
+  唯一能字面命中的东西。
+- **词条**（`slice_lexicon`）：混合检索的词法一路。
+
+三步**都不让上传失败**：模型调用失败或没配 key 时，转写那页照旧是跳过页、
+定位语为空、嵌入文本就是组文本本身。结果计数进 `IngestResult`，进上传事件。
+
+查重提到了解析之后、转写之前：转写要花钱，重复上传的那一份不该花。
+
+决策日期：2026-09-12 · 2026-10-07
 """
 
 from __future__ import annotations
@@ -118,6 +135,45 @@ class IngestResult:
     source_format: str = ""
     page_count: int = 0
     usable_page_count: int = 0
+    # ---- 2026-10-07（口径 F99 / F100）
+    index_ruleset: str = ""
+    vision_page_count: int = 0
+    #: 候选页超过上限、没送去转写的页数。**非 0 要说出来**，否则用户以为整份都读了。
+    vision_skipped_over_cap: int = 0
+    contextualized_count: int = 0
+    #: 转写 + 定位语的模型成本。None = 有一次超时（可能已计费，金额未知，F73 同一条）。
+    llm_cost_usd: float | None = 0.0
+
+
+#: 一份课件最多转写多少页。**是成本上限，不是质量口径**：Haiku 4.5 看一页图约
+#: 1.6k 输入 token + 几百输出 token，≈ $0.005 / 页，40 页 ≈ $0.2 / 份。
+#: 超出的页照旧记为跳过页，数量进 `vision_skipped_over_cap`。
+VISION_MAX_PAGES = 40
+
+#: 送去转写的那几类页。`empty` 不送——空白页没什么可转写的，送了只是花钱。
+VISION_PAGE_KINDS = ("image_only", "scanned_ocr")
+
+#: 渲染时的长边像素。Anthropic 文档：长边超过 1568 px 的图会被先缩小再看，
+#: 渲染得更大只是多传字节、不多给信息。
+VISION_LONG_EDGE_PX = 1568
+
+
+def _render_pages(data: bytes, page_indices: list[int]) -> list[tuple[int, bytes]]:
+    """把指定页（1 起）渲染成 PNG。"""
+    import pymupdf
+
+    out: list[tuple[int, bytes]] = []
+    doc = pymupdf.open(stream=data, filetype="pdf")
+    try:
+        for idx in page_indices:
+            page = doc[idx - 1]
+            long_edge = max(page.rect.width, page.rect.height) or 1.0
+            zoom = VISION_LONG_EDGE_PX / long_edge
+            pix = page.get_pixmap(matrix=pymupdf.Matrix(zoom, zoom))
+            out.append((idx, pix.tobytes("png")))
+    finally:
+        doc.close()
+    return out
 
 
 #: 写进 `slice_embeddings.model` 的字符串。**从 `retrieval.selection` 读，不写字面量**——
@@ -140,6 +196,8 @@ def ingest_document(
     restricted_pages: frozenset[int] = frozenset(),
     split_threshold_chars: int | None = None,
     find_existing: Any | None = None,
+    contextualizer: Any | None = None,
+    vision: Any | None = None,
 ) -> IngestResult:
     """跑完整条链，返回落库结果。
 
@@ -147,17 +205,53 @@ def ingest_document(
     （与 `/me/style` 同一条路径，服务端不持有 service_role key，口径 F40）。
     """
     from parse_service.pdf import parse_pdf
-    from retrieval.compose import EMBED_TEXT_RULESET_VERSION, compose
+    from retrieval.compose import compose
+
+    from explain.rag import VISION_PROMPT_VERSION
     from retrieval.selection import SELECTED_DIMENSIONS, SELECTED_VARIANT
     from slicer import slice_document
     from slicer.schema import SLICE_SCHEMA_VERSION
 
+    from .indexing import INDEX_RULESET, embedding_text, lexicon_text
+
     parsed = parse_pdf(data, filename)
 
-    # ---- 一页都读不出文字 → **到此为止，不建行**（见 `UnusableDocument`）。
-    # 放在切片之前：没有可用页就没有片可切，再往下走只是在为一份注定检索不到的
-    # 文档建行、写唯一索引，把「重新传一份文字版」这条路也堵死。
-    if parsed.document.verdict == "unusable":
+    # ---- 「先查后提示」：建行之前问一次这门课里有没有同一份文件。
+    #
+    # ⚠️ **这一层不替代唯一索引。** 查完到插入之间有个窗口，两个标签页同时传
+    # 同一份文件仍然会撞上 23505 → 409（`insert_document` 那条翻译还在）。
+    #
+    # ⚠️ **在 parse 之后查**：`content_sha256` 的出处是 `parse_pdf`，自己再算一份
+    # 就是第二处出处（F13）。2026-10-07 起**排在转写之前**：转写要花钱，
+    # 重复上传的那一份不该花。整份读不出字的文档从不入库，所以它不可能是「重复」，
+    # 这一挪不改变任何既有分类。
+    if find_existing is not None:
+        existing = find_existing(parsed.document.content_sha256)
+        if existing is not None:
+            raise DuplicateDocument(
+                "这门课里已经有同一份文件了", existing=existing)
+
+    # ---- 图片页转写（口径 F100）。失败不让上传失败：那一页照旧是跳过页。
+    # ⚠️ **受限页在送出去之前就排除**，不是转写完再丢：转写意味着页面图像已经出境
+    # （PRD §13.3），事后丢掉结果不能撤回那次出境。
+    candidates = [p.index for p in parsed.document.unusable_pages
+                  if p.kind in VISION_PAGE_KINDS and p.index not in restricted_pages]
+    over_cap = max(0, len(candidates) - VISION_MAX_PAGES)
+    vision_hits: list[Any] = []
+    llm_cost: float | None = 0.0
+    if vision is not None and candidates:
+        results = vision.transcribe_many(filename, _render_pages(data, candidates[:VISION_MAX_PAGES]))
+        for r in results:
+            if r.cost_usd is None:
+                llm_cost = None
+            elif llm_cost is not None:
+                llm_cost += r.cost_usd
+        vision_hits = [r for r in results if r.text]
+
+    # ---- 一页都读不出文字、转写也没救回任何一页 → **到此为止，不建行**（见 `UnusableDocument`）。
+    # 没有可用页就没有片可切，再往下走只是在为一份注定检索不到的文档建行、写唯一索引，
+    # 把「重新传一份文字版」这条路也堵死。
+    if parsed.document.verdict == "unusable" and not vision_hits:
         raise UnusableDocument(
             "这份课件一页都读不出文字，没有入库",
             page_count=parsed.document.page_count,
@@ -168,27 +262,37 @@ def ingest_document(
     sliceset = slice_document(parsed, split_threshold_chars)
     manifest = sliceset.manifest
 
-    # ---- 「先查后提示」：建行之前问一次这门课里有没有同一份文件。
-    #
-    # ⚠️ **这一层不替代唯一索引。** 查完到插入之间有个窗口，两个标签页同时传
-    # 同一份文件仍然会撞上 23505 → 409（`insert_document` 那条翻译还在）。
-    # 两层，任一层被误改另一层还在。
-    #
-    # ⚠️ **在 parse 之后查，不在之前。** 之前查需要我们自己算一次 sha，
-    # 而 `content_sha256` 的出处是 `parse_pdf`——自己再算一份就是第二处出处
-    # （F13），而它漂开的表现是「重复检测永远查不到」，没有任何东西会红。
-    # 代价是白解析一次（本地 CPU，**不花钱**：嵌入在这之后）。
-    # **触发条件**：解析耗时成为上传体验的抱怨点时，再考虑自己算 sha + 配一条
-    # 「两份 sha 必须相等」的断言把两处出处变成一对可验的。
-    if find_existing is not None:
-        existing = find_existing(parsed.document.content_sha256)
-        if existing is not None:
-            raise DuplicateDocument(
-                "这门课里已经有同一份文件了", existing=existing)
-
     # 受限页不入索引（见模块 docstring 的登记）。
     kept = [s for s in sliceset.slices if not any(p in restricted_pages for p in s.page_indices)]
     excluded = len(sliceset.slices) - len(kept)
+
+    # 转写出来的页 → 切片行。`v###` 前缀与 slicer 的 `s###` 分开，永不撞号。
+    next_ordinal = max((s.ordinal for s in kept), default=0) + 1
+    vision_rows = [
+        {
+            "slice_id": f"v{r.page_index:03d}",
+            "ordinal": next_ordinal + i,
+            "page_indices": [r.page_index],
+            # **标题写明这是转写**：讲解在片头看得到它（`build_user_turn`），
+            # 模型与学生都知道这一片不是课件原文。
+            "title": f"第 {r.page_index} 页（图像转写，可能有误）",
+            "text": r.text,
+        }
+        for i, r in enumerate(vision_hits)
+    ]
+
+    # ---- 定位语（口径 F99）。失败的那几片定位语为空，嵌入文本就是组文本本身。
+    contexts: dict[str, str] = {}
+    if contextualizer is not None and (kept or vision_rows):
+        ctx_result = contextualizer.contextualize(filename, [
+            *[(s.slice_id, list(s.page_indices), s.title, s.text) for s in kept],
+            *[(v["slice_id"], v["page_indices"], v["title"], v["text"]) for v in vision_rows],
+        ])
+        contexts = ctx_result.contexts
+        if ctx_result.cost_usd is None:
+            llm_cost = None
+        elif llm_cost is not None:
+            llm_cost += ctx_result.cost_usd
 
     doc = store.insert_document(
         token=token,
@@ -211,15 +315,21 @@ def ingest_document(
             "slice_ruleset_version": manifest.slice_ruleset_version,
             # NULL 有含义（= 不拆），所以原样传 None，不填 0
             "split_threshold_chars": split_threshold_chars,
+            # 第六个口径版本列（口径 F97）：检索按它取这份文档的向量与词条。
+            "index_ruleset": INDEX_RULESET,
+            # 转写救回的页（口径 F100）。**不改 verdict / unusable_pages**——那是解析器的结论。
+            "vision_pages": [
+                {"index": r.page_index, "chars": len(r.text), "prompt": VISION_PROMPT_VERSION}
+                for r in vision_hits],
         },
     )
     document_id = doc["id"]
 
-    if kept:
+    if kept or vision_rows:
         store.insert_slices(
             token=token,
             rows=[
-                {
+                *[{
                     "document_id": document_id,
                     "slice_id": s.slice_id,
                     "owner": owner,
@@ -233,23 +343,33 @@ def ingest_document(
                     "page_signals": [p.model_dump(mode="json") for p in s.page_signals],
                     "prev_slice_id": s.prev_slice_id,
                     "next_slice_id": s.next_slice_id,
-                }
-                for s in kept
+                } for s in kept],
+                *[{
+                    "document_id": document_id,
+                    "owner": owner,
+                    **v,
+                    "char_count": len(v["text"]),
+                    "units": [], "images": [], "page_signals": [],
+                    "prev_slice_id": None, "next_slice_id": None,
+                } for v in vision_rows],
             ],
         )
 
         # 组文本走 T0 变体（`retrieval.selection` 是那个选择的唯一出处）。
         # ⚠️ compose 要**整份** sliceset —— boilerplate 检测是文档范围的。
-        texts = compose(sliceset, SELECTED_VARIANT)
-        ordered = [texts[s.slice_id] for s in kept]
+        # 转写片不在 sliceset 里（slicer 不认识它们），组文本就是转写原文。
+        texts = compose(sliceset, SELECTED_VARIANT) if kept else {}
+        ids = [s.slice_id for s in kept] + [v["slice_id"] for v in vision_rows]
+        composed = [texts[s.slice_id] for s in kept] + [v["text"] for v in vision_rows]
+        ordered = [embedding_text(contexts.get(i), c) for i, c in zip(ids, composed, strict=True)]
 
         # ⚠️ **在边界上归一化成纯 Python list。** 生产的嵌入器返回 np.ndarray，
         # 而下游的 `if vectors:` 对多元素 ndarray 抛 ValueError（见 Embedder 的 docstring）。
         # 归一化放在这里而不是每个用到的地方各判一次：类型只在这一行被关心，
         # 后面的代码从此与「嵌入器返回什么容器」无关。
         vectors = [[float(x) for x in row] for row in embedder.embed(ordered)]
-        if len(vectors) != len(kept):
-            raise ValueError(f"嵌入返回 {len(vectors)} 条，切片有 {len(kept)} 条")
+        if len(vectors) != len(ids):
+            raise ValueError(f"嵌入返回 {len(vectors)} 条，切片有 {len(ids)} 条")
 
         # ⚠️ **比的是 schema 的维度，不是嵌入器自称的维度。**
         # 第一版写的是 `len(vectors[0]) != embedder.dimensions` —— 那是拿嵌入器
@@ -273,26 +393,50 @@ def ingest_document(
             rows=[
                 {
                     "document_id": document_id,
-                    "slice_id": s.slice_id,
+                    "slice_id": sid,
                     "owner": owner,
                     "model": EMBED_MODEL_ID(),
-                    "embed_ruleset": EMBED_TEXT_RULESET_VERSION,
+                    # 与 `documents.index_ruleset` 是**同一个串**（`api/indexing.py` 唯一出处）。
+                    "embed_ruleset": INDEX_RULESET,
                     # pgvector 的文本输入格式。传参形状由 verify_corpus_prod.py 第 1 步
                     # 对真库确认过——本地验不了（PGlite 没有 vector 扩展）。
                     "embedding": "[" + ",".join(repr(float(x)) for x in v) + "]",
                 }
-                for s, v in zip(kept, vectors, strict=True)
+                for sid, v in zip(ids, vectors, strict=True)
+            ],
+        )
+
+        # 词条（口径 F97）。标题 + 定位语 + 原文，**与查询侧走同一个分词函数**。
+        titles = [s.title for s in kept] + [v["title"] for v in vision_rows]
+        raw = [s.text for s in kept] + [v["text"] for v in vision_rows]
+        store.insert_lexicon(
+            token=token,
+            rows=[
+                {
+                    "document_id": document_id,
+                    "slice_id": sid,
+                    "owner": owner,
+                    "ruleset": INDEX_RULESET,
+                    "context": contexts.get(sid),
+                    "lexical_text": lexicon_text(t, contexts.get(sid), x),
+                }
+                for sid, t, x in zip(ids, titles, raw, strict=True)
             ],
         )
 
     return IngestResult(
         document_id=document_id,
-        slice_count=len(kept),
-        embedded_count=len(kept),
+        slice_count=len(kept) + len(vision_rows),
+        embedded_count=len(kept) + len(vision_rows),
         skipped_pages=len(manifest.skipped_pages),
         restricted_pages_excluded=excluded,
         verdict=parsed.document.verdict,
         source_format=parsed.document.source_format,
         page_count=parsed.document.page_count,
         usable_page_count=parsed.document.usable_page_count,
+        index_ruleset=INDEX_RULESET,
+        vision_page_count=len(vision_rows),
+        vision_skipped_over_cap=over_cap,
+        contextualized_count=len(contexts),
+        llm_cost_usd=llm_cost,
     )

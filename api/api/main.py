@@ -24,7 +24,7 @@ F1 阶段 1.5 论证过：F1 全部读写落在一张表上，多一跳 FastAPI 
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
 from pydantic import BaseModel, Field
@@ -99,6 +99,17 @@ class ExplainRequest(BaseModel):
     conversation_id: str | None = None
 
 
+class RetrieveRequest(BaseModel):
+    """评测用：只检索、不生成（口径 F97 的测量手段）。"""
+
+    model_config = {"extra": "forbid"}   # 同 ExplainRequest
+
+    question: str = Field(min_length=1, max_length=500)
+    #: 关掉哪几环。**闭集**，认不出的值 422——拼错一个就等于「什么都没关」，
+    #: 而那样两组对照会是同一个东西、差异恒为 0。
+    ablate: list[Literal["rewrite", "lexical", "rerank"]] = Field(default_factory=list)
+
+
 class CourseRequest(BaseModel):
     model_config = {"extra": "forbid"}   # 同上
 
@@ -153,6 +164,8 @@ def create_app(
     model_factory: Any | None = None,
     embedder_factory: Any | None = None,
     gap_checker_factory: Any | None = None,
+    rag_model_factory: Any | None = None,
+    vision_factory: Any | None = None,
 ) -> FastAPI:
     """组装。每个依赖都可注入，**为的是断言能喂真东西**。
 
@@ -160,6 +173,20 @@ def create_app(
     走的仍然是 `jwt.decode` 那条真实路径，而不是一个被打桩掉的替身（通则七 #7）。
     """
     cfg = settings or load_settings()
+
+    # ---- 检索助手（改写 / 重排 / 定位语）与图片页转写用的模型（口径 F96–F100）。
+    #
+    # 生产：配了 key 就是真的 Haiku。测试：**注入了讲解模型而没注入检索助手时，
+    # 不造真的检索助手**——否则每条测试都会真的出网，失败后走超时回落，
+    # 测试照样绿、只是每条慢 10 秒，而且测的已经不是它声称的那件事。
+    def make_rag_model(max_tokens: int, *, cache_system: bool = False) -> Any | None:
+        if rag_model_factory is not None:
+            return rag_model_factory()
+        if model_factory is not None or cfg.anthropic_api_key is None:
+            return None
+        from explain.rag import build_rag_model
+
+        return build_rag_model(max_tokens, cache_system=cache_system)
     verify = verifier or TokenVerifier(HttpJwks(cfg.jwks_url), issuer=cfg.issuer)
     db = supabase or SupabaseClient(cfg.rest_url, cfg.supabase_publishable_key)
 
@@ -327,7 +354,7 @@ def create_app(
                 # 泄露课程 id 的存在性，而 RLS 的整个意思就是让别人的行不可见。
                 raise HTTPException(404, "找不到这门课（可能不存在，也可能不是你的）")
             active = _course_retriever(db, p.token, req.course_id,
-                                       embedder_factory or _default_embedder)
+                                       embedder_factory or _default_embedder, make_rag_model)
             label = course["name"]
         else:
             active = _default_retriever()
@@ -354,6 +381,10 @@ def create_app(
             for m in db.conversation_history(p.token, req.conversation_id):
                 history.append({"role": m["role"], "content": m["content"]})
             turn_index = db.next_turn_index(p.token, req.conversation_id)
+
+        # 查询改写要用历史做指代消解（口径 F96）。**同一份历史**，不另读一遍。
+        if hasattr(active, "history"):
+            active.history = list(history)
 
         return {"style": style, "active": active, "label": label,
                 "history": history, "turn_index": turn_index}
@@ -569,7 +600,7 @@ def create_app(
 
         | 类型 | 什么时候 | 内容 |
         | --- | --- | --- |
-        | `stage` | 进入检索 / 生成 | `{"stage": "retrieving" \| "generating"}` |
+        | `stage` | 进入检索 / 生成 | `{"stage": "retrieving" 或 "generating"}` |
         | `retrieval` | 检索完 | 出处、`round_id`、`slice_keys`、`confusion` |
         | `gap` | 兜底判断返回 | 与响应里 `gap` 同形 |
         | `delta` | 每段正文 | `{"text": "..."}` |
@@ -707,6 +738,64 @@ def create_app(
         except SupabaseError as exc:
             raise HTTPException(status_code=exc.status, detail=exc.message) from exc
 
+    @app.post("/courses/{course_id}/retrieve")
+    def retrieve(course_id: str, req: RetrieveRequest,
+                 p: Principal = Depends(principal)) -> dict[str, Any]:
+        """**只检索、不生成**。给 `api/scripts/eval_retrieval_prod.py` 用（口径 F97）。
+
+        混合检索的四个环节（改写 / 词法 / 融合 / 重排）在本轮**没有实测收益**。
+        这个端点让评测集能在真库、真模型上逐环节对照，花的只是检索那一点钱
+        （每题两次 Haiku + 一次嵌入），而不是每题一次完整讲解。
+        """
+        if db.course(p.token, course_id) is None:
+            raise HTTPException(404, "找不到这门课（可能不存在，也可能不是你的）")
+        r = _course_retriever(db, p.token, course_id,
+                              embedder_factory or _default_embedder, make_rag_model)
+        r.ablate = frozenset(req.ablate)
+        try:
+            ctx = r.fetch(req.question)
+        except SupabaseError as exc:
+            raise HTTPException(status_code=exc.status, detail=exc.message) from exc
+        return {"retrieval": ctx.to_dict(), "slice_keys": _marks.slice_keys_of(ctx)}
+
+    @app.post("/courses/{course_id}/reindex")
+    def reindex_course(course_id: str, p: Principal = Depends(principal)) -> dict[str, Any]:
+        """把这门课里**还在老口径上**的文档升级到当前的检索索引（口径 F97 / F99）。
+
+        老文档不升级也检索得到（向量一路按它自己的口径取行），只是吃不到
+        词法一路与定位语。逐份做、逐份报；一份失败不挡其余几份。详见 `reindex.py`。
+        """
+        from explain.rag import Contextualizer
+
+        from .indexing import INDEX_RULESET
+        from .reindex import reindex_document
+
+        if db.course(p.token, course_id) is None:
+            raise HTTPException(404, "找不到这门课（可能不存在，也可能不是你的）")
+        try:
+            docs = db.documents_in_course(p.token, course_id)
+        except SupabaseError as exc:
+            raise HTTPException(status_code=exc.status, detail=exc.message) from exc
+
+        ctx_model = make_rag_model(2000, cache_system=True)
+        make_embedder = embedder_factory or _default_embedder
+        done: list[dict[str, Any]] = []
+        failed: list[dict[str, Any]] = []
+        current = 0
+        for d in docs:
+            if d.get("index_ruleset") == INDEX_RULESET:
+                current += 1
+                continue
+            try:
+                done.append(reindex_document(
+                    store=db, token=p.token, owner=p.user_id, document=d,
+                    embedder=make_embedder(),
+                    contextualizer=Contextualizer(ctx_model) if ctx_model is not None else None))
+            except Exception as exc:  # noqa: BLE001 —— 一份失败不挡其余几份，但要说出来
+                failed.append({"document_id": str(d["id"]), "error": f"{type(exc).__name__}: {exc}"})
+        return {"index_ruleset": INDEX_RULESET, "already_current": current,
+                "reindexed": done, "failed": failed}
+
     @app.post("/courses/{course_id}/documents", status_code=201)
     async def upload(
         course_id: str,
@@ -760,12 +849,24 @@ def create_app(
                     extra={"bytes": len(data), "limit_bytes": limit})
 
             make_embedder = embedder_factory or _default_embedder
+            # 定位语与图片页转写（口径 F99 / F100）。拿不到模型（没配 key、测试没注入）
+            # 时是 None：上传照常，定位语为空、图片页照旧是跳过页。
+            from explain.rag import Contextualizer, VisionTranscriber
+
+            ctx_model = make_rag_model(2000, cache_system=True)
+            if vision_factory is not None:
+                vision = vision_factory()
+            else:
+                vis_model = make_rag_model(1500)
+                vision = VisionTranscriber(vis_model) if vis_model is not None else None
             try:
                 result = ingest_document(
                     data=data, filename=name, owner=p.user_id, course_id=course_id,
                     token=p.token, store=db, embedder=make_embedder(),
                     find_existing=lambda sha: db.find_document_by_sha(
                         token=p.token, course_id=course_id, sha=sha),
+                    contextualizer=Contextualizer(ctx_model) if ctx_model is not None else None,
+                    vision=vision,
                 )
             except DuplicateDocument as exc:
                 # 两条路都到这里：**先查查到的**（exc.existing 非空，说得出是哪一份）
@@ -841,6 +942,13 @@ def create_app(
                 "restricted_pages_excluded": None,
                 "bytes": len(data),
                 "duration_ms": ms(),
+                # ---- 2026-10-07（口径 F97 / F99 / F100）。都不进必需清单：
+                # 老构建发的事件没有它们，进了清单会让那批事件被静默拒掉（F50）。
+                "index_ruleset": result.index_ruleset,
+                "vision_page_count": result.vision_page_count,
+                "vision_skipped_over_cap": result.vision_skipped_over_cap,
+                "contextualized_count": result.contextualized_count,
+                "ingest_llm_cost_usd": result.llm_cost_usd,
             },
             deck_id=result.document_id,
         )
@@ -852,6 +960,13 @@ def create_app(
             "skipped_pages": result.skipped_pages,
             "restricted_pages_excluded": None,   # 同上：未检查，不是 0
             "verdict": result.verdict,
+            # 转写救回了几页、几片有定位语（口径 F99 / F100）。上传页据此说清
+            # 「第 N 页是图，已经转写成文字」——否则用户会以为图里的内容仍然读不了。
+            "vision_page_count": result.vision_page_count,
+            "vision_skipped_over_cap": result.vision_skipped_over_cap,
+            "contextualized_count": result.contextualized_count,
+            "index_ruleset": result.index_ruleset,
+            "ingest_llm_cost_usd": result.llm_cost_usd,
             # 埋点结果**进响应**（2026-09-13 改，见 `_record_upload_event` 的说明）：
             # 事件表从外面读不到，而「deck_id 到底带没带」正是验收要确认的。
             # 页面可以不读这个字段；没有它，任何人都无法自证埋点落没落库。
@@ -1031,16 +1146,27 @@ _COURSE_LABEL = "合成课件（未指定课程：检索走阶段 3 的替身）
 _SSE_KEEPALIVE_S = 15.0
 
 
-def _course_retriever(db: Any, token: str, course_id: str, make_embedder: Any) -> Any:
+def _course_retriever(db: Any, token: str, course_id: str, make_embedder: Any,
+                      make_rag_model: Any = None) -> Any:
     """真检索后端。**每次请求新建，绝不缓存**——它持有某一个用户的 JWT。
 
     与下面 `_default_retriever()` 的 `@lru_cache` 对照着看：那个缓存的是替身，
     替身不持有任何人的东西。
+
+    改写器与重排器（口径 F96 / F98）在拿得到模型时接上，拿不到就是 `None`，
+    检索退回「原问题 + 融合排名」——`meta.rewrite/rerank.implementation` 会写 `none`。
     """
+    from explain.rag import LlmReranker, QueryRewriter
+
     from .retriever import SupabaseRetriever
 
-    return SupabaseRetriever(store=db, embedder=make_embedder(),
-                             token=token, course_id=course_id)
+    rw_model = make_rag_model(400) if make_rag_model else None
+    rr_model = make_rag_model(200) if make_rag_model else None
+    return SupabaseRetriever(
+        store=db, embedder=make_embedder(), token=token, course_id=course_id,
+        rewriter=QueryRewriter(rw_model) if rw_model is not None else None,
+        reranker=LlmReranker(rr_model) if rr_model is not None else None,
+    )
 
 
 def _default_model() -> Any:

@@ -64,8 +64,9 @@ const SHOTS = [
   ["documents", true, async (p) => {
     await seenTour(p);
     await p.goto(`${BASE}/courses/c-energy`);
-    // 窄屏上「我的课件」在抽屉里；顶栏有同一个入口
-    await p.click(p.viewportSize().width < 900 ? '.ws-top [aria-label="我的课件"]' : '[data-field="open-documents"]');
+    // 窄屏上「我的课件」在折起来的那一块里，先展开
+    if (p.viewportSize().width < 900) await p.click(".ws-side__toggle");
+    await p.click('[data-field="open-documents"]');
     await p.waitForTimeout(700);
   }],
   ["adjust", true, async (p) => {
@@ -77,8 +78,28 @@ const SHOTS = [
   ["drawer", true, async (p) => {
     await seenTour(p);
     await p.goto(`${BASE}/courses/c-energy`);
-    if (p.viewportSize().width < 900) await p.click('.ws-top [aria-label="打开目录"]');
-    await p.waitForTimeout(900);
+    if (p.viewportSize().width < 900) await p.click(".ws-side__toggle");
+    await p.waitForTimeout(700);
+  }],
+  // 动线：首页建课 → 直接落进新课（不是停在首页列表里）
+  ["new-course", true, async (p) => {
+    await p.goto(`${BASE}/`);
+    await p.fill('[data-field="new-course-name"]', "6.006 算法导论");
+    await p.click('[data-field="create-course"]');
+    await p.waitForURL(/\/courses\/c-/, { timeout: 15000 });
+    await p.waitForTimeout(1200);
+  }],
+  // 动线：「新对话」不建行，直接给输入框；第一个问题发出去才建会话并自动发出
+  ["first-ask", true, async (p) => {
+    await seenTour(p);
+    await p.goto(`${BASE}/courses/c-energy`);
+    if (p.viewportSize().width < 900) await p.click(".ws-side__toggle");
+    await p.click('[data-field="new-conversation"]');
+    await p.waitForSelector('[data-field="question"]');
+    await p.fill('[data-field="question"]', "核电站的废热比火电站多吗？");
+    await p.click('[data-field="ask"]');
+    await p.waitForSelector('[data-field="turn"][data-state="answered"]', { timeout: 30000 });
+    await p.waitForTimeout(800);
   }],
   ["empty-course", true, async (p) => { await seenTour(p); await p.goto(`${BASE}/courses/c-newbie`); await p.waitForTimeout(1200); }],
   ["settings", true, async (p) => { await p.goto(`${BASE}/settings`); await p.waitForTimeout(1200); }],
@@ -103,7 +124,7 @@ for (const [name, authed, act] of SHOTS) {
     page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
     try {
       await act(page);
-      await page.screenshot({ path: join(OUT, `${name}-${vp}.png`), fullPage: name !== "streaming" && name !== "tour" && name !== "documents" && name !== "adjust" && name !== "drawer" });
+      await page.screenshot({ path: join(OUT, `${name}-${vp}.png`), fullPage: name !== "streaming" && name !== "tour" && name !== "documents" && name !== "adjust" && name !== "drawer" && name !== "first-ask" });
       console.log(`✓ ${name}-${vp}${errors.length ? `  ⚠ ${errors.slice(0, 2).join(" | ").slice(0, 300)}` : ""}`);
     } catch (e) {
       console.log(`✗ ${name}-${vp}  ${String(e).split("\n")[0]}`);

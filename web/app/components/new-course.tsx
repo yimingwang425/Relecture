@@ -11,8 +11,8 @@ import { createClient } from "@/lib/supabase/client";
  * **走产品服务端的 `POST /courses`，不在浏览器里直接插表**：建课与上传是同一条链路，
  * 归属、命名规则都在那一侧；前端另开一条插入路径，两条迟早不一致，而不一致不会报错。
  *
- * 建完 `router.refresh()`：列表由服务端渲染，刷新一次就拿到新行，
- * 不在客户端维护第二份列表副本。
+ * 建完直接进那门课（下一步只能是传课件）。响应里拿不到 id 时退回
+ * `router.refresh()`：列表由服务端渲染，刷新一次就拿到新行，不在客户端维护第二份副本。
  */
 export function NewCourse({ apiBase }: { apiBase: string }) {
   const router = useRouter();
@@ -46,6 +46,10 @@ export function NewCourse({ apiBase }: { apiBase: string }) {
         setBusy(false);
         return;
       }
+      // 建完**直接进这门课**（2026-10-07 改）。建课之后唯一的下一步是往里传课件，
+      // 而原来停在首页、只把新课加进列表——用户还得在列表里找到它再点一次。
+      const row = (await r.json().catch(() => null)) as { id?: string } | null;
+      if (row?.id) return router.push(`/courses/${row.id}`);
       setName("");
       setBusy(false);
       router.refresh();
@@ -73,15 +77,15 @@ export function NewCourse({ apiBase }: { apiBase: string }) {
   }
 
   return (
-    <form onSubmit={create} className="flex flex-col gap-3" data-field="new-course">
-      <div className="flex items-end gap-4">
+    <form onSubmit={create} className="flex flex-col gap-2" data-field="new-course">
+      <div className="flex gap-2">
         <input
           data-field="new-course-name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="新课程名，例如 18.06 线性代数"
           aria-label="新课程名"
-          className="input input--line flex-1"
+          className="input flex-1"
         />
         <button
           type="submit"
@@ -90,11 +94,6 @@ export function NewCourse({ apiBase }: { apiBase: string }) {
           className="btn btn--primary shrink-0"
         >
           {busy ? "建课中…" : "建课"}
-          {!busy && (
-            <span className="btn__arrow" aria-hidden>
-              →
-            </span>
-          )}
         </button>
       </div>
       {error && (

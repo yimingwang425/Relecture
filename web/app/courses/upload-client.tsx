@@ -330,8 +330,8 @@ export function CourseUpload({
         {!lockedCourse && (
         <div className="card enter p-2">
           <div className="px-3 pt-3 pb-4">
-            <p className="t-eyebrow">课程</p>
-            <h2 className="t-title mt-2">上传到哪门课</h2>
+            <p className="t-eyebrow"># 课程</p>
+            <h2 className="t-title mt-1">上传到哪门课</h2>
           </div>
 
           <div className="panel flex flex-col gap-4 p-3">
@@ -411,18 +411,19 @@ export function CourseUpload({
         )}
 
         {/* ================================================================ 上传 */}
-        <div className={lockedCourse ? "" : "card enter-late p-5"}>
-          <div className="flex flex-wrap items-end justify-between gap-3 pb-4">
-            <div>
-              <p className="t-eyebrow">上传</p>
-              {!lockedCourse && <h2 className="t-title mt-2">上传课件</h2>}
+        <div className="card enter-late p-2">
+          {/* 课程工作区里它在「我的课件」弹窗中，弹窗已有标题，这里再来一个「上传课件」是重复的。 */}
+          {!lockedCourse && (
+            <div className="flex flex-wrap items-end justify-between gap-3 px-3 pt-3 pb-4">
+              <div>
+                <p className="t-eyebrow"># 上传</p>
+                <h2 className="t-title mt-1">上传课件</h2>
+              </div>
+              {courseName && <span className="chip chip--accent max-w-full truncate">传到：{courseName}</span>}
             </div>
-            {!lockedCourse && courseName && (
-              <span className="chip chip--accent max-w-full truncate">传到：{courseName}</span>
-            )}
-          </div>
+          )}
 
-          <div className="flex flex-col gap-4">
+          <div className="panel flex flex-col gap-4 p-4">
             <label
               data-dragging={dragging}
               onDragOver={(e) => {
@@ -435,12 +436,12 @@ export function CourseUpload({
                 setDragging(false);
                 if (canUpload) enqueue(e.dataTransfer.files);
               }}
-              className={`group flex flex-col items-center justify-center gap-2 rounded-[16px] border-[1.5px] border-dashed px-6 py-10 text-center transition-colors duration-300 ${
+              className={`flex flex-col items-center justify-center gap-2 rounded-[12px] border-[1.5px] border-dashed px-6 py-10 text-center transition-colors ${
                 !canUpload
-                  ? "cursor-not-allowed border-[var(--c-border-strong)] bg-[var(--c-paper)] opacity-70"
+                  ? "cursor-not-allowed border-[var(--c-border-strong)] bg-[#fafafa] opacity-70"
                   : dragging
                     ? "cursor-copy border-[var(--c-accent)] bg-[var(--c-accent-wash)]"
-                    : "cursor-pointer border-[var(--c-border-strong)] bg-[var(--c-paper)] hover:border-[var(--c-accent)] hover:bg-[var(--c-surface-panel)]"
+                    : "cursor-pointer border-[var(--c-border-strong)] hover:border-[var(--c-accent)] hover:bg-[#fcfeff]"
               }`}
             >
               <input
@@ -457,16 +458,9 @@ export function CourseUpload({
                 }}
                 className="sr-only"
               />
-              <svg
-                aria-hidden
-                width="40"
-                height="40"
-                viewBox="0 0 36 36"
-                fill="none"
-                className="transition-[translate] duration-500 ease-[var(--ease-reveal)] group-hover:-translate-y-1"
-              >
-                <rect x="7" y="4" width="22" height="28" rx="3" fill="var(--c-sheet)" stroke="var(--c-border-strong)" />
-                <path d="M18 23V13m0 0-4 4m4-4 4 4" stroke="var(--c-accent)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              <svg aria-hidden width="36" height="36" viewBox="0 0 36 36" fill="none">
+                <rect x="7" y="4" width="22" height="28" rx="4" fill="#f2f2f2" stroke="#d8d8d8" />
+                <path d="M18 23V13m0 0-4 4m4-4 4 4" stroke="var(--c-accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
               <span className="t-ui">
                 {!courseId ? "先在左边选一门课" : busy ? "正在处理上一份…" : "把 PDF 拖到这里，或点击选择"}
@@ -539,7 +533,7 @@ export function CourseUpload({
                           {it.failure.detail && (
                             // 服务端原文只给这一次请求的用户看。**它不进事件**
                             // （解析器谈论的是用户上传的文件内容，PRD §12.2 / 口径 F32）。
-                            <p className="mono mt-1 text-[11px] leading-relaxed break-all text-[var(--c-muted-text)]">
+                            <p className="mono mt-1 text-[11px] leading-relaxed break-all text-[#9a9a9a]">
                               {it.failure.detail}
                             </p>
                           )}

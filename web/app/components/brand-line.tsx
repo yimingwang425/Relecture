@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { Wordmark } from "@/app/components/wordmark";
+import { BrandMark } from "@/app/components/brand-mark";
 
 /**
  * 页眉的**一行**：左边应用名，右边一个去处。
@@ -22,10 +22,11 @@ import { Wordmark } from "@/app/components/wordmark";
 export function BrandLine({ children }: { children?: ReactNode }) {
   return (
     <div className="brandline enter">
-      <Link href="/" className="brandline__mark" aria-label="Relecture，回到我的课程">
-        <Wordmark />
+      <Link href="/" className="brandline__mark">
+        <BrandMark size={22} />
+        <span>Relecture</span>
       </Link>
-      <nav className="flex items-center gap-6">{children}</nav>
+      <nav className="flex items-center gap-4 text-[13.5px]">{children}</nav>
     </div>
   );
 }

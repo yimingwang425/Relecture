@@ -7,9 +7,7 @@ import { ApiWarmup } from "@/app/components/api-warmup";
 import { Tour } from "@/app/components/tour";
 import { ExplainClient } from "@/app/explain/explain-client";
 import { CourseUpload } from "@/app/courses/upload-client";
-import { IconBack, IconClose, IconDoc, IconMenu, IconPen, IconPlus } from "@/app/components/icons";
 import { StatusDot } from "@/app/components/status-dot";
-import { Wordmark } from "@/app/components/wordmark";
 import type { Arm } from "@/lib/style/axes";
 import { turnsFromMessages, type Turn } from "@/lib/explain/turns";
 import { createClient } from "@/lib/supabase/client";
@@ -28,6 +26,14 @@ import { createClient } from "@/lib/supabase/client";
  * 分工与理由写在迁移 `20260920110000_f5_conversations.sql` 里。一句话：
  * 标题是纯 UI 状态，服务端不产出它的任何一个字段；而 `round_id` / `turn_index` /
  * 答案正文只有那一次 `run_round` 知道，让浏览器自报等于让它自报模型说了什么。
+ *
+ * ## 会话在**第一次提问时**才建（2026-10-07 改）
+ *
+ * 原来要先按「新对话」建一行、再在「开一个对话」那一屏点一次，才看得到输入框——
+ * 刚传完课件的人落在一个只有一个按钮的空屏上；连点几次「新对话」还会留下一串
+ * 「新对话 2 / 3」空行。现在没有选中会话时（`activeId === null`）直接给输入框，
+ * 发出第一个问题的那一刻才建会话，标题就用这个问题。建完换成正式会话、
+ * 把那个问题原样交给新挂载的聊天组件自动发出（`autoAsk`）。
  *
  * ## 换会话时**整个聊天组件重挂载**（`key`）
  *
@@ -81,8 +87,12 @@ export function Workspace({
   const [docs, setDocs] = useState(initialDocuments);
   const [error, setError] = useState<string | null>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
-  /** 窄屏上侧栏是抽屉。宽屏上这个值不起作用（CSS 只在窄屏读 data-open）。 */
+  /** 窄屏上侧栏的会话 / 课件那一块折起来，默认收着——进门先看到讲解，不是一屏导航。 */
   const [navOpen, setNavOpen] = useState(false);
+  /** 刚建好的会话要自动发出的那个问题。只给那一次挂载用。 */
+  const [autoAsk, setAutoAsk] = useState<string | null>(null);
+  /** 刚建的会话不必再去库里读消息（读回来也是空的，还会跟正在写的那一轮赛跑）。 */
+  const freshId = useRef<string | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   const supabase = useCallback(() => createClient(), []);
@@ -90,7 +100,7 @@ export function Workspace({
   // 打开一个会话就把它已有的轮次读出来。**读失败要说出来**：
   // 悄悄显示成空会话的话，用户会以为之前问过的都没了，然后重问一遍（再花一次钱）。
   useEffect(() => {
-    if (!activeId) return;
+    if (!activeId || freshId.current === activeId) return;
     const id = activeId;
     let cancelled = false;
     void (async () => {
@@ -115,20 +125,35 @@ export function Workspace({
     };
   }, [activeId, supabase]);
 
-  async function newConversation() {
-    // 标题先给一个占位，用户随时能改。**不用问题的前几个字当标题**：
-    // 建会话发生在提问之前，那时还没有问题；等提问之后再回填的话，
-    // 用户已经改过的标题会被覆盖掉。
-    const title = `新对话 ${conversations.length + 1}`;
+  /**
+   * 第一次提问时建会话。标题取这个问题的开头——建会话与提问现在是同一刻，
+   * 不再有「先建后问、等问完再回填标题会覆盖用户改过的名字」那个顾虑。
+   */
+  async function startConversation(question: string) {
+    const title = question.length > 24 ? `${question.slice(0, 24)}…` : question;
     const { data, error: e } = await supabase()
       .from("conversations")
       .insert({ owner: userId, course_id: course.id, title })
       .select("id, title, updated_at")
       .single();
-    if (e || !data) return setError(`新建对话失败：${e?.message ?? "没有返回行"}`);
+    if (e || !data) {
+      setError(`新建对话失败：${e?.message ?? "没有返回行"}`);
+      return false;
+    }
+    freshId.current = data.id;
     setConversations((prev) => [data as Conversation, ...prev]);
+    setLoaded({ id: data.id, turns: [] });
+    setAutoAsk(question);
     setActiveId(data.id);
     setError(null);
+    return true;
+  }
+
+  /** 「新对话」只是回到空白输入框，**不建行**——没问过的会话不该出现在列表里。 */
+  function newConversation() {
+    setActiveId(null);
+    setAutoAsk(null);
+    setNavOpen(false);
   }
 
   async function rename(id: string, title: string) {
@@ -175,98 +200,70 @@ export function Workspace({
     if (e) setError(`给课件改名失败：${e.message}`);
   }
 
-  const openDocs = () => {
-    setNavOpen(false);
-    dialogRef.current?.showModal();
-  };
-
   return (
     <div className="ws" data-course-id={course.id}>
       {/* 进提问页时弹一次，讲清「调整讲法在哪、两种用法各是什么」。
           它自己判断看没看过，看过就什么都不渲染。 */}
-      <Tour />
-
-      {/* 窄屏顶栏：目录 · 课名 · 课件。宽屏上不渲染（CSS 隐藏）。 */}
-      <header className="ws-top">
-        <button
-          type="button"
-          className="icon-btn"
-          aria-label="打开目录"
-          aria-expanded={navOpen}
-          aria-controls="ws-side"
-          onClick={() => setNavOpen(true)}
-        >
-          <IconMenu size={20} />
-        </button>
-        <p className="ws-top__title">{course.name}</p>
-        <button type="button" className="icon-btn" aria-label="我的课件" onClick={openDocs}>
-          <IconDoc size={20} />
-        </button>
-      </header>
-      <button
-        type="button"
-        className="ws-scrim"
-        data-open={navOpen}
-        aria-label="关闭目录"
-        tabIndex={navOpen ? 0 : -1}
-        onClick={() => setNavOpen(false)}
-      />
-
+      {/* 只在**能提问的时候**弹：它讲的是输入框旁边的「调整讲法」，
+          一门还没课件的课里没有输入框，弹了等于指着一块空白讲。 */}
+      {docs.length > 0 && <Tour />}
       {/* ============================================================ 侧栏 */}
-      <aside className="ws-side" id="ws-side" data-open={navOpen}>
-        <div className="flex items-center justify-between gap-2 px-[10px]">
-          <Link href="/" className="wordmark-sm text-[22px]" aria-label="Relecture，回到我的课程">
-            <Wordmark />
+      <aside className="ws-side" data-open={navOpen}>
+        <div className="flex items-center justify-between gap-2 px-2">
+          <Link href="/" className="t-caption link no-underline">
+            ← 我的课程
           </Link>
+          <Link href="/settings" className="t-caption link no-underline">
+            设置
+          </Link>
+        </div>
+
+        <div className="flex items-center justify-between gap-3 px-2">
+          <p className="t-title min-w-0 text-[17px]" data-field="course-name">
+            {course.name}
+          </p>
+          {/* 窄屏才出现：展开 / 收起下面的课件与会话 */}
           <button
             type="button"
-            className="icon-btn -mr-2 min-[900px]:hidden"
-            aria-label="关闭目录"
-            onClick={() => setNavOpen(false)}
+            className="ws-side__toggle btn btn--ghost btn--sm shrink-0"
+            aria-expanded={navOpen}
+            aria-controls="ws-side-more"
+            onClick={() => setNavOpen((v) => !v)}
           >
-            <IconClose />
+            {navOpen ? "收起" : conversations.length > 0 ? `对话 ${conversations.length}` : "目录"}
           </button>
         </div>
 
-        <div className="ws-course">
-          <Link href="/" className="t-caption link no-underline inline-flex items-center gap-1.5">
-            <IconBack size={13} /> 我的课程
-          </Link>
-          <p className="ws-course__name mt-3" data-field="course-name">
-            {course.name}
-          </p>
-        </div>
-
-        <div className="flex flex-col gap-0.5">
-          <button type="button" className="side-item" data-field="open-documents" onClick={openDocs}>
-            <span className="side-item__icon">
-              <IconDoc />
-            </span>
+        <div id="ws-side-more" className="ws-side__more">
+        <div>
+          <button
+            type="button"
+            className="side-item"
+            data-field="open-documents"
+            onClick={() => dialogRef.current?.showModal()}
+          >
+            <span aria-hidden>📄</span>
             我的课件
-            <span className="side-item__aux">{docs.length} 份</span>
+            <span className="t-caption ml-auto">{docs.length}</span>
           </button>
           <button
             type="button"
             className="side-item"
             data-field="new-conversation"
-            onClick={() => {
-              setNavOpen(false);
-              void newConversation();
-            }}
+            aria-current={activeId === null && docs.length > 0}
+            onClick={newConversation}
           >
-            <span className="side-item__icon">
-              <IconPlus />
-            </span>
+            <span aria-hidden>＋</span>
             新对话
           </button>
         </div>
 
         <div className="min-h-0 flex-1">
-          <p className="side-label mb-2">对话</p>
+          <p className="side-label mb-1">对话</p>
           {conversations.length === 0 ? (
-            <p className="t-caption px-[10px]">还没有对话。按「新对话」开一个。</p>
+            <p className="t-caption px-[10px]">还没有对话。问第一个问题时会自动存成一个。</p>
           ) : (
-            <ul data-field="conversations" className="flex flex-col gap-0.5">
+            <ul data-field="conversations">
               {conversations.map((c) => (
                 <li key={c.id}>
                   {renaming === c.id ? (
@@ -274,7 +271,7 @@ export function Workspace({
                       autoFocus
                       defaultValue={c.title}
                       maxLength={80}
-                      className="input min-h-[40px] text-[14px]"
+                      className="input"
                       data-field="conversation-rename"
                       onBlur={(e) => void rename(c.id, e.target.value)}
                       onKeyDown={(e) => {
@@ -291,6 +288,7 @@ export function Workspace({
                       aria-current={c.id === activeId}
                       onClick={() => {
                         setActiveId(c.id);
+                        setAutoAsk(null);
                         setNavOpen(false);
                       }}
                       onDoubleClick={() => setRenaming(c.id)}
@@ -300,8 +298,7 @@ export function Workspace({
                         role="button"
                         tabIndex={0}
                         aria-label={`重命名「${c.title}」`}
-                        title="改名"
-                        className="side-item__edit side-item__icon -my-1 rounded-full hover:bg-[var(--c-paper-deep)] hover:text-[var(--c-ink)]"
+                        className="side-item__rename t-caption shrink-0"
                         onClick={(e) => {
                           e.stopPropagation();
                           setRenaming(c.id);
@@ -314,7 +311,7 @@ export function Workspace({
                           }
                         }}
                       >
-                        <IconPen size={14} />
+                        改名
                       </span>
                     </button>
                   )}
@@ -324,60 +321,51 @@ export function Workspace({
           )}
         </div>
 
+        </div>
+
         {error && (
           <p role="alert" data-field="workspace-error" className="notice notice--danger text-[12.5px]">
             {error}
           </p>
         )}
-
-        <div className="flex items-center justify-between border-t border-[var(--c-border-row)] px-[10px] pt-4">
-          <Link href="/settings" className="t-caption link no-underline">
-            设置
-          </Link>
-          <Link href="/settings/style" className="t-caption link no-underline">
-            讲解风格
-          </Link>
-        </div>
       </aside>
 
       {/* ============================================================ 聊天 */}
       <div className="ws-main">
         {/* 同首页：提问与上传都要这个服务，而进这一页之后马上就会用到它。 */}
-        <div className="mx-auto w-full max-w-[44rem] px-[var(--page-margin)] pt-4 empty:hidden">
+        <div className="mx-auto w-full max-w-[46rem] px-4 pt-3">
           <ApiWarmup apiBase={apiBase} />
         </div>
         {docs.length === 0 ? (
-          <div className="ws-empty enter">
-            <span className="ws-empty__mark" aria-hidden>
-              §
-            </span>
-            <p className="t-display text-[clamp(28px,3vw,40px)]">这门课还没有材料</p>
-            <p className="t-body mt-3 text-[var(--c-muted-text)]">
+          <div className="ws-empty">
+            <p className="t-title">这门课还没有材料</p>
+            <p className="t-body mt-2">
               讲解只用你上传的材料，不靠通用知识补全。先传一份 PDF 讲义。
             </p>
-            <button type="button" className="btn btn--primary btn--lg mt-7" onClick={openDocs}>
-              上传课件 <span className="btn__arrow" aria-hidden>→</span>
+            <button
+              type="button"
+              className="btn btn--primary mt-5"
+              onClick={() => dialogRef.current?.showModal()}
+            >
+              上传课件
             </button>
           </div>
         ) : activeId === null ? (
-          <div className="ws-empty enter">
-            <span className="ws-empty__mark" aria-hidden>
-              ¶
-            </span>
-            <p className="t-display text-[clamp(28px,3vw,40px)]">开一个对话</p>
-            <p className="t-body mt-3 text-[var(--c-muted-text)]">
-              一个对话一个上下文。按周分开，追问时它才知道「刚才那一点」指的是什么。
-            </p>
-            <button type="button" className="btn btn--primary btn--lg mt-7" onClick={() => void newConversation()}>
-              新对话 <span className="btn__arrow" aria-hidden>→</span>
-            </button>
-          </div>
+          // 没选中会话：直接给输入框。第一个问题发出去时才建会话（见组件说明）。
+          <ExplainClient
+            key="draft"
+            apiBase={apiBase}
+            sessionId={sessionId}
+            detailLevel={detailLevel}
+            modelLabel={modelLabel}
+            userId={userId}
+            lockedCourse={course}
+            onFirstQuestion={startConversation}
+          />
         ) : turns === null ? (
-          <div className="mx-auto flex w-full max-w-[44rem] flex-col gap-3 px-[var(--page-margin)] pt-16" aria-label="读取中">
-            <div className="skeleton h-7 w-[55%]" />
-            <div className="skeleton mt-4 h-4 w-full" />
-            <div className="skeleton h-4 w-[92%]" />
-            <div className="skeleton h-4 w-[70%]" />
+          <div className="ws-empty" aria-label="读取中">
+            <div className="skeleton h-5 w-[40%]" />
+            <div className="skeleton mt-3 h-5 w-[70%]" />
           </div>
         ) : (
           <ExplainClient
@@ -391,37 +379,37 @@ export function Workspace({
             conversationId={activeId}
             initialTurns={turns}
             lockedCourse={course}
+            autoAsk={autoAsk ?? undefined}
           />
         )}
       </div>
 
       {/* ============================================================ 课件弹窗 */}
-      <dialog ref={dialogRef} className="dialog" data-field="documents-dialog">
+      <dialog
+        ref={dialogRef}
+        className="dialog"
+        data-field="documents-dialog"
+        // 关掉课件弹窗就把光标放进输入框：从这里出来的人下一件事是提问。
+        onClose={() => document.querySelector<HTMLTextAreaElement>('[data-field="question"]')?.focus()}
+      >
         <div className="dialog__head">
-          <div>
-            <p className="t-eyebrow">{course.name}</p>
-            <h2 className="t-title mt-1.5">我的课件</h2>
-          </div>
+          <h2 className="t-title text-[17px]">我的课件</h2>
           <form method="dialog">
-            <button className="icon-btn" aria-label="关闭">
-              <IconClose />
-            </button>
+            <button className="btn btn--ghost btn--sm">关闭</button>
           </form>
         </div>
         <div className="dialog__body">
           {docs.length > 0 && (
             <ul className="mb-6 flex flex-col gap-2" data-field="documents">
               {docs.map((d) => (
-                <li key={d.id} className="row items-center">
-                  <span className="text-[var(--c-muted-text)]">
-                    <IconDoc size={22} />
-                  </span>
+                <li key={d.id} className="row">
+                  <StatusDot kind={d.verdict === "unusable" ? "warn" : "ok"} />
                   <div className="min-w-0 flex-1">
                     <input
                       defaultValue={d.display_name ?? ""}
                       placeholder={d.filename}
                       maxLength={80}
-                      className="input min-h-[40px] border-transparent bg-transparent px-2 py-1 font-[var(--fw-medium)] hover:border-[var(--c-border-row)]"
+                      className="input"
                       data-field="document-rename"
                       aria-label={`给「${d.filename}」起个名字`}
                       onBlur={(e) => void renameDoc(d.id, e.target.value)}
@@ -429,10 +417,8 @@ export function Workspace({
                         if (e.key === "Enter") e.currentTarget.blur();
                       }}
                     />
-                    <p className="row__sub mt-1.5 flex min-w-0 items-center gap-2">
-                      <StatusDot kind={d.verdict === "unusable" ? "warn" : "ok"} className="!mt-0 scale-[0.8]" />
-                      <span className="shrink-0">{d.page_count} 页</span>
-                      <span className="truncate">{d.filename}</span>
+                    <p className="row__sub mt-1">
+                      {d.page_count} 页 · <span className="mono">{d.filename}</span>
                     </p>
                   </div>
                 </li>
@@ -454,6 +440,15 @@ export function Workspace({
             lockedCourse={course}
             onUploaded={() => void reloadDocs()}
           />
+
+          {/* 传完之后的下一步就是提问：给一个直接去的按钮，不让人去找右上角的「关闭」。 */}
+          {docs.length > 0 && (
+            <form method="dialog" className="mt-6 flex justify-end border-t border-[var(--c-border-row)] pt-4">
+              <button className="btn btn--primary" data-field="documents-done">
+                去提问
+              </button>
+            </form>
+          )}
         </div>
       </dialog>
     </div>

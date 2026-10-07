@@ -2,7 +2,6 @@
 
 import { useRef, useState } from "react";
 
-import { IconClose } from "@/app/components/icons";
 import { BOARDS, resolveTaste } from "@/lib/style/taste";
 import { createClient } from "@/lib/supabase/client";
 
@@ -50,7 +49,7 @@ export function StyleNudge({
     <>
       <button
         type="button"
-        className="btn btn--ghost btn--sm h-7 px-3 text-[12px]"
+        className="btn btn--ghost btn--sm"
         data-field="style-adjust-entry"
         onClick={() => {
           setOpen(true);
@@ -168,33 +167,25 @@ function AdjustDialog({
   return (
     <dialog ref={ref} className="dialog" data-field="style-adjust" onClose={onClose}>
       <div className="dialog__head">
-        <div>
-          <p className="t-eyebrow">只改你点到的</p>
-          <h2 className="t-title mt-1.5">调整讲法</h2>
-        </div>
+        <h2 className="t-title text-[17px]">调整讲法</h2>
         <form method="dialog">
-          <button className="icon-btn" aria-label="关闭">
-            <IconClose />
-          </button>
+          <button className="btn btn--ghost btn--sm">关闭</button>
         </form>
       </div>
       <div className="dialog__body">
         {BOARDS.map((board) => (
-          <section key={board.id} className="mb-7">
+          <section key={board.id} className="mb-5">
             <p className="field-label">{board.title}</p>
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-2 flex flex-wrap gap-2">
               {board.tags.map((tag) => (
                 <button
                   key={tag.id}
                   type="button"
-                  className="choice choice--tag"
+                  className="choice"
                   data-field="adjust-tag"
                   aria-pressed={picked.includes(tag.id)}
                   onClick={() => toggle(tag.id, board.id, board.max)}
                 >
-                  <span className="tick" aria-hidden>
-                    ✓
-                  </span>
                   {tag.label}
                 </button>
               ))}
@@ -212,7 +203,7 @@ function AdjustDialog({
             onChange={(e) => setText(e.target.value)}
             placeholder="输入你想要的讲法，我们来调整。比如：再短一点，先说结论，多举个例子。"
           />
-          <p className="t-caption mt-2">没提到的部分保持原样，不会被一起改掉。</p>
+          <p className="t-caption mt-1">没提到的部分保持原样，不会被一起改掉。</p>
         </section>
 
         {error && (
@@ -228,7 +219,7 @@ function AdjustDialog({
 
         <button
           type="button"
-          className="btn btn--primary btn--lg mt-3 w-full sm:w-auto"
+          className="btn btn--primary mt-2"
           data-field="adjust-apply"
           disabled={busy}
           onClick={() => void apply()}

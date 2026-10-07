@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import type { CSSProperties } from "react";
 import { redirect } from "next/navigation";
 
 import { BrandLine } from "@/app/components/brand-line";
@@ -43,40 +42,38 @@ export default async function SettingsPage() {
 
       <PageHeader
         eyebrow="设置"
-        title={
-          <>
-            <em>讲法</em>与账号
-          </>
-        }
+        title="讲法、账号"
         lead="讲解的详略、举例、结构、深度都在「讲解风格」里；那份配置一人一份，所有课通用。"
       />
 
-      <div className="index stagger">
-        <Link href="/settings/style" data-field="to-style" className="index__row" style={{ "--i": 0 } as CSSProperties}>
-          <span className="index__num">01</span>
-          <span className="index__name">讲解风格</span>
-          <span className="index__meta">
-            <span className="index__arrow" aria-hidden>
-              →
-            </span>
-          </span>
-          <span className="index__desc">
-            改讲得多细、举不举例子、先给结论还是先铺垫、讲到什么深度。也可以重走一遍六步选择。
+      <div className="flex flex-col gap-3">
+        <Link
+          href="/settings/style"
+          data-field="to-style"
+          className="row no-underline transition-transform hover:-translate-y-[1px]"
+        >
+          <div className="min-w-0 flex-1">
+            <p className="row__title">讲解风格</p>
+            <p className="row__sub">
+              改讲得多细、举不举例子、先给结论还是先铺垫、讲到什么深度。也可以重走一遍六步选择。
+            </p>
+          </div>
+          <span aria-hidden className="t-meta">
+            →
           </span>
         </Link>
 
-        <div className="index__row hover:!pl-1 hover:before:!scale-x-0" style={{ "--i": 1 } as CSSProperties}>
-          <span className="index__num">02</span>
-          <span className="index__name">账号</span>
-          <span className="index__meta">
-            <LogoutButton className="btn btn--ghost btn--sm" />
-          </span>
-          <span className="index__desc break-all">{auth.user.email ?? "（这个账号没有邮箱）"}</span>
+        <div className="row">
+          <div className="min-w-0 flex-1">
+            <p className="row__title">账号</p>
+            <p className="row__sub mono break-all">{auth.user.email ?? "（这个账号没有邮箱）"}</p>
+          </div>
+          <LogoutButton className="btn btn--ghost btn--sm shrink-0" />
         </div>
       </div>
 
       <Diagnostics
-        className="mt-24"
+        className="mt-10"
         items={[
           ["账号", auth.user.email ?? "—"],
           ["user_id", auth.user.id, "user-id"],

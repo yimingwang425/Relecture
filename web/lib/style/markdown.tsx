@@ -123,7 +123,7 @@ export function Markdown({ text }: { text: string }) {
         switch (block.kind) {
           case "h":
             return (
-              <p key={key} className="md-h mt-4 font-[var(--fw-semibold)] first:mt-0">
+              <p key={key} className="mt-4 font-[var(--fw-semibold)] first:mt-0">
                 {inline(block.lines[0], key)}
               </p>
             );

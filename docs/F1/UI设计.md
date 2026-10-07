@@ -1,5 +1,4 @@
-> ⚠️ **2026-10-07 起本稿退役（口径 F105）。** 现行视觉语言是「页边批注」（纸 · 墨 · 朱红 · 宋体正文），
-> 设计说明在 `web/app/globals.css` 文件头。本稿原样保留，作为 2026-09 那几轮界面**当时**依据的那一版（同 F25）。
+> 2026-10-07：F105 曾宣布本稿退役，**当天即撤回（F106）**——用户要保留原来的极简基调。本稿仍是现行视觉语言的依据。
 
 Build a SINGLE standalone file: index.html (inline CSS + JS, no frameworks, no extra files). Recreate this exact Quantum² marketing landing page pixel-for-pixel: one-screen hero, black pill nav, two-line headline, subcopy, Get Started, full-bleed cyan video band, and a fixed-geometry product mockup card sitting on the band. html lang="en". Title: Quantum² — Convert screen recording into clear, intelligent insights. Viewport: width=device-width, initial-scale=1, viewport-fit=cover.
 

@@ -6,7 +6,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Diagnostics } from "@/app/components/diagnostics";
 import { LoadingQuotes } from "@/app/components/loading-quotes";
 import { StyleNudge } from "@/app/explain/style-nudge";
-import { IconArrowUp } from "@/app/components/icons";
 import { StatusDot } from "@/app/components/status-dot";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -111,6 +110,8 @@ export function ExplainClient({
   conversationId = null,
   initialTurns,
   lockedCourse,
+  onFirstQuestion,
+  autoAsk,
 }: {
   apiBase: string;
   sessionId: string;
@@ -132,10 +133,20 @@ export function ExplainClient({
    * 用户是从这门课点进来的，换课应当是回到列表再进另一门，不是在这里改一个下拉。
    */
   lockedCourse?: { id: string; name: string };
+  /**
+   * 还没有会话时（课程工作区的空白输入框）：第一个问题**不在这里发**，交给调用方去建会话。
+   * 建好之后调用方换成正式会话重挂载这个组件，并把问题经 `autoAsk` 交回来。
+   * 返回 false = 没建成，问题填回输入框。
+   */
+  onFirstQuestion?: (question: string) => Promise<boolean>;
+  /** 挂载后立刻发出的问题（只发一次）。见 `onFirstQuestion`。 */
+  autoAsk?: string;
 }) {
   const [courses, setCourses] = useState<Course[] | null>(null);
   const [courseId, setCourseId] = useState(lockedCourse?.id ?? "");
-  const [question, setQuestion] = useState("");
+  const [question, setQuestion] = useState(autoAsk ?? "");
+  /** 正在建会话（`onFirstQuestion` 那一步）。期间输入框与发送都停用。 */
+  const [starting, setStarting] = useState(false);
   // 打开已有会话时先铺上历史。**key 由调用方按 conversationId 给**，
   // 换会话时整个组件重挂载——用 effect 去同步 props 到 state 的话，
   // 换会话那一瞬间旧会话的轮次还在屏幕上，而输入框已经指向新会话了。
@@ -147,7 +158,7 @@ export function ExplainClient({
   /** 每轮卡片当前在哪个标签页。键是 `turns` 里的原始下标。 */
   const [tabs, setTabs] = useState<Record<number, Tab>>({});
 
-  const pending = hasPending(turns);
+  const pending = hasPending(turns) || starting;
 
   const token = useCallback(async () => {
     const { data } = await createClient().auth.getSession();
@@ -202,10 +213,29 @@ export function ExplainClient({
     el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, [turns.length, pending]);
 
+  // 刚建好的会话：把带过来的那个问题发出去。ref 挡住开发模式下 effect 的二次执行——
+  // 发两次就是两轮讲解、两份钱。
+  const autoAsked = useRef(false);
+  useEffect(() => {
+    if (!autoAsk || autoAsked.current) return;
+    autoAsked.current = true;
+    void ask();
+    // 只在挂载时跑一次：ask 每次渲染都是新函数，放进依赖会在每次渲染后重发。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   async function ask() {
     const q = question.trim();
     // **只允许一轮在飞**（见组件说明）。
     if (!q || !courseId || pending) return;
+
+    if (onFirstQuestion && !conversationId) {
+      setStarting(true);
+      const ok = await onFirstQuestion(q);
+      // 建成了这个组件会被换掉（调用方按新会话重挂载），不必再动自己的状态。
+      if (!ok) setStarting(false);
+      return;
+    }
 
     // `turn_index` 由账本算，**不是「发了几次请求」**：失败不计入
     // （用户一个字都没看到，那不是一轮讲解），重生成也不计入（它在服务端一次
@@ -389,35 +419,40 @@ export function ExplainClient({
               disabled={pending}
               rows={2}
               maxLength={500}
-              placeholder={pending ? "正在讲解，等这一轮回来再问…" : "问这门课的任何问题"}
+              placeholder={
+                starting ? "正在建对话…" : pending ? "正在讲解，等这一轮回来再问…" : "问这门课的任何问题"
+              }
               className="composer__input"
             />
             <div className="composer__foot">
-              <span className="composer__meta t-caption">
+              <span className="t-caption">
                 {/* 用的是哪个模型，**说出来**。 */}
-                {modelLabel ? <span className="composer__model mono text-[11.5px]">{modelLabel}</span> : null}
-                {modelLabel ? <span className="composer__sep" aria-hidden>·</span> : null}
+                {modelLabel ? <span className="mono max-sm:hidden">{modelLabel}</span> : null}
+                {modelLabel ? <span className="max-sm:hidden"> · </span> : null}
                 <span data-field="detail-level">
                   {DETAIL_COPY[detailLevel] ?? detailLevel}
                 </span>
-                {userId ? (
-                  <StyleNudge userId={userId} sessionId={sessionId} />
-                ) : (
-                  <Link href="/settings/style" className="link">
-                    调整讲法
-                  </Link>
+                {/* 能改配置时旁边就有「调整讲法」按钮；只有不能改的时候才给去设置页的链接。
+                    原来两个都在，同一行里出现两次「调整讲法」，一个跳页、一个弹窗。 */}
+                {!userId && (
+                  <>
+                    {" · "}
+                    <Link href="/settings/style" className="link">
+                      调整讲法
+                    </Link>
+                  </>
                 )}
               </span>
-              <span className="flex shrink-0 items-center gap-3">
-                <span className="composer__count t-caption kbd-count">{question.length} / 500</span>
+              <span className="flex items-center gap-3">
+                {userId && <StyleNudge userId={userId} sessionId={sessionId} />}
+                <span className="t-caption kbd-count max-sm:hidden">{question.length} / 500</span>
                 <button
                   data-field="ask"
                   onClick={() => void ask()}
                   disabled={!question.trim() || !courseId || pending}
-                  className="btn btn--primary btn--sm h-9 pl-4 pr-3"
+                  className="btn btn--primary btn--sm"
                 >
                   {pending ? "讲解中…" : "发送"}
-                  {!pending && <IconArrowUp size={16} />}
                 </button>
               </span>
             </div>
@@ -454,32 +489,27 @@ export function ExplainClient({
                   {/* 用户那句话。**不再用「第 N 轮」当标题**：聊天式布局里
                       轮次编号是内部口径，用户读的是自己问了什么。编号仍然在
                       data-turn-index 上，回归工具按它断言。 */}
-                  <div className="turn__q">
-                    <span className="turn__qmark" aria-hidden>
-                      Q.
-                    </span>
-                    <p className="turn__qtext" data-field="turn-question">{t.question}</p>
-                  </div>
+                  <p className="bubble" data-field="turn-question">{t.question}</p>
 
                   {t.state === "pending" && t.draft && t.draft.text && (
-                    <div className="pt-1" data-field="answer-streaming" aria-live="polite">
+                    <div className="tabpanel p-4 sm:p-6" data-field="answer-streaming" aria-live="polite">
                       {t.draft.rewriting > 0 && (
                         <p className="notice notice--warn mb-3 text-[13px]" data-field="rewriting">
                           上一版没达到你设定的讲法要求，正在重写（第 {t.draft.rewriting} 次）…
                         </p>
                       )}
-                      <div className="prose-answer is-streaming">
+                      <div className="prose-answer">
                         <Markdown text={t.draft.text} />
                       </div>
                       {t.draft.sources.length > 0 && (
-                        <p className="t-caption mt-6">
+                        <p className="t-caption mt-4">
                           出处：
                           {t.draft.sources.map((s) => `${s.sourceFile} 第 ${s.pages.join("、")} 页`).join("；")}
                         </p>
                       )}
-                      <p className="t-caption mt-3 flex items-center gap-2.5" data-field="elapsed">
-                        <span aria-hidden className="pulse-dot" />
-                        正在写 · 已 <b className="kbd-count">{elapsed}</b> 秒
+                      <p className="t-caption mt-2 flex items-center gap-2" data-field="elapsed">
+                        <span aria-hidden className="spinner" />
+                        生成中 · 已 <b className="kbd-count">{elapsed}</b> 秒
                       </p>
                     </div>
                   )}
@@ -493,8 +523,8 @@ export function ExplainClient({
                       {/* 走着的计时器。**不能省**：没有它，一个 40 秒的等待与一个
                           卡死的请求在页面上长得一模一样。它不是阈值判断，
                           只是让等待可见——所以只报秒数，不报「是不是太久了」。 */}
-                      <p className="t-caption mt-3 flex flex-wrap items-center gap-x-2.5 gap-y-1" data-field="elapsed">
-                        <span aria-hidden className="pulse-dot" />
+                      <p className="t-caption mt-2 flex items-center gap-2" data-field="elapsed">
+                        <span aria-hidden className="spinner" />
                         {t.draft?.rewriting
                           ? "上一版没达到讲法要求，正在重写"
                           : t.draft?.stage === "generating"
@@ -507,7 +537,7 @@ export function ExplainClient({
                   )}
 
                   {t.state === "failed" && t.failure && (
-                    <div className="rounded-[var(--radius-panel)] border border-[#e8bfb2] bg-[var(--c-danger-wash)] p-4 sm:p-5" data-field="turn-failure">
+                    <div className="panel p-4 sm:p-5" data-field="turn-failure">
                       <div className="flex items-start gap-3">
                         <StatusDot kind="bad" />
                         <div className="min-w-0 flex-1">
@@ -555,7 +585,7 @@ export function ExplainClient({
                         ))}
                       </div>
 
-                      <div role="tabpanel" className="tabpanel">
+                      <div role="tabpanel" className="tabpanel p-4 sm:p-6">
                         {/* ---------------------------------------------- 讲解 */}
                         {tab === "answer" && (
                           <>
@@ -574,7 +604,8 @@ export function ExplainClient({
                             {/* F3b 兜底判断：判了且不是 covered 才挂。措辞守 G02——
                                 说「片段里」，不说「课件里没有」。 */}
                             {gapNotice(t.answer) && notice && (
-                              <div className="aside-note mb-7" data-field="gap-notice" data-gap-verdict={notice.verdict}>
+                              <div className="row mb-4" data-field="gap-notice" data-gap-verdict={notice.verdict}>
+                                <StatusDot kind="warn" />
                                 <div className="min-w-0 flex-1">
                                   <p className="row__title">
                                     {notice.verdict === "insufficient"
@@ -591,7 +622,8 @@ export function ExplainClient({
                             )}
 
                             {t.answer.confusion?.injected && (
-                              <div className="aside-note aside-note--info mb-7" data-field="confusion-injected">
+                              <div className="row mb-4" data-field="confusion-injected">
+                                <StatusDot kind="info" />
                                 <p className="row__title">你之前标过这几页没看懂，这次换了个切入点讲。</p>
                               </div>
                             )}
@@ -602,12 +634,12 @@ export function ExplainClient({
 
                             {/* 出处：点名到页，**始终可见**。PRD 要求讲解能溯源到页号。 */}
                             {t.answer.sources.length > 0 ? (
-                              <div className="cites" data-field="sources">
-                                <span className="t-eyebrow mr-2">出处</span>
+                              <div className="mt-6 flex flex-wrap items-center gap-2" data-field="sources">
+                                <span className="t-caption mr-1">出处</span>
                                 {t.answer.sources.map((s) => (
-                                  <span key={s.sourceFile} className="cite" title={s.sourceFile}>
-                                    <span className="cite__file">{s.sourceFile}</span>
-                                    <span className="cite__pages">p.{s.pages.join(", ")}</span>
+                                  <span key={s.sourceFile} className="chip h-auto min-h-7 max-w-full flex-wrap py-1">
+                                    <span className="truncate" title={s.sourceFile}>{s.sourceFile}</span>
+                                    <span className="text-[var(--c-muted-text)]">第 {s.pages.join("、")} 页</span>
                                   </span>
                                 ))}
                                 <button
@@ -615,7 +647,7 @@ export function ExplainClient({
                                   className="t-caption link cursor-pointer bg-transparent"
                                   onClick={() => setTabs((prev) => ({ ...prev, [index]: "sources" }))}
                                 >
-                                  看原文片段 →
+                                  看这几片原文的标题与分数
                                 </button>
                               </div>
                             ) : (
@@ -626,7 +658,7 @@ export function ExplainClient({
                               )
                             )}
 
-                            <p className="t-caption mt-3 empty:hidden" data-field="turn-meta">
+                            <p className="t-caption mt-2" data-field="turn-meta">
                               {t.answer.regenerations > 0 && (
                                 // 重生成**不计入轮次**（§13.0），显示它是为了让
                                 // 「审查链路在工作」这件事可见。
@@ -649,8 +681,8 @@ export function ExplainClient({
                               </p>
                             )}
                             {markUnavailable(t.answer) === null && (
-                              <div className="mt-6" data-field="mark">
-                                <div className="mark-box">
+                              <div className="mt-5 border-t border-[var(--c-border-row)] pt-4" data-field="mark">
+                                <div className="flex flex-wrap items-start gap-x-5 gap-y-3">
                                   <button
                                     data-field="mark-confused"
                                     data-mark-state={t.mark?.status ?? "idle"}
@@ -666,15 +698,12 @@ export function ExplainClient({
                                   </button>
                                   {/* 口径 F56：两个按钮的说明**放在一起**，把「这次这里」与「以后都」说开。
                                       用户点错不会有任何指标变红 —— 配置会被一路改深，而没人知道。 */}
-                                  <ul data-field="mark-scope">
+                                  <ul data-field="mark-scope" className="t-caption min-w-[220px] flex-1 space-y-0.5">
                                     <li>
-                                      <b>这部分没看懂</b>：只管<b>这次命中的这几页</b>。不改你的风格配置；
-                                      以后再讲到这几页时，换一个切入点重讲。
+                                      <b>这部分没看懂</b>：只管这次命中的这几页，不改风格配置，下次讲到时换个切入点。
                                     </li>
                                     <li>
-                                      <b>讲太深</b>（在
-                                      <a href="/settings/style" className="link">风格设置</a>
-                                      里）：<b>以后所有讲解</b>都往浅讲一格，改的是配置。
+                                      <b>讲太深</b>（在<a href="/settings/style" className="link">风格设置</a>里）：以后所有讲解都往浅讲一格。
                                     </li>
                                   </ul>
                                 </div>
@@ -695,15 +724,15 @@ export function ExplainClient({
                               <p className="t-meta">这一轮没有检索到课件片段。</p>
                             ) : (
                               <>
-                                <p className="t-meta mb-4">讲解用到的课件片段，按检索时的顺序。</p>
+                                <p className="t-meta mb-3">讲解用到的课件片段，按检索时的顺序。</p>
                                 <ol className="flex flex-col gap-2">
                                   {t.answer.slices.map((s, j) => (
-                                    <li key={`${s.sourceFile}-${j}`} className="row items-baseline">
-                                      <span className="t-num w-6 shrink-0 text-[18px]">{j + 1}</span>
+                                    <li key={`${s.sourceFile}-${j}`} className="row">
+                                      <span className="chip kbd-count h-6 shrink-0 px-2">{j + 1}</span>
                                       <div className="min-w-0 flex-1">
                                         <p className="row__title">{s.title ?? "（这一片没有标题）"}</p>
                                         <p className="row__sub">
-                                          {s.sourceFile} · 第 {s.pages.join("、")} 页
+                                          <span className="mono">{s.sourceFile}</span> · 第 {s.pages.join("、")} 页
                                           {s.score !== null && ` · 相似度 ${s.score.toFixed(3)}`}
                                         </p>
                                       </div>
@@ -760,7 +789,7 @@ export function ExplainClient({
       {composer}
 
       {/* 验收要读的那几个数。**折叠，不删**（进度总结 §八 第 7 条）。 */}
-      <details className="diagnostics mx-auto mb-4 w-[calc(100%-2*var(--page-margin))] max-w-[var(--chat-w)]">
+      <details className="diagnostics mx-auto w-full max-w-[var(--chat-w)] px-1">
         <summary>
           这个会话已答{" "}
           <b className="kbd-count" data-field="answered-count">{answeredCount(turns)}</b> 轮

@@ -43,7 +43,8 @@ comment on function public.match_slices_indexed(uuid, vector, text, int) is
 
 -- ---------------------------------------------------------------- 执行记录
 --
---     生产执行日期：（待填）　执行结果：（待填）
+--     生产执行日期：2026-10-07　执行结果：用户报告在 SQL Editor 依次跑完（先 20261007100000，再本文件）
+--     ⚠️ 这一行是**用户的报告**，不是观测：下面三件事要由 verify_retrieval_prod.py 第 5 节在真库上验过才算数（F34）
 --
 -- 本文件的行为在本地一条都验不了。真库上要观测的三件事（`verify_retrieval_prod.py`）：
 --   · 老文档（index_ruleset = 'embed-text-1.0'）照样召回得到；

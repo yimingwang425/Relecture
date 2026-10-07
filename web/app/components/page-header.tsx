@@ -18,11 +18,11 @@ export function PageHeader({
   aside?: ReactNode;
 }) {
   return (
-    <header className="mt-10 mb-8 flex flex-wrap items-end justify-between gap-x-8 gap-y-4 sm:mt-14">
-      <div className="min-w-0 max-w-[720px]">
-        {eyebrow && <p className="t-eyebrow enter mb-3">{eyebrow}</p>}
+    <header className="mt-12 mb-10 flex flex-wrap items-end justify-between gap-x-10 gap-y-5 sm:mt-20 sm:mb-14">
+      <div className="min-w-0 max-w-[780px]">
+        {eyebrow && <p className="t-eyebrow enter mb-5">{eyebrow}</p>}
         <h1 className="t-display enter-wipe">{title}</h1>
-        {lead && <p className="t-body enter-late mt-3 max-w-[62ch]">{lead}</p>}
+        {lead && <p className="t-body enter-late mt-5 max-w-[58ch] text-[var(--c-muted-text)]">{lead}</p>}
       </div>
       {aside && <div className="enter-late shrink-0">{aside}</div>}
     </header>

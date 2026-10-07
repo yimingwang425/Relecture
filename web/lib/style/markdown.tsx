@@ -60,12 +60,26 @@ type Block =
   | { kind: "p" | "quote" | "h"; lines: string[] }
   | { kind: "ul" | "ol"; items: string[] };
 
-/** 按空行与行首标记切块。同类相邻行合并，段内换行按空格接起来（中文段落不需要硬换行）。 */
+/**
+ * 按空行与行首标记切块。同类相邻行合并，段内换行接起来（中文段落不需要硬换行）。
+ *
+ * ⚠️ **空行结束一个自然段**（2026-10-07 修）。原实现遇到空行只是 `continue`，
+ * 下一行又落进 `last.kind === "p"` 分支被并进上一段——这段注释一直写着「按空行切块」，
+ * 代码却没有切。后果是**每一段讲解都渲染成一整段**：模型按讲法分好的段落、
+ * 审查器量过的「平均段落字数」，到了屏幕上全没了。2026-10-07 UI 走查截图时才看出来，
+ * 因为 16 个样例的判据只数标记有没有被吃掉，不数段落。
+ *
+ * 列表与引用仍然跨空行合并（松散列表 `- a\n\n- b` 是同一张列表）。
+ */
 function blocks(text: string): Block[] {
   const out: Block[] = [];
+  let paragraphOpen = false;
   for (const rawLine of text.split("\n")) {
     const line = rawLine.trim();
-    if (!line) continue;
+    if (!line) {
+      paragraphOpen = false;
+      continue;
+    }
 
     const ul = /^[-*]\s+(.*)$/.exec(line);
     const ol = /^\d+\.\s+(.*)$/.exec(line);
@@ -84,13 +98,21 @@ function blocks(text: string): Block[] {
       else out.push({ kind: "quote", lines: [quote[1]] });
     } else if (heading) {
       out.push({ kind: "h", lines: [heading[1]] });
-    } else if (last?.kind === "p") {
+    } else if (last?.kind === "p" && paragraphOpen) {
       last.lines.push(line);
     } else {
       out.push({ kind: "p", lines: [line] });
     }
+    paragraphOpen = !ul && !ol && !quote && !heading;
   }
   return out;
+}
+
+/** 两侧都是中文（含全角标点）时直接接上，否则补一个空格——中文行间多出的空格会显示成一道缝。 */
+const CJK = /[\u3000-\u303f\u3400-\u9fff\uff00-\uffef]/;
+export function joinLines(lines: string[]): string {
+  return lines.reduce((acc, line) =>
+    acc === "" ? line : CJK.test(acc.at(-1)!) || CJK.test(line[0]) ? acc + line : `${acc} ${line}`, "");
 }
 
 export function Markdown({ text }: { text: string }) {
@@ -101,7 +123,7 @@ export function Markdown({ text }: { text: string }) {
         switch (block.kind) {
           case "h":
             return (
-              <p key={key} className="mt-4 font-[var(--fw-semibold)] first:mt-0">
+              <p key={key} className="md-h mt-4 font-[var(--fw-semibold)] first:mt-0">
                 {inline(block.lines[0], key)}
               </p>
             );
@@ -111,7 +133,7 @@ export function Markdown({ text }: { text: string }) {
                 key={key}
                 className="my-3 border-l-2 border-[var(--c-accent)] bg-[var(--c-quote-bg)] py-2 pl-3 pr-2 text-[0.95em] text-[var(--c-ink-soft)]"
               >
-                {inline(block.lines.join(" "), key)}
+                {inline(joinLines(block.lines), key)}
               </blockquote>
             );
           case "ul":
@@ -133,7 +155,7 @@ export function Markdown({ text }: { text: string }) {
           default:
             return (
               <p key={key} className="my-3 first:mt-0 last:mb-0">
-                {inline(block.lines.join(" "), key)}
+                {inline(joinLines(block.lines), key)}
               </p>
             );
         }

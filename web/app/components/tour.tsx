@@ -176,9 +176,14 @@ export function Tour() {
       ref={(el) => {
         dialogRef.current = el;
         // 挂上就打开。`showModal()` 只能在元素进 DOM 之后调。
-        if (el && !el.open) el.showModal();
+        if (el && !el.open) {
+          el.showModal();
+          // 焦点放到「下一步」：`showModal()` 默认聚焦第一个可聚焦元素，也就是第一个进度点，
+          // 它会被套上一圈焦点环，看起来像选中了什么。
+          el.querySelector<HTMLButtonElement>('[data-field="tour-next"]')?.focus();
+        }
       }}
-      className="dialog"
+      className="dialog w-[min(560px,calc(100vw-24px))]"
       data-field="tour"
       data-step={i + 1}
       onCancel={(e) => {
@@ -187,7 +192,7 @@ export function Tour() {
         finish();
       }}
     >
-      <div className="dialog__body">
+      <div className="dialog__body p-5 sm:p-6">
         {/* key：换一步就重挂载，动画从头播一遍。 */}
         <div key={i} className="tour-stage" style={step.vars}>
           <div className="tour-zoom">{step.mock}</div>
@@ -196,10 +201,13 @@ export function Tour() {
           )}
         </div>
 
-        <h2 className="t-title mt-5 text-[17px]">{step.title}</h2>
-        <p className="t-body mt-2">{step.lead}</p>
+        <p className="t-eyebrow mt-7">
+          {String(i + 1).padStart(2, "0")} / {String(STEPS.length).padStart(2, "0")}
+        </p>
+        <h2 className="t-title mt-3 text-[24px]">{step.title}</h2>
+        <p className="t-body mt-2 text-[var(--c-muted-text)]">{step.lead}</p>
 
-        <div className="mt-6 flex items-center justify-between gap-4">
+        <div className="mt-8 flex items-center justify-between gap-4">
           <div className="tour-dots" data-field="tour-dots">
             {STEPS.map((s, k) => (
               <button

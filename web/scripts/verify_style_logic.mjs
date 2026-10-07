@@ -533,6 +533,25 @@ console.log("\n\x1b[1m六 · 16 个样例都渲染得出来\x1b[0m");
     "正文里的 HTML 被转义，不当标签渲染",
     evil.slice(0, 80),
   );
+
+  // 段落（2026-10-07 补）：上面几条只数标记有没有被吃掉，**不数段落**——于是
+  // 「空行不分段、整篇讲解渲染成一段」在这一节全绿地活了一个月。
+  // 计数从语料自己数：每个样例空行分出的自然段数，渲染后 <p> 至少要有那么多个
+  // 去掉列表 / 引用 / 标题之后的块。这里只钉最小形态，它就足以分辨。
+  const paras = (t) => (renderToStaticMarkup(createElement(Markdown, { text: t })).match(/<p\b/g) ?? []).length;
+  check(paras("第一段。\n\n第二段。\n\n第三段。") === 3, "空行分开的三段渲染成三个 <p>",
+    `实得 ${paras("第一段。\n\n第二段。\n\n第三段。")}`);
+  check(paras("同一段的上半句，\n下半句。") === 1, "反向控制：段内单换行仍是同一段",
+    "← 上一条若靠「每行一段」通过，这条会红");
+  const soft = renderToStaticMarkup(createElement(Markdown, { text: "中文上半句，\n下半句。" }));
+  check(!/， 下/.test(soft) && /，下/.test(soft), "中文段内换行接起来不留空格", soft.slice(0, 80));
+  const latin = renderToStaticMarkup(createElement(Markdown, { text: "first half\nsecond half" }));
+  check(/half second/.test(latin), "反向控制：拉丁字母之间仍补一个空格", latin.slice(0, 80));
+  const sampleParas = samples.reduce((n, s) =>
+    n + s.text.split(/\n\s*\n/).filter((b) => /^(?![-*>#]|\d+\.)\S/.test(b.trim())).length, 0);
+  const renderedParas = (all.match(/<p\b/g) ?? []).length;
+  check(renderedParas >= sampleParas, "16 个样例：渲染出的 <p> 不少于语料里空行分出的正文段",
+    `语料 ${sampleParas} 段 · 渲染 ${renderedParas} 个 <p>`);
 }
 
 

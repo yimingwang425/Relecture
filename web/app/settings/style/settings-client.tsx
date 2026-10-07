@@ -188,7 +188,11 @@ export function StyleSettings({
     <div data-events-pending={eventState.pending} data-events-dropped={eventState.dropped}>
       <PageHeader
         eyebrow="讲解风格"
-        title="按你读得进去的方式讲"
+        title={
+          <>
+            按你<em>读得进去</em>的方式讲
+          </>
+        }
         lead="讲解按这四条来。改完保存即刻生效，下一次讲解就用新的。"
       />
 
@@ -220,20 +224,18 @@ export function StyleSettings({
         </div>
       )}
 
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,360px)]">
+      <div className="grid items-start gap-x-14 gap-y-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,360px)]">
         {/* ================================================================ 四条轴 */}
-        <section className="card enter p-2">
-          <div className="px-3 pt-3 pb-4">
-            <p className="t-eyebrow"># 四条轴</p>
-            <h2 className="t-title mt-1">直接改</h2>
-          </div>
+        <section className="enter">
+          <p className="t-eyebrow mb-5">四条轴 · 直接改</p>
 
-          <div className="panel divide-y divide-[var(--c-border-row)]">
-            {AXIS_IDS.map((axis) => (
-              <fieldset key={axis} data-axis={axis} className="p-4 sm:p-5">
+          <div className="border-t border-[var(--c-ink)]">
+            {AXIS_IDS.map((axis, ai) => (
+              <fieldset key={axis} data-axis={axis} className="border-b border-[var(--c-border-row)] py-7">
                 <legend className="contents">
-                  <span className="t-heading mb-3 flex flex-wrap items-center gap-2">
-                    {AXIS_LABEL[axis]}
+                  <span className="mb-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                    <span className="t-num text-[19px]">{String(ai + 1).padStart(2, "0")}</span>
+                    <span className="t-title text-[21px]">{AXIS_LABEL[axis]}</span>
                     {ENFORCED[axis] ? (
                       <span className="chip chip--accent h-6 px-2 text-[11.5px]">会被自动审查</span>
                     ) : (
@@ -242,7 +244,7 @@ export function StyleSettings({
                   </span>
                 </legend>
 
-                <div className="grid gap-2 sm:grid-cols-3">
+                <div className="grid gap-2.5 sm:grid-cols-3">
                   {(AXES[axis] as readonly string[]).map((value) => {
                     const active = draft[axis] === value;
                     return (
@@ -256,7 +258,7 @@ export function StyleSettings({
                         onClick={() =>
                           setDraft({ ...draft, [axis]: value } as StyleConfig)
                         }
-                        className="choice cursor-pointer p-3 text-left"
+                        className="choice cursor-pointer px-4 py-3.5 text-left"
                       >
                         <span className="t-ui block">
                           {(VALUE_LABEL[axis] as Record<string, string>)[value]}
@@ -272,7 +274,7 @@ export function StyleSettings({
             ))}
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 px-3 pt-4 pb-3">
+          <div className="sticky bottom-4 z-20 mt-8 flex flex-wrap items-center gap-3 rounded-full border border-[var(--c-border-row)] bg-[color-mix(in_srgb,var(--c-sheet)_88%,transparent)] py-2 pr-5 pl-2 shadow-[var(--shadow-float)] backdrop-blur-md sm:w-fit">
             <button
               type="button"
               className="btn btn--primary"
@@ -299,16 +301,16 @@ export function StyleSettings({
         </section>
 
         {/* ================================================================ 反馈 */}
-        <aside className="card enter-late p-2 lg:sticky lg:top-[84px]">
-          <div className="px-3 pt-3 pb-4">
-            <p className="t-eyebrow"># 反馈</p>
-            <h2 className="t-title mt-1">读完一段讲解之后</h2>
-            <p className="t-meta mt-1">
+        <aside className="card card--raised enter-late p-6 lg:sticky lg:top-8">
+          <div className="pb-5">
+            <p className="t-eyebrow">反馈</p>
+            <h2 className="t-title mt-3">读完一段讲解之后</h2>
+            <p className="t-meta mt-2">
               点一下就按下面的规则调整配置 —— 除「例子没懂」外，改的都是<b>以后所有讲解</b>。
             </p>
           </div>
 
-          <div className="panel p-4">
+          <div>
             <div className="grid grid-cols-2 gap-2">
               {FEEDBACK_KINDS.map((kind) => (
                 <button

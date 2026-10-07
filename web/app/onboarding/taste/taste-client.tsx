@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 
 import type { Arm } from "@/lib/style/axes";
@@ -209,26 +209,34 @@ export function TasteBoards({
 
   return (
     <div className="enter pb-28" data-events-pending={eventState.pending} data-events-dropped={eventState.dropped}>
-      <header className="mt-10 mb-8 sm:mt-14">
-        
-        <h1 className="t-display enter-wipe">先说说你的口味</h1>
-        <p className="t-body mt-3 max-w-[62ch]">点几个就行。之后在讲解里随时能改——那时你手上有具体的东西可以反应。</p>
+      <header className="mt-14 mb-12 sm:mt-24 sm:mb-16">
+        <p className="t-eyebrow enter mb-5">开始之前 · 一分钟</p>
+        <h1 className="t-display enter-wipe">
+          先说说你的<em>口味</em>
+        </h1>
+        <p className="t-body enter-late mt-5 max-w-[58ch] text-[var(--c-muted-text)]">点几个就行。之后在讲解里随时能改——那时你手上有具体的东西可以反应。</p>
       </header>
 
-      <div className="flex flex-col gap-8">
-        {perBoard.map(({ board, picked }) => (
-          <section key={board.id} data-board={board.id} className="card p-2">
-            <div className="flex flex-wrap items-baseline justify-between gap-2 px-3 pt-3 pb-4">
+      <div className="stagger flex flex-col border-t border-[var(--c-ink)]">
+        {perBoard.map(({ board, picked }, bi) => (
+          <section
+            key={board.id}
+            data-board={board.id}
+            style={{ "--i": bi } as CSSProperties}
+            className="grid gap-x-10 gap-y-5 border-b border-[var(--c-border-row)] py-9 md:grid-cols-[minmax(0,15rem)_minmax(0,1fr)] md:py-12"
+          >
+            <div className="flex items-start justify-between gap-4 md:flex-col md:justify-start">
               <div>
-                <h2 className="t-title">{board.title}</h2>
-                <p className="t-meta mt-1 max-w-[56ch]">{board.lead}</p>
+                <span className="t-num text-[22px]">{String(bi + 1).padStart(2, "0")}</span>
+                <h2 className="t-title mt-2 text-[24px]">{board.title}</h2>
+                <p className="t-meta mt-2 max-w-[40ch]">{board.lead}</p>
               </div>
               <span className="t-caption kbd-count shrink-0" data-field={`count-${board.id}`}>
                 {picked.length} / {board.max}
               </span>
             </div>
 
-            <div className="panel flex flex-wrap gap-2 p-4">
+            <div className="flex flex-wrap content-start gap-2.5">
               {board.tags.map((tag) => {
                 const active = selected.includes(tag.id);
                 const full = !active && board.max > 1 && picked.length >= board.max;
@@ -241,14 +249,11 @@ export function TasteBoards({
                     aria-pressed={active}
                     disabled={full || busy}
                     onClick={() => toggle(board.id, tag.id)}
-                    className={`chip h-auto cursor-pointer px-4 py-2 text-[14px] transition-colors ${
-                      active
-                        ? "border-[var(--c-accent)] bg-[var(--c-accent-wash)] text-[var(--c-accent-ink)]"
-                        : full
-                          ? "opacity-40"
-                          : "hover:border-[var(--c-border-strong)]"
-                    }`}
+                    className={`choice choice--tag ${full ? "opacity-40" : ""}`}
                   >
+                    <span className="tick" aria-hidden>
+                      ✓
+                    </span>
                     {tag.label}
                   </button>
                 );
@@ -256,7 +261,7 @@ export function TasteBoards({
             </div>
 
             {board.max > 1 && picked.length >= board.max && (
-              <p className="t-caption px-3 py-2" data-field={`full-${board.id}`}>
+              <p className="t-caption md:col-start-2" data-field={`full-${board.id}`}>
                 最多 {board.max} 个。想换先取消一个。
               </p>
             )}
@@ -280,20 +285,25 @@ export function TasteBoards({
       )}
 
       {/* 操作条吸底：三块要滚，按钮不能只在页底。 */}
-      <div className="sticky bottom-4 z-20 mt-8">
-        <div className="panel card--raised flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
+      <div className="sticky bottom-5 z-20 mt-12">
+        <div className="mx-auto flex w-fit max-w-full flex-wrap items-center gap-x-5 gap-y-2 rounded-full bg-[var(--c-ink)] py-2 pr-2 pl-6 text-[var(--c-on-dark)] shadow-[var(--shadow-float)]">
+          <span className="t-meta text-[rgb(251_249_244/0.72)]" data-field="gate">
+            {unmet.length === 0 ? `已选 ${selected.length}` : `还差：${unmet.map(({ board }) => board.title).join(" · ")}`}
+          </span>
           <button
             type="button"
-            className="btn btn--primary"
+            className="btn btn--light"
             disabled={!canContinue}
             onClick={() => void submit()}
             data-action="continue"
           >
             {busy ? "保存中…" : "开始用"}
+            {!busy && (
+              <span className="btn__arrow" aria-hidden>
+                →
+              </span>
+            )}
           </button>
-          <span className="t-meta" data-field="gate">
-            {unmet.length === 0 ? `已选 ${selected.length}` : `还差：${unmet.map(({ board }) => board.title).join(" · ")}`}
-          </span>
         </div>
       </div>
     </div>

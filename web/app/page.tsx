@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import type { CSSProperties } from "react";
 import { redirect } from "next/navigation";
 
 import { ApiWarmup } from "@/app/components/api-warmup";
@@ -79,8 +80,18 @@ export default async function HomePage() {
       ) : (
         <>
           <PageHeader
-            eyebrow="我的课程"
-            title={courses.length > 0 ? "打开一门课，开始提问" : "先建一门课"}
+            eyebrow={courses.length > 0 ? `我的课程 · ${courses.length} 门` : "我的课程"}
+            title={
+              courses.length > 0 ? (
+                <>
+                  打开一门课，<em>开始提问</em>
+                </>
+              ) : (
+                <>
+                  先建<em>一门课</em>
+                </>
+              )
+            }
             lead={
               courses.length > 0
                 ? "一门课就是一个项目：它的课件、提问和讲解都在里面。"
@@ -88,49 +99,61 @@ export default async function HomePage() {
             }
           />
 
-          {API_BASE_URL ? (
-            <div className="enter mb-8 max-w-[520px]">
-              {/* 叫醒它，**在用户开始打字之前**。建课是打开这一页之后最可能做的事，
-                  而那一次请求正好撞上冷启动（F74）。 */}
-              <ApiWarmup apiBase={API_BASE_URL} />
-              <NewCourse apiBase={API_BASE_URL} />
-            </div>
-          ) : (
-            <p role="alert" data-field="no-api-base" className="notice notice--warn mb-8">
-              <b>还没配 <code>NEXT_PUBLIC_API_BASE_URL</code>。</b>
-              建课、上传与讲解要用产品服务端（<code>api/</code>，部署在 Render）。
-              配好之后刷新即可 —— 课程列表不受影响，它直连 Supabase。
-            </p>
-          )}
+          <div className="grid items-start gap-x-16 gap-y-14 lg:grid-cols-[minmax(0,1fr)_340px]">
+            {courses.length === 0 ? (
+              <div className="index enter-late lg:order-1">
+                <p className="t-meta py-8" data-field="no-courses">
+                  还没有课程。用{API_BASE_URL ? "旁边" : "上面"}的输入框建第一门。
+                </p>
+              </div>
+            ) : (
+              <ul className="index stagger" data-field="courses">
+                {courses.map((c, i) => (
+                  <li key={c.id} style={{ "--i": i } as CSSProperties}>
+                    <Link
+                      href={`/courses/${c.id}`}
+                      data-field="course-card"
+                      data-course-id={c.id}
+                      className="index__row"
+                    >
+                      <span className="index__num">{String(i + 1).padStart(2, "0")}</span>
+                      <span className="index__name">{c.name}</span>
+                      <span className="index__meta">
+                        <span className="index__date">建于 {new Date(c.created_at).toLocaleDateString("zh-CN")}</span>
+                        <span className="index__arrow" aria-hidden>
+                          →
+                        </span>
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
 
-          {courses.length === 0 ? (
-            <p className="t-meta" data-field="no-courses">
-              还没有课程。用上面的输入框建第一门。
-            </p>
-          ) : (
-            <ul className="enter-late grid gap-3 sm:grid-cols-2 lg:grid-cols-3" data-field="courses">
-              {courses.map((c) => (
-                <li key={c.id}>
-                  <Link
-                    href={`/courses/${c.id}`}
-                    data-field="course-card"
-                    data-course-id={c.id}
-                    className="card card--raised flex h-full flex-col justify-between gap-6 p-5 no-underline transition-transform hover:-translate-y-0.5"
-                  >
-                    <span className="t-title block">{c.name}</span>
-                    <span className="t-caption">
-                      建于 {new Date(c.created_at).toLocaleDateString("zh-CN")} · 进入提问 →
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
+            {API_BASE_URL ? (
+              <section className="enter-late lg:sticky lg:top-8">
+                <p className="t-eyebrow mb-4">新建一门课</p>
+                {/* 叫醒它，**在用户开始打字之前**。建课是打开这一页之后最可能做的事，
+                    而那一次请求正好撞上冷启动（F74）。 */}
+                <div className="mb-4 empty:hidden">
+                  <ApiWarmup apiBase={API_BASE_URL} />
+                </div>
+                <NewCourse apiBase={API_BASE_URL} />
+                <p className="t-caption mt-4">建好之后在课里上传 PDF 讲义，就能对着它提问。</p>
+              </section>
+            ) : (
+              <p role="alert" data-field="no-api-base" className="notice notice--warn">
+                <b>还没配 <code>NEXT_PUBLIC_API_BASE_URL</code>。</b>
+                建课、上传与讲解要用产品服务端（<code>api/</code>，部署在 Render）。
+                配好之后刷新即可 —— 课程列表不受影响，它直连 Supabase。
+              </p>
+            )}
+          </div>
         </>
       )}
 
       <Diagnostics
-        className="mt-12"
+        className="mt-24"
         items={[
           ["账号", auth.user.email ?? "—"],
           ["user_id", auth.user.id, "user-id"],

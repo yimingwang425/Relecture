@@ -73,15 +73,15 @@ export function NewCourse({ apiBase }: { apiBase: string }) {
   }
 
   return (
-    <form onSubmit={create} className="flex flex-col gap-2" data-field="new-course">
-      <div className="flex gap-2">
+    <form onSubmit={create} className="flex flex-col gap-3" data-field="new-course">
+      <div className="flex items-end gap-4">
         <input
           data-field="new-course-name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="新课程名，例如 18.06 线性代数"
           aria-label="新课程名"
-          className="input flex-1"
+          className="input input--line flex-1"
         />
         <button
           type="submit"
@@ -90,6 +90,11 @@ export function NewCourse({ apiBase }: { apiBase: string }) {
           className="btn btn--primary shrink-0"
         >
           {busy ? "建课中…" : "建课"}
+          {!busy && (
+            <span className="btn__arrow" aria-hidden>
+              →
+            </span>
+          )}
         </button>
       </div>
       {error && (

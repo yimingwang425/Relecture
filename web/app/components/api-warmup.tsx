@@ -80,7 +80,7 @@ export function ApiWarmup({ apiBase }: { apiBase: string }) {
   if (state.kind === "waking") {
     return (
       <p className="notice notice--info text-[13px]" data-field="api-waking" data-state="waking">
-        <span aria-hidden className="spinner mr-2 inline-block align-[-2px]" />
+        <span aria-hidden className="pulse-dot mr-3 align-[1px]" />
         正在叫醒讲解服务（免费层 15 分钟没人用就休眠，首次唤醒要几十秒）。
         {state.attempt > 1 ? ` 第 ${state.attempt} 次尝试。` : ""}
         <b>这期间建课与提问会失败</b>，等这行字消失再试。

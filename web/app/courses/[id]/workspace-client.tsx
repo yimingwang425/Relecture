@@ -7,7 +7,9 @@ import { ApiWarmup } from "@/app/components/api-warmup";
 import { Tour } from "@/app/components/tour";
 import { ExplainClient } from "@/app/explain/explain-client";
 import { CourseUpload } from "@/app/courses/upload-client";
+import { IconBack, IconClose, IconDoc, IconMenu, IconPen, IconPlus } from "@/app/components/icons";
 import { StatusDot } from "@/app/components/status-dot";
+import { Wordmark } from "@/app/components/wordmark";
 import type { Arm } from "@/lib/style/axes";
 import { turnsFromMessages, type Turn } from "@/lib/explain/turns";
 import { createClient } from "@/lib/supabase/client";
@@ -79,6 +81,8 @@ export function Workspace({
   const [docs, setDocs] = useState(initialDocuments);
   const [error, setError] = useState<string | null>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
+  /** 窄屏上侧栏是抽屉。宽屏上这个值不起作用（CSS 只在窄屏读 data-open）。 */
+  const [navOpen, setNavOpen] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   const supabase = useCallback(() => createClient(), []);
@@ -171,51 +175,98 @@ export function Workspace({
     if (e) setError(`给课件改名失败：${e.message}`);
   }
 
+  const openDocs = () => {
+    setNavOpen(false);
+    dialogRef.current?.showModal();
+  };
+
   return (
     <div className="ws" data-course-id={course.id}>
       {/* 进提问页时弹一次，讲清「调整讲法在哪、两种用法各是什么」。
           它自己判断看没看过，看过就什么都不渲染。 */}
       <Tour />
+
+      {/* 窄屏顶栏：目录 · 课名 · 课件。宽屏上不渲染（CSS 隐藏）。 */}
+      <header className="ws-top">
+        <button
+          type="button"
+          className="icon-btn"
+          aria-label="打开目录"
+          aria-expanded={navOpen}
+          aria-controls="ws-side"
+          onClick={() => setNavOpen(true)}
+        >
+          <IconMenu size={20} />
+        </button>
+        <p className="ws-top__title">{course.name}</p>
+        <button type="button" className="icon-btn" aria-label="我的课件" onClick={openDocs}>
+          <IconDoc size={20} />
+        </button>
+      </header>
+      <button
+        type="button"
+        className="ws-scrim"
+        data-open={navOpen}
+        aria-label="关闭目录"
+        tabIndex={navOpen ? 0 : -1}
+        onClick={() => setNavOpen(false)}
+      />
+
       {/* ============================================================ 侧栏 */}
-      <aside className="ws-side">
-        <div className="flex items-center justify-between gap-2 px-2">
-          <Link href="/" className="t-caption link no-underline">
-            ← 我的课程
+      <aside className="ws-side" id="ws-side" data-open={navOpen}>
+        <div className="flex items-center justify-between gap-2 px-[10px]">
+          <Link href="/" className="wordmark-sm text-[22px]" aria-label="Relecture，回到我的课程">
+            <Wordmark />
           </Link>
-          <Link href="/settings" className="t-caption link no-underline">
-            设置
-          </Link>
+          <button
+            type="button"
+            className="icon-btn -mr-2 min-[900px]:hidden"
+            aria-label="关闭目录"
+            onClick={() => setNavOpen(false)}
+          >
+            <IconClose />
+          </button>
         </div>
 
-        <div className="px-2">
-          <p className="t-title text-[17px]" data-field="course-name">
+        <div className="ws-course">
+          <Link href="/" className="t-caption link no-underline inline-flex items-center gap-1.5">
+            <IconBack size={13} /> 我的课程
+          </Link>
+          <p className="ws-course__name mt-3" data-field="course-name">
             {course.name}
           </p>
         </div>
 
-        <div>
+        <div className="flex flex-col gap-0.5">
+          <button type="button" className="side-item" data-field="open-documents" onClick={openDocs}>
+            <span className="side-item__icon">
+              <IconDoc />
+            </span>
+            我的课件
+            <span className="side-item__aux">{docs.length} 份</span>
+          </button>
           <button
             type="button"
             className="side-item"
-            data-field="open-documents"
-            onClick={() => dialogRef.current?.showModal()}
+            data-field="new-conversation"
+            onClick={() => {
+              setNavOpen(false);
+              void newConversation();
+            }}
           >
-            <span aria-hidden>📄</span>
-            我的课件
-            <span className="t-caption ml-auto">{docs.length}</span>
-          </button>
-          <button type="button" className="side-item" data-field="new-conversation" onClick={() => void newConversation()}>
-            <span aria-hidden>＋</span>
+            <span className="side-item__icon">
+              <IconPlus />
+            </span>
             新对话
           </button>
         </div>
 
         <div className="min-h-0 flex-1">
-          <p className="side-label mb-1">对话</p>
+          <p className="side-label mb-2">对话</p>
           {conversations.length === 0 ? (
             <p className="t-caption px-[10px]">还没有对话。按「新对话」开一个。</p>
           ) : (
-            <ul data-field="conversations">
+            <ul data-field="conversations" className="flex flex-col gap-0.5">
               {conversations.map((c) => (
                 <li key={c.id}>
                   {renaming === c.id ? (
@@ -223,7 +274,7 @@ export function Workspace({
                       autoFocus
                       defaultValue={c.title}
                       maxLength={80}
-                      className="input"
+                      className="input min-h-[40px] text-[14px]"
                       data-field="conversation-rename"
                       onBlur={(e) => void rename(c.id, e.target.value)}
                       onKeyDown={(e) => {
@@ -238,7 +289,10 @@ export function Workspace({
                       data-field="conversation"
                       data-conversation-id={c.id}
                       aria-current={c.id === activeId}
-                      onClick={() => setActiveId(c.id)}
+                      onClick={() => {
+                        setActiveId(c.id);
+                        setNavOpen(false);
+                      }}
                       onDoubleClick={() => setRenaming(c.id)}
                     >
                       <span className="min-w-0 flex-1 truncate">{c.title}</span>
@@ -246,7 +300,8 @@ export function Workspace({
                         role="button"
                         tabIndex={0}
                         aria-label={`重命名「${c.title}」`}
-                        className="t-caption shrink-0 opacity-60 hover:opacity-100"
+                        title="改名"
+                        className="side-item__edit side-item__icon -my-1 rounded-full hover:bg-[var(--c-paper-deep)] hover:text-[var(--c-ink)]"
                         onClick={(e) => {
                           e.stopPropagation();
                           setRenaming(c.id);
@@ -259,7 +314,7 @@ export function Workspace({
                           }
                         }}
                       >
-                        改名
+                        <IconPen size={14} />
                       </span>
                     </button>
                   )}
@@ -274,42 +329,55 @@ export function Workspace({
             {error}
           </p>
         )}
+
+        <div className="flex items-center justify-between border-t border-[var(--c-border-row)] px-[10px] pt-4">
+          <Link href="/settings" className="t-caption link no-underline">
+            设置
+          </Link>
+          <Link href="/settings/style" className="t-caption link no-underline">
+            讲解风格
+          </Link>
+        </div>
       </aside>
 
       {/* ============================================================ 聊天 */}
       <div className="ws-main">
         {/* 同首页：提问与上传都要这个服务，而进这一页之后马上就会用到它。 */}
-        <div className="mx-auto w-full max-w-[46rem] px-4 pt-3">
+        <div className="mx-auto w-full max-w-[44rem] px-[var(--page-margin)] pt-4 empty:hidden">
           <ApiWarmup apiBase={apiBase} />
         </div>
         {docs.length === 0 ? (
-          <div className="ws-empty">
-            <p className="t-title">这门课还没有材料</p>
-            <p className="t-body mt-2">
+          <div className="ws-empty enter">
+            <span className="ws-empty__mark" aria-hidden>
+              §
+            </span>
+            <p className="t-display text-[clamp(28px,3vw,40px)]">这门课还没有材料</p>
+            <p className="t-body mt-3 text-[var(--c-muted-text)]">
               讲解只用你上传的材料，不靠通用知识补全。先传一份 PDF 讲义。
             </p>
-            <button
-              type="button"
-              className="btn btn--primary mt-5"
-              onClick={() => dialogRef.current?.showModal()}
-            >
-              上传课件
+            <button type="button" className="btn btn--primary btn--lg mt-7" onClick={openDocs}>
+              上传课件 <span className="btn__arrow" aria-hidden>→</span>
             </button>
           </div>
         ) : activeId === null ? (
-          <div className="ws-empty">
-            <p className="t-title">开一个对话</p>
-            <p className="t-body mt-2">
+          <div className="ws-empty enter">
+            <span className="ws-empty__mark" aria-hidden>
+              ¶
+            </span>
+            <p className="t-display text-[clamp(28px,3vw,40px)]">开一个对话</p>
+            <p className="t-body mt-3 text-[var(--c-muted-text)]">
               一个对话一个上下文。按周分开，追问时它才知道「刚才那一点」指的是什么。
             </p>
-            <button type="button" className="btn btn--primary mt-5" onClick={() => void newConversation()}>
-              新对话
+            <button type="button" className="btn btn--primary btn--lg mt-7" onClick={() => void newConversation()}>
+              新对话 <span className="btn__arrow" aria-hidden>→</span>
             </button>
           </div>
         ) : turns === null ? (
-          <div className="ws-empty" aria-label="读取中">
-            <div className="skeleton h-5 w-[40%]" />
-            <div className="skeleton mt-3 h-5 w-[70%]" />
+          <div className="mx-auto flex w-full max-w-[44rem] flex-col gap-3 px-[var(--page-margin)] pt-16" aria-label="读取中">
+            <div className="skeleton h-7 w-[55%]" />
+            <div className="skeleton mt-4 h-4 w-full" />
+            <div className="skeleton h-4 w-[92%]" />
+            <div className="skeleton h-4 w-[70%]" />
           </div>
         ) : (
           <ExplainClient
@@ -330,23 +398,30 @@ export function Workspace({
       {/* ============================================================ 课件弹窗 */}
       <dialog ref={dialogRef} className="dialog" data-field="documents-dialog">
         <div className="dialog__head">
-          <h2 className="t-title text-[17px]">我的课件</h2>
+          <div>
+            <p className="t-eyebrow">{course.name}</p>
+            <h2 className="t-title mt-1.5">我的课件</h2>
+          </div>
           <form method="dialog">
-            <button className="btn btn--ghost btn--sm">关闭</button>
+            <button className="icon-btn" aria-label="关闭">
+              <IconClose />
+            </button>
           </form>
         </div>
         <div className="dialog__body">
           {docs.length > 0 && (
             <ul className="mb-6 flex flex-col gap-2" data-field="documents">
               {docs.map((d) => (
-                <li key={d.id} className="row">
-                  <StatusDot kind={d.verdict === "unusable" ? "warn" : "ok"} />
+                <li key={d.id} className="row items-center">
+                  <span className="text-[var(--c-muted-text)]">
+                    <IconDoc size={22} />
+                  </span>
                   <div className="min-w-0 flex-1">
                     <input
                       defaultValue={d.display_name ?? ""}
                       placeholder={d.filename}
                       maxLength={80}
-                      className="input"
+                      className="input min-h-[40px] border-transparent bg-transparent px-2 py-1 font-[var(--fw-medium)] hover:border-[var(--c-border-row)]"
                       data-field="document-rename"
                       aria-label={`给「${d.filename}」起个名字`}
                       onBlur={(e) => void renameDoc(d.id, e.target.value)}
@@ -354,8 +429,10 @@ export function Workspace({
                         if (e.key === "Enter") e.currentTarget.blur();
                       }}
                     />
-                    <p className="row__sub mt-1">
-                      {d.page_count} 页 · <span className="mono">{d.filename}</span>
+                    <p className="row__sub mt-1.5 flex min-w-0 items-center gap-2">
+                      <StatusDot kind={d.verdict === "unusable" ? "warn" : "ok"} className="!mt-0 scale-[0.8]" />
+                      <span className="shrink-0">{d.page_count} 页</span>
+                      <span className="truncate">{d.filename}</span>
                     </p>
                   </div>
                 </li>

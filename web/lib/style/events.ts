@@ -342,9 +342,11 @@ export function classifyInsertFailure(error: { code?: string | null }): "transie
  *    读事件是分析行为，走 service_role。
  * 2. **失败不抛，返回结果。** 埋点写不进去不该打断用户的 onboarding；
  *    但也**不能静默**，所以失败时输出一条结构化日志，调用方还能把它显示出来。
- * 3. **`arm` 不由调用方随便给。** 数据库有一条 `arm = f1_assign_arm(user_id)`
- *    的 CHECK（见迁移），传错会直接 23514。这里照样要求传进来，是因为
+ * 3. **`arm` 不由调用方随便给。** 数据库有一个触发器要求 `arm = style_config.f1_arm`
+ *    （迁移 20261007120000，口径 F102），传错会直接 23514。这里照样要求传进来，是因为
  *    页面本来就从自己那行读到了 `f1_arm`——传的是同一个值，只是多了一道校验。
+ *    ⚠️ 2026-09-20 到 10-07 之间那道校验对照的是 `f1_assign_arm()`（恒 taste），
+ *    09-20 之前注册的用户的事件因此**全部**被拒——见那条迁移的文件头。
  */
 export async function recordEvent(
   sink: EventSink,

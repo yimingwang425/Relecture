@@ -765,7 +765,7 @@ async function main() {
       payload: FULL_PAYLOADS.style_pair_shown,
     });
     forgedErr?.code === "23514"
-      ? ok("伪造 arm 被拒", `${realArm} 之外的值写不进去 ← arm = f1_assign_arm(user_id)`)
+      ? ok("伪造 arm 被拒", `${realArm} 之外的值写不进去 ← 2026-10-07 起拦它的是触发器 style_events_arm_matches_config（对照 style_config.f1_arm，F102）`)
       : bad("伪造 arm 被放行", String(forgedErr?.code));
 
     // ---- 冒名：A 写 user_id = B 的事件。挡它的是 RLS 的 with check（insert 有授权）。
@@ -2155,6 +2155,52 @@ async function main() {
   // slice_lexicon + match_slices_lexical + documents.index_ruleset / vision_pages。
   // 八组：①允许控制 ②跨用户 ③口径不混用 ④排序方向 ⑤owner 一致性（RLS 挡不住的那类）
   // ⑥不给 update ⑦cascade ⑧vision_pages 必须是数组。每条「拒绝」都配一条「允许」。
+  // ============================================================ 老用户的事件（2026-10-07，口径 F102）
+  //
+  // 09-20 之前注册的用户 f1_arm 是 pairwise / text，而 f1_assign_arm() 自 F85 起恒为 taste。
+  // 本地此前**从来没有这样的用户**——所有用户都在迁移跑完之后才注册，f1_arm 恒为 taste，
+  // 于是旧 CHECK 对他们恒成立，那个生产 bug 在这里一次都没出现过。这一节专门造一个老用户。
+  console.log("\n\x1b[1m老用户的事件 · arm 对照 style_config.f1_arm（F102）\x1b[0m");
+  {
+    const db = await freshDb();
+    // 造一个「09-20 之前注册的用户」：f1_arm 由 style_config_before_update 锁死，
+    // 只有临时停掉那个触发器才改得动（以超级用户身份，模拟当时的注册结果）。
+    await db.exec("alter table public.style_config disable trigger style_config_before_update;");
+    await db.query("update public.style_config set f1_arm='pairwise' where user_id=$1", [UID_A]);
+    await db.exec("alter table public.style_config enable trigger style_config_before_update;");
+    const legacy = (await db.query("select f1_arm, public.f1_assign_arm(user_id) a from public.style_config where user_id=$1", [UID_A])).rows[0];
+    legacy.f1_arm === "pairwise" && legacy.a === "taste"
+      ? ok("造出一个老用户：f1_arm = pairwise，而 f1_assign_arm() = taste", "← 生产上 09-12 建的验收账号就是这个形态")
+      : bad("没造出老用户", JSON.stringify(legacy));
+
+    const put = (arm) => errorOf(() => asUser(db, UID_A, () => db.query(
+      `insert into public.style_events (user_id, event_type, arm, session_id, payload)
+       values ($1, 'style_pair_shown', $2, '99999999-9999-4999-8999-999999999999', $3::jsonb)`,
+      // payload 取一份**本身合法**的（与上面 style_events 那节的 FULL_PAYLOADS 同形）：
+      // 被拒的理由只能是 arm，不能是 payload 缺字段。
+      [UID_A, arm, JSON.stringify({ step: 1, axis: "detail_level", pair_id: "detail_p0_p3", left_variant: "P0" })])));
+
+    const okLegacy = await put("pairwise");
+    okLegacy === null
+      ? ok("老用户按自己那行的 f1_arm 写事件 → 写得进去", "← 修复前这里是 23514，全部事件静默丢失")
+      : bad("老用户的事件仍被拒", `${okLegacy.code} ${okLegacy.message}`);
+
+    const forged = await put("taste");
+    forged?.code === "23514" && /style_events_arm_matches_config/.test(forged?.constraint ?? forged?.message ?? "")
+      ? ok("老用户写 arm = taste（不是他那一行）→ 23514，约束名是新触发器", "← 「改不了自己的臂」照旧成立")
+      : bad("伪造 arm 没被新触发器拦下", `${forged?.code} ${forged?.constraint ?? forged?.message}`);
+
+    // R22 · 反向：把旧 CHECK 加回来，同一条老用户事件必须被拒——复现生产上那个 bug
+    await db.exec("drop trigger style_events_arm_matches_config on public.style_events;");
+    await db.exec(`alter table public.style_events add constraint style_events_arm_matches_assignment
+                   check (arm = public.f1_assign_arm(user_id)) not valid;`);
+    const repro = await put("pairwise");
+    repro?.code === "23514" && /arm_matches_assignment/.test(repro?.constraint ?? repro?.message ?? "")
+      ? ok("R22 · 换回旧 CHECK → 老用户事件 23514", "← 复现了 2026-09-20 起生产上的静默丢失：bug 是真的，修复在承重")
+      : bad("R22 · 旧 CHECK 没拒老用户的事件——那上面那条绿不说明修复有用", repro?.code ?? "写进去了");
+    await db.close();
+  }
+
   console.log("\n\x1b[1m混合检索 · 词法一路（slice_lexicon / match_slices_lexical）\x1b[0m");
   {
     const db = await freshDb();

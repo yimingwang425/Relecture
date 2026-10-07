@@ -44,7 +44,9 @@
  * 决策日期：2026-09-13
  */
 
-/** 一轮的终态。`pending` 是还在等（不流式，30–60 秒）。 */
+import type { StreamDraft } from "./stream";
+
+/** 一轮的终态。`pending` 是还在等（流式：正文在 `draft` 里一段段长出来）。 */
 export type TurnState = "pending" | "answered" | "failed";
 
 export type TurnAnswer = {
@@ -126,6 +128,12 @@ export type Turn = {
   failure?: TurnFailure;
   /** 「这部分没看懂」。**只活在本次页面加载里**：不做跨刷新回显（口径 F60）。 */
   mark?: MarkState;
+  /**
+   * 流式进行中的草稿（口径 F94）。**只在 pending 时有意义**：终态的正文、出处、
+   * 诊断全部取自 `done` 事件的响应体（`answerFromResponse`），不取草稿——
+   * 草稿是边收边拼的，响应体才是服务端认定的那一版。
+   */
+  draft?: StreamDraft;
 };
 
 /**
@@ -159,7 +167,10 @@ export function answeredCount(turns: readonly Turn[]): number {
   return turns.filter((t) => t.state === "answered").length;
 }
 
-/** 有没有一轮还在等。不流式，所以同时只允许一轮在飞。 */
+/**
+ * 有没有一轮还在等。**同时只允许一轮在飞**：流式之后仍然如此——两轮同时流，
+ * 会话历史里两轮的先后由服务端各自落库的时刻决定，与用户的提问顺序可能相反。
+ */
 export function hasPending(turns: readonly Turn[]): boolean {
   return turns.some((t) => t.state === "pending");
 }

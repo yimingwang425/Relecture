@@ -221,10 +221,14 @@ def build_explain_events(
         # 价目带到期日，否则事后无法重算（§13.0 原话）。
         "pricing_intro_until": pricing["pricing_intro_until"],
         "pricing_as_of": pricing["pricing_as_of"],
+        # 关键路径（判断与首版生成并行之后不再是总和，口径 F93）。
         "latency_ms": round(result.latency_ms, 1),
-        # 不流式 → 测不了首字延迟。**写 null，不塞假数**（PRD §9.2 本轮无数据）。
-        # 它刻意不在 REQUIRED_KEYS 里，见那张表的注释。
-        "first_token_latency_ms": None,
+        # 流式之后**测得到了**（口径 F94）：从请求开始到第一段正文放出闸门。
+        # 没有正文时仍是 null——**不塞假数**。它刻意不在 REQUIRED_KEYS 里，见那张表的注释。
+        "first_token_latency_ms": result.first_token_latency_ms,
+        "wall_ms": result.wall_ms,
+        # 投机生成被作废的次数（0 或 1）。它花的钱已计入上面的 `cost_usd`。
+        "speculative_discarded": len(result.discarded),
         "accepted": result.accepted,
         "regenerations": result.regenerations,
         # F04 的两个标识各管一件事：前者管「阈值变没变」，后者管「指标集是不是同一个」。

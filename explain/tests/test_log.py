@@ -56,13 +56,15 @@ class TestRoundRecord:
         assert rec["metric_set_id"] == config.metric_set_id()
         assert rec["config_version"] == "2.0"
 
-    def test_first_token_latency_is_null_not_faked(self, config, retriever):
-        """不流式就测不了首字延迟。**写 null，不塞一个假数。**
+    def test_first_token_latency_is_measured_not_faked(self, config, retriever):
+        """流式之后首字延迟**是测出来的**（口径 F94），日志里的数就是 `run_round` 测的那个。
 
-        塞一个数进去，PRD §9.2 的「首字 < 3s」就会有一个看起来有依据、
-        实际没测过的数字——那正是假断言的形态（通则七 #1）。
+        2026-10-07 之前这条断的是「恒 null」——那时不流式，测不了。
+        「不塞假数」那条纪律没变：没有正文流出来时它仍是 null（见 `test_parallel_stream`）。
         """
-        assert _record(config, retriever)["first_token_latency_ms"] is None
+        rec = _record(config, retriever)
+        assert isinstance(rec["first_token_latency_ms"], float)
+        assert rec["first_token_latency_ms"] <= rec["wall_ms"]
 
     def test_gap_fields_present_but_null(self, config, retriever):
         rec = _record(config, retriever)

@@ -25,10 +25,11 @@ from __future__ import annotations
 
 import hashlib
 import os
+import threading
 import time
 from dataclasses import dataclass, field
 from datetime import date
-from typing import Any, Protocol
+from typing import Any, Callable, Protocol
 
 __all__ = [
     "Usage", "Completion", "Model", "AnthropicModel",
@@ -233,6 +234,29 @@ class AnthropicModel:
         return self._client
 
     def complete(self, system: str, messages: list[dict[str, Any]]) -> Completion:
+        """一次完整调用。**就是不带回调的 `stream()`**——一条代码路径，不是两条。"""
+        return self.stream(system, messages)
+
+    def stream(
+        self,
+        system: str,
+        messages: list[dict[str, Any]],
+        *,
+        on_delta: Callable[[str], None] | None = None,
+        cancel: threading.Event | None = None,
+    ) -> Completion:
+        """流式调用：每来一段正文就交给 `on_delta`；`cancel` 被置位时中途停下。
+
+        ## 叫停（2026-10-07，口径 F93 / F95）
+
+        兜底判断与生成并行之后，判断若要求加限定语，那一版投机生成就作废。
+        **跳出事件循环 = 关闭连接**，服务端随即停止生成——省下的是剩余的输出 token。
+
+        ⚠️ **被叫停的那一版，用量只有下界**：输入 token 在 `message_start` 里就给全了，
+        而输出 token 的累计值要到 `message_delta`（流的末尾）才更新。中途关掉连接时
+        拿到的输出数**小于实际计费**。`stop_reason="cancelled"` 标出这种情况，
+        与 F75「判断失败时成本被低估」是同一类、同一处置：如实登记，不编一个数。
+        """
         client = self._ensure_client()
         # 课件全量在 system 且会话内不变 → 必须开 prompt caching（PRD §7.3）。
         # 断点放在 system 末块：渲染顺序是 tools → system → messages，
@@ -268,23 +292,39 @@ class AnthropicModel:
             kwargs["thinking"] = {"type": "adaptive"}
 
         started = time.perf_counter()
+        cancelled = False
+        message: Any = None
         with client.messages.stream(**kwargs) as stream:
-            message = stream.get_final_message()
+            for event in stream:
+                if cancel is not None and cancel.is_set():
+                    cancelled = True
+                    break
+                if (on_delta is not None and event.type == "content_block_delta"
+                        and getattr(event.delta, "type", None) == "text_delta"):
+                    on_delta(event.delta.text)
+            # 叫停时取当时的快照；没被叫停时循环已读完，快照就是最终消息。
+            try:
+                message = stream.current_message_snapshot
+            except AssertionError:  # 一个事件都没收到就被叫停
+                message = None
         latency = (time.perf_counter() - started) * 1000
 
+        if message is None:
+            return Completion(text="", usage=Usage(), latency_ms=latency,
+                              model=self.name, stop_reason="cancelled")
         text = "".join(b.text for b in message.content if b.type == "text")
         u = message.usage
         return Completion(
             text=text,
             usage=Usage(
-                input_tokens=u.input_tokens,
-                output_tokens=u.output_tokens,
+                input_tokens=u.input_tokens or 0,
+                output_tokens=u.output_tokens or 0,
                 cache_creation_input_tokens=getattr(u, "cache_creation_input_tokens", 0) or 0,
                 cache_read_input_tokens=getattr(u, "cache_read_input_tokens", 0) or 0,
             ),
             latency_ms=latency,
             model=message.model,
-            stop_reason=message.stop_reason,
+            stop_reason="cancelled" if cancelled else message.stop_reason,
         )
 
     def request_signature(self, system: str, messages: list[dict[str, Any]]) -> str:

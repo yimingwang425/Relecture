@@ -14,8 +14,9 @@ PRD §9.1：「**从第一天起**将每次调用的 token 数与成本写入日
    `metric_set_id`（指标集是不是同一个）。配置扫描里前者按设计逐点不同，
    只有后者能挡住跨指标集的误合并。
 
-**首字延迟本轮记不了**——不流式，`latency_ms` 是完整响应时间。
-PRD §9.2 的「首字 < 3s」在本轮无数据，日志里如实写 `null` 而不是塞一个假数。
+**首字延迟**：2026-10-07 起流式（口径 F94），记的是 `run_round` 测到的那个数；
+没有正文流出来时仍写 `null`，不塞假数。`round_latency_ms` 是**关键路径**
+（判断与首版生成并行，口径 F93），真实墙钟另记 `wall_ms`。
 
 决策日期：2026-08-22
 """
@@ -99,8 +100,10 @@ def round_record(
         # 两个延迟都记：总延迟是用户等待的，生成延迟用于分离兜底判断的增量
         "round_latency_ms": round(result.latency_ms, 1),
         "generation_latency_ms": round(result.generation_latency_ms, 1),
-        # 不流式 → 测不了首字延迟。写 null，不塞假数（PRD §9.2 本轮无数据）
-        "first_token_latency_ms": None,
+        # 流式之后测得到（口径 F94）；没有正文时仍是 null，不塞假数
+        "first_token_latency_ms": result.first_token_latency_ms,
+        "wall_ms": result.wall_ms,
+        "discarded": [d.to_dict() for d in result.discarded],
         # ---- 观察项（不进指标）----
         "observations": {**result.observations.to_dict(), "retrieval_hit_gold": hit_gold},
     }

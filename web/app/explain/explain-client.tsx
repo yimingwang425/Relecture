@@ -20,6 +20,7 @@ import {
   submitMark,
   type Turn,
 } from "@/lib/explain/turns";
+import { EMPTY_DRAFT, readExplainStream } from "@/lib/explain/stream";
 import { Markdown } from "@/lib/style/markdown";
 
 /**
@@ -40,18 +41,20 @@ import { Markdown } from "@/lib/style/markdown";
  * 同一次请求里发（`mark_count_after` 本来就只有服务端知道）。前端只转述
  * `session_id` / `course_id`，**不入队、不另发**——另发就是每次点击两行。
  *
- * ## 等待态是这一页最要紧的交互
+ * ## 等待态：**流式**（2026-10-07，口径 F94）
  *
- * 一次请求 **30–60 秒**（生成 + 最多 2 次重生成），而且**不流式**
- * （`explain/prompt.py`：`first_token_latency_ms` 恒 null，「不塞假数」）。
- * 所以：
+ * 走 `POST /explain/stream`：检索一完出处先到，正文一段段长出来；
+ * 审查判不达标要重写时服务端发 `reset`，这里清掉已显示的那一版并说一句「在重写」。
+ * 原来是整段返回，一次 **30–60 秒**全程只有转圈。
  *
- * - **只允许一轮在飞**。不流式意味着第二次提交不会「插队」，只会让两个几十秒
- *   的请求同时在跑，而先回来的那个先渲染 —— **轮次顺序会与提问顺序相反**，
- *   而 `turn_index` 是按「用户看到第几次回答」计的，那时它就错了。
- * - **有一个走着的计时器**。没有它，一个 40 秒的等待与一个卡死的请求
- *   在页面上长得一模一样。
- * - **明说别关页面**。关掉标签页这一轮就没了（不流式，没有中间结果可续）。
+ * - **只允许一轮在飞**。两轮同时流的话，会话历史里两轮的先后由服务端各自落库的
+ *   时刻决定，可能与提问顺序相反，而 `turn_index` 按「用户看到第几次回答」计。
+ * - **计时器仍然在**。正文出来之前（检索 + 首字前的思考）可能有好几秒什么都没有，
+ *   没有它，那几秒与一个卡死的请求长得一模一样。
+ * - **关掉页面不会丢这一轮**（有会话时）：生成在服务端后台跑完并落库，
+ *   刷新会话就能看到。这一句要说出来，否则用户会守着页面不敢动。
+ * - **终态只认 `done`**：草稿是边收边拼的，出处、诊断、正文一律取 `done` 里的
+ *   响应体（与 `/explain` 逐字段同形）。流在 `done` 之前断了**不算成功**。
  *
  * ## 用合成课件答的必须被看见
  *
@@ -207,7 +210,7 @@ export function ExplainClient({
     // （用户一个字都没看到，那不是一轮讲解），重生成也不计入（它在服务端一次
     // 请求里面）。口径与理由在 lib/explain/turns.ts。
     const turnIndex = nextTurnIndex(turns);
-    setTurns((prev) => [...prev, { turnIndex, question: q, courseId, state: "pending" }]);
+    setTurns((prev) => [...prev, { turnIndex, question: q, courseId, state: "pending", draft: EMPTY_DRAFT }]);
     setElapsed(0);
     setQuestion("");
 
@@ -225,7 +228,7 @@ export function ExplainClient({
     }
 
     try {
-      const r = await fetch(`${apiBase}/explain`, {
+      const r = await fetch(`${apiBase}/explain/stream`, {
         method: "POST",
         headers: { Authorization: `Bearer ${jwt}`, "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -261,7 +264,41 @@ export function ExplainClient({
         });
       }
 
-      finish({ state: "answered", answer: answerFromResponse(await r.json()) });
+      if (!r.body) {
+        return finish({
+          state: "failed",
+          failure: { status: r.status, message: "服务端返回了 200 但没有正文流。", retryable: true },
+        });
+      }
+      const outcome = await readExplainStream(r.body, (draft) =>
+        setTurns((prev) => prev.map((t, i) => (i === prev.length - 1 ? { ...t, draft } : t))),
+      );
+      if (outcome.kind === "done") {
+        // **终态只取响应体**，不取草稿（见组件说明）。
+        return finish({
+          state: "answered",
+          draft: undefined,
+          answer: answerFromResponse(outcome.response as Parameters<typeof answerFromResponse>[0]),
+        });
+      }
+      finish({
+        state: "failed",
+        draft: undefined,
+        failure:
+          outcome.kind === "error"
+            ? {
+                status: outcome.status,
+                message: outcome.detail,
+                retryable: outcome.status === null || outcome.status >= 500,
+              }
+            : {
+                status: null,
+                message:
+                  `${outcome.detail}。` +
+                  (conversationId ? "服务端多半已经讲完并存进了这个会话，刷新一下就能看到。" : ""),
+                retryable: true,
+              },
+      });
     } catch (e) {
       finish({
         state: "failed",
@@ -415,7 +452,30 @@ export function ExplainClient({
                       data-turn-index 上，回归工具按它断言。 */}
                   <p className="bubble" data-field="turn-question">{t.question}</p>
 
-                  {t.state === "pending" && (
+                  {t.state === "pending" && t.draft && t.draft.text && (
+                    <div className="tabpanel p-4 sm:p-6" data-field="answer-streaming" aria-live="polite">
+                      {t.draft.rewriting > 0 && (
+                        <p className="notice notice--warn mb-3 text-[13px]" data-field="rewriting">
+                          上一版没达到你设定的讲法要求，正在重写（第 {t.draft.rewriting} 次）…
+                        </p>
+                      )}
+                      <div className="prose-answer">
+                        <Markdown text={t.draft.text} />
+                      </div>
+                      {t.draft.sources.length > 0 && (
+                        <p className="t-caption mt-4">
+                          出处：
+                          {t.draft.sources.map((s) => `${s.sourceFile} 第 ${s.pages.join("、")} 页`).join("；")}
+                        </p>
+                      )}
+                      <p className="t-caption mt-2 flex items-center gap-2" data-field="elapsed">
+                        <span aria-hidden className="spinner" />
+                        生成中 · 已 <b className="kbd-count">{elapsed}</b> 秒
+                      </p>
+                    </div>
+                  )}
+
+                  {t.state === "pending" && !t.draft?.text && (
                     <div className="answer-wait" aria-live="polite">
                       {/* 小尺寸、贴左上角（2026-09-20）。原来是整块面板 + 四条骨架，
                           在聊天式布局里那等于每问一句就插进来一屏占位。
@@ -426,7 +486,13 @@ export function ExplainClient({
                           只是让等待可见——所以只报秒数，不报「是不是太久了」。 */}
                       <p className="t-caption mt-2 flex items-center gap-2" data-field="elapsed">
                         <span aria-hidden className="spinner" />
-                        已等 <b className="kbd-count">{elapsed}</b> 秒 · 不流式，别关页面
+                        {t.draft?.rewriting
+                          ? "上一版没达到讲法要求，正在重写"
+                          : t.draft?.stage === "generating"
+                            ? "正在组织讲解"
+                            : "正在检索课件"}
+                        {" · "}已等 <b className="kbd-count">{elapsed}</b> 秒
+                        {conversationId ? " · 关掉页面也不会丢，会存进这个会话" : ""}
                       </p>
                     </div>
                   )}

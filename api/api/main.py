@@ -291,19 +291,14 @@ def create_app(
             config_fingerprint=style_config_for(row.detail_level).fingerprint(),
         )
 
-    @app.post("/explain")
-    def explain(req: ExplainRequest, both: tuple[Principal, StyleRow] = Depends(style_row)) -> dict[str, Any]:
-        """一轮讲解。**这是 `style_config` 那一行第一次影响模型输出。**
+    def _prepare_explain(req: ExplainRequest, p: Principal, row: StyleRow) -> dict[str, Any]:
+        """一轮讲解里**会以 HTTP 状态码失败**的那一半：配置、课程、会话。
 
-        阶段 5 起 `course_id` 可选：给了就真检索那门课的语料
-        （`SupabaseRetriever`，RLS 由数据库执行），不给走阶段 3 的替身。
+        拆出来是为了流式（口径 F94）：SSE 一旦开始写，状态码就已经是 200 了。
+        「不是你的课」「key 没配」这类错必须在开流之前判完，仍然是 404 / 503——
+        否则前端拿到一个 200 的流，里面写着失败，而重试与否的判断全靠状态码。
         """
-        from explain.pipeline import Trajectory, run_round
-        from explain.review import RuleReviewer
         from explain.style_axes import style_config_for
-        from explain.style_prompt import render_all_style_rules
-
-        p, row = both
 
         if cfg.anthropic_api_key is None and model_factory is None:
             # 缺 key 是部署配置问题，不是用户输入问题——点名说清，不写「请重试」。
@@ -338,35 +333,6 @@ def create_app(
             active = _default_retriever()
             label = _COURSE_LABEL
 
-        # ---- F4 · 检索**提到这里做**，因为注入要在生成之前拿到本轮的 slice_ids。
-        #
-        # `run_round(context=...)` 是既有参数（口径 X02：两组对照共用同一份
-        # ContextPack），不是为本轮新开的口子。检索仍然只发生一次。
-        import uuid as _uuid
-
-        ctx = active.fetch(req.question)
-        #: 讲解轮标识（口径 F65）。**服务端生成**——响应里此前没有任何稳定的轮
-        #: 标识（`retrieval.signature` 只认提问与命中切片，同一个人把同一个问题
-        #: 问两遍会得到同一个值，拿它当幂等键会让第二轮的标记覆盖第一轮）。
-        #: 一次 `/explain` = 一轮；轮内的重生成不新开一个（重生成不计入轮次，
-        #: 轮的定义是「用户可见的一次输出」，PRD §13.0）。
-        round_id = str(_uuid.uuid4())
-        slice_keys = _marks.slice_keys_of(ctx)
-        confusion = _confusion_for_round(db, p, slice_keys)
-
-        # ---- 兜底判断（F3b / PRD §10.1）。**接进生产，不加开关**（口径 F70）。
-        #
-        # 此前这里不传 `gap_checker`，`run_round` 回落到 `NullGapChecker`，
-        # `gap_verdict` 恒 null——F3b 的实测数全部来自实验侧，而没有任何东西在核对
-        # 「线上到底接没接」。再加一个开关就是再造一个同样的分叉；要停用就 revert。
-        #
-        # `GuardedGapChecker`：判断抛异常时讲解照常返回，`gap_verdict=null` 并带原因。
-        # 注入的 factory 也套它——测试走的就是生产这一层包装。
-        from explain.gap import GuardedGapChecker
-
-        make_gap = gap_checker_factory or _default_gap_checker
-        gap_checker = GuardedGapChecker(make_gap())
-
         # ---- F5 · 会话历史。**给了 conversation_id 才有历史**，否则这一轮是孤立的。
         #
         # 历史喂的是「**用户当时问的那句话** + 最终答案」，不是当时那一整个渲染过的
@@ -389,6 +355,56 @@ def create_app(
                 history.append({"role": m["role"], "content": m["content"]})
             turn_index = db.next_turn_index(p.token, req.conversation_id)
 
+        return {"style": style, "active": active, "label": label,
+                "history": history, "turn_index": turn_index}
+
+    def _run_explain(req: ExplainRequest, p: Principal, row: StyleRow,
+                     prep: dict[str, Any], emit: Any, started_at: float) -> dict[str, Any]:
+        """一轮讲解里**只会在流里失败**的那一半：检索、判断、生成、落库、埋点。
+
+        `emit` 收流式事件；JSON 路由传一个什么都不做的，两条路由跑的是同一段代码。
+        """
+        from explain.pipeline import Trajectory, run_round
+        from explain.review import RuleReviewer
+        from explain.style_prompt import render_all_style_rules
+
+        style, active, label = prep["style"], prep["active"], prep["label"]
+        history, turn_index = prep["history"], prep["turn_index"]
+
+        # ---- F4 · 检索**提到这里做**，因为注入要在生成之前拿到本轮的 slice_ids。
+        #
+        # `run_round(context=...)` 是既有参数（口径 X02：两组对照共用同一份
+        # ContextPack），不是为本轮新开的口子。检索仍然只发生一次。
+        import uuid as _uuid
+
+        emit({"type": "stage", "stage": "retrieving"})
+        ctx = active.fetch(req.question)
+        #: 讲解轮标识（口径 F65）。**服务端生成**——响应里此前没有任何稳定的轮
+        #: 标识（`retrieval.signature` 只认提问与命中切片，同一个人把同一个问题
+        #: 问两遍会得到同一个值，拿它当幂等键会让第二轮的标记覆盖第一轮）。
+        #: 一次 `/explain` = 一轮；轮内的重生成不新开一个（重生成不计入轮次，
+        #: 轮的定义是「用户可见的一次输出」，PRD §13.0）。
+        round_id = str(_uuid.uuid4())
+        slice_keys = _marks.slice_keys_of(ctx)
+        confusion = _confusion_for_round(db, p, slice_keys)
+        # 出处先发：正文还在路上时，用户已经能看到这一轮用了哪几页。
+        emit({"type": "retrieval", "round_id": round_id, "slice_keys": slice_keys,
+              "retrieval": ctx.to_dict(), "confusion": confusion})
+        emit({"type": "stage", "stage": "generating"})
+
+        # ---- 兜底判断（F3b / PRD §10.1）。**接进生产，不加开关**（口径 F70）。
+        #
+        # 此前这里不传 `gap_checker`，`run_round` 回落到 `NullGapChecker`，
+        # `gap_verdict` 恒 null——F3b 的实测数全部来自实验侧，而没有任何东西在核对
+        # 「线上到底接没接」。再加一个开关就是再造一个同样的分叉；要停用就 revert。
+        #
+        # `GuardedGapChecker`：判断抛异常时讲解照常返回，`gap_verdict=null` 并带原因。
+        # 注入的 factory 也套它——测试走的就是生产这一层包装。
+        from explain.gap import GuardedGapChecker
+
+        make_gap = gap_checker_factory or _default_gap_checker
+        gap_checker = GuardedGapChecker(make_gap())
+
         make_model = model_factory or _default_model
         result = run_round(
             round_index=1,
@@ -409,6 +425,8 @@ def create_app(
             # G03a 的限定语（非 `covered` 且该课件跳过页非空）由它产出、
             # 由 `build_user_turn` 渲染进本轮消息。**跳过页不给判断模型**（G01 末条）。
             gap_checker=gap_checker,
+            on_event=emit,
+            started_at=started_at,
         )
 
         ev = result.final_review.evaluation
@@ -502,6 +520,14 @@ def create_app(
             "text": result.final_text,
             "accepted": result.accepted,
             "regenerations": result.regenerations,
+            # ---- 延迟（口径 F93 / F94）。三个数各管一件事：首字是用户感到的等待，
+            # 关键路径可由各次调用自报的耗时复算，墙钟是真的等了多久。
+            "latency": {
+                "first_token_ms": result.first_token_latency_ms,
+                "critical_path_ms": round(result.latency_ms, 1),
+                "wall_ms": result.wall_ms,
+                "speculative_discarded": len(result.discarded),
+            },
             # ---- 检索（阶段 5）。**原样回传 backend**，让「真检索」与「替身」
             # 在响应里分得开；`slices` 里带 document_id 之外的全部身份信息，
             # §13.0 的 `retrieval_executed` 就从这里取。
@@ -516,6 +542,94 @@ def create_app(
             "all_activated_passed": ev.all_activated_passed,
             "style_rules": result.system_text.split("## 材料范围")[0].strip(),
         }
+
+    @app.post("/explain")
+    def explain(req: ExplainRequest, both: tuple[Principal, StyleRow] = Depends(style_row)) -> dict[str, Any]:
+        """一轮讲解（整段返回）。**这是 `style_config` 那一行第一次影响模型输出。**
+
+        阶段 5 起 `course_id` 可选：给了就真检索那门课的语料
+        （`SupabaseRetriever`，RLS 由数据库执行），不给走阶段 3 的替身。
+
+        验收脚本与不需要流式的调用方用它；页面用 `/explain/stream`。
+        两条路由共用 `_prepare_explain` + `_run_explain`，**不是两份实现**。
+        """
+        import time as _time
+
+        started = _time.perf_counter()
+        p, row = both
+        prep = _prepare_explain(req, p, row)
+        return _run_explain(req, p, row, prep, lambda _e: None, started)
+
+    @app.post("/explain/stream")
+    def explain_stream(req: ExplainRequest,
+                       both: tuple[Principal, StyleRow] = Depends(style_row)) -> Any:
+        """一轮讲解，**SSE 流式**（口径 F94）。
+
+        事件（`event:` 行是类型，`data:` 行是 JSON）：
+
+        | 类型 | 什么时候 | 内容 |
+        | --- | --- | --- |
+        | `stage` | 进入检索 / 生成 | `{"stage": "retrieving" \| "generating"}` |
+        | `retrieval` | 检索完 | 出处、`round_id`、`slice_keys`、`confusion` |
+        | `gap` | 兜底判断返回 | 与响应里 `gap` 同形 |
+        | `delta` | 每段正文 | `{"text": "..."}` |
+        | `reset` | 审查不达标、要重生成 | 前端清掉已显示的那一版 |
+        | `done` | 结束 | **与 `/explain` 的响应体逐字段相同** |
+        | `error` | 开流之后失败 | `{"status", "detail"}` |
+
+        ⚠️ **开流之前能判的错仍然走状态码**（`_prepare_explain`）：
+        课不存在 404、key 没配 503、请求体不合法 422。开流之后状态码已经是 200，
+        所以之后的失败只能是 `error` 事件——它带一个 `status`，语义同状态码。
+
+        ⚠️ **用户关掉页面，这一轮仍会跑完并落库**：生成在后台线程里，
+        流断了只是不再往外写。这是有意的——落库的那一问一答是会话历史，
+        半截中断的话下次打开会话会少一轮，而用户其实看到了大半段。
+        """
+        import json as _json
+        import queue as _queue
+        import threading as _threading
+        import time as _time
+
+        from fastapi.responses import StreamingResponse
+
+        started = _time.perf_counter()
+        p, row = both
+        prep = _prepare_explain(req, p, row)
+        q: _queue.Queue[dict[str, Any] | None] = _queue.Queue()
+
+        def work() -> None:
+            try:
+                out = _run_explain(req, p, row, prep, q.put, started)
+                q.put({"type": "done", "response": out})
+            except HTTPException as exc:
+                q.put({"type": "error", "status": exc.status_code, "detail": exc.detail})
+            except Exception as exc:  # noqa: BLE001 —— 开流之后只能用事件报错
+                q.put({"type": "error", "status": 500,
+                       "detail": f"{type(exc).__name__}: {exc}"})
+            finally:
+                q.put(None)
+
+        _threading.Thread(target=work, name="explain-stream", daemon=True).start()
+
+        def sse() -> Any:
+            while True:
+                try:
+                    item = q.get(timeout=_SSE_KEEPALIVE_S)
+                except _queue.Empty:
+                    # 注释行。代理与浏览器都忽略它，但它让连接不被当成空闲掐掉。
+                    yield ": keepalive\n\n"
+                    continue
+                if item is None:
+                    return
+                kind = item.get("type", "message")
+                data = {k: v for k, v in item.items() if k != "type"}
+                yield f"event: {kind}\ndata: {_json.dumps(data, ensure_ascii=False)}\n\n"
+
+        return StreamingResponse(sse(), media_type="text/event-stream", headers={
+            "Cache-Control": "no-cache",
+            # 关掉反向代理的缓冲，否则「流式」会变成「攒够一整段再一次性到」。
+            "X-Accel-Buffering": "no",
+        })
 
     # ---------------------------------------------------------------- F4 · 「这部分没看懂」
     #
@@ -911,6 +1025,10 @@ def _default_embedder() -> Any:
 
 
 _COURSE_LABEL = "合成课件（未指定课程：检索走阶段 3 的替身）"
+
+#: SSE 保活间隔（秒）。生成开始前（检索 + 首字前的思考）可能十几秒没有任何事件，
+#: 15 s 远低于常见代理的 60 s 空闲超时。**不是阈值判断**，只是不让连接被掐。
+_SSE_KEEPALIVE_S = 15.0
 
 
 def _course_retriever(db: Any, token: str, course_id: str, make_embedder: Any) -> Any:

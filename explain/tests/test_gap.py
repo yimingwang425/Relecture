@@ -206,10 +206,14 @@ class TestCostAndLatencyAccounting:
         assert NullGapChecker().check("q", _ctx()).to_dict()["gap_cost_usd"] == 0.0
 
     def test_round_latency_includes_the_extra_hop(self):
-        """**这一跳是串行的**：既不能与检索并行，也不能与生成并行。
+        """判断与首版生成**并行**（口径 F93），关键路径是两者较慢的那个。
 
-        用户等待的是总和，所以 `round_latency_ms` 必须含它；
+        判断 1500 ms、生成近乎 0 ms 时，用户等的是 1500 ms——
+        `round_latency_ms` 必须含它（不能因为并行就把它算没了），
         另出 `generation_latency_ms` 以便分离增量。
+
+        2026-10-07 前这条断的是「总和」（串行）。改的是口径，不是放宽：
+        下面 `test_parallel_takes_the_max_not_the_sum` 钉住了「不再是总和」那一半。
         """
         from explain.fake import FakeExplainModel
         from explain.pipeline import Trajectory, run_round
@@ -232,8 +236,37 @@ class TestCostAndLatencyAccounting:
             style_rules=render_style_rules(cfg), course_label="t",
             review_enabled=True, gap_checker=Slow(),
         )
-        assert r.latency_ms == pytest.approx(r.generation_latency_ms + 1500.0)
+        first = r.attempts[0].completion.latency_ms
+        assert r.latency_ms == pytest.approx(max(1500.0, first) + r.generation_latency_ms - first)
+        assert r.latency_ms >= 1500.0
         assert r.cost_usd > sum(a.completion.cost for a in r.attempts)
+
+    def test_parallel_takes_the_max_not_the_sum(self):
+        """**反向一半**：判断 1500、生成 2000 → 关键路径 2000，不是 3500。"""
+        from explain.llm import Completion, Usage
+        from explain.pipeline import Attempt, RoundResult
+        from explain.context import ContextPack
+        from explain.observe import observe
+
+        class _R:
+            passed = True
+
+        gen = Completion(text="x", usage=Usage(), latency_ms=2000.0, model="fake:m")
+        gap = GapResult(verdict="covered", latency_ms=1500.0, implementation="model")
+        r = RoundResult(round_index=1, question="q", context=ContextPack(question="q", slices=()),
+                        gap=gap, attempts=(Attempt(0, gen, _R()),), final_text="x",
+                        accepted=True, request_signature="s",
+                        observations=observe("x", []), system_text="")
+        assert r.latency_ms == pytest.approx(2000.0)
+        # 作废了投机那一版时：max(判断, 投机) + 全部正式各版
+        spec = Completion(text="", usage=Usage(), latency_ms=1500.0, model="fake:m",
+                          stop_reason="cancelled")
+        r2 = RoundResult(round_index=1, question="q", context=ContextPack(question="q", slices=()),
+                         gap=gap, attempts=(Attempt(0, gen, _R()),), final_text="x",
+                         accepted=True, request_signature="s",
+                         observations=observe("x", []), system_text="",
+                         discarded=(spec,))
+        assert r2.latency_ms == pytest.approx(1500.0 + 2000.0)
 
 
 class TestVerdictVocabulary:

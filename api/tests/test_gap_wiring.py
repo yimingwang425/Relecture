@@ -153,8 +153,16 @@ def turn_row(rest: RoutedRest) -> dict[str, Any]:
 
 
 def first_user_turn(model: RecordingModel) -> str:
-    """讲解模型**首次**收到的 user turn。重生成之后最后一条是审查反馈，不是它。"""
-    return str(model.messages[0][-1]["content"])
+    """讲解模型**正式第 1 版**收到的 user turn。
+
+    重生成之后最后一条是审查反馈，不是它。
+    ⚠️ 2026-10-07 起**也不一定是第 0 次调用**（口径 F93）：判断与投机生成并行，
+    判断要求限定语时第 0 次调用是被作废的投机版（不带限定语），正式那一版是下一次。
+    所以取「最后一次不是审查反馈的调用」——它就是带着判断结果真正被采用的那一条。
+    """
+    turns = [str(m[-1]["content"]) for m in model.messages
+             if "未通过风格审查" not in str(m[-1]["content"])]
+    return turns[-1]
 
 
 # ---------------------------------------------------------------- 守卫 1

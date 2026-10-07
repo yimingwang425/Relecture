@@ -157,6 +157,11 @@ class FakeResult:
         #: 内测前-P1：`explain_turn` 要读 `result.gap`。用**生产的** `GapResult`，
         #: 不另造一个假的（口径 F49）——默认值就是 `NullGapChecker` 给的那一份。
         self.gap = GapResult(verdict=None)
+        #: 2026-10-07（口径 F93 / F94）：生产的 `RoundResult` 多了这三个字段，
+        #: 替身照生产的默认值补齐（F49：替身照生产实现写，不照记忆写）。
+        self.discarded = ()
+        self.first_token_latency_ms = None
+        self.wall_ms = 18300.0
 
     @property
     def regenerations(self):
@@ -301,10 +306,19 @@ class TestBuild:
         assert ev["payload"]["pricing_rates"] is not None
 
     def test_first_token_latency_is_null_not_faked(self):
-        """不流式 → 测不了。**写 null，不塞假数**（PRD §9.2 本轮无数据）。"""
+        """没有正文流出来时测不了 → **写 null，不塞假数**（PRD §9.2）。"""
         ev = _by_type(build_explain_events(make_result(), config=style_config(),
                                           question="Q", course_id="c1"), "explain_turn")
         assert ev["payload"]["first_token_latency_ms"] is None
+
+    def test_first_token_latency_comes_from_the_round(self):
+        """流式之后测得到（口径 F94）——事件里的数**就是** `run_round` 测的那个，不另算。"""
+        r = make_result()
+        r.first_token_latency_ms = 2345.6
+        ev = _by_type(build_explain_events(r, config=style_config(),
+                                          question="Q", course_id="c1"), "explain_turn")
+        assert ev["payload"]["first_token_latency_ms"] == 2345.6
+        assert ev["payload"]["speculative_discarded"] == 0
 
     def test_both_config_identifiers_are_recorded(self):
         """F04：`config_fingerprint` 管「阈值变没变」，`metric_set_id` 管

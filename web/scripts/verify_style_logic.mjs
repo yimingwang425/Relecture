@@ -193,7 +193,7 @@ const outExplain = mkdtempSync(join(WEB, "node_modules", ".f1-explain-"));
 try {
   execFileSync(
     "npx",
-    ["tsc", "lib/explain/turns.ts",
+    ["tsc", "lib/explain/turns.ts", "lib/explain/stream.ts",
      "--module", "commonjs", "--target", "es2020", "--strict", "--skipLibCheck",
      "--rootDir", "lib/explain", "--outDir", outExplain],
     { cwd: WEB, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
@@ -1409,15 +1409,18 @@ console.log("\n\x1b[1m十三 · 讲解页 · 接线（阶段 6 第二批）\x1b[
       "← 口径 F51：字段全部产生在服务端，浏览器一个都不知道");
   }
 
-  // 只允许一轮在飞。不流式，第二次提交只会让两个几十秒的请求同时跑，
-  // 而先回来的先渲染 —— 轮次顺序会与提问顺序相反。
+  // 只允许一轮在飞。流式之后仍然如此：两轮同时流，落库先后由服务端决定，
+  // 可能与提问顺序相反。
   check(/if \(!q \|\| !courseId \|\| pending\) return/.test(clientCode),
-    "在飞时不接受新提问", "← 不流式，并发会让轮次顺序与提问顺序相反");
+    "在飞时不接受新提问", "← 并发会让会话里两轮的先后与提问顺序相反");
   check(/disabled=\{[^}]*pending/.test(client), "在飞时按钮/输入被禁用");
 
   // 等待可见：没有计时器的话，40 秒的等待与卡死的请求长得一样。
   check(/data-field="elapsed"/.test(client), "有走着的等待计时器");
-  check(/别关页面/.test(client), "明说别关页面", "← 不流式，关了这一轮就没了");
+  // 2026-10-07 起反过来（口径 F94）：生成在服务端后台跑完并落库，关页面不丢。
+  // 说出来是为了让用户敢走开；原来那句「别关页面」现在是错话。
+  check(/关掉页面也不会丢/.test(client), "说清关掉页面也不会丢（有会话时）");
+  check(!/别关页面/.test(client), "「别关页面」那句已经去掉", "← 流式 + 后台落库之后它不再成立");
 
   // 用合成课件答的必须被看见（口径 F52 那次真实失败）。
   check(/isFromRequestedCourse\(/.test(clientCode), "按 backend 判是不是用了这门课");
@@ -1437,7 +1440,10 @@ console.log("\n\x1b[1m十三 · 讲解页 · 接线（阶段 6 第二批）\x1b[
     "← 那些数只存在于 scan/points.py 的 AXIS_POINTS，抄进 TS 就是 F13 那个坑");
 
   // 直连产品服务端；缺 API base 在页面点名。
-  check(/fetch\(`\$\{apiBase\}\/explain`/.test(clientCode), "直连 apiBase/explain");
+  check(/fetch\(`\$\{apiBase\}\/explain\/stream`/.test(clientCode), "直连 apiBase/explain/stream（流式）");
+  check(/readExplainStream\(/.test(clientCode), "流由 readExplainStream 读（纯模块，二十节有断言）");
+  check(/outcome\.kind === "done"[\s\S]{0,200}answerFromResponse\(outcome\.response/.test(clientCode),
+    "终态取 done 里的响应体，不取草稿", "← 草稿是边收边拼的；出处、诊断都要以服务端那一版为准");
   check(/no-api-base/.test(pageCode), "缺 NEXT_PUBLIC_API_BASE_URL 时点名说清");
   check(/data-state=\{/.test(pageCode), "页面有终态标记 data-state");
 
@@ -1941,6 +1947,72 @@ console.log("\n\x1b[1m十九 · 连不上讲解服务时说什么\x1b[0m");
     "「在唤醒」与「叫不醒」是两个不同的终态",
     "← 压成一个的话，等一会儿有用和等多久都没用就分不开了");
 }
+
+// ================================================================ 二十 · 流式（2026-10-07，口径 F94）
+//
+// 三条：解析器经得起任意分包、reset 真的清屏、流在 done 之前断掉不算成功。
+// 每条都配反向控制：把被测逻辑换成平凡实现，判据必须红。
+console.log("\n\x1b[1m二十 · 流式讲解 · SSE 的读法（口径 F94）\x1b[0m");
+await (async () => {
+  const S = require_(join(outExplain, "stream.js"));
+  const ev = (type, data) => `event: ${type}\ndata: ${JSON.stringify(data)}\n\n`;
+  const wire =
+    ": keepalive\n\n" +
+    ev("stage", { stage: "retrieving" }) +
+    ev("retrieval", { retrieval: { slices: [{ source_file: "a.pdf", pages: [3] }, { source_file: "a.pdf", pages: [1] }] } }) +
+    ev("stage", { stage: "generating" }) +
+    ev("delta", { text: "第一版" }) +
+    ev("reset", { reason: "review", attempt: 1 }) +
+    ev("delta", { text: "第二版，" }) +
+    ev("delta", { text: "讲完了。" }) +
+    ev("done", { response: { text: "第二版，讲完了。" } });
+
+  // -------- 20.1 任意分包：逐字节喂，结果与一次喂完相同
+  const whole = S.createSseParser().push(wire);
+  const p = S.createSseParser();
+  const bytewise = [];
+  for (const ch of wire) bytewise.push(...p.push(ch));
+  check(JSON.stringify(whole) === JSON.stringify(bytewise), "逐字符分包与整包解析结果相同",
+    `${whole.length} 个事件`);
+  check(whole.length === 8, "保活注释行被丢掉，不算事件", `${whole.length}`);
+  // 反向控制：不攒尾巴的解析器（每包独立解析）在分包时必然丢事件。
+  const naive = (chunk) => chunk.split("\n\n").filter((b) => b.startsWith("event:"));
+  let naiveCount = 0;
+  for (let i = 0; i < wire.length; i += 7) naiveCount += naive(wire.slice(i, i + 7)).length;
+  check(naiveCount < whole.length, "反向控制：不攒尾巴的解析器在分包时丢事件",
+    `${naiveCount} < ${whole.length} ← 所以 20.1 不是恒绿的`);
+
+  // -------- 20.2 reset 清屏：重放到 done 之前，草稿正文 == 最终正文
+  let d = S.EMPTY_DRAFT;
+  for (const e of whole.filter((x) => x.type !== "done")) d = S.applyStreamEvent(d, e);
+  check(d.text === "第二版，讲完了。", "reset 之后只剩最后一版", JSON.stringify(d.text));
+  check(d.rewriting === 1, "草稿记下在重写第几版", String(d.rewriting));
+  check(JSON.stringify(d.sources) === JSON.stringify([{ sourceFile: "a.pdf", pages: [1, 3] }]),
+    "出处先于正文到达，按文件合并并排序页号", JSON.stringify(d.sources));
+  let noReset = S.EMPTY_DRAFT;
+  for (const e of whole.filter((x) => x.type !== "done" && x.type !== "reset")) noReset = S.applyStreamEvent(noReset, e);
+  check(noReset.text !== d.text, "反向控制：忽略 reset 时两版拼在一起", JSON.stringify(noReset.text));
+  check(S.applyStreamEvent(S.EMPTY_DRAFT, { type: "delta", data: { text: "x" } }) !== S.EMPTY_DRAFT
+        && S.EMPTY_DRAFT.text === "", "归约函数不改入参");
+
+  // -------- 20.3 终态：done / error / 流在两者之前断开
+  const streamOf = (text) => new ReadableStream({
+    start(c) { c.enqueue(new TextEncoder().encode(text)); c.close(); },
+  });
+  const drafts = [];
+  const okOut = await S.readExplainStream(streamOf(wire), (x) => drafts.push(x));
+  check(okOut.kind === "done" && okOut.response.text === "第二版，讲完了。", "读到 done 即返回响应体");
+  check(drafts.length > 0 && drafts.at(-1).text === "第二版，讲完了。", "草稿随事件更新");
+  const errOut = await S.readExplainStream(
+    streamOf(ev("delta", { text: "半" }) + ev("error", { status: 500, detail: "炸了" })), () => {});
+  check(errOut.kind === "error" && errOut.status === 500 && errOut.detail === "炸了",
+    "error 事件原样交出 status 与 detail");
+  const cutOut = await S.readExplainStream(streamOf(ev("delta", { text: "大半段正文" })), () => {});
+  check(cutOut.kind === "cut", "流在 done 之前断开 → cut，**不是成功**",
+    "← 哪怕草稿里已有大半段正文");
+  const bad = S.createSseParser().push("event: delta\ndata: {坏的\n\n");
+  check(bad.length === 1 && bad[0].type === "error", "读不懂的 data 不被吞掉，变成 error 事件");
+})();
 
 rmSync(out, { recursive: true, force: true });
 rmSync(outUpload, { recursive: true, force: true });

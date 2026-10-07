@@ -1360,7 +1360,7 @@ OpenAI 是 F2 摄入接线要引入的第二个（embedding），**查证是它�
 | `question` / `question_tags` | |
 | `usage` | **四类分列**：`input_tokens`（未命中）/ `cache_read` / `cache_creation` / `output_tokens`。三类输入互不重叠 |
 | `cost_usd` · `pricing_rates` · `pricing_intro_until` | 价目带到期日，否则事后无法重算 |
-| `latency_ms` · `first_token_latency_ms` | 后者当前恒为 `null`（不流式）。**不塞假数** |
+| `latency_ms` · `first_token_latency_ms` | ~~后者当前恒为 `null`（不流式）~~ → 2026-10-07 起流式（口径 F94），后者是测出来的；无正文时仍为 `null`。**不塞假数**。前者改为关键路径（F93），另有 `wall_ms` |
 | `accepted` · `regenerations` | |
 | `style_config_fingerprint` · `metric_set_id` | 前者管「阈值变没变」，后者管「指标集是不是同一个」 |
 

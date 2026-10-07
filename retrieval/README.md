@@ -127,7 +127,7 @@ env $(grep -v '^#' .env | xargs) ./.venv/bin/python -m scripts.run_matrix
 
 | 模块 | 职责 |
 | --- | --- |
-| `compose.py` | `SliceSet` → `embedding_text`（T0–T3 变体 + 缺陷清理） |
+| `compose.py` | `SliceSet` → `embedding_text`（T0–T3 变体 + 缺陷清理）。`compose_t0` 是单片的 T0，重建索引时只有落库的 units 也能算（2026-10-07） |
 | `embed.py` | 三种 embedder + 磁盘缓存 |
 | `index.py` | 内存精确余弦索引 |
 | `search.py` | 检索 + 三种扩展模式 + R07 的取舍顺序 |
@@ -135,6 +135,7 @@ env $(grep -v '^#' .env | xargs) ./.venv/bin/python -m scripts.run_matrix
 | `report.py` | 分组表、可分性分布图、页脚限制 |
 | `corpus.py` | 语料装载与排除规则 |
 | `selection.py` | **选型结论**。维度这个数在代码里的唯一出处 |
+| `lexical.py` | **混合检索的词法一路**（2026-10-07，口径 F97）：分词（拉丁词 + 轻量词尾归一、CJK 二元组）、`tsquery`、RRF 融合。**索引侧与查询侧共用 `tokens()`** |
 | `sql/001_slices.sql` | pgvector 表结构 + RLS（**只出 SQL，不接线上库**） |
 
 ## 六、凭据

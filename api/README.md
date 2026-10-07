@@ -72,7 +72,13 @@ F1 阶段 1.5 论证过：F1 全部读写落在一张表上，多一跳 FastAPI 
 | `GET /health` | 不需要 token。只报服务状态与「模型 key 配没配」 |
 | `GET /me/style` | 以用户身份读 `style_config`。读到的是自己那行**不是因为这里过滤了 `user_id`**，而是因为策略 `style_config_select_own` 在数据库里 |
 | `POST /explain` | 一轮讲解。四条轴全部进 prompt（A 类 + B 类，口径 F45），详细程度同时驱动 `RuleReviewer` 的判定（口径 X05）。**阶段 5 起可选 `course_id`**（真检索那门课，见 §四）、**阶段 6 起可选 `session_id` / `turn_index`**（埋点，见 §七） |
-| `GET /courses` · `POST /courses` · `POST /courses/{id}/documents` | 摄入，见 §六 |
+| `POST /explain/stream` | **流式**的 `/explain`（SSE，口径 F94）。`done` 事件的响应体与 `/explain` 逐字段同形——两条路由共用 `_prepare_explain` + `_run_explain`。开流前能判的错仍走状态码 |
+| `GET /courses` · `POST /courses` · `POST /courses/{id}/documents` | 摄入，见 §六。2026-10-07 起摄入多三步：看图转写（F100）、定位语（F99）、词条（F97） |
+| `POST /courses/{id}/retrieve` | **只检索、不生成**，可 `ablate` 改写 / 词法 / 重排——评测用（`scripts/eval_retrieval_prod.py`） |
+| `POST /courses/{id}/reindex` | 把老口径的文档升级到当前检索索引（只用落库的 units；切口径是最后一步） |
+
+> 2026-10-07 的全部改动（流式、判断并行、混合检索、看图转写）见 `docs/项目进度总结.md` §十七，
+> 口径 F93–F101 在 `f1_samples/README.md`。**部署前先跑两条新迁移**——这一次迁移晚了主链路会红。
 
 ## 四、检索（阶段 5）：**给了 `course_id` 就是真的**
 

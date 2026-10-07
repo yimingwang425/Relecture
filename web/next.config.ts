@@ -1,5 +1,3 @@
-import path from "node:path";
-
 import type { NextConfig } from "next";
 import { assertNoSecretsInPublicEnv } from "./lib/public-env-guard.mjs";
 

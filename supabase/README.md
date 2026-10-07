@@ -8,6 +8,8 @@ migrations/20260907120000_f1_style_config.sql   style_config 的唯一 DDL 出�
 migrations/20260909130000_…_drop_p1.sql         detail_level CHECK 收紧到 P0/P2/P3
 migrations/20260910090000_…_revoke_client_insert.sql   收回 style_config 的客户端 insert
 migrations/20260910140000_f1_style_events.sql   style_events 的唯一 DDL 出处（阶段 4）
+migrations/20261007100000_f2_hybrid_lexicon.sql slice_lexicon + match_slices_lexical + documents.index_ruleset / vision_pages（本地全验）
+migrations/20261007100100_f2_match_indexed.sql  match_slices_indexed（要 pgvector，本地跳过，真库验）
 verify_rls_prod.py                              生产验收（正向，publishable key）
 verify_rls_local.mjs                            本地反向验证（拆防护，断言必须红）
 ```

@@ -74,7 +74,10 @@ comment on function public.f1_event_arm_matches_config() is
 
 -- ---------------------------------------------------------------- 执行记录
 --
---     生产执行日期：（待填）　执行结果：（待填）
+--     生产执行日期：2026-10-07　执行结果：成功
+--
+--     **真库观测**（verify_retrieval_prod.py 第 4 节，构建 0799e49）：09-12 建的验收账号
+--     （f1_arm = pairwise）「事件真的落库」从 emitted 0 / failed 3（23514）变成 emitted 3 / failed 0。
 --
 -- 真库上要观测的一件事：用 09-20 之前注册的账号（如 f1-rls-a）重跑
 -- `verify_retrieval_prod.py`，第 4 节「事件真的落库（期望 3 条）」变绿。

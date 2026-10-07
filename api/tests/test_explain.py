@@ -327,3 +327,60 @@ class TestTheTurnIsPersisted:
                     conversation_id="00000000-0000-4000-8000-000000000000")
         assert r.status_code == 404, r.text
         assert not [u for u, _ in rest.writes if "/messages" in u]
+
+
+class TestFollowupNote:
+    """追问的限定语（口径 F107）：**有历史才加，加在本轮用户消息里**。
+
+    每条正向断言旁边都有反向控制：一个「每轮都加」的实现会让「追问时有」全绿，
+    只有「第一轮没有」能把它抓出来。
+    """
+
+    Recorder = TestConversationHistoryReachesTheModel.Recorder
+
+    def _history(self):
+        return _conv_rest(messages=[
+            {"conversation_id": CONV, "role": "user", "content": "特征值是什么", "turn_index": 1},
+            {"conversation_id": CONV, "role": "assistant", "content": "只被缩放的那个方向", "turn_index": 1},
+        ])
+
+    def test_followup_turn_carries_the_note(self, jwks, keypair):
+        from api.followup import FOLLOWUP_NOTE
+
+        rec = self.Recorder()
+        r = _ask_in(build(jwks, self._history(), model=rec), keypair, q="没懂，能简单点吗")
+        assert r.status_code == 200, r.text
+        assert FOLLOWUP_NOTE in rec.seen[-1]["content"]
+        # 在**本轮**消息里，不在历史里：历史是上一轮原样，不该被改写。
+        assert all(FOLLOWUP_NOTE not in m["content"] for m in rec.seen[:-1])
+
+    def test_first_turn_has_no_note(self, jwks, keypair):
+        """反向控制：会话里还没有历史 → 一个字都不加。"""
+        from api.followup import FOLLOWUP_NOTE
+
+        rec = self.Recorder()
+        r = _ask_in(build(jwks, _conv_rest(), model=rec), keypair)
+        assert r.status_code == 200, r.text
+        assert FOLLOWUP_NOTE not in rec.seen[-1]["content"]
+
+    def test_one_off_question_has_no_note(self, jwks, keypair):
+        """反向控制：不带会话的一次性问答（`/explain` 跨课页）也不加。"""
+        from api.followup import FOLLOWUP_NOTE
+
+        rec = self.Recorder()
+        r = _ask_in(build(jwks, self._history(), model=rec), keypair, conversation_id=None)
+        assert r.status_code == 200, r.text
+        assert FOLLOWUP_NOTE not in rec.seen[-1]["content"]
+
+    def test_note_never_asks_for_longer_answers(self):
+        """措辞约束（同 F58）：不许出现「更详细 / 更长」——与段落长度的判定方向相反。"""
+        from api.followup import FOLLOWUP_NOTE
+
+        assert not any(w in FOLLOWUP_NOTE for w in ("更详细", "详细一点", "更长", "展开讲"))
+        assert "新问题" in FOLLOWUP_NOTE, "要让模型分得清：新问题照常回答，不是每轮都重讲"
+
+    def test_prefix_function_is_the_only_switch(self):
+        from api.followup import FOLLOWUP_NOTE, followup_prefix
+
+        assert followup_prefix([]) == ""
+        assert followup_prefix([{"role": "user", "content": "x"}]) == FOLLOWUP_NOTE

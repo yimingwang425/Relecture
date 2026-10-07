@@ -14,10 +14,7 @@ import {
   gapNotice,
   hasPending,
   isFromRequestedCourse,
-  markButtonDisabled,
-  markUnavailable,
   nextTurnIndex,
-  submitMark,
   type Turn,
 } from "@/lib/explain/turns";
 import { EMPTY_DRAFT, readExplainStream } from "@/lib/explain/stream";
@@ -78,6 +75,9 @@ import { Markdown } from "@/lib/style/markdown";
 type Course = { id: string; name: string; created_at: string };
 
 type Tab = "answer" | "sources" | "diag";
+
+/** 重讲时发出去的问题前缀。用户在会话里看得见它——这一轮是重讲，不是新问题。 */
+const REDO_PREFIX = "按我刚调整的讲法，重新讲一遍：";
 
 const TABS: readonly (readonly [Tab, string])[] = [
   ["answer", "讲解"],
@@ -224,8 +224,9 @@ export function ExplainClient({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function ask() {
-    const q = question.trim();
+  /** `override`：不读输入框，直接发这一句（重讲用）。输入框里正在打的字不动。 */
+  async function ask(override?: string) {
+    const q = (override ?? question).trim();
     // **只允许一轮在飞**（见组件说明）。
     if (!q || !courseId || pending) return;
 
@@ -243,7 +244,7 @@ export function ExplainClient({
     const turnIndex = nextTurnIndex(turns);
     setTurns((prev) => [...prev, { turnIndex, question: q, courseId, state: "pending", draft: EMPTY_DRAFT }]);
     setElapsed(0);
-    setQuestion("");
+    if (override === undefined) setQuestion("");
 
     const finish = (patch: Partial<Turn>) =>
       setTurns((prev) =>
@@ -345,20 +346,17 @@ export function ExplainClient({
   }
 
   /**
-   * 「这部分没看懂」（F4）。按**下标**改那一轮，不是「最后一轮」：
-   * 用户完全可能在下一轮还在飞时回头标记上一轮。
+   * 「按新讲法重讲上一个问题」（口径 F107）。在这个会话里**再问一次**，问题前面写明是重讲——
+   * 服务端读到的是刚改好的配置，模型也知道这不是一个新问题。
+   * 上一个问题本身就是一次重讲时，剥掉前缀再套，免得越套越长。
    */
-  async function markConfused(index: number) {
-    const t = turns[index];
-    if (!t?.answer || markUnavailable(t.answer) !== null || markButtonDisabled(t.mark)) return;
-
-    const patchMark = (mark: Turn["mark"]) =>
-      setTurns((prev) => prev.map((x, i) => (i === index ? { ...x, mark } : x)));
-
-    patchMark({ status: "sending" });
-    const jwt = await token();
-    if (!jwt) return patchMark({ status: "failed", message: "登录状态已过期，请重新登录。" });
-    patchMark(await submitMark({ fetch: (u, init) => fetch(u, init), apiBase, jwt, turn: t, sessionId }));
+  const lastAnswered = [...turns].reverse().find((t) => t.state === "answered");
+  function redo() {
+    if (!lastAnswered) return;
+    const original = lastAnswered.question.startsWith(REDO_PREFIX)
+      ? lastAnswered.question.slice(REDO_PREFIX.length)
+      : lastAnswered.question;
+    void ask(`${REDO_PREFIX}${original}`);
   }
 
   const composer = (
@@ -444,7 +442,14 @@ export function ExplainClient({
                 )}
               </span>
               <span className="flex items-center gap-3">
-                {userId && <StyleNudge userId={userId} sessionId={sessionId} />}
+                {userId && (
+                  <StyleNudge
+                    userId={userId}
+                    sessionId={sessionId}
+                    // 有答过的一轮、且没有一轮在飞时才能重讲。
+                    onRedo={lastAnswered && !pending ? redo : undefined}
+                  />
+                )}
                 <span className="t-caption kbd-count max-sm:hidden">{question.length} / 500</span>
                 <button
                   data-field="ask"
@@ -653,7 +658,7 @@ export function ExplainClient({
                             ) : (
                               t.answer.roundId && (
                                 <p className="t-caption mt-6">
-                                  这一轮没有检索到课件片段，所以没有出处，也不能标记「没看懂」。
+                                  这一轮没有检索到课件片段，所以没有出处。
                                 </p>
                               )
                             )}
@@ -672,48 +677,6 @@ export function ExplainClient({
                               )}
                             </p>
 
-                            {/* ---- F4 · 这部分没看懂 ----
-                                空检索轮不渲染（POST /marks 对空 slice_ids 回 422）；
-                                服务端旧到没有 round_id 时**说出来**，不与空检索一样静默。 */}
-                            {markUnavailable(t.answer) === "old-server" && (
-                              <p className="notice notice--warn mt-4 text-[13px]" data-field="mark-old-server">
-                                服务端没有返回 round_id（构建比这一页旧），这一轮暂时标记不了。
-                              </p>
-                            )}
-                            {markUnavailable(t.answer) === null && (
-                              <div className="mt-5 border-t border-[var(--c-border-row)] pt-4" data-field="mark">
-                                <div className="flex flex-wrap items-start gap-x-5 gap-y-3">
-                                  <button
-                                    data-field="mark-confused"
-                                    data-mark-state={t.mark?.status ?? "idle"}
-                                    onClick={() => void markConfused(index)}
-                                    disabled={markButtonDisabled(t.mark)}
-                                    className="btn btn--ghost btn--sm shrink-0"
-                                  >
-                                    {t.mark?.status === "marked"
-                                      ? "已记下"
-                                      : t.mark?.status === "sending"
-                                        ? "记下中…"
-                                        : "这部分没看懂"}
-                                  </button>
-                                  {/* 口径 F56：两个按钮的说明**放在一起**，把「这次这里」与「以后都」说开。
-                                      用户点错不会有任何指标变红 —— 配置会被一路改深，而没人知道。 */}
-                                  <ul data-field="mark-scope" className="t-caption min-w-[220px] flex-1 space-y-0.5">
-                                    <li>
-                                      <b>这部分没看懂</b>：只管这次命中的这几页，不改风格配置，下次讲到时换个切入点。
-                                    </li>
-                                    <li>
-                                      <b>讲太深</b>（在<a href="/settings/style" className="link">风格设置</a>里）：以后所有讲解都往浅讲一格。
-                                    </li>
-                                  </ul>
-                                </div>
-                                {t.mark?.status === "failed" && (
-                                  <p role="alert" data-field="mark-failure" className="notice notice--danger mono mt-3 text-[12px]">
-                                    {t.mark.message}
-                                  </p>
-                                )}
-                              </div>
-                            )}
                           </>
                         )}
 

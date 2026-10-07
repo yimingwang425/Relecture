@@ -29,6 +29,7 @@ from typing import Any, Literal
 from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
+from . import followup as _followup
 from . import marks as _marks
 from .auth import AuthError, HttpJwks, Principal, TokenVerifier, bearer_token
 from .build import build_commit
@@ -452,7 +453,9 @@ def create_app(
             review_enabled=True,
             # F4 的限定语进**本轮用户消息**，不进 system（口径 F57）：
             # marks 逐轮变化，而 system 是按「会话内不变」设计的。
-            turn_prefix=confusion["note"] or "",
+            # 追问的限定语（口径 F107）跟在它后面：有历史才加，单轮一个字不多。
+            turn_prefix="\n\n".join(
+                x for x in (confusion["note"] or "", _followup.followup_prefix(history)) if x),
             # G03a 的限定语（非 `covered` 且该课件跳过页非空）由它产出、
             # 由 `build_user_turn` 渲染进本轮消息。**跳过页不给判断模型**（G01 末条）。
             gap_checker=gap_checker,

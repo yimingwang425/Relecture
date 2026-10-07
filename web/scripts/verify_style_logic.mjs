@@ -148,6 +148,7 @@ try {
       "lib/style/axes.ts",
       "lib/style/feedback.ts",
       "lib/style/taste.ts",
+      "lib/style/adjust.ts",
       "lib/style/text-arm.ts",
       "lib/style/events.ts",
       "lib/style/markdown.tsx",
@@ -1438,7 +1439,7 @@ console.log("\n\x1b[1m十三 · 讲解页 · 接线（阶段 6 第二批）\x1b[
 }
 
 // ================================================================ 十四 · 讲解页 · 这部分没看懂（F4-P2）
-console.log("\n\x1b[1m十四 · 讲解页 · 「这部分没看懂」（F4-P2）\x1b[0m");
+console.log("\n\x1b[1m十四 · 讲解页 · 「这部分没看懂」（F4-P2；按钮 2026-10-07 撤，改由追问承担）\x1b[0m");
 await (async () => {
   const T = require_(join(outExplain, "turns.js"));
   const client = readFileSync(join(WEB, "app", "explain", "explain-client.tsx"), "utf8");
@@ -1481,95 +1482,38 @@ await (async () => {
   check(eq(a.sliceKeys, KEYS), "slice_keys 原样取出，不重拼", "← 唯一拼法在服务端 slice_key()（F66）");
   check(a.confusion?.injected === false && a.confusion?.markedRounds === 0, "confusion 字段取出");
 
-  // -------- 14.2 空检索轮不渲染；服务端旧时说出来
-  check(T.markUnavailable(a) === null, "有 round_id 与切片 → 可标记");
-  check(T.markUnavailable(answered({ slice_keys: [],
-    confusion: { injected: false, skipped_reason: "本轮没有可标记的切片身份" } }).answer) === "empty-retrieval",
-    "slice_keys 为空 → empty-retrieval", "← POST /marks 对空 slice_ids 回 422");
-  check(T.markUnavailable(answered({ round_id: undefined, slice_keys: undefined }).answer) === "old-server",
-    "响应里没有 round_id → old-server", "← 服务端比客户端旧，要响亮，不能与空检索一样静默");
-  check(/markUnavailable\(t\.answer\) === null && \(\s*<div[^>]*data-field="mark"/.test(clientCode),
-    "按钮只在 markUnavailable === null 时渲染");
-  check(/markUnavailable\(t\.answer\) === "old-server"/.test(clientCode) && /data-field="mark-old-server"/.test(client),
-    "服务端旧时页面上有一句话");
-
-  // -------- 14.3 请求体：字段必须是服务端 MarkRequest 认得的（extra="forbid"）
   const mainPy = readFileSync(join(API, "main.py"), "utf8");
-  function parseMarkRequest(src) {
-    const block = /class MarkRequest\(BaseModel\):[\s\S]*?(?=\n\S)/.exec(src)?.[0] ?? "";
-    const fields = {};
-    for (const m of block.matchAll(/^ {4}(\w+):[^\n]*$/gm)) fields[m[1]] = !/=\s*None\s*$/.test(m[0]);
-    return fields;   // name → required
-  }
-  function markBodyProblems(body, fields) {
-    const p = [];
-    const extra = Object.keys(body).filter((k) => !(k in fields));
-    if (extra.length) p.push(`服务端不认得的字段 ${JSON.stringify(extra)}（extra=forbid → 422）`);
-    for (const [k, req] of Object.entries(fields)) if (req && !(k in body)) p.push(`缺必需字段 ${k}`);
-    if (!Array.isArray(body.slice_ids) || body.slice_ids.length === 0) p.push("slice_ids 为空（422）");
-    if (!body.session_id) p.push("缺 session_id → 服务端跳过 confusion_mark_created");
-    return p;
-  }
-  const fields = parseMarkRequest(mainPy);
-  check(eq(sorted_(Object.keys(fields).filter((k) => fields[k])), ["question", "round_id", "slice_ids"]),
-    "从 main.py 读出 MarkRequest 的必需字段是三个", JSON.stringify(fields));
-  const body = T.markRequestBody(answered(), "sess-1");
-  const bodyProblems = markBodyProblems(body, fields);
-  check(bodyProblems.length === 0, "请求体字段全部是 MarkRequest 认得的，且带 session_id", bodyProblems.join("；"));
-  check(eq(body.slice_ids, KEYS) && body.round_id === a.roundId && body.course_id === "c1",
-    "round_id / slice_ids 取自本轮响应，course_id 取自本轮发出时的课");
-  // 反向控制 ×2：多一个字段 / 缺 session_id，判据必须报出来。
-  check(markBodyProblems({ ...body, deck_id: "x" }, fields).length > 0,
-    "反向控制：多塞一个字段 → 判据报 422 风险");
-  {
-    const { session_id: _drop, ...noSession } = body;
-    check(markBodyProblems(noSession, fields).some((s) => s.includes("session_id")),
-      "反向控制：去掉 session_id → 判据报「服务端跳过事件」");
-  }
 
-  // -------- 14.4 点击 → 发出请求 → 成功后 disabled
-  {
-    const f = fakeFetch(OK(true));
-    const s = await submit(f.fn);
-    check(f.calls.length === 1, "点一次发一个请求", `${f.calls.length} 次`);
-    check(f.calls[0]?.url === "https://api.test/marks", "路径是 /marks（无 /api/v1）", f.calls[0]?.url);
-    check(f.calls[0]?.init.method === "POST", "方法是 POST");
-    check(eq(JSON.parse(f.calls[0]?.init.body ?? "{}"), body), "发出去的请求体就是 markRequestBody");
-    check(s.status === "marked" && T.markButtonDisabled(s) === true, "成功 → marked 且 disabled");
-    check(T.markButtonDisabled({ status: "sending" }) === true, "在飞时 disabled");
-    check(T.markButtonDisabled(undefined) === false, "未点过 → 可点");
-    // 2026-09-20：轮次列表从倒序改成正序（聊天式布局），所以下标表达式从
-    // `turns.length - 1 - i` 变成了 `index`。**断的是意图，不是那一串字符**：
-    // 用户完全可能在下一轮还在飞时回头标记上一轮，所以不能按「最后一轮」标记。
-    check(/onClick=\{\(\) => void markConfused\(index\)\}/.test(clientCode),
-      "按钮点击接到 markConfused（按那一轮自己的下标）");
-    check(!/markConfused\(turns\.length - 1\)/.test(clientCode),
-      "不按「最后一轮」标记",
-      "← 下一轮在飞时回头标上一轮，会标到错的那一轮上，而页面看起来完全正常");
-    check(/submitMark\(\{/.test(clientCode) && /disabled=\{markButtonDisabled\(t\.mark\)\}/.test(clientCode),
-      "页面走 submitMark，disabled 由 markButtonDisabled 决定");
-    check(/"已记下"/.test(clientCode), "成功后按钮文案是「已记下」");
+  // -------- 14.2–14.6 **按钮已撤**（2026-10-07，口径 F107）
+  //
+  // 原来这里验的是按钮什么时候渲染、请求体、点击后的状态机、失败恢复、重复提交。
+  // 用户的判断：难点要用户自己指出来，指出的方式就是**追问**；追问时服务端让模型
+  // 换个角度、更浅白、带例子重讲（`api/api/followup.py`）。按钮与它的客户端代码一起删了。
+  //
+  // 被测对象没了，那些断言就没有对象——留着它们是在验一段没人跑的代码（同 16.3 的处置）。
+  // 换成下面几条：**确实撤干净了**，以及**撤的只是入口**（已标过的页仍然生效）。
+  function markEntryProblems(code) {
+    return ['data-field="mark-confused"', "submitMark", "markConfused", "markButtonDisabled", "/marks`"]
+      .filter((pat) => code.includes(pat));
   }
+  check(markEntryProblems(clientCode).length === 0, "讲解页不再有「这部分没看懂」入口",
+    markEntryProblems(clientCode).join(", "));
+  check(markEntryProblems(clientCode + '\n<button data-field="mark-confused">这部分没看懂</button>').length > 0,
+    "反向控制：把按钮加回页面 → 判据红");
+  check(typeof T.submitMark === "undefined" && typeof T.markUnavailable === "undefined",
+    "turns.ts 里那几个只为按钮存在的函数也删了", "← 没有调用方的导出就是冗余代码");
+  check(/t\.answer\.confusion\?\.injected/.test(clientCode) && /data-field="confusion-injected"/.test(client),
+    "撤的只是入口：已标过的页命中时，页面照旧说「你之前标过这几页没看懂」",
+    "← 服务端照旧读 confusion_marks 注入限定语；删掉提示的话那一轮的换讲法看不出原因");
 
-  // -------- 14.5 失败 → 恢复可点，不静默
-  for (const [label, res] of [["HTTP 502", { status: 502, body: { detail: "db down" } }],
-                              ["HTTP 422", { status: 422, body: { detail: "slice_ids" } }],
-                              ["网络层失败", "throws"]]) {
-    const s = await submit(fakeFetch(res).fn);
-    check(s.status === "failed" && T.markButtonDisabled(s) === false && !!s.message,
-      `${label} → failed、可再点、带原因`, s.message);
-  }
-  check(/data-field="mark-failure"/.test(client) && /t\.mark\.message/.test(clientCode),
-    "失败原因显示在页面上");
-
-  // -------- 14.6 重复提交 created:false —— UI 与首次成功一致，不许多一个分支
-  {
-    const first = await submit(fakeFetch(OK(true)).fn);
-    const again = await submit(fakeFetch(OK(false)).fn);
-    check(eq(first, again), "created:false 与 created:true 得到完全相同的状态", JSON.stringify(again));
-    check(!/created/.test(String(T.submitMark)) && !/\.created\b/.test(clientCode),
-      "submitMark 与页面都不读 created", "← 服务端刻意不返回 409，就是为了前端少这个分支");
-  }
+  // 追问的限定语：接上了，而且只在有历史时加（行为测试在 api/tests/test_explain.py
+  // TestFollowupNote，含反向控制；这里钉的是接线与措辞约束，两处各管一层）。
+  const followPy = readFileSync(join(API, "followup.py"), "utf8");
+  check(/_followup\.followup_prefix\(history\)/.test(mainPy), "main.py 把追问限定语接进本轮消息前缀");
+  check(/return FOLLOWUP_NOTE if history else ""/.test(followPy), "只在有历史（追问）时加");
+  const note = /FOLLOWUP_NOTE = \(([\s\S]*?)\n\)/.exec(followPy)?.[1] ?? "";
+  check(note !== "" && !/更详细|详细一点|更长|展开讲/.test(note),
+    "限定语不要求「更详细」", "← 与段落长度的判定方向相反（同 CONFUSION_NOTE 那条，F58）");
 
   // -------- 14.7 埋点 confusion_mark_created：一个发送方，三个必需字段
   //
@@ -1601,13 +1545,7 @@ await (async () => {
     "反向控制：往页面里加一次 enqueue → 判据必须红");
   check(!/\/api\/v1\/marks/.test(clientCode), "页面不调 /api/v1/marks");
 
-  // -------- 14.8 文案（口径 F56）：两个按钮的说明放在一起
-  const scope = /data-field="mark-scope"[\s\S]*?<\/ul>/.exec(client)?.[0] ?? "";
-  check(/这部分没看懂/.test(scope) && /讲太深/.test(scope), "「这部分没看懂」与「讲太深」的说明在同一块里");
-  check(/这次/.test(scope) && /以后所有讲解/.test(scope) && /不改/.test(scope),
-    "说明里把「这次这几页 / 不改配置」与「以后所有讲解」说开");
-  const btn = /<button\s+data-field="mark-confused"[\s\S]*?<\/button>/.exec(client)?.[0] ?? "";
-  check(btn !== "" && !/title=/.test(btn), "按钮上没有 tooltip（说明不拆到 tooltip 里）");
+  // -------- 14.8 **已撤**（F56 那两条说明随按钮一起没了）。「讲太深」仍在设置页的反馈按钮里。
 })();
 
 // ================================================================ 十五 · 讲解页 · 兜底判断提示与出处（UI 重做）
@@ -1675,63 +1613,80 @@ console.log("\n\x1b[1m十五 · 讲解页 · 兜底判断提示与出处（UI �
     "出处面板与诊断面板在页面上", "← 诊断字段折叠不删（进度总结 §八 第 7 条）");
 }
 
-// ================================================================ 十六 · 开场标签（2026-09-19）
-console.log("\n\x1b[1m十六 · 开场标签 → 语气 / 先验（2026-09-20 起它就是开场的全部）\x1b[0m");
+// ================================================================ 十六 · 开场：四种讲法（2026-10-07，口径 F107）
+//
+// 原来这一节验的是两块标签（`BOARDS` / `resolveTaste` 的多数票与同轴矛盾作废）。
+// 2026-10-07 换成四种讲法选一种：10 个标签只落到 3 个语气档上，「卡住的时候」问的是
+// 用户答不了的问题（见 `lib/style/taste.ts` 文件头）。被测对象换了，判据跟着换——
+// 但**要钉的东西没变**：选项必须真的改变输出（没有装饰选项）、彼此可辨、取值合法。
+console.log("\n\x1b[1m十六 · 开场：四种讲法 · 讲解之后的相对调整\x1b[0m");
 {
   const T = require_(join(out, "taste.js"));
   const A = require_(join(out, "axes.js"));
+  const ADJ = require_(join(out, "adjust.js"));
 
-  // -------- 16.1 标签表本身：**没有装饰标签**
-  const ids = T.ALL_TAGS.map((x) => x.id);
-  check(new Set(ids).size === ids.length, "标签 id 不重复", `${ids.length} 个`);
-  // 2026-09-19 去掉「你学什么」：课件讲什么由老师定，不由学生的专业定。
-  check(T.BOARDS.length === 2, "两个板块", T.BOARDS.map((b) => b.id).join(" / "));
-  const noEffect = T.ALL_TAGS.filter((x) => !x.effect || !x.effect.kind);
-  check(noEffect.length === 0, "每个标签都有 effect",
-    "← 没有 effect 的标签就是让用户白点一次，正是这次要消灭的「假装选择」",
-    noEffect.map((x) => x.id).join(", "));
-  const badPrior = T.ALL_TAGS.filter(
-    (x) => x.effect.kind === "prior" && !(A.AXES[x.effect.axis] ?? []).includes(x.effect.value));
-  check(badPrior.length === 0, "先验标签的取值都在该轴取值域里", "",
-    badPrior.map((x) => `${x.id}→${x.effect.value}`).join(", "));
-
-  // -------- 16.2 解析：多数票 / 平票回落 / 同轴矛盾作废 / 未知报出
-  function resolveProblems(fn) {
+  // -------- 16.1 四种讲法本身
+  const ids = T.PRESETS.map((p) => p.id);
+  check(T.PRESETS.length === 4 && new Set(ids).size === 4, "四种讲法、id 不重复", ids.join(" / "));
+  function presetProblems(presets) {
     const p = [];
-    if (fn(["tone_peer", "tone_plain", "tone_written"]).tone !== "spoken") p.push("多数票没生效");
-    if (fn(["tone_peer", "tone_written"]).tone !== "neutral") p.push("平票没回落中性");
-    if (fn([]).tone !== "neutral") p.push("没选语气时不是默认中性");
-    if ("field" in fn(["tone_peer"])) p.push("去掉的 field 又回来了（专业猜不出内容类型）");
-    if (fn(["stuck_short", "stuck_slow"]).priors.detail_level !== undefined)
-      p.push("同轴矛盾没有作废该轴先验（替用户猜了一个）");
-    if (!fn(["nope_not_a_tag"]).unknown.includes("nope_not_a_tag")) p.push("未知标签没被报出来");
-    if (fn(["stuck_why"]).priors.depth !== "why") p.push("先验没取出来");
+    for (const x of presets) {
+      for (const axis of A.AXIS_IDS) {
+        if (!A.AXES[axis].includes(x.config[axis])) p.push(`${x.id}.${axis}=${x.config[axis]} 不在取值域`);
+      }
+      if (!T.TONES.includes(x.tone)) p.push(`${x.id}.tone=${x.tone} 不在取值域`);
+      if (!x.sample || x.sample.length > 160) p.push(`${x.id} 的示例为空或太长（${x.sample?.length ?? 0} 字）`);
+    }
+    // **彼此可辨**：任意两种至少在两样上不同。只差一样的两张卡片，用户读示例分不出来。
+    for (let i = 0; i < presets.length; i++)
+      for (let j = i + 1; j < presets.length; j++)
+        if (T.presetDistance(presets[i], presets[j]) < 2) p.push(`${presets[i].id} 与 ${presets[j].id} 只差 ${T.presetDistance(presets[i], presets[j])} 样`);
     return p;
   }
-  const resolveReal = resolveProblems(T.resolveTaste);
-  check(resolveReal.length === 0,
-    "resolveTaste：多数票 · 平票回落中性 · 同轴矛盾作废 · 未知标签报出", resolveReal.join("；"));
-  check(resolveProblems(() => ({ tone: "spoken", priors: {}, unknown: [] })).length > 0,
-    "反向控制：恒返回同一个语气的实现 → 判据红");
-  check(resolveProblems((sel) => {
-    const r = T.resolveTaste(sel);
-    if (sel.includes("stuck_short") && sel.includes("stuck_slow")) r.priors.detail_level = "P3";
-    return r;
-  }).length > 0, "反向控制：同轴矛盾时替用户猜一个 → 判据红");
+  check(presetProblems(T.PRESETS).length === 0, "每种讲法取值合法、示例不超过 160 字、两两至少差两样",
+    presetProblems(T.PRESETS).join("；"));
+  check(presetProblems([...T.PRESETS, { ...T.PRESETS[0], id: "dup" }]).length > 0,
+    "反向控制：加一张与第一张一模一样的卡片 → 判据红", "← 近义词换皮正是这次要消灭的东西");
+  check(presetProblems([{ ...T.PRESETS[0], config: { ...T.PRESETS[0].config, depth: "deep" } }]).length > 0,
+    "反向控制：取值写错 → 判据红");
+  // 四种讲法加起来**覆盖了每条轴的不只一个取值**——否则那条轴开场等于没问。
+  const uncovered = A.AXIS_IDS.filter((axis) => new Set(T.PRESETS.map((p) => p.config[axis])).size < 2);
+  check(uncovered.length === 0, "每条轴在四种讲法里至少出现两个取值", uncovered.join(", "));
+  check(new Set(T.PRESETS.map((p) => p.tone)).size === 3, "三个语气档都有讲法用到");
 
-  // -------- 16.3–16.5 **已删除**（2026-09-22）
-  //
-  // 原来这里验的是排步（`plan` / `stepAtWithPriors` / `reachablePairIds`）与
-  // 「先验不许进配置」（`configFromPicksAndTone` 缺轴要抛）。
-  // 成对比较撤掉之后（口径 F83）那些函数全删了，这几条没有被测对象。
-  //
-  // ⚠️ 其中「拿先验跳过比较 → 判据红」曾经是一条重要纪律，它的前提是
-  // **比较是可信的那一半**。比较没了，前提也没了——现在标签就是配置的来源
-  // （`configFromTaste`），它的护栏在第十八节（标签真的变成四条轴、
-  // 没覆盖的轴回落默认且报出来）。
-  //
-  // 16.1 / 16.2（标签表本身、`resolveTaste` 的多数票与同轴矛盾）**全部保留**：
-  // 那两块现在是开场的全部，比以前更要紧。
+  // -------- 16.2 选中 → 配置；认不出的 id 抛，不写进库
+  const c0 = T.configFromPreset(T.PRESETS[0].id);
+  check(eq(c0.config, T.PRESETS[0].config) && c0.tone === T.PRESETS[0].tone, "configFromPreset 原样给出那一份");
+  let threw = false;
+  try { T.configFromPreset("tone_peer"); } catch { threw = true; }
+  check(threw, "认不出的 id（比如旧标签）→ 抛，不悄悄回落默认");
+  check(T.presetMatching(T.PRESETS[1].config, T.PRESETS[1].tone)?.id === T.PRESETS[1].id,
+    "presetMatching 认得出原样的配置");
+  check(T.presetMatching({ ...T.PRESETS[1].config, use_examples: "more" }, T.PRESETS[1].tone) === undefined,
+    "反向控制：改过一样之后不再算任何一种");
+
+  // -------- 16.3 讲解之后的相对调整（`adjust.ts`）
+  const base = { config: { detail_level: "P2", use_examples: "more", structure: "conclusion_first", depth: "why" }, tone: "neutral" };
+  const r1 = ADJ.applyAdjustments(base, ["shorter"]);
+  check(r1.config.detail_level === "P3", "「再短一点」沿详略阶梯走一格", r1.config.detail_level);
+  const untouched = A.AXIS_IDS.filter((x) => x !== "detail_level").every((x) => r1.config[x] === base.config[x]) && r1.tone === base.tone;
+  check(untouched, "**没点到的原样保留**", "← 用户只说了短一点，别的都不该动");
+  const r2 = ADJ.applyAdjustments(r1, ["shorter"]);
+  check(r2.config.detail_level === "P3" && r2.atEdge.includes("再短一点"), "已经最简洁再点 → 不变，并报出「到头了」",
+    JSON.stringify(r2.atEdge));
+  check(ADJ.applyAdjustments(base, ["more_spoken"]).tone === "spoken" &&
+        ADJ.applyAdjustments(base, ["more_formal"]).tone === "academic", "语气按阶梯挪一格（书面 ← 平实 → 口语）");
+  check(ADJ.applyAdjustments(base, ["deeper"]).config.depth === "derivation" &&
+        ADJ.applyAdjustments(base, ["shallower"]).config.depth === "what", "深浅沿深度阶梯挪一格");
+  check(eq(ADJ.toggleAdjustment(["shorter"], "longer"), ["longer"]), "成对的两个互斥：点「再细一点」取消「再短一点」");
+  check(ADJ.applyAdjustments(base, ["nope"]).unknown.includes("nope"), "认不出的调整报出来，不静默丢");
+  // 每个按钮都**真的会改东西**（在至少一个起点上）——没有装饰按钮。
+  const starts = T.PRESETS.map((p) => ({ config: p.config, tone: p.tone }));
+  const decorative = ADJ.ADJUSTMENTS.filter((adj) =>
+    starts.every((st) => { const r = ADJ.applyAdjustments(st, [adj.id]); return eq(r.config, st.config) && r.tone === st.tone; }));
+  check(decorative.length === 0, "每个调整按钮在某种讲法上都真的改了配置", decorative.map((x) => x.id).join(", "));
+  const pairs = ADJ.ADJUSTMENTS.filter((x) => ADJ.adjustmentById(x.pair)?.pair !== x.id);
+  check(pairs.length === 0, "成对关系是对称的", pairs.map((x) => x.id).join(", "));
 }
 
 // ================================================================ 十七 · 会话工作区（2026-09-20）
@@ -1856,12 +1811,27 @@ console.log("\n\x1b[1m十八 · 讲法矫正 · 搬进讲解之后\x1b[0m");
   check(/onCancel/.test(tour), "Esc 关掉也算看过",
     "← 否则每次进页面都再弹一次");
 
+  // -------- 18.5b 相对调整 + 重讲（2026-10-07，口径 F107）
+  //
+  // 按钮在**现在的**配置上挪：先读那一行再写。不读就写的话，只能写「按钮对应的绝对值」，
+  // 那又回到了「点一下被重置」。
+  const iRead = nudge.indexOf('.select("detail_level, use_examples, structure, depth, tone")');
+  const iWrite = nudge.indexOf("applyAdjustments(");
+  check(iRead > -1 && iWrite > iRead, "调整前先读当前配置，在它上面挪", "← 不读就只能写绝对值，等于重置");
+  check(/\{onRedo && \(/.test(nudge) && /data-field="adjust-redo"/.test(nudge),
+    "「按新讲法重讲」只在调用方给了 onRedo 时出现");
+  const explainCode2 = stripComments(readFileSync(join(WEB, "app/explain/explain-client.tsx"), "utf8"));
+  check(/onRedo=\{lastAnswered && !pending \? redo : undefined\}/.test(explainCode2),
+    "有答过的一轮、且没有一轮在飞时才能重讲", "← 在飞时重讲会撞上「只允许一轮在飞」，按钮点了没反应");
+  check(/void ask\(`\$\{REDO_PREFIX\}\$\{original\}`\)/.test(explainCode2) && /startsWith\(REDO_PREFIX\)/.test(explainCode2),
+    "重讲发的是带前缀的原问题，且不会越套越长");
+
   // -------- 18.6 开场只剩标签页，且它自己写完 onboarded_at
   check(/redirect\("\/onboarding\/taste"\)/.test(onboarding), "开场一律进标签页");
   check(!/f1_arm/.test(onboarding), "开场不再按臂分流");
   check(/onboarded_at: new Date\(\)/.test(taste), "标签页自己写 onboarded_at",
     "← 不写的话首页会把人一直送回 onboarding");
-  check(/configFromTaste\(/.test(taste), "标签真的变成四条轴",
+  check(/configFromPreset\(/.test(taste), "选中的讲法真的变成四条轴 + 语气",
     "← 不写轴的话每个新用户拿到的都是默认档");
 }
 

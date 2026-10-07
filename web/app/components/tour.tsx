@@ -84,13 +84,13 @@ function MockPanel({ focus }: { focus: "tags" | "text" }) {
       >
         <div className="mk__bar" style={{ width: "26%" }} />
         <div className="mk__tags" style={{ marginTop: 4 }}>
-          {["口语", "大白话", "平实", "书面", "教材式"].map((t, i) => (
+          {["再短一点", "再细一点", "多举例子", "少举例子", "讲浅一点"].map((t, i) => (
             <span
               key={t}
-              className={`mk__chip${focus === "tags" && (i === 1 || i === 3) ? " mk__chip--pick" : ""}`}
+              className={`mk__chip${focus === "tags" && (i === 0 || i === 2) ? " mk__chip--pick" : ""}`}
               // 两个标签先后亮起来。**错开是刻意的**：同时亮看起来像页面在闪，
               // 而不是像有人在挑。
-              style={focus === "tags" && (i === 1 || i === 3) ? { animationDelay: `${i * 140}ms` } : undefined}
+              style={focus === "tags" && (i === 0 || i === 2) ? { animationDelay: `${i * 140}ms` } : undefined}
             >
               {t}
             </span>
@@ -98,7 +98,7 @@ function MockPanel({ focus }: { focus: "tags" | "text" }) {
         </div>
         <div className="mk__bar" style={{ width: "22%", marginTop: 6 }} />
         <div className="mk__tags" style={{ marginTop: 4 }}>
-          {["先给结论", "要具体例子", "尽量短", "讲透"].map((t) => (
+          {["先说结论", "口语一点", "书面一点", "讲深一点"].map((t) => (
             <span key={t} className="mk__chip">
               {t}
             </span>
@@ -127,14 +127,14 @@ const STEPS: Step[] = [
     mock: <MockChat />,
   },
   {
-    title: "点几个标签就行",
-    lead: "不用想怎么描述。挑几个读着顺眼的，没挑到的部分保持原样，不会被一起改掉。",
+    title: "和刚才比，想怎么变就点哪个",
+    lead: "「再短一点」「多举例子」……每个只改一样，没点的部分保持原样。改完可以让它按新讲法把上一个问题重讲一遍。",
     vars: { "--zs": 2.2, "--zx": "40%", "--zy": "38%" } as React.CSSProperties,
     mock: <MockPanel focus="tags" />,
   },
   {
     title: "或者直接说一句",
-    lead: "「再短一点」「先说结论」「多举个例子」——写下来就行，我们把它变成设置。",
+    lead: "「公式少一点，多用生活里的例子」——写下来就行，我们把它变成设置。",
     vars: { "--zs": 2.4, "--zx": "40%", "--zy": "86%" } as React.CSSProperties,
     mock: <MockPanel focus="text" />,
   },

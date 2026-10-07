@@ -99,17 +99,6 @@ export type Confusion = {
   skippedReason: string | null;
 };
 
-/**
- * 「这部分没看懂」按钮的状态。**没有 `created` 这一维**：重复提交返回
- * `created: false`，而服务端刻意不返回 409，就是为了前端少一个它不关心的分支。
- */
-export type MarkState = {
-  status: "sending" | "marked" | "failed";
-  message?: string;
-  /** `POST /marks` 响应里的埋点结果（事件由服务端发，见 `submitMark`）。 */
-  events?: unknown;
-};
-
 export type TurnFailure = {
   /** HTTP 状态码；网络/CORS 层失败时为 null（那时压根没有状态码）。 */
   status: number | null;
@@ -126,8 +115,6 @@ export type Turn = {
   state: TurnState;
   answer?: TurnAnswer;
   failure?: TurnFailure;
-  /** 「这部分没看懂」。**只活在本次页面加载里**：不做跨刷新回显（口径 F60）。 */
-  mark?: MarkState;
   /**
    * 流式进行中的草稿（口径 F94）。**只在 pending 时有意义**：终态的正文、出处、
    * 诊断全部取自 `done` 事件的响应体（`answerFromResponse`），不取草稿——
@@ -306,86 +293,13 @@ export function isFromRequestedCourse(answer: TurnAnswer): boolean {
   return answer.backend === "supabase";
 }
 
-// ---------------------------------------------------------------- F4 · 这部分没看懂
-
-/**
- * 这一轮能不能标记。三种结果，页面各自处置：
- *
- * - `null`：能。
- * - `"empty-retrieval"`：本轮没有切片身份（空检索 / 走替身检索）。**不渲染按钮**——
- *   `POST /marks` 对空 `slice_ids` 回 422，一条空 mark 是死数据。
- *   ⚠️ 代价：用户想标却没得标，而这不单独埋点（`retrieval_executed` 的
- *   `slice_count` 已经算得出空检索轮占比，见 F4-P2 人工验收清单的观察项）。
- * - `"old-server"`：响应里没有 `round_id`。**服务端比这一页旧**，要响亮地说出来，
- *   不能与「空检索」一样静默不显示——那样它长得和「这一轮本来就不能标」一模一样。
- */
-export function markUnavailable(answer: TurnAnswer): null | "empty-retrieval" | "old-server" {
-  if (!answer.roundId) return "old-server";
-  if (answer.sliceKeys.length === 0) return "empty-retrieval";
-  return null;
-}
-
-/**
- * `POST /marks` 的请求体。字段必须是服务端 `MarkRequest` 认得的
- * （`extra="forbid"`，多一个就 422 —— `verify:logic` 从 `api/api/main.py` 原文读回来比对）。
- *
- * **`session_id` 与 `course_id` 必须带。** `confusion_mark_created` 由服务端在
- * 同一次请求里发（`_record_mark_event`），**缺 `session_id` 它就跳过不发**
- * （服务端不现编 session）；`course_id` 进事件那一行的列，供按课分组。
- * 前端不自己再发一条：发了就是每次点击两行。
- */
-export function markRequestBody(turn: Turn, sessionId: string) {
-  return {
-    round_id: turn.answer?.roundId ?? "",
-    // 原样带回 `/explain` 给的那一份，**不在前端重拼**（口径 F66：唯一拼法在服务端）。
-    slice_ids: turn.answer?.sliceKeys ?? [],
-    question: turn.question,
-    session_id: sessionId,
-    course_id: turn.courseId ?? null,
-  };
-}
-
-/** `fetch` 的最小面。抽成类型是为了能在断言里喂一个假的。 */
-export type FetchLike = (
-  url: string,
-  init: { method: string; headers: Record<string, string>; body: string },
-) => Promise<{ ok: boolean; status: number; json(): Promise<unknown>; text(): Promise<string> }>;
-
-/**
- * 点一次「这部分没看懂」。**永不抛**，返回按钮的下一个状态。
- *
- * - 2xx → `marked`。**不读 `created`**：重复提交（`created: false`）与首次成功
- *   在 UI 上必须一模一样，幂等是服务端的事。
- * - 非 2xx / 网络层失败 → `failed`，带一句原因，按钮恢复可点。**不静默吞掉。**
- */
-export async function submitMark(args: {
-  fetch: FetchLike;
-  apiBase: string;
-  jwt: string;
-  turn: Turn;
-  sessionId: string;
-}): Promise<MarkState> {
-  try {
-    const r = await args.fetch(`${args.apiBase}/marks`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${args.jwt}`, "Content-Type": "application/json" },
-      body: JSON.stringify(markRequestBody(args.turn, args.sessionId)),
-    });
-    if (!r.ok) {
-      const detail = await r.text().catch(() => "");
-      return { status: "failed", message: `没记上（HTTP ${r.status}）。${detail}`.trim() };
-    }
-    const body = (await r.json()) as { events?: unknown };
-    return { status: "marked", events: body.events };
-  } catch (e) {
-    return { status: "failed", message: `没记上：连不上产品服务端。原始错误：${String(e)}` };
-  }
-}
-
-/** 成功之后本轮内不可再点；在飞时也不可再点。失败 → 可点。 */
-export function markButtonDisabled(mark: MarkState | undefined): boolean {
-  return mark?.status === "sending" || mark?.status === "marked";
-}
+// ---------------------------------------------------------------- F4 · 这部分没看懂（按钮已撤）
+//
+// 2026-10-07 撤掉了「这部分没看懂」按钮与它的客户端代码（`markUnavailable` /
+// `markRequestBody` / `submitMark` / `markButtonDisabled`，口径 F107）：难点由用户
+// **追问**说出来，追问时服务端让模型换个角度、更浅白、带例子重讲那一点。
+// 已经标过的页仍然生效——服务端照旧读 `confusion_marks`，命中时注入限定语，
+// 页面照旧显示「你之前标过这几页没看懂」（`confusion` 字段，见上面的 TurnAnswer）。
 
 /**
  * 库里的 `messages` 行 → 页面上的轮次（F5，2026-09-20）。

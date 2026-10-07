@@ -45,6 +45,7 @@ export default async function StyleSettingsPage() {
           <StyleSettings
             userId={result.userId}
             initialConfig={configOf(result.row)}
+            initialTone={result.row.tone}
             onboarded={result.row.onboarded_at !== null}
             arm={result.row.f1_arm}
             sessionId={newSessionId()}
@@ -62,6 +63,7 @@ export default async function StyleSettingsPage() {
               ["use_examples", result.row.use_examples, "use_examples"],
               ["structure", result.row.structure, "structure"],
               ["depth", result.row.depth, "depth"],
+              ["tone", result.row.tone, "tone"],
               ["f1_arm", result.row.f1_arm, "f1_arm"],
               [
                 "onboarded_at",

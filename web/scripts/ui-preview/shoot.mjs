@@ -101,6 +101,23 @@ const SHOTS = [
     await p.waitForSelector('[data-field="turn"][data-state="answered"]', { timeout: 30000 });
     await p.waitForTimeout(800);
   }],
+  // 动线：调整讲法 → 应用 → 按新讲法重讲上一个问题（在这个会话里多出一轮）
+  ["adjust-redo", true, async (p) => {
+    await seenTour(p);
+    await p.goto(`${BASE}/courses/c-energy`);
+    await p.waitForSelector('[data-field="turn"][data-state="answered"]');
+    const before = await p.locator('[data-field="turn"]').count();
+    await p.click('[data-field="style-adjust-entry"]');
+    await p.click('[data-adjust="shorter"]');
+    await p.click('[data-adjust="more_examples"]');
+    await p.click('[data-field="adjust-apply"]');
+    await p.waitForSelector('[data-field="adjust-redo"]', { timeout: 15000 });
+    await p.click('[data-field="adjust-redo"]');
+    await p.waitForFunction((n) => document.querySelectorAll('[data-field="turn"][data-state="answered"]').length > n - 0 &&
+      document.querySelectorAll('[data-field="turn"]').length > n, before, { timeout: 30000 });
+    await p.waitForSelector('[data-field="turn"]:last-child[data-state="answered"]', { timeout: 30000 });
+    await p.waitForTimeout(800);
+  }],
   ["empty-course", true, async (p) => { await seenTour(p); await p.goto(`${BASE}/courses/c-newbie`); await p.waitForTimeout(1200); }],
   ["settings", true, async (p) => { await p.goto(`${BASE}/settings`); await p.waitForTimeout(1200); }],
   ["style", true, async (p) => { await p.goto(`${BASE}/settings/style`); await p.waitForTimeout(1400); }],
@@ -124,7 +141,7 @@ for (const [name, authed, act] of SHOTS) {
     page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
     try {
       await act(page);
-      await page.screenshot({ path: join(OUT, `${name}-${vp}.png`), fullPage: name !== "streaming" && name !== "tour" && name !== "documents" && name !== "adjust" && name !== "drawer" && name !== "first-ask" });
+      await page.screenshot({ path: join(OUT, `${name}-${vp}.png`), fullPage: name !== "streaming" && name !== "tour" && name !== "documents" && name !== "adjust" && name !== "drawer" && name !== "first-ask" && name !== "adjust-redo" });
       console.log(`✓ ${name}-${vp}${errors.length ? `  ⚠ ${errors.slice(0, 2).join(" | ").slice(0, 300)}` : ""}`);
     } catch (e) {
       console.log(`✗ ${name}-${vp}  ${String(e).split("\n")[0]}`);

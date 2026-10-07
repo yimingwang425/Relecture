@@ -25,6 +25,7 @@ import {
 } from "@/lib/style/events";
 import { FEEDBACK_KINDS, FEEDBACK_LABEL, applyFeedback, type FeedbackKind } from "@/lib/style/feedback";
 import { createClient } from "@/lib/supabase/client";
+import { PRESETS, TONES, TONE_HINT, TONE_LABEL, presetMatching, type Tone } from "@/lib/style/taste";
 
 /**
  * 风格设置：四条轴直接改 + 四个反馈按钮。
@@ -63,12 +64,15 @@ import { createClient } from "@/lib/supabase/client";
 export function StyleSettings({
   userId,
   initialConfig,
+  initialTone,
   onboarded,
   arm,
   sessionId,
 }: {
   userId: string;
   initialConfig: StyleConfig;
+  /** 语气（2026-10-07 起设置页也能改，口径 F107）。库里认不出的值按默认档显示。 */
+  initialTone: string;
   onboarded: boolean;
   arm: Arm;
   /** 一次页面加载一个，**由服务端生成**（见 `page.tsx`）。 */
@@ -77,6 +81,9 @@ export function StyleSettings({
   const router = useRouter();
   const [saved, setSaved] = useState<StyleConfig>(initialConfig);
   const [draft, setDraft] = useState<StyleConfig>(initialConfig);
+  const startTone: Tone = (TONES as readonly string[]).includes(initialTone) ? (initialTone as Tone) : "neutral";
+  const [savedTone, setSavedTone] = useState<Tone>(startTone);
+  const [draftTone, setDraftTone] = useState<Tone>(startTone);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -90,7 +97,9 @@ export function StyleSettings({
 
   const [frozenSessionId] = useState(sessionId);
 
-  const dirty = AXIS_IDS.some((axis) => draft[axis] !== saved[axis]);
+  const dirty = AXIS_IDS.some((axis) => draft[axis] !== saved[axis]) || draftTone !== savedTone;
+  /** 草稿恰好是哪一种讲法。调过任何一样就不是任何一种——那时四张卡片都不亮。 */
+  const matched = presetMatching(draft, draftTone);
 
   /**
    * 事件队列，**每个组件实例一个**，且**只在 effect / 事件处理里取用**。
@@ -129,7 +138,12 @@ export function StyleSettings({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function write(config: StyleConfig, message: string, event: StyleEvent) {
+  /**
+   * ⚠️ 语气**不进** `style_config_changed` 事件：那条事件的 before/after 是四条轴
+   * （A5 预登记的「配置修改频率」按它算），语气是 2026-09-19 才加的维度，
+   * 塞进去会让新旧两批事件的 after 形状不一样。语气变没变看 `style_config.tone` 本身。
+   */
+  async function write(config: StyleConfig, message: string, event: StyleEvent, tone: Tone = savedTone) {
     setBusy(true);
     setError(null);
     setNotice(null);
@@ -138,7 +152,7 @@ export function StyleSettings({
     // 那是「完成过 onboarding」的时间戳，不是「最后修改时间」，改配置不该覆盖它。
     const { data, error: err } = await createClient()
       .from("style_config")
-      .update(config)
+      .update({ ...config, tone })
       .eq("user_id", userId)
       .select("user_id, detail_level, use_examples, structure, depth");
 
@@ -159,6 +173,8 @@ export function StyleSettings({
 
     setSaved(config);
     setDraft(config);
+    setSavedTone(tone);
+    setDraftTone(tone);
     setNotice(message);
     setBusy(false);
     router.refresh();
@@ -224,11 +240,58 @@ export function StyleSettings({
         {/* ================================================================ 四条轴 */}
         <section className="card enter p-2">
           <div className="px-3 pt-3 pb-4">
-            <p className="t-eyebrow"># 四条轴</p>
-            <h2 className="t-title mt-1">直接改</h2>
+            <p className="t-eyebrow"># 讲法</p>
+            <h2 className="t-title mt-1">选一种，或者逐项改</h2>
+          </div>
+
+          {/* 四种讲法：点一下把下面五项一起换掉（还要按「保存」）。逐项改过之后就不再是任何一种。 */}
+          <div className="grid gap-2 px-1 pb-3 sm:grid-cols-2" data-field="presets">
+            {PRESETS.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                data-preset={p.id}
+                data-selected={matched?.id === p.id}
+                aria-pressed={matched?.id === p.id}
+                disabled={busy}
+                onClick={() => {
+                  setDraft({ ...p.config });
+                  setDraftTone(p.tone);
+                }}
+                className="choice cursor-pointer p-3 text-left"
+              >
+                <span className="t-ui block">{p.name}</span>
+                <span className="t-caption mt-1 block">{p.summary}</span>
+              </button>
+            ))}
           </div>
 
           <div className="panel divide-y divide-[var(--c-border-row)]">
+            <fieldset data-axis="tone" className="p-4 sm:p-5">
+              <legend className="contents">
+                <span className="t-heading mb-3 flex flex-wrap items-center gap-2">
+                  语气
+                  <span className="t-caption font-[var(--fw-regular)]">只作倾向，不做判定</span>
+                </span>
+              </legend>
+              <div className="grid gap-2 sm:grid-cols-3">
+                {TONES.map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    data-value={t}
+                    data-selected={draftTone === t}
+                    aria-pressed={draftTone === t}
+                    disabled={busy}
+                    onClick={() => setDraftTone(t)}
+                    className="choice cursor-pointer p-3 text-left"
+                  >
+                    <span className="t-ui block">{TONE_LABEL[t]}</span>
+                    <span className="t-caption mt-1 block">{TONE_HINT[t]}</span>
+                  </button>
+                ))}
+              </div>
+            </fieldset>
             {AXIS_IDS.map((axis) => (
               <fieldset key={axis} data-axis={axis} className="p-4 sm:p-5">
                 <legend className="contents">
@@ -277,7 +340,7 @@ export function StyleSettings({
               type="button"
               className="btn btn--primary"
               disabled={!dirty || busy}
-              onClick={() => void write(draft, "已保存。", manualChange(saved, draft))}
+              onClick={() => void write(draft, "已保存。", manualChange(saved, draft), draftTone)}
               data-action="save"
             >
               {busy ? "保存中…" : "保存"}
@@ -288,6 +351,7 @@ export function StyleSettings({
               disabled={!dirty || busy}
               onClick={() => {
                 setDraft(saved);
+                setDraftTone(savedTone);
                 setNotice(null);
               }}
               data-action="revert"
@@ -345,8 +409,8 @@ export function StyleSettings({
             </ul>
 
             <p className="notice notice--info mt-4 text-[13px]">
-              只是<b>某一段的这几页</b>没看懂、不想以后都讲浅？别点「讲太深」——
-              去讲解页那一轮下面点<b>「这部分没看懂」</b>：不改配置，只在下次讲到这几页时换个切入点（口径 F56）。
+              只是<b>某一段</b>没看懂、不想以后都讲浅？别点「讲太深」——
+              直接在那个对话里<b>追问</b>（比如「没懂，能简单点吗」）：会换个角度、带例子重讲那一点，不改配置。
             </p>
           </div>
         </aside>

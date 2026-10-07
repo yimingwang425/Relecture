@@ -9,7 +9,7 @@ import { TasteBoards } from "./taste-client";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = { title: "先说说你的口味" };
+export const metadata: Metadata = { title: "讲解偏好" };
 
 /**
  * 开场标签页：三块，点选即可。**没有顶栏**——这一页只做一件事。

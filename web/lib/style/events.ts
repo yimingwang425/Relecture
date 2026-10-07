@@ -164,11 +164,12 @@ export function tasteShown(args: { board: string; tagIds: readonly string[] }): 
 }
 
 /**
- * 三块选完。**`priors` 进事件**是为了事后能核一件事：先验有没有真的改变提问顺序。
- * 不记的话，「自适应」是不是空转就只能靠读代码判断，而代码会变。
+ * 开场选完。
  *
- * ⚠️ 这里**不记配置**：标签不产生配置（四条轴仍由成对比较选出来），
- * 记一份配置进来会让读数的人以为标签定了轴。
+ * ⚠️ **`priors` 的含义随版本变过，分析时按 `tags` 分开读：**
+ * - 2026-09-19 起（两块标签，`tags` 是 `tone_*` / `stuck_*`）：标签给出的**先验**，只覆盖部分轴；
+ * - 2026-10-07 起（四种讲法，`tags` 是一个 `preset_*`，口径 F107）：选中那种讲法的**整份配置**，
+ *   四条轴全有。字段名不改——改名等于让新旧两批行对不上同一个 required key。
  */
 export function tasteChosen(args: {
   tags: readonly string[];

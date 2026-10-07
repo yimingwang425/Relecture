@@ -13,27 +13,16 @@ import {
   type EventQueueState,
   type StyleEvent,
 } from "@/lib/style/events";
-import { BOARDS, configFromTaste, resolveTaste, priorsAreValid } from "@/lib/style/taste";
+import { PRESETS, SAMPLE_QUESTION, configFromPreset } from "@/lib/style/taste";
 import { createClient } from "@/lib/supabase/client";
 
 /**
- * 三块标签的交互。
- *
- * ## 限制选择数量不是为了省事
- *
- * 允许无限多选时人会「什么都想要」，结果是不产生区分度——这是评分量表相对于
- * 强制取舍（MaxDiff / 最优最劣量表）的已知缺陷。每块 `max` 由 `taste.ts` 给，
- * 达到上限后其余标签置灰**并说明原因**，不是静默失效。
- *
- * ## 「展示」事件按**真的进入视口**发
- *
- * 三块在同一页上，挂载时全发的话，`style_taste_shown` 只能告诉我们「这一页被打开过」，
- * 而我们要问的是「用户在第几块走掉」。所以用 IntersectionObserver，每块只发一次。
+ * 开场：四种讲法选一种（口径 F107）。卡片与示例的定义在 `lib/style/taste.ts`。
  *
  * ## 写库成功之后才跳下一页
  *
- * 跳了再写的话，写失败的表现是「下一页的比较顺序莫名其妙」——那时已经没人知道
- * 是标签没存上（同 F42 的处置方向：不打断，但也不静默）。
+ * 跳了再写的话，写失败的表现是「后面的讲解莫名其妙」——那时已经没人知道
+ * 是选择没存上（同 F42 的处置方向：不打断，但也不静默）。
  */
 export function TasteBoards({
   userId,
@@ -47,7 +36,10 @@ export function TasteBoards({
   initialTags: string[];
 }) {
   const router = useRouter();
-  const [selected, setSelected] = useState<string[]>(initialTags);
+  // 走过一遍又回来的人：上次选的那种讲法预先选中。老用户存的是旧标签 id，认不出就不选。
+  const [picked, setPicked] = useState<string | null>(
+    () => initialTags.find((id) => PRESETS.some((p) => p.id === id)) ?? null,
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [eventState, setEventState] = useState<EventQueueState>({
@@ -59,9 +51,8 @@ export function TasteBoards({
 
   const [frozenSessionId] = useState(sessionId);
   const startedAtRef = useRef<number | null>(null);
-  const shownRef = useRef<Set<string>>(new Set());
 
-  /** 事件队列：每个实例一个，只在 effect / 事件处理里取用（同其余三页）。 */
+  /** 事件队列：每个实例一个，只在 effect / 事件处理里取用（同设置页）。 */
   const queueRef = useRef<EventQueue | null>(null);
   function eventQueue(): EventQueue {
     if (queueRef.current === null) {
@@ -79,77 +70,35 @@ export function TasteBoards({
     setEventState(q.state());
     void q.flush();
     startedAtRef.current = performance.now();
+    // 一页、一块，挂载即是看到了。`board` 记成 "preset"，与旧的 "tone" / "stuck" 分得开。
+    send(tasteShown({ board: "preset", tagIds: PRESETS.map((p) => p.id) }));
     return off;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 每块**真的进入视口**时发一次展示事件（见组件说明）。
-  useEffect(() => {
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          const id = (e.target as HTMLElement).dataset.board;
-          if (!e.isIntersecting || !id || shownRef.current.has(id)) continue;
-          shownRef.current.add(id);
-          const board = BOARDS.find((b) => b.id === id);
-          if (board) send(tasteShown({ board: id, tagIds: board.tags.map((t) => t.id) }));
-        }
-      },
-      { threshold: 0.35 },
-    );
-    for (const el of document.querySelectorAll("[data-board]")) io.observe(el);
-    return () => io.disconnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const taste = resolveTaste(selected);
-  const perBoard = BOARDS.map((b) => ({
-    board: b,
-    picked: selected.filter((id) => b.tags.some((t) => t.id === id)),
-  }));
-  const unmet = perBoard.filter(({ board, picked }) => picked.length < board.min);
-  const canContinue = unmet.length === 0 && !busy;
-
-  function toggle(boardId: string, tagId: string) {
-    const board = BOARDS.find((b) => b.id === boardId);
-    if (!board) return;
-    setSelected((prev) => {
-      if (prev.includes(tagId)) return prev.filter((x) => x !== tagId);
-      const mine = prev.filter((id) => board.tags.some((t) => t.id === id));
-      // 单选块（领域）：再点一个就换掉，不是被拒绝——拒绝会让人以为点坏了。
-      if (board.max === 1) return [...prev.filter((id) => !mine.includes(id)), tagId];
-      if (mine.length >= board.max) return prev;
-      return [...prev, tagId];
-    });
-  }
-
   async function submit() {
-    if (!canContinue) return;
+    if (!picked || busy) return;
     setBusy(true);
     setError(null);
 
-    if (!priorsAreValid(taste.priors)) {
-      // 取值域校验在写库之前。落进配置之后再发现，炸的地方离原因很远。
-      setError(`先验取值不在取值域里：${JSON.stringify(taste.priors)}。请把这句话报给开发。`);
+    let chosen: ReturnType<typeof configFromPreset>;
+    try {
+      chosen = configFromPreset(picked);
+    } catch (e) {
+      setError(`${String(e)}。请把这句话报给开发。`);
       setBusy(false);
       return;
     }
-
-    // ---- 2026-09-20：成对比较去掉了，**这一页就是 onboarding 的全部**。
+    const { config, tone } = chosen;
+    // 一种讲法定死全部四条轴 + 语气，**没有回落默认的轴**（旧版两块标签时有，见 F107）。
     //
-    // 所以这里要写的不再只是「先验」三列，而是真正的四条轴 + `onboarded_at`。
-    // 标签没覆盖到的轴回落默认档，并且把回落了哪几条**记进事件**——
-    // 回落本身不可怕，看不见的回落才可怕（库里「他选的 P0」和「我们填的 P0」
-    // 长得一模一样）。
-    //
-    // 仍然不碰 `f1_arm`（口径 F10：改它抛 23514）。它现在的含义从「实验臂」
-    // 变成「这行配置是怎么来的」，新用户一律 taste（见迁移 20260920120000）。
-    const { config, fellBack } = configFromTaste(taste.priors, taste.tone);
+    // 仍然不碰 `f1_arm`（口径 F10：改它抛 23514）。它的含义是「这行配置是怎么来的」，
+    // 新用户一律 taste（见迁移 20260920120000）。
     const { data, error: err } = await createClient()
       .from("style_config")
       .update({
-        taste_tags: selected,
-        tone: config.tone,
+        taste_tags: [picked],
+        tone,
         detail_level: config.detail_level,
         use_examples: config.use_examples,
         structure: config.structure,
@@ -171,38 +120,17 @@ export function TasteBoards({
       return;
     }
 
-    send(
-      tasteChosen({
-        tags: selected,
-        tone: taste.tone,
-        priors: taste.priors as Record<string, string>,
-        totalMs: Math.round(performance.now() - (startedAtRef.current ?? performance.now())),
-      }),
-    );
-    // ---- A5 预登记的「onboarding 完成率」（2026-09-22 补上）。
+    const totalMs = Math.round(performance.now() - (startedAtRef.current ?? performance.now()));
+    // `priors` 现在就是整份配置：一种讲法定死全部四条轴（不再有「回落默认」的轴）。
+    send(tasteChosen({ tags: [picked], tone, priors: { ...config }, totalMs }));
+    // ---- A5 预登记的「onboarding 完成率」。
     //
-    // ⚠️ **这条事件断过一次，而且是静默断的。** 它原来由成对比较臂的收尾屏发；
-    // 2026-09-20 把开场改成只剩这一页之后，**没有人再发它了**——完成率的分子
-    // 从此恒为 0，而不会有任何东西报错。清理废弃代码时才发现。
+    // ⚠️ **这条事件断过一次，而且是静默断的**（2026-09-20 到 09-22）：开场换页之后
+    // 没有人再发它，完成率的分子恒为 0 而不报错。页面再换时它必须跟着搬过来。
     //
     // `steps_completed` 在不同版本上含义不同（见 `events.ts` 那条注释）。
-    // 这一版记的是**用户真的动过的板块数**（0–2），不是板块总数：
-    // 总数是个常量，记一个常量等于记了个寂寞。
-    const touched = BOARDS.filter((b) => selected.some((id) => b.tags.some((t) => t.id === id)));
-    send(
-      onboardingCompleted({
-        config,
-        stepsCompleted: touched.length,
-        tone: config.tone,
-        totalMs: Math.round(performance.now() - (startedAtRef.current ?? performance.now())),
-      }),
-    );
-
-    if (fellBack.length > 0) {
-      // 标签没定下来的轴。**查得出来的数**，不是一句感觉——
-      // 如果它长期是 3 条、4 条，说明这两块标签没在做事。
-      console.info(JSON.stringify({ event: "taste_axes_fell_back", axes: fellBack }));
-    }
+    // 这一版恒为 1：只有一步、选了才能走。
+    send(onboardingCompleted({ config, stepsCompleted: 1, tone, totalMs }));
 
     router.replace("/");
   }
@@ -210,58 +138,35 @@ export function TasteBoards({
   return (
     <div className="enter pb-28" data-events-pending={eventState.pending} data-events-dropped={eventState.dropped}>
       <header className="mt-10 mb-8 sm:mt-14">
-        
-        <h1 className="t-display enter-wipe">先说说你的口味</h1>
-        <p className="t-body mt-3 max-w-[62ch]">点几个就行。之后在讲解里随时能改——那时你手上有具体的东西可以反应。</p>
+        <h1 className="t-display enter-wipe">请选择你的讲解偏好</h1>
+        <p className="t-meta mt-3">下面四段都在回答同一个问题：{SAMPLE_QUESTION}</p>
       </header>
 
-      <div className="flex flex-col gap-8">
-        {perBoard.map(({ board, picked }) => (
-          <section key={board.id} data-board={board.id} className="card p-2">
-            <div className="flex flex-wrap items-baseline justify-between gap-2 px-3 pt-3 pb-4">
-              <div>
-                <h2 className="t-title">{board.title}</h2>
-                <p className="t-meta mt-1 max-w-[56ch]">{board.lead}</p>
-              </div>
-              <span className="t-caption kbd-count shrink-0" data-field={`count-${board.id}`}>
-                {picked.length} / {board.max}
+      <div className="grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="讲解偏好">
+        {PRESETS.map((p) => {
+          const active = picked === p.id;
+          return (
+            <button
+              key={p.id}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              data-preset={p.id}
+              data-selected={active}
+              disabled={busy}
+              onClick={() => setPicked(p.id)}
+              className="choice flex cursor-pointer flex-col gap-3 p-5 text-left"
+            >
+              <span>
+                <span className="t-title block">{p.name}</span>
+                <span className="t-meta mt-1 block">{p.summary}</span>
               </span>
-            </div>
-
-            <div className="panel flex flex-wrap gap-2 p-4">
-              {board.tags.map((tag) => {
-                const active = selected.includes(tag.id);
-                const full = !active && board.max > 1 && picked.length >= board.max;
-                return (
-                  <button
-                    key={tag.id}
-                    type="button"
-                    data-tag={tag.id}
-                    data-selected={active}
-                    aria-pressed={active}
-                    disabled={full || busy}
-                    onClick={() => toggle(board.id, tag.id)}
-                    className={`chip h-auto cursor-pointer px-4 py-2 text-[14px] transition-colors ${
-                      active
-                        ? "border-[var(--c-accent)] bg-[var(--c-accent-wash)] text-[var(--c-accent-ink)]"
-                        : full
-                          ? "opacity-40"
-                          : "hover:border-[var(--c-border-strong)]"
-                    }`}
-                  >
-                    {tag.label}
-                  </button>
-                );
-              })}
-            </div>
-
-            {board.max > 1 && picked.length >= board.max && (
-              <p className="t-caption px-3 py-2" data-field={`full-${board.id}`}>
-                最多 {board.max} 个。想换先取消一个。
-              </p>
-            )}
-          </section>
-        ))}
+              <span className="t-sample block border-l-2 border-[var(--c-border-strong)] pl-3 text-[14.5px] leading-[1.85] text-[var(--c-ink-soft)]">
+                {p.sample}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {error && (
@@ -279,22 +184,17 @@ export function TasteBoards({
         </p>
       )}
 
-      {/* 操作条吸底：三块要滚，按钮不能只在页底。 */}
-      <div className="sticky bottom-4 z-20 mt-8">
-        <div className="panel card--raised flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
-          <button
-            type="button"
-            className="btn btn--primary"
-            disabled={!canContinue}
-            onClick={() => void submit()}
-            data-action="continue"
-          >
-            {busy ? "保存中…" : "开始用"}
-          </button>
-          <span className="t-meta" data-field="gate">
-            {unmet.length === 0 ? `已选 ${selected.length}` : `还差：${unmet.map(({ board }) => board.title).join(" · ")}`}
-          </span>
-        </div>
+      {/* 吸底：卡片在手机上要滚，按钮不能只在页底。 */}
+      <div className="sticky bottom-4 z-20 mt-8 flex justify-end">
+        <button
+          type="button"
+          className="btn btn--primary btn--lg card--raised"
+          disabled={!picked || busy}
+          onClick={() => void submit()}
+          data-action="continue"
+        >
+          {busy ? "保存中…" : "下一步"}
+        </button>
       </div>
     </div>
   );

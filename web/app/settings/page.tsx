@@ -55,7 +55,7 @@ export default async function SettingsPage() {
           <div className="min-w-0 flex-1">
             <p className="row__title">讲解风格</p>
             <p className="row__sub">
-              改讲得多细、举不举例子、先给结论还是先铺垫、讲到什么深度。也可以重走一遍六步选择。
+              四种讲法选一种，或者逐项改：讲多细、举不举例子、先结论还是先铺垫、讲多深、语气。
             </p>
           </div>
           <span aria-hidden className="t-meta">

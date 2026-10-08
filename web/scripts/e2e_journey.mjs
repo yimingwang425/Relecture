@@ -408,16 +408,34 @@ class Journey {
     });
 
     // ---- 8. 刷新：都还在
-    await this.step("刷新页面：会话与三轮都在（库里 6 条消息）", async () => {
+    // **先查库、再看页面**，分开成两步：刷新后看不到第三轮时，要分得清是「没写进库」
+    // （服务端落库失败不打断讲解，F42——屏幕上一切正常，库里少了几行）还是「库里有、页面没渲染出来」。
+    // 2026-10-08 第一次生产跑红在这里，而原来那一步把两件事绑在一起，红了说不出是哪一边。
+    let convId = null;
+    await this.step("库里：一个会话、三问三答 6 条消息", async () => {
+      const convs = await rest(jwt, `conversations?select=id,title&course_id=eq.${this.courseId}`);
+      if (convs.length !== 1) throw new Error(`这门课有 ${convs.length} 个会话，应为 1（新对话不该建空行）`);
+      convId = convs[0].id;
+      const msgs = await rest(jwt, `messages?select=role,turn_index&conversation_id=eq.${convId}&order=created_at.asc`);
+      const shape = msgs.map((m) => `${m.turn_index}${m.role === "user" ? "问" : "答"}`).join(" ");
+      if (msgs.length !== 6) throw new Error(`messages ${msgs.length} 条，应为 6：[${shape}]`);
+      return `「${convs[0].title.slice(0, 16)}」· [${shape}]`;
+    });
+    await this.step("刷新页面：会话在侧栏、三轮都显示", async () => {
       await page.reload();
-      await page.locator('[data-field="turn"][data-state="answered"]').nth(2).waitFor({ timeout: 30000 });
+      const answered = page.locator('[data-field="turn"][data-state="answered"]');
+      const ok = await answered.nth(2).waitFor({ timeout: 30000 }).then(() => true, () => false);
+      if (!ok) {
+        // 红的时候把页面上**实际**有什么说出来，不只报一个超时。
+        const n = await answered.count();
+        const all = await page.locator('[data-field="turn"]').count();
+        const err = await page.locator('[data-field="workspace-error"], [data-field="documents-error"]').allInnerTexts();
+        const active = await page.locator('[data-field="conversation"][aria-current="true"]').allInnerTexts();
+        throw new Error(`30 秒后页面上 ${all} 轮（已答 ${n}）· 当前会话 ${JSON.stringify(active)}${err.length ? ` · 报错：${err.join(" | ").slice(0, 120)}` : ""}`);
+      }
       const title = await page.locator('[data-field="conversation"][aria-current="true"]').innerText();
       if (!title.includes(QUESTION.slice(0, 10))) throw new Error(`当前会话标题是「${title}」，应取第一个问题`);
-      const convs = await rest(jwt, `conversations?select=id&course_id=eq.${this.courseId}`);
-      if (convs.length !== 1) throw new Error(`这门课有 ${convs.length} 个会话，应为 1（新对话不该建空行）`);
-      const msgs = await rest(jwt, `messages?select=role&conversation_id=eq.${convs[0].id}`);
-      if (msgs.length !== 6) throw new Error(`messages ${msgs.length} 条，应为 6（三问三答）`);
-      return `会话「${title.trim().slice(0, 20)}」· ${msgs.length} 条消息`;
+      return `会话「${title.trim().slice(0, 20)}」`;
     });
 
     // ---- 9. 设置页

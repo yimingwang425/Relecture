@@ -1818,8 +1818,13 @@ console.log("\n\x1b[1m十八 · 讲法矫正 · 搬进讲解之后\x1b[0m");
     "← 隐私模式下 localStorage 会抛；抛了就再弹一次，不该白屏");
   check(/useSyncExternalStore/.test(tour),
     "读那个标记不在 effect 里 setState", "← 会触发级联渲染（eslint 拦它）");
-  check(/STEPS\.length - 1/.test(tour) && /tour-dot/.test(tour),
+  check(/SCENES\.length - 1/.test(tour) && /tour-dot/.test(tour),
     "三步之间能来回，且底部有进度点");
+  // 2026-10-08 重画：画面里的「调整讲法」按钮文字取自 ADJUSTMENTS，不抄一份——
+  // 抄一份的话，改了那张表，引导就在教一组已经不存在的按钮（旧版就是这样漂开的）。
+  check(/from "@\/lib\/style\/adjust"/.test(tour) && /ADJUSTMENTS\.map/.test(tour) && !/"再短一点"/.test(tour),
+    "引导里的调整按钮取自 ADJUSTMENTS，没有抄写的标签");
+  check(/prefers-reduced-motion/.test(tour), "减弱动效时不播，停在最后一帧");
   check(/onCancel/.test(tour), "Esc 关掉也算看过",
     "← 否则每次进页面都再弹一次");
 

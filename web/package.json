@@ -14,7 +14,9 @@
     "verify:axes": "node scripts/verify_style_axes.mjs",
     "verify:logic": "node scripts/verify_style_logic.mjs",
     "verify:explain-py": "node scripts/verify_explain_py.mjs",
-    "verify:api": "node scripts/verify_api.mjs"
+    "verify:api": "node scripts/verify_api.mjs",
+    "e2e:mock": "node scripts/e2e_journey.mjs --target mock",
+    "e2e:prod": "node scripts/e2e_journey.mjs --target prod"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.124.0",

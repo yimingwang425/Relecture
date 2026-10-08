@@ -124,3 +124,36 @@ jobs:
         run: git config user.email "$(git log -1 --format=%ae)"
       - run: npm run verify:guards
         working-directory: web
+
+  # 端到端动线（2026-10-08）：一个真 Chromium 按真用户的路线走一遍——登录 → 选讲法 → 建课 →
+  # 上传 → 提问 → 追问 → 调整讲法并重讲 → 刷新仍在 → 设置页 → 退出。
+  #
+  # **跑的是假后端**（web/scripts/ui-preview/mock-server.mjs）：不花钱、不要账号、约一分钟。
+  # 它证明的是「前端这条路走得通、每一步落到了对的数据上」，**不证明**真模型讲得好、真库的
+  # RLS 挡得住——那些是部署后 `npm run e2e:prod` 的事（要钱、要账号、要 --commit，F17）。
+  # 与上面三个 job 分开报（F34）：这一条红，说的是动线断了，不是哪道单元门。
+  e2e:
+    name: e2e · 用户动线（假后端）
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+        working-directory: web
+      - name: 装 Chromium（与 @playwright/test 同版本）
+        run: npx playwright install --with-deps chromium
+        working-directory: web
+      - run: npm run e2e:mock
+        working-directory: web
+      - name: 失败时留下报告与截图
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-report
+          path: web/.e2e-runs/
+          retention-days: 14

@@ -49,3 +49,6 @@ api/scripts/.ingest_real_state.json
 
 # 批量建号生成的明文密码（scripts/invite_user.mjs --count / --emails）。只在本地。
 scripts/invited/
+
+# 端到端动线测试的报告与失败截图（web/scripts/e2e_journey.mjs）
+web/.e2e-runs/

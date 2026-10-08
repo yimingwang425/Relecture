@@ -48,3 +48,7 @@ node scripts/invite_user.mjs --emails 'a@x.com,b@y.com' --note '同学试用'   
 | a5@test.local | 2026-09-10 | 阶段4复验 主臂 | `6ffac4ab-4842-451e-8548-d30d31bb7da4` |
 | f1-rls-a@example.com | 2026-09-11 | 真库验证 A | `765c629b-52d7-441f-bdb8-d123872fe53d` |
 | f1-rls-b@example.com | 2026-09-11 | 真库验证 B | `1326580d-33b2-45e2-b26f-4c63d4f8aca3` |
+| e2e01@test.local | 2026-10-08 | e2e | `929dad60-1531-4ce4-8783-3b1a4453c944` |
+| e2e02@test.local | 2026-10-08 | e2e | `2c7e2de9-4aef-487a-83c4-3901a1ead811` |
+| e2e03@test.local | 2026-10-08 | e2e | `e7b22d22-ab1f-4344-a82c-fc34619de428` |
+| e2e04@test.local | 2026-10-08 | e2e | `f10984a0-3b9e-4028-b092-c8660461b92d` |

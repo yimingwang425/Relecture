@@ -1,0 +1,219 @@
+{
+  "date": "2026-10-07",
+  "course_id": "192ce225-acc7-4fc9-a200-79e57a0b0ae9",
+  "questions": 24,
+  "rulesets_before": [
+    "embed-text-1.0"
+  ],
+  "round1": {
+    "C0 只有向量": {
+      "multipage": {
+        "n": 7,
+        "full_hit": 5,
+        "page_recall": 0.857,
+        "missed": 0,
+        "ceiling_zero": false
+      },
+      "no_answer": {
+        "n": 5,
+        "full_hit": 0,
+        "page_recall": 0.0,
+        "missed": 0,
+        "ceiling_zero": false
+      },
+      "synonym": {
+        "n": 17,
+        "full_hit": 15,
+        "page_recall": 0.941,
+        "missed": 0,
+        "ceiling_zero": false
+      }
+    },
+    "C1 +改写": {
+      "multipage": {
+        "n": 7,
+        "full_hit": 5,
+        "page_recall": 0.857,
+        "missed": 0,
+        "ceiling_zero": false
+      },
+      "no_answer": {
+        "n": 5,
+        "full_hit": 0,
+        "page_recall": 0.0,
+        "missed": 0,
+        "ceiling_zero": false
+      },
+      "synonym": {
+        "n": 17,
+        "full_hit": 15,
+        "page_recall": 0.941,
+        "missed": 0,
+        "ceiling_zero": false
+      }
+    },
+    "C2 +改写+词法": {
+      "multipage": {
+        "n": 7,
+        "full_hit": 5,
+        "page_recall": 0.857,
+        "missed": 0,
+        "ceiling_zero": false
+      },
+      "no_answer": {
+        "n": 5,
+        "full_hit": 0,
+        "page_recall": 0.0,
+        "missed": 0,
+        "ceiling_zero": false
+      },
+      "synonym": {
+        "n": 17,
+        "full_hit": 15,
+        "page_recall": 0.941,
+        "missed": 0,
+        "ceiling_zero": false
+      }
+    },
+    "C3 全开": {
+      "multipage": {
+        "n": 7,
+        "full_hit": 7,
+        "page_recall": 1.0,
+        "missed": 0,
+        "ceiling_zero": false
+      },
+      "no_answer": {
+        "n": 5,
+        "full_hit": 0,
+        "page_recall": 0.0,
+        "missed": 0,
+        "ceiling_zero": false
+      },
+      "synonym": {
+        "n": 17,
+        "full_hit": 17,
+        "page_recall": 1.0,
+        "missed": 0,
+        "ceiling_zero": false
+      }
+    }
+  },
+  "reindex": {
+    "index_ruleset": "embed-text-1.0+ctx-1+lex-1",
+    "already_current": 0,
+    "reindexed": [
+      {
+        "document_id": "1b92fb09-0eee-43e8-9ed1-3a5f1b0524a0",
+        "slices": 39,
+        "contextualized": 39,
+        "llm_cost_usd": 0.016525,
+        "index_ruleset": "embed-text-1.0+ctx-1+lex-1",
+        "vision_not_backfilled": false
+      },
+      {
+        "document_id": "b9b5912f-3df1-4f70-8698-3c75e44239a5",
+        "slices": 15,
+        "contextualized": 15,
+        "llm_cost_usd": 0.006884,
+        "index_ruleset": "embed-text-1.0+ctx-1+lex-1",
+        "vision_not_backfilled": false
+      }
+    ],
+    "failed": []
+  },
+  "round2": {
+    "C0 只有向量": {
+      "multipage": {
+        "n": 7,
+        "full_hit": 6,
+        "page_recall": 0.929,
+        "missed": 0,
+        "ceiling_zero": false
+      },
+      "no_answer": {
+        "n": 5,
+        "full_hit": 0,
+        "page_recall": 0.0,
+        "missed": 0,
+        "ceiling_zero": false
+      },
+      "synonym": {
+        "n": 17,
+        "full_hit": 16,
+        "page_recall": 0.971,
+        "missed": 0,
+        "ceiling_zero": false
+      }
+    },
+    "C1 +改写": {
+      "multipage": {
+        "n": 7,
+        "full_hit": 6,
+        "page_recall": 0.929,
+        "missed": 0,
+        "ceiling_zero": false
+      },
+      "no_answer": {
+        "n": 5,
+        "full_hit": 0,
+        "page_recall": 0.0,
+        "missed": 0,
+        "ceiling_zero": false
+      },
+      "synonym": {
+        "n": 17,
+        "full_hit": 16,
+        "page_recall": 0.971,
+        "missed": 0,
+        "ceiling_zero": false
+      }
+    },
+    "C2 +改写+词法": {
+      "multipage": {
+        "n": 7,
+        "full_hit": 5,
+        "page_recall": 0.857,
+        "missed": 0,
+        "ceiling_zero": false
+      },
+      "no_answer": {
+        "n": 5,
+        "full_hit": 0,
+        "page_recall": 0.0,
+        "missed": 0,
+        "ceiling_zero": false
+      },
+      "synonym": {
+        "n": 17,
+        "full_hit": 15,
+        "page_recall": 0.941,
+        "missed": 0,
+        "ceiling_zero": false
+      }
+    },
+    "C3 全开": {
+      "multipage": {
+        "n": 7,
+        "full_hit": 7,
+        "page_recall": 1.0,
+        "missed": 0,
+        "ceiling_zero": false
+      },
+      "no_answer": {
+        "n": 5,
+        "full_hit": 0,
+        "page_recall": 0.0,
+        "missed": 0,
+        "ceiling_zero": false
+      },
+      "synonym": {
+        "n": 17,
+        "full_hit": 17,
+        "page_recall": 1.0,
+        "missed": 0,
+        "ceiling_zero": false
+      }
+    }
+  }
+}

@@ -474,9 +474,16 @@ def create_app(
         if req.conversation_id:
             persisted["attempted"] = 2
             try:
+                # ⚠️ **两行的键必须一模一样**（2026-10-08 生产实测）：PostgREST 批量插入时
+                # 各对象键不同就 400 PGRST102「All object keys must match」，**整批一行都不写**。
+                # 原来问那一行没有 round_id / meta，于是从 F5 上线起会话一条消息都没存进去——
+                # 而这里吞掉异常不打断讲解（F42），屏幕上一切正常，刷新之后对话是空的。
+                # round_id 显式给 None（问那一行本来就没有，null 是事实）；meta 给 {}，
+                # 不给 None：那一列 not null，传 null 会换一种方式整批失败。
                 db.insert_messages(token=p.token, rows=[
                     {"owner": p.user_id, "conversation_id": req.conversation_id,
-                     "role": "user", "content": req.question, "turn_index": turn_index},
+                     "role": "user", "content": req.question, "turn_index": turn_index,
+                     "round_id": None, "meta": {}},
                     {"owner": p.user_id, "conversation_id": req.conversation_id,
                      "role": "assistant", "content": result.final_text,
                      "turn_index": turn_index, "round_id": round_id,

@@ -23,6 +23,16 @@ class FakeRest:
         self.seen.append((url, dict(headers)))
         if body is not None:          # 写入
             self.writes.append((url, body))
+            # **照真 PostgREST 的两条规矩拒收**（2026-10-08，生产上 messages 一直是 0 行才发现）：
+            #  · 请求体要能序列化成 JSON——真客户端（httpx）在这一步就会抛；
+            #  · 批量插入时**每个对象的键必须一模一样**，否则 400 PGRST102
+            #    「All object keys must match」，整批一行都不写。
+            # 这个假库原来什么都收，于是「问那一行少了 round_id / meta」在测试里一直是绿的。
+            import json as _json
+            from api.supabase import SupabaseError
+            _json.dumps(body)
+            if isinstance(body, list) and len({tuple(sorted(r)) for r in body}) > 1:
+                raise SupabaseError("PGRST102 All object keys must match", status=400)
             if "/messages" in url:
                 if self.fail_message_insert:
                     from api.supabase import SupabaseError

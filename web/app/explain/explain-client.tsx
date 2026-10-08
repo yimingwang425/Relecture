@@ -637,6 +637,14 @@ export function ExplainClient({
                               <Markdown text={t.answer.text} />
                             </div>
 
+                            {/* 落库失败不打断讲解（F42），但**不能静默**：不说的话用户刷新后才发现对话没了。 */}
+                            {t.answer.persistFailed && (
+                              <p role="alert" data-field="persist-failed" className="notice notice--warn mt-4 text-[13px]">
+                                这一轮没能存进会话，刷新页面后会看不到它（讲解本身不受影响）。
+                                <span className="mono mt-1 block text-[11.5px] break-all opacity-80">{t.answer.persistFailed}</span>
+                              </p>
+                            )}
+
                             {/* 出处：点名到页，**始终可见**。PRD 要求讲解能溯源到页号。 */}
                             {t.answer.sources.length > 0 ? (
                               <div className="mt-6 flex flex-wrap items-center gap-2" data-field="sources">

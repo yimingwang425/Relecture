@@ -278,7 +278,11 @@ class TestTheTurnIsPersisted:
         assert rows[1]["content"] == r.json()["text"]
         # round_id **只有 assistant 行有**；user 行为 null 是事实，不是遗漏（F50）。
         assert rows[1]["round_id"] == r.json()["round_id"]
-        assert "round_id" not in rows[0]
+        # ⚠️ 原来这里断的是 `"round_id" not in rows[0]`——**它把 bug 钉成了规格**：
+        # 两行键不同，真 PostgREST 整批拒收（PGRST102），生产上会话一条消息都没存进去
+        # （2026-10-08 e2e 实测：页面答了三轮、库里 0 行）。null 是事实，但要**显式写出来**。
+        assert rows[0]["round_id"] is None and rows[0]["meta"] == {}
+        assert set(rows[0]) == set(rows[1]), "两行的键必须一样，否则 PostgREST 批量插入整批失败"
 
     def test_turn_index_comes_from_the_database_not_the_request(self, jwks, keypair):
         """**请求里那个 turn_index 不作数。**

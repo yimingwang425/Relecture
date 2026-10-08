@@ -475,6 +475,10 @@ class Journey {
       if ((await turn.getAttribute("data-state")) === "failed") {
         throw new Error(`这一轮失败了：${(await turn.locator('[data-field="turn-failure"]').innerText()).slice(0, 160)}`);
       }
+      // 落库失败的提示条：讲解照常出来，但这一轮刷新就没了——这是功能红，不是观测。
+      if (await turn.locator('[data-field="persist-failed"]').count()) {
+        throw new Error(`这一轮没存进会话：${(await turn.locator('[data-field="persist-failed"]').innerText()).replace(/\s+/g, " ").slice(0, 160)}`);
+      }
       const answer = await turn.locator('[data-field="answer"]').innerText();
       if (answer.trim().length < 20) throw new Error(`回答只有 ${answer.trim().length} 字`);
       const paras = await turn.locator('[data-field="answer"] p').count();

@@ -51,6 +51,14 @@ export type TurnState = "pending" | "answered" | "failed";
 
 export type TurnAnswer = {
   text: string;
+  /**
+   * 这一轮**没存进会话**的原因；存好了（或本来就不存）为 null（2026-10-08）。
+   *
+   * 服务端落库失败不打断讲解（F42），原来只把结果放进响应、页面不看——于是 F5 上线起
+   * 会话一条消息都没存进去，屏幕上一切正常，刷新后对话是空的，没有人知道。
+   * 现在页面把它说出来：用户至少知道「刷新会丢」。
+   */
+  persistFailed: string | null;
   accepted: boolean;
   regenerations: number;
   meanParagraphChars: number;
@@ -182,6 +190,7 @@ export function answerFromResponse(body: {
     skipped_pages_in_scope?: { source_file: string; index: number; kind: string }[];
   };
   events?: unknown;
+  persisted?: { written?: number; attempted?: number; error?: string };
   round_id?: string;
   slice_keys?: string[];
   confusion?: {
@@ -206,8 +215,13 @@ export function answerFromResponse(body: {
     for (const p of s.pages ?? []) set.add(p);
     byFile.set(s.source_file, set);
   }
+  const pe = body.persisted;
   return {
     text: body.text,
+    persistFailed:
+      pe && (pe.attempted ?? 0) > (pe.written ?? 0)
+        ? (pe.error ?? `只存进 ${pe.written ?? 0} / ${pe.attempted} 条`)
+        : null,
     accepted: body.accepted,
     regenerations: body.regenerations,
     meanParagraphChars: body.mean_paragraph_chars,

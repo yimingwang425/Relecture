@@ -1611,6 +1611,18 @@ console.log("\n\x1b[1m十五 · 讲解页 · 兜底判断提示与出处（UI �
     "讲解页按 gapNotice 渲染提示");
   check(/data-field="slices"/.test(client) && /data-field="turn-diagnostics"/.test(client),
     "出处面板与诊断面板在页面上", "← 诊断字段折叠不删（进度总结 §八 第 7 条）");
+
+  // -------- 15.5 落库失败要说出来（2026-10-08）
+  //
+  // F5 上线起服务端写 messages 一直整批失败（PGRST102，两行键不同），而失败不打断讲解（F42），
+  // 页面不看响应里的 persisted——屏幕一切正常，刷新后对话是空的。e2e 生产跑才抓到。
+  const pf = (persisted) => T.answerFromResponse({ ...base, persisted }).persistFailed;
+  check(pf({ written: 0, attempted: 2, error: "SupabaseError: PGRST102" }) === "SupabaseError: PGRST102",
+    "没存进去 → persistFailed 带着原因");
+  check(pf({ written: 2, attempted: 2 }) === null && pf({ written: 0, attempted: 0 }) === null && pf(undefined) === null,
+    "反向控制：存好了 / 本来就不存（一次性问答）/ 旧服务端没给 → 不报");
+  check(/t\.answer\.persistFailed && \(/.test(clientCode) && /data-field="persist-failed"/.test(client),
+    "页面按 persistFailed 渲染提示条");
 }
 
 // ================================================================ 十六 · 开场：四种讲法（2026-10-07，口径 F107）

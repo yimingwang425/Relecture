@@ -191,7 +191,9 @@ async function sseExplain(req, res, body) {
   }
   const conv = body.conversation_id;
   const turnIndex = db.messages.filter((m) => m.conversation_id === conv && m.role === "user").length + 1;
-  if (conv) {
+  // MOCK_PERSIST_FAIL=1：模拟服务端落库失败（e2e 的反向控制用）。讲解照常回来，库里不写。
+  const persistFail = process.env.MOCK_PERSIST_FAIL === "1";
+  if (conv && !persistFail) {
     db.messages.push(
       { conversation_id: conv, role: "user", content: body.question, turn_index: turnIndex, round_id: null, meta: null, created_at: new Date().toISOString() },
       {
@@ -209,7 +211,10 @@ async function sseExplain(req, res, body) {
   ev("done", {
     response: {
       events: { emitted: 3, attempted: 3, failed: 0 }, round_id: roundId, slice_keys: ["d1:s026", "d1:s027"],
-      conversation_id: conv ?? null, turn_index: turnIndex, persisted: { written: 2, attempted: 2 },
+      conversation_id: conv ?? null, turn_index: turnIndex,
+      persisted: !conv ? { written: 0, attempted: 0 } : persistFail
+        ? { written: 0, attempted: 2, error: "SupabaseError: PGRST102 All object keys must match（mock）" }
+        : { written: 2, attempted: 2 },
       confusion: { injected: false, note: null, marked_rounds: 0, matched_slice_keys: [] },
       gap: { gap_verdict: "covered", gap_implementation: "model", gap_reason: null, gap_error: null, gap_skipped_hint_pages: [] },
       text, accepted: true, regenerations: 0,

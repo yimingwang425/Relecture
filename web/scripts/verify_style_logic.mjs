@@ -2012,6 +2012,17 @@ await (async () => {
   check(unknown.activity === "正在翻课件", "认不出的工具名也有一句话，不留空白", String(unknown.activity));
   const fb = at([{ type: "delta", data: { text: "半截" } }, { type: "reset", data: { reason: "fallback" } }]);
   check(fb.text === "" && fb.rewriting === 0, "reset{reason:fallback} 只清屏");
+
+  // 路由判成寒暄时，「没有出处」那句话不许说成「没有检索到」（2026-10-08 部署后验收逮到）。
+  const clientCode = readFileSync(join(WEB, "app/explain/explain-client.tsx"), "utf8");
+  check(/agent\?\.route === "chat"\s*\?\s*"这句不需要查课件，所以没有出处。"/.test(clientCode),
+    "chat 轮的「没有出处」说的是不需要查，不是没检索到");
+  const T = require_(join(outExplain, "turns.js"));
+  const chatAns = T.answerFromResponse({ text: "不客气", accepted: false, regenerations: 0, mean_paragraph_chars: 3,
+    detail_level: "P2", agent: { mode: "agent", route: { route: "chat" }, tools: [], fallback_error: null } });
+  check(chatAns.agent?.route === "chat", "响应里的 agent.route 读得出来", JSON.stringify(chatAns.agent));
+  const oldAns = T.answerFromResponse({ text: "x", accepted: true, regenerations: 0, mean_paragraph_chars: 1, detail_level: "P2" });
+  check(oldAns.agent === null, "旧构建没给 agent → null，不编", String(oldAns.agent));
 })();
 
 rmSync(out, { recursive: true, force: true });

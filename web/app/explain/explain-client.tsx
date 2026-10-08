@@ -667,8 +667,12 @@ export function ExplainClient({
                               </div>
                             ) : (
                               t.answer.roundId && (
-                                <p className="t-caption mt-6">
-                                  这一轮没有检索到课件片段，所以没有出处。
+                                // 路由判成寒暄（口径 F110）时根本没去查课件——说「没有检索到」是错话，
+                                // 听起来像检索失败了。
+                                <p className="t-caption mt-6" data-field="no-sources">
+                                  {t.answer.agent?.route === "chat"
+                                    ? "这句不需要查课件，所以没有出处。"
+                                    : "这一轮没有检索到课件片段，所以没有出处。"}
                                 </p>
                               )
                             )}
@@ -694,7 +698,9 @@ export function ExplainClient({
                         {tab === "sources" && (
                           <div data-field="slices">
                             {t.answer.slices.length === 0 ? (
-                              <p className="t-meta">这一轮没有检索到课件片段。</p>
+                              <p className="t-meta">
+                                {t.answer.agent?.route === "chat" ? "这句不需要查课件。" : "这一轮没有检索到课件片段。"}
+                              </p>
                             ) : (
                               <>
                                 <p className="t-meta mb-3">讲解用到的课件片段，按检索时的顺序。</p>

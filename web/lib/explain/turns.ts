@@ -84,6 +84,18 @@ export type TurnAnswer = {
   skippedPages: { sourceFile: string; index: number; kind: string }[];
   /** 兜底判断（F3b，内测前-P1 接进生产）。`null` = 服务端没给（构建旧于 `84b5624`）。 */
   gap: GapInfo | null;
+  /** 多智能体链路走了哪条路（口径 F109–F114）。`null` = 服务端没给（构建旧于 agent 链路）。 */
+  agent: AgentInfo | null;
+};
+
+export type AgentInfo = {
+  /** `"agent"` / `"pipeline"` / `"fallback"`。`fallback` 时 `fallbackError` 说明原因。 */
+  mode: string;
+  /** 路由的判断：`"course"` / `"chat"`；`null` = 这一轮没有路由器。 */
+  route: string | null;
+  /** 讲解 agent 调了哪些工具，按先后。 */
+  tools: string[];
+  fallbackError: string | null;
 };
 
 export type GapVerdict = "covered" | "partial" | "insufficient";
@@ -207,6 +219,12 @@ export function answerFromResponse(body: {
     gap_error?: string | null;
     gap_skipped_hint_pages?: number[];
   };
+  agent?: {
+    mode?: string;
+    route?: { route?: string } | null;
+    tools?: { name?: string }[];
+    fallback_error?: string | null;
+  } | null;
 }): TurnAnswer {
   const c = body.confusion;
   const byFile = new Map<string, Set<number>>();
@@ -264,6 +282,14 @@ export function answerFromResponse(body: {
           reason: body.gap.gap_reason ?? null,
           error: body.gap.gap_error ?? null,
           hintPages: body.gap.gap_skipped_hint_pages ?? [],
+        }
+      : null,
+    agent: body.agent
+      ? {
+          mode: body.agent.mode ?? "unknown",
+          route: body.agent.route?.route ?? null,
+          tools: (body.agent.tools ?? []).map((t) => String(t.name ?? "?")),
+          fallbackError: body.agent.fallback_error ?? null,
         }
       : null,
   };
@@ -380,6 +406,7 @@ export function turnsFromMessages(
           slice_keys: m.slice_keys as string[] | undefined,
           confusion: m.confusion as never,
           gap: m.gap as never,
+          agent: m.agent as never,
         }),
       };
     });

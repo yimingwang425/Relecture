@@ -182,7 +182,17 @@ async function sseExplain(req, res, body) {
   ev("retrieval", { round_id: roundId, slice_keys: ["d1:s026", "d1:s027"], retrieval: retrievalOf(slices), confusion: { injected: false } });
   ev("stage", { stage: "generating" });
   await sleep(Number(process.env.MOCK_FIRST_TOKEN_MS ?? 1100));
+  ev("route", { route: "course", implementation: "model" });
   ev("gap", { gap_verdict: "covered", gap_implementation: "model" });
+  // 多智能体链路（口径 F109–F114）：讲解 agent 自己再翻一次课件，查到的片随 tool(done) 到。
+  const agentSlice = { source_file: "MIT22_081JF10_lec01b.pdf", slice_id: "s028", pages: [28], title: "CENTRIFUGES", chars: 240, score: 0.512, via: "hit" };
+  ev("tool", { phase: "start", name: "search_slices" });
+  await sleep(Number(process.env.MOCK_TOOL_MS ?? 700));
+  slices.push(agentSlice);
+  ev("tool", { phase: "done", name: "search_slices", input: { query: "uranium enrichment centrifuge" }, ok: true,
+    summary: "2 片（新 1 片）：第 27、28 页", new_slices: 1, retrieval: retrievalOf(slices) });
+  const agent = { mode: "agent", route: { route: "course", implementation: "model" }, tool_rounds: 1,
+    tools: [{ name: "search_slices", ok: true, new_slices: 1 }], fallback_error: null };
   const text = STREAM_ANSWER;
   const step = 3;
   for (let i = 0; i < text.length; i += step) {
@@ -203,7 +213,7 @@ async function sseExplain(req, res, body) {
           retrieval: retrievalOf(slices), slice_keys: ["d1:s026", "d1:s027"],
           gap: { gap_verdict: "covered", gap_implementation: "model", gap_reason: null, gap_error: null, gap_skipped_hint_pages: [] },
           confusion: { injected: false, note: null, marked_rounds: 0, matched_slice_keys: [] },
-          accepted: true, regenerations: 0, detail_level: "P2", mean_paragraph_chars: 58.2,
+          accepted: true, regenerations: 0, detail_level: "P2", mean_paragraph_chars: 58.2, agent,
         },
       },
     );
@@ -217,6 +227,7 @@ async function sseExplain(req, res, body) {
         : { written: 2, attempted: 2 },
       confusion: { injected: false, note: null, marked_rounds: 0, matched_slice_keys: [] },
       gap: { gap_verdict: "covered", gap_implementation: "model", gap_reason: null, gap_error: null, gap_skipped_hint_pages: [] },
+      agent,
       text, accepted: true, regenerations: 0,
       latency: { first_token_ms: 2010.4, critical_path_ms: 5200.1, wall_ms: 5400.3, speculative_discarded: 0 },
       course_id: body.course_id ?? null, retrieval: retrievalOf(slices), detail_level: "P2", tone: "spoken",

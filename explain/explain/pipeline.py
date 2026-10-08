@@ -64,7 +64,7 @@ from .observe import Observations, observe
 from .prompt import build_system, build_user_turn, render_gap_note
 from .review import Review, RuleReviewer
 
-__all__ = ["Attempt", "RoundResult", "Trajectory", "run_round"]
+__all__ = ["Attempt", "RoundResult", "Trajectory", "run_round", "generate"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -103,6 +103,9 @@ class RoundResult:
     #: 本轮的墙钟耗时（毫秒）。与 `latency_ms` 分开：那个由各次调用自报的耗时
     #: 按关键路径算出来，可复算；这个是真的等了多久，含线程调度等一切开销。
     wall_ms: float = 0.0
+    #: 多智能体链路的轨迹（`explain.agent.AgentTrace`，口径 F109）。固定流水线为 None。
+    #: 路由、调工具的那几步、工具本身的钱**计入单轮**（F71 同一条），见下面三个属性。
+    agent: Any = None
 
     @property
     def regenerations(self) -> int:
@@ -119,13 +122,16 @@ class RoundResult:
             total = total + a.completion.usage
         for d in self.discarded:
             total = total + d.usage
+        if self.agent is not None:
+            total = total + self.agent.usage
         return total
 
     @property
     def cost_usd(self) -> float:
         return (sum(a.completion.cost for a in self.attempts)
                 + sum(d.cost for d in self.discarded) + self.gap.cost_usd
-                + self.retrieval_llm_cost_usd)
+                + self.retrieval_llm_cost_usd
+                + (self.agent.cost_usd if self.agent is not None else 0.0))
 
     @property
     def retrieval_llm_cost_usd(self) -> float:
@@ -148,7 +154,11 @@ class RoundResult:
         - 投机那一版作废：`max(判断, 投机版) + 全部正式各版`
 
         由各次调用自报的耗时算出，**可复算**；真实墙钟另记在 `wall_ms`。
+
+        多智能体链路（口径 F109）由 agent 自己按同一规则算好，记在 `agent.critical_path_ms`。
         """
+        if self.agent is not None and self.agent.critical_path_ms is not None:
+            return self.agent.critical_path_ms
         gen = self.generation_latency_ms
         if self.discarded:
             spec = sum(d.latency_ms for d in self.discarded)
@@ -209,7 +219,7 @@ class _Gate:
 
 def _generate(model: Any, system: str, messages: list[dict[str, Any]],
               on_delta: Callable[[str], None] | None,
-              cancel: threading.Event | None = None) -> Completion:
+              cancel: threading.Event | None = None, **tool_kwargs: Any) -> Completion:
     """有 `stream()` 就流式，没有就整段调用后一次性交出去。
 
     假模型与实验侧的替身大多只实现了 `complete()`——它们照样走得通这条链，
@@ -217,7 +227,7 @@ def _generate(model: Any, system: str, messages: list[dict[str, Any]],
     """
     stream = getattr(model, "stream", None)
     if callable(stream):
-        return stream(system, messages, on_delta=on_delta, cancel=cancel)
+        return stream(system, messages, on_delta=on_delta, cancel=cancel, **tool_kwargs)
     completion = model.complete(system, messages)
     if on_delta is not None and completion.text and not (cancel is not None and cancel.is_set()):
         on_delta(completion.text)
@@ -392,3 +402,7 @@ def run_round(
                                 if first_token else None),
         wall_ms=round((time.perf_counter() - t0) * 1000, 1),
     )
+
+
+#: 给 `explain.agent` 用的公开名字。**同一个函数**——两条链路的「有没有 stream()」处置不分叉。
+generate = _generate

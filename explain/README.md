@@ -73,6 +73,32 @@ python3 -m venv .venv && ./.venv/bin/pip install -e ".[dev]"
 （判断的输出进生成的 prompt），它仍然成立——F93 的投机生成正是在**不违反**这条依赖的前提下
 把等待藏起来：判断要求限定语时，投机那一版被作废，正式那一版仍然拿着判断结果生成。
 
+### 2026-10-08 · 多智能体链路（口径 F109–F114，正本在 `f1_samples/README.md`）
+
+生产的 `/explain` 不再直接调 `run_round`，而是 `agent.run_with_fallback`：
+
+    提问 ─┬─ 路由 agent（router.py，Haiku）：course / chat
+          └─ 首轮检索（代码执行，与路由并行）
+                 ↓ course
+          讲解 agent（agent.py，Sonnet + 工具循环）
+            · 第 1 步与兜底判断并行（F93 原样）
+            · search_slices / read_page / check_coverage，至多 3 轮
+                 ↓
+          风格审查（代码强制，不是工具）→ 不合格重写，上限 2
+
+| 上表的行 | 现在 | 理由 |
+| --- | --- | --- |
+| **X02** 两组共用一份 ContextPack | **生产侧被推翻**：讲解 agent 查到的片并进本轮 ContextPack（F111）。**实验侧照旧**——实验直接调 `run_round`，不经 agent | 下游只认 ContextPack，累计之后出处面板、切片键、落库 meta 一行不改就看得到 agent 查到的页 |
+| **X08** GapChecker 每轮都调 | 照旧（首轮判断仍由代码强制执行）；另外它成了讲解 agent 可以**再叫一次**的工具 `check_coverage` | F70：接进生产、不加开关 |
+| **F93** 投机生成 + 闸门 | 照旧，作用在 agent 的第 1 步上 | 不调工具、判断 `covered` 时首字延迟与改动前相同 |
+
+**`run_round` 原样保留**：它是实验侧的执行者、测试替身（不支持工具）的执行者、
+以及 agent 链路抛异常时的回落（F113）。`tests/test_parallel_stream.py` 等原有断言守的就是这条路。
+新增的断言在 `tests/test_agent.py`（链路）与 `tests/test_llm_tools.py`（SDK 那一层）。
+
+真模型验收：`explain/scripts/agent_live_check.py`（要钱；`--fake` 先跑通脚本本身）。
+**它只证明链路跑得通，不证明收益**——见脚本说明与 F109 的「收益未测」。
+
 另外三件本轮新增、与本表相关的事，正本在 `f1_samples/README.md`：
 **F94**（流式 + `reset`）、**F95**（被叫停的投机版用量是下界）、**F98**（重排）。
 检索助手（`explain/rag.py`）的模型 id 与兜底判断的 `GAP_MODEL_NAME` **数值相同、分开写**——

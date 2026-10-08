@@ -532,9 +532,11 @@ export function ExplainClient({
                         <span aria-hidden className="spinner" />
                         {t.draft?.rewriting
                           ? "上一版没达到讲法要求，正在重写"
-                          : t.draft?.stage === "generating"
-                            ? "正在组织讲解"
-                            : "正在检索课件"}
+                          : t.draft?.stage === "searching"
+                            ? (t.draft.activity ?? "正在翻课件")
+                            : t.draft?.stage === "generating"
+                              ? "正在组织讲解"
+                              : "正在检索课件"}
                         {" · "}已等 <b className="kbd-count">{elapsed}</b> 秒
                         {conversationId ? " · 关掉页面也不会丢，会存进这个会话" : ""}
                       </p>
@@ -737,6 +739,7 @@ export function ExplainClient({
                                 ["平均段落", `${t.answer.meanParagraphChars.toFixed(0)} 字`],
                                 ["重生成", `${t.answer.regenerations}（accepted=${String(t.answer.accepted)}）`],
                                 ["gap", t.answer.gap ? JSON.stringify(t.answer.gap) : "null（服务端没给）"],
+                                ["agent", t.answer.agent ? JSON.stringify(t.answer.agent) : "null（服务端没给）"],
                                 ["confusion", t.answer.confusion ? JSON.stringify(t.answer.confusion) : "null"],
                                 ["埋点结果", t.answer.events ? JSON.stringify(t.answer.events) : "—"],
                               ] as const

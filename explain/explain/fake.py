@@ -23,9 +23,9 @@ import time
 from dataclasses import dataclass, field
 from typing import Any
 
-from .llm import FAKE_PREFIX, Completion, Usage, signature
+from .llm import FAKE_PREFIX, Completion, ToolCall, Usage, signature
 
-__all__ = ["FakeExplainModel"]
+__all__ = ["FakeExplainModel", "ScriptedToolModel"]
 
 _FILLER = (
     "这一段是用于验证链路的占位讲解文字，内容本身没有意义，"
@@ -84,4 +84,78 @@ class FakeExplainModel:
         )
 
     def request_signature(self, system: str, messages: list[dict[str, Any]]) -> str:
+        return signature(self.name, self.params, system, messages)
+
+
+#: 一段能过默认配置审查的讲解（四段、每段六十字上下，落在段长默认区间里）。
+_ANSWER_PARA = ("第二十页讲的是热机效率的定义：热机把热能转成机械功，"
+                "卡诺效率等于一减去低温与高温的绝对温度之比。")
+
+
+@dataclass
+class ScriptedToolModel:
+    """**照生产 `AnthropicModel.stream` 的签名写的**、会调工具的假模型（口径 F111）。
+
+    `script` 逐次调用取一项：`("tool", [(name, input), ...])` 发起工具调用、
+    `("text", "...")` 直接作答、`("preamble+tool", text, [(name, input), ...])`
+    先吐几个字再调工具（system 不许这样，但模型不一定照做——测的是那条兜底）、
+    `("raise", "原因")` 抛异常。用完了就回默认讲解。
+
+    **`tool_choice={"type": "none"}` 时不发工具调用**，与真 API 一致——
+    否则轮数上限那条判据测的是假模型，不是链路。
+    """
+
+    script: list[tuple[Any, ...]] = field(default_factory=list)
+    name: str = FAKE_PREFIX + "claude-sonnet-5"
+    answer: str = "\n\n".join([_ANSWER_PARA] * 4)
+    params: dict[str, Any] = field(default_factory=lambda: {"effort": "medium"})
+    calls: list[dict[str, Any]] = field(default_factory=list)
+
+    def stream(self, system, messages, *, on_delta=None, cancel=None, tools=None,
+               tool_choice=None, on_tool=None) -> Completion:
+        self.calls.append({"system": system, "messages": [dict(m) for m in messages],
+                           "tools": [t["name"] for t in (tools or [])], "tool_choice": tool_choice})
+        n = len(self.calls)
+        step = self.script[n - 1] if n <= len(self.script) else ("text", self.answer)
+        kind = step[0]
+        if kind == "raise":
+            raise RuntimeError(step[1])
+        forbid = tool_choice is not None and tool_choice.get("type") == "none"
+        if kind in ("tool", "preamble+tool") and (forbid or not tools):
+            kind, step = "text", ("text", self.answer)
+
+        text, calls = "", ()
+        if kind == "text":
+            text = step[1]
+        elif kind == "preamble+tool":
+            text, calls = step[1], step[2]
+        else:
+            calls = step[1]
+
+        sent = ""
+        for piece in (text[i:i + 20] for i in range(0, len(text), 20)):
+            if cancel is not None and cancel.is_set():
+                return Completion(text=sent, usage=Usage(input_tokens=100, output_tokens=len(sent)),
+                                  latency_ms=2.0, model=self.name, stop_reason="cancelled")
+            sent += piece
+            if on_delta is not None:
+                on_delta(piece)
+        tool_calls = tuple(ToolCall(id=f"toolu_{n}_{i}", name=nm, input=dict(inp))
+                           for i, (nm, inp) in enumerate(calls))
+        for tc in tool_calls:
+            if on_tool is not None:
+                on_tool(tc.name)
+        blocks: tuple[dict[str, Any], ...] = ()
+        if tools:
+            blocks = tuple(([{"type": "text", "text": text}] if text else [])
+                           + [{"type": "tool_use", **tc.to_dict()} for tc in tool_calls])
+        return Completion(text=text, usage=Usage(input_tokens=100, output_tokens=len(text) + 10),
+                          latency_ms=2.0, model=self.name,
+                          stop_reason="tool_use" if tool_calls else "end_turn",
+                          tool_calls=tool_calls, content=blocks)
+
+    def complete(self, system, messages) -> Completion:
+        return self.stream(system, messages)
+
+    def request_signature(self, system, messages) -> str:
         return signature(self.name, self.params, system, messages)

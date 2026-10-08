@@ -9,7 +9,11 @@
  * 2. **草稿只由事件推出来**：`applyStreamEvent()` 是一个归约函数——同一串事件
  *    重放两遍得到同一份草稿。`reset`（审查不达标、要重写）**清空正文**，
  *    否则用户看到的是两版拼在一起。
- * 3. **终态只有两个出口**：`done`（与 `/explain` 的响应体逐字段同形，交给
+ * 3. **多智能体链路（口径 F109–F114）**：讲解 agent 自己去翻课件时服务端发 `tool`，
+ *    草稿进 `searching` 并说清它在做什么；查到的片随 `tool`（`phase: "done"`）一起到，
+ *    出处面板跟着更新。`reset` 带 `reason`：只有 `review` 是「在重写」，
+ *    `tool` / `fallback` 只清屏——那不是讲法没达标，说成「在重写」是错话。
+ * 4. **终态只有两个出口**：`done`（与 `/explain` 的响应体逐字段同形，交给
  *    `answerFromResponse()`）或 `error`（带 status，语义同状态码）。
  *    流在两者之前断掉，是第三种情况——**不是成功**，调用方要按失败处理。
  *
@@ -56,7 +60,9 @@ export function createSseParser(): { push(chunk: string): SseEvent[] } {
 
 /** 流式进行中的这一轮。**只活在 pending 期间**，终态由 `done` 的响应体决定。 */
 export type StreamDraft = {
-  stage: "connecting" | "retrieving" | "generating";
+  stage: "connecting" | "retrieving" | "searching" | "generating";
+  /** `searching` 时讲解 agent 正在做的那件事（一句人话）。正文一来就清掉。 */
+  activity: string | null;
   /** 已经流出来的正文。`reset` 时清空。 */
   text: string;
   /** 审查判不达标、正在重写第几版（0 = 没在重写）。 */
@@ -65,7 +71,31 @@ export type StreamDraft = {
   sources: { sourceFile: string; pages: number[] }[];
 };
 
-export const EMPTY_DRAFT: StreamDraft = { stage: "connecting", text: "", rewriting: 0, sources: [] };
+export const EMPTY_DRAFT: StreamDraft = { stage: "connecting", activity: null, text: "", rewriting: 0, sources: [] };
+
+/** 讲解 agent 的工具 → 等待时说的那句话。**认不出的工具名照样有一句**，不留空白。 */
+export const TOOL_ACTIVITY: Record<string, string> = {
+  search_slices: "正在课件里再找一找",
+  read_page: "正在翻看原页",
+  check_coverage: "正在确认材料够不够",
+};
+
+function sourcesOf(retrieval: unknown): StreamDraft["sources"] {
+  const slices = ((retrieval as { slices?: unknown[] } | undefined)?.slices ?? []) as {
+    source_file: string;
+    pages?: number[];
+  }[];
+  const byFile = new Map<string, Set<number>>();
+  for (const s of slices) {
+    const set = byFile.get(s.source_file) ?? new Set<number>();
+    for (const p of s.pages ?? []) set.add(p);
+    byFile.set(s.source_file, set);
+  }
+  return [...byFile.entries()].map(([sourceFile, pages]) => ({
+    sourceFile,
+    pages: [...pages].sort((a, b) => a - b),
+  }));
+}
 
 /** 一个事件 → 下一份草稿。**纯函数**，不改入参。 */
 export function applyStreamEvent(draft: StreamDraft, ev: SseEvent): StreamDraft {
@@ -74,28 +104,26 @@ export function applyStreamEvent(draft: StreamDraft, ev: SseEvent): StreamDraft 
       const s = ev.data.stage;
       return s === "retrieving" || s === "generating" ? { ...draft, stage: s } : draft;
     }
-    case "retrieval": {
-      const slices = ((ev.data.retrieval as { slices?: unknown[] } | undefined)?.slices ?? []) as {
-        source_file: string;
-        pages?: number[];
-      }[];
-      const byFile = new Map<string, Set<number>>();
-      for (const s of slices) {
-        const set = byFile.get(s.source_file) ?? new Set<number>();
-        for (const p of s.pages ?? []) set.add(p);
-        byFile.set(s.source_file, set);
-      }
-      return {
+    case "retrieval":
+      return { ...draft, sources: sourcesOf(ev.data.retrieval) };
+    case "tool": {
+      // 讲解 agent 在翻课件。`done` 那一条带着累计的检索结果：出处跟着长。
+      const name = String(ev.data.name ?? "");
+      const next: StreamDraft = {
         ...draft,
-        sources: [...byFile.entries()].map(([sourceFile, pages]) => ({
-          sourceFile,
-          pages: [...pages].sort((a, b) => a - b),
-        })),
+        stage: "searching",
+        activity: TOOL_ACTIVITY[name] ?? "正在翻课件",
       };
+      return ev.data.phase === "done" && ev.data.retrieval
+        ? { ...next, sources: sourcesOf(ev.data.retrieval) }
+        : next;
     }
     case "delta":
-      return { ...draft, stage: "generating", text: draft.text + String(ev.data.text ?? "") };
+      return { ...draft, stage: "generating", activity: null, text: draft.text + String(ev.data.text ?? "") };
     case "reset":
+      // 只有 `review` 是「上一版没达标、在重写」。`tool`（那几个字原来不是讲解）、
+      // `fallback`（换一条路重新讲）只清屏，不说「在重写」。
+      if (ev.data.reason === "tool" || ev.data.reason === "fallback") return { ...draft, text: "" };
       // 上一版已经给用户看过了，审查说不达标 → **清掉**，不在后面接着写。
       return { ...draft, text: "", rewriting: Number(ev.data.attempt ?? draft.rewriting + 1) };
     default:

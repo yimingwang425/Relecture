@@ -54,6 +54,24 @@ class InMemoryRetriever:
             meta=dict(self.meta),
         )
 
+    def page(self, source_file: str, page: int) -> ContextPack:
+        """讲解 agent 的 `read_page`（口径 F111）：给定映射里落在这一页上的全部切片。"""
+        seen: set[tuple[str, str]] = set()
+        out: list[ContextSlice] = []
+        for group in (self.default_slices, *self.by_question.values()):
+            for s in group:
+                key = (s.source_file, s.slice_id)
+                if s.source_file == source_file and page in s.page_indices and key not in seen:
+                    seen.add(key)
+                    out.append(s)
+        return ContextPack(
+            question=f"{source_file}#p{page}",
+            slices=tuple(out),
+            skipped_pages=self.skipped_pages,
+            unusable_files=self.unusable_files,
+            meta=dict(self.meta),
+        )
+
 
 @dataclass
 class RetrievalRetriever:

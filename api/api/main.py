@@ -167,6 +167,7 @@ def create_app(
     gap_checker_factory: Any | None = None,
     rag_model_factory: Any | None = None,
     vision_factory: Any | None = None,
+    router_factory: Any | None = None,
 ) -> FastAPI:
     """组装。每个依赖都可注入，**为的是断言能喂真东西**。
 
@@ -188,6 +189,18 @@ def create_app(
         from explain.rag import build_rag_model
 
         return build_rag_model(max_tokens, cache_system=cache_system)
+
+    # ---- 路由 agent（口径 F110）。与检索助手同一条：注入了讲解模型而没注入路由器时
+    # **不造真的路由器**，否则每条测试都真的出网。拿不到就是 None，一律按 course 走。
+    def make_router() -> Any | None:
+        if router_factory is not None:
+            return router_factory()
+        if model_factory is not None or cfg.anthropic_api_key is None:
+            return None
+        from explain.router import build_router
+
+        return build_router()
+
     verify = verifier or TokenVerifier(HttpJwks(cfg.jwks_url), issuer=cfg.issuer)
     db = supabase or SupabaseClient(cfg.rest_url, cfg.supabase_publishable_key)
 
@@ -396,7 +409,9 @@ def create_app(
 
         `emit` 收流式事件；JSON 路由传一个什么都不做的，两条路由跑的是同一段代码。
         """
-        from explain.pipeline import Trajectory, run_round
+        import dataclasses
+
+        from explain.pipeline import Trajectory
         from explain.review import RuleReviewer
         from explain.style_prompt import render_all_style_rules
 
@@ -410,7 +425,41 @@ def create_app(
         import uuid as _uuid
 
         emit({"type": "stage", "stage": "retrieving"})
+
+        # ---- 路由 agent 与首轮检索**并行**（口径 F110）。路由只看提问与最近一轮，
+        # 不依赖检索结果；检索要 1–3 s，Haiku 的一次短输出通常更早回来。
+        import threading as _threading
+
+        router = make_router()
+        route_box: dict[str, Any] = {}
+
+        def _route() -> None:
+            try:
+                route_box["route"] = router.route(req.question, history)
+            except Exception as exc:  # noqa: BLE001 —— 路由坏了按 course 走，不打断讲解
+                from explain.router import RouteResult
+
+                route_box["route"] = RouteResult(
+                    route="course", implementation="error", cost_usd=None,
+                    error=f"{type(exc).__name__}: {str(exc)[:200]}")
+
+        route_thread = None
+        if router is not None:
+            route_thread = _threading.Thread(target=_route, name="route", daemon=True)
+            route_thread.start()
         ctx = active.fetch(req.question)
+        if route_thread is not None:
+            route_thread.join()
+        route = route_box.get("route")
+        if route is not None and route.answers_directly:
+            # 寒暄：这一轮不讲课件，出处面板不该显示一组与回复无关的页。
+            # 检索已经花掉的钱留在 meta 里照记（计入单轮），片清空。
+            from explain.context import ContextPack
+
+            ctx = ContextPack(question=ctx.question, slices=(), skipped_pages=ctx.skipped_pages,
+                              unusable_files=ctx.unusable_files,
+                              meta={**(ctx.meta or {}), "hit_documents": [],
+                                    "discarded_by_route": len(ctx.slices)})
         #: 讲解轮标识（口径 F65）。**服务端生成**——响应里此前没有任何稳定的轮
         #: 标识（`retrieval.signature` 只认提问与命中切片，同一个人把同一个问题
         #: 问两遍会得到同一个值，拿它当幂等键会让第二轮的标记覆盖第一轮）。
@@ -437,12 +486,23 @@ def create_app(
         make_gap = gap_checker_factory or _default_gap_checker
         gap_checker = GuardedGapChecker(make_gap())
 
+        # ---- 多智能体链路（口径 F109–F113）：默认走 agent，走不了或走挂了回落到固定流水线。
+        # 讲解 agent 自己发起的检索**关掉查询改写**：它写的查询本来就是独立完整的一句。
+        from explain.agent import RetrieverTools, run_with_fallback
+
+        tool_backend = active
+        if dataclasses.is_dataclass(active) and hasattr(active, "ablate"):
+            tool_backend = dataclasses.replace(
+                active, ablate=frozenset(active.ablate) | {"rewrite"}, history=[])
+
         make_model = model_factory or _default_model
-        result = run_round(
+        result = run_with_fallback(
             round_index=1,
             question=req.question,
             trajectory=Trajectory(history=history),
             retriever=active,
+            tools=RetrieverTools(tool_backend),
+            route=route,
             context=ctx,
             model=make_model(),
             reviewer=RuleReviewer(style),
@@ -450,7 +510,7 @@ def create_app(
             # 语气那一行：默认 neutral 渲染成空，这一段与样例的生成条件逐字节相同。
             style_rules=render_all_style_rules(style, row.b_class, row.tone),
             course_label=label,
-            review_enabled=True,
+            # 审查恒开（`run_with_fallback` 只有这一种）：无审查对照组只在实验侧。
             # F4 的限定语进**本轮用户消息**，不进 system（口径 F57）：
             # marks 逐轮变化，而 system 是按「会话内不变」设计的。
             # 追问的限定语（口径 F107）跟在它后面：有历史才加，单轮一个字不多。
@@ -464,6 +524,8 @@ def create_app(
         )
 
         ev = result.final_review.evaluation
+        # agent 查到的片已并进 `result.context`（口径 F111）——「没看懂」要能标到它们。
+        slice_keys = _marks.slice_keys_of(result.context)
 
         # ---- F5 · 把这一问一答写回会话。**在发事件之前**，理由与事件同一条
         # （口径 F42）：写库失败**不打断这次讲解**，但也不静默——结果进响应。
@@ -496,12 +558,13 @@ def create_app(
                      # 「这条消息说了什么」就不再是一个字符串能回答的问题了。
                      "meta": {
                          # **写 `result.context`，不写上面那个 `ctx`。**
-                         # 两者目前是同一个对象（`run_round(context=ctx)` 原样带着走），
-                         # 但依赖这一点等于让「落库的出处」跟着 run_round 的内部实现走：
-                         # 哪天它在轮内重取一次，历史里存的就还是旧的那一份，
-                         # 而页面上显示得完全正常。
+                         # 这条注释写下时两者还是同一个对象，并预言过「哪天它在轮内重取一次」——
+                         # 2026-10-08 起真的会了：讲解 agent 自己查到的片并进 `result.context`
+                         # （口径 F111），而 `ctx` 只有首轮那几片。写 `ctx` 的话，历史里的出处
+                         # 会少掉 agent 查到的页，而页面上显示得完全正常。
                          "retrieval": result.context.to_dict(),
                          "gap": result.gap.to_dict(),
+                         "agent": result.agent.to_dict() if result.agent is not None else None,
                          "slice_keys": slice_keys,
                          "confusion": confusion,
                          "accepted": result.accepted,
@@ -558,6 +621,9 @@ def create_app(
             # 兜底判断的结果**从外面看得见**（口径 F53）。部署后验收第 4 步读的就是它：
             # `gap_implementation` 是 "model" 而 `gap_verdict` 不是 null，才算线上真的接上了。
             "gap": result.gap.to_dict(),
+            # 多智能体链路走了哪条路、调了哪些工具、花了多少（口径 F109–F114）。
+            # `mode` 是 "fallback" 时 `fallback_error` 说明原因——**回落从外面看得见**（F53）。
+            "agent": result.agent.to_dict() if result.agent is not None else None,
             "text": result.final_text,
             "accepted": result.accepted,
             "regenerations": result.regenerations,

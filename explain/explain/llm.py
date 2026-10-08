@@ -32,7 +32,7 @@ from datetime import date
 from typing import Any, Callable, Protocol
 
 __all__ = [
-    "Usage", "Completion", "Model", "AnthropicModel",
+    "Usage", "Completion", "ToolCall", "Model", "AnthropicModel",
     "cost_usd", "rates_for", "PRICING", "FAKE_PREFIX", "signature",
 ]
 
@@ -130,12 +130,30 @@ def cost_usd(model: str, usage: Usage, on: date | None = None) -> float:
 
 
 @dataclass(frozen=True, slots=True)
+class ToolCall:
+    """模型发出的一次工具调用（口径 F111）。`input` 是 SDK 已解析好的 dict，**不做字符串匹配**。"""
+
+    id: str
+    name: str
+    input: dict[str, Any]
+
+    def to_dict(self) -> dict[str, Any]:
+        return {"id": self.id, "name": self.name, "input": dict(self.input)}
+
+
+@dataclass(frozen=True, slots=True)
 class Completion:
     text: str
     usage: Usage
     latency_ms: float
     model: str
     stop_reason: str | None = None
+    #: 这一步里模型要调的工具。没给 `tools` 的调用恒为空。
+    tool_calls: tuple[ToolCall, ...] = ()
+    #: 助手消息的**原样内容块**（含 thinking 块与它的签名），只在给了 `tools` 时填。
+    #: 工具循环要把它**原封不动**接回 messages——拆成纯文本再拼回去会丢掉 thinking 块，
+    #: 而带工具的多步对话里，上一步的 thinking 块必须原样回传。
+    content: tuple[dict[str, Any], ...] = ()
 
     @property
     def cost(self) -> float:
@@ -149,6 +167,8 @@ class Completion:
             "usage": self.usage.to_dict(),
             "cost_usd": self.cost,
             "chars": len(self.text),
+            # 只在真的调了工具时出现：没有工具的那几十条既有日志形状逐字节不变。
+            **({"tool_calls": [t.name for t in self.tool_calls]} if self.tool_calls else {}),
         }
 
 
@@ -244,6 +264,9 @@ class AnthropicModel:
         *,
         on_delta: Callable[[str], None] | None = None,
         cancel: threading.Event | None = None,
+        tools: list[dict[str, Any]] | None = None,
+        tool_choice: dict[str, Any] | None = None,
+        on_tool: Callable[[str], None] | None = None,
     ) -> Completion:
         """流式调用：每来一段正文就交给 `on_delta`；`cancel` 被置位时中途停下。
 
@@ -256,6 +279,13 @@ class AnthropicModel:
         而输出 token 的累计值要到 `message_delta`（流的末尾）才更新。中途关掉连接时
         拿到的输出数**小于实际计费**。`stop_reason="cancelled"` 标出这种情况，
         与 F75「判断失败时成本被低估」是同一类、同一处置：如实登记，不编一个数。
+
+        ## 工具（2026-10-08，口径 F111）
+
+        给了 `tools` 就把它们发出去；模型要调工具时 `tool_calls` 非空、
+        `content` 带着原样的内容块。`on_tool(name)` 在**某个工具调用块刚开始**时触发——
+        讲解 agent 靠它知道「这一步不是最终讲解」，好让前端清掉已推出去的那几个字。
+        不给 `tools` 时请求体与改动前逐字节相同。
         """
         client = self._ensure_client()
         # 课件全量在 system 且会话内不变 → 必须开 prompt caching（PRD §7.3）。
@@ -290,6 +320,10 @@ class AnthropicModel:
             kwargs["thinking"] = {"type": "disabled"}
         else:
             kwargs["thinking"] = {"type": "adaptive"}
+        if tools:
+            kwargs["tools"] = tools
+            if tool_choice is not None:
+                kwargs["tool_choice"] = tool_choice
 
         started = time.perf_counter()
         cancelled = False
@@ -302,6 +336,9 @@ class AnthropicModel:
                 if (on_delta is not None and event.type == "content_block_delta"
                         and getattr(event.delta, "type", None) == "text_delta"):
                     on_delta(event.delta.text)
+                elif (on_tool is not None and event.type == "content_block_start"
+                        and getattr(event.content_block, "type", None) == "tool_use"):
+                    on_tool(event.content_block.name)
             # 叫停时取当时的快照；没被叫停时循环已读完，快照就是最终消息。
             try:
                 message = stream.current_message_snapshot
@@ -313,6 +350,12 @@ class AnthropicModel:
             return Completion(text="", usage=Usage(), latency_ms=latency,
                               model=self.name, stop_reason="cancelled")
         text = "".join(b.text for b in message.content if b.type == "text")
+        calls: tuple[ToolCall, ...] = ()
+        blocks: tuple[dict[str, Any], ...] = ()
+        if tools and not cancelled:
+            calls = tuple(ToolCall(id=b.id, name=b.name, input=dict(b.input or {}))
+                          for b in message.content if b.type == "tool_use")
+            blocks = tuple(b.to_dict() for b in message.content)
         u = message.usage
         return Completion(
             text=text,
@@ -325,6 +368,8 @@ class AnthropicModel:
             latency_ms=latency,
             model=message.model,
             stop_reason="cancelled" if cancelled else message.stop_reason,
+            tool_calls=calls,
+            content=blocks,
         )
 
     def request_signature(self, system: str, messages: list[dict[str, Any]]) -> str:

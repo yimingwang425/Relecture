@@ -621,3 +621,28 @@ class TestAblation:
     def test_production_default_ablates_nothing(self):
         r, _ = hybrid()
         assert r.ablate == frozenset() and r.fetch("问题").meta["ablate"] == []
+
+
+class TestReadPage:
+    """讲解 agent 的 `read_page`（口径 F111）。"""
+
+    def test_returns_every_slice_on_the_page_with_aligned_hits(self):
+        r, store = build(slices=[
+            sl(DOC_A, "s001", "第一片", (1, 2)),
+            sl(DOC_A, "s002", "第二片", (2,)),
+            sl(DOC_A, "s003", "第三页", (3,)),
+            sl(DOC_B, "s001", "另一份的第二页", (2,)),
+        ])
+        p = r.page("能源.pdf", 2)
+        assert [s.slice_id for s in p.slices] == ["s001", "s002"]
+        assert all(s.source_file == "能源.pdf" for s in p.slices)
+        assert p.meta["hit_documents"] == [{"document_id": DOC_A, "slice_id": "s001"},
+                                           {"document_id": DOC_A, "slice_id": "s002"}]
+        # 只取那一份文档，不取整门课
+        assert store.slice_calls[-1] == [DOC_A]
+
+    def test_unknown_label_is_empty_not_a_guess(self):
+        r, store = build()
+        p = r.page("能源", 1)            # 少了扩展名：不猜最像的那份
+        assert p.slices == () and p.meta["hit_documents"] == []
+        assert store.slice_calls == []

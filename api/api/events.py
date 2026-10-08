@@ -241,6 +241,9 @@ def build_explain_events(
         "context_signature": ctx.signature(),
         # 兜底判断：**单独记账，但已计入上面的 `cost_usd` / `latency_ms`**（口径 F71 / G08）。
         **_gap_fields(result.gap),
+        # 多智能体链路（口径 F109–F114）。**全是可选字段**，不进 REQUIRED_KEYS——
+        # 实验侧直接调 `run_round` 时没有它们；null 有含义（F50）。不需要迁移：payload 是 jsonb。
+        **_agent_fields(getattr(result, "agent", None)),
     }))
 
     # ---------------------------------------------------------------- style_review_result
@@ -406,6 +409,35 @@ def _gap_fields(gap: Any) -> dict[str, Any]:
         "gap_model": d["gap_model"],
         "gap_error": d["gap_error"],
         "gap_skipped_hint_pages": d["gap_skipped_hint_pages"],
+    }
+
+
+def _agent_fields(agent: Any) -> dict[str, Any]:
+    """`agent_mode` 是读这一组字段的入口：`agent` / `pipeline` / `fallback`，或 null（没经过 agent 入口）。
+
+    ⚠️ `agent_cost_usd` **已计入** `cost_usd`，单列是为了回答「多出来的这几跳值不值」——
+    与 `gap_cost_usd` 同一个处置（F71）。路由判成 chat 时路由那次调用就是讲解本身，
+    钱在 attempts 里，不在这里（`AgentTrace._route_billed_here`）。
+    """
+    if agent is None:
+        return {"agent_mode": None}
+    d = agent.to_dict()
+    route = d.get("route") or {}
+    tools = d.get("tools") or []
+    return {
+        "agent_mode": d["mode"],
+        "agent_route": route.get("route"),
+        "agent_route_implementation": route.get("implementation"),
+        "agent_route_cost_usd": route.get("cost_usd"),
+        "agent_tool_rounds": d["tool_rounds"],
+        "agent_tool_calls": [t["name"] for t in tools],
+        "agent_tools_failed": sum(1 for t in tools if not t["ok"]),
+        "agent_slices_added": sum(int(t.get("new_slices") or 0) for t in tools),
+        "agent_hit_round_cap": d["hit_round_cap"],
+        "agent_cost_usd": d["cost_usd"],
+        "agent_cost_known": d["cost_known"],
+        "agent_prompt_version": d["prompt_version"],
+        "agent_fallback_error": d["fallback_error"],
     }
 
 

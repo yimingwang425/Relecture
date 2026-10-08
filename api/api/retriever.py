@@ -416,6 +416,41 @@ class SupabaseRetriever:
             },
         )
 
+    def page(self, source_file: str, page: int):
+        """讲解 agent 的 `read_page`（口径 F111）：一份文档某一页上的全部切片。
+
+        `source_file` 是**展示标签**（`label_documents` 的输出，同名时带一截 id）——
+        模型看到的就是它，照抄回来。认不出就返回空的 ContextPack，不猜最像的那份：
+        猜错的页比「没找到」更糟，它看起来是对的。
+
+        受限页（G06）不需要在这里再挡一次：它们入库时就没有切片。
+        """
+        from explain.context import ContextPack, ContextSlice
+
+        documents = self._documents()
+        labels = label_documents(documents)
+        skipped, unusable = self._skipped_and_unusable(documents, labels)
+        doc_id = next((i for i, lab in labels.items() if lab == source_file), None)
+        slices: list[ContextSlice] = []
+        hits: list[dict[str, str]] = []
+        if doc_id is not None:
+            rows = self.store.slices_in_documents(self.token, [doc_id])
+            for s in sorted(rows, key=lambda r: str(r.get("slice_id"))):
+                if s.get("document_id") != doc_id or page not in (s.get("page_indices") or ()):
+                    continue
+                slices.append(ContextSlice(
+                    source_file=source_file, slice_id=s["slice_id"],
+                    page_indices=tuple(s.get("page_indices") or ()), title=s.get("title"),
+                    text=s.get("text") or "", char_count=int(s.get("char_count") or 0),
+                    score=None, via="page",
+                ))
+                hits.append({"document_id": doc_id, "slice_id": s["slice_id"]})
+        return ContextPack(
+            question=f"{source_file}#p{page}", slices=tuple(slices),
+            skipped_pages=skipped, unusable_files=unusable,
+            meta={"backend": "supabase", "course_id": self.course_id, "hit_documents": hits},
+        )
+
     def _embed(self, text: str, dims: int) -> list[float]:
         """嵌入一句查询。**这是 PRD §13.3 的第一次出境在检索侧的那一半**：
         出去的是提问（或改写后的提问），不是课件。"""

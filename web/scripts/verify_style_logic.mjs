@@ -1978,6 +1978,42 @@ await (async () => {
   check(bad.length === 1 && bad[0].type === "error", "读不懂的 data 不被吞掉，变成 error 事件");
 })();
 
+// ================================================================ 二十一 · 多智能体链路的流式事件（2026-10-08，口径 F109–F114）
+//
+// 讲解 agent 翻课件时发 `tool`；它漏出来的几个字用 `reset{reason:"tool"}` 收回。
+// 守三件事：等待时说得出它在做什么、出处跟着 agent 查到的片长、**只有审查的 reset 才叫「在重写」**。
+console.log("\n\x1b[1m二十一 · 多智能体链路 · tool / reset 的原因（口径 F109–F114）\x1b[0m");
+await (async () => {
+  const S = require_(join(outExplain, "stream.js"));
+  const at = (events) => events.reduce((d, e) => S.applyStreamEvent(d, e), S.EMPTY_DRAFT);
+  const base = [
+    { type: "route", data: { route: "course" } },
+    { type: "retrieval", data: { retrieval: { slices: [{ source_file: "a.pdf", pages: [3] }] } } },
+    { type: "delta", data: { text: "我去查一下" } },
+    { type: "reset", data: { reason: "tool" } },
+    { type: "tool", data: { phase: "start", name: "search_slices" } },
+  ];
+  const mid = at(base);
+  check(mid.stage === "searching" && mid.activity === "正在课件里再找一找",
+    "agent 翻课件时说得出在做什么", JSON.stringify([mid.stage, mid.activity]));
+  check(mid.text === "" && mid.rewriting === 0, "reset{reason:tool} 只清屏，不说「在重写」",
+    JSON.stringify([mid.text, mid.rewriting]));
+  // 反向控制：把 tool 的 reset 当成审查的 reset，就会说错话。
+  const asReview = at(base.map((e) => (e.type === "reset" ? { type: "reset", data: { reason: "review", attempt: 1 } } : e)));
+  check(asReview.rewriting === 1, "反向控制：原因是 review 时才进「在重写」", String(asReview.rewriting));
+
+  const done = at([...base, { type: "tool", data: { phase: "done", name: "search_slices",
+    retrieval: { slices: [{ source_file: "a.pdf", pages: [3] }, { source_file: "b.pdf", pages: [7] }] } } }]);
+  check(JSON.stringify(done.sources.map((x) => x.sourceFile)) === JSON.stringify(["a.pdf", "b.pdf"]),
+    "agent 查到的片随 tool(done) 进出处", JSON.stringify(done.sources));
+  const text = S.applyStreamEvent(done, { type: "delta", data: { text: "正文" } });
+  check(text.stage === "generating" && text.activity === null, "正文一来，等待说明就清掉");
+  const unknown = at([{ type: "tool", data: { phase: "start", name: "未来的新工具" } }]);
+  check(unknown.activity === "正在翻课件", "认不出的工具名也有一句话，不留空白", String(unknown.activity));
+  const fb = at([{ type: "delta", data: { text: "半截" } }, { type: "reset", data: { reason: "fallback" } }]);
+  check(fb.text === "" && fb.rewriting === 0, "reset{reason:fallback} 只清屏");
+})();
+
 rmSync(out, { recursive: true, force: true });
 rmSync(outUpload, { recursive: true, force: true });
 rmSync(outExplain, { recursive: true, force: true });

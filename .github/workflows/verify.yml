@@ -156,4 +156,7 @@ jobs:
         with:
           name: e2e-report
           path: web/.e2e-runs/
+          # 目录名以点开头，upload-artifact 默认跳过隐藏文件——不开这一项，失败时什么都传不上去
+          # （2026-10-08 第一次 CI 失败时就是这样：「No files were found」）。
+          include-hidden-files: true
           retention-days: 14

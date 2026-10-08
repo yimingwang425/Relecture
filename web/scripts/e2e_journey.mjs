@@ -355,8 +355,15 @@ class Journey {
     await this.step("「去提问」→ 输入框就在眼前", async () => {
       await page.click('[data-field="documents-done"]');
       await page.locator('[data-field="question"]').waitFor();
-      const focused = await page.evaluate(() => document.activeElement?.getAttribute("data-field"));
-      if (focused !== "question") throw new Error(`关掉课件弹窗后焦点在 ${focused}，不在输入框`);
+      // 弹窗的 close 事件是**异步派发**的，焦点在点击之后的下一个任务里才移过去。
+      // 立刻读 activeElement 本地能过、CI 上会输（2026-10-08 CI 实测）——等它，最多 3 秒。
+      const moved = await page
+        .waitForFunction(() => document.activeElement?.getAttribute("data-field") === "question", null, { timeout: 3000 })
+        .then(() => true, () => false);
+      if (!moved) {
+        const focused = await page.evaluate(() => document.activeElement?.getAttribute("data-field"));
+        throw new Error(`关掉课件弹窗 3 秒后焦点仍在 ${focused}，不在输入框`);
+      }
     });
 
     // ---- 5. 第一个问题

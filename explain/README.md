@@ -97,6 +97,7 @@ python3 -m venv .venv && ./.venv/bin/pip install -e ".[dev]"
 新增的断言在 `tests/test_agent.py`（链路）与 `tests/test_llm_tools.py`（SDK 那一层）。
 
 真模型验收：`explain/scripts/agent_live_check.py`（要钱；`--fake` 先跑通脚本本身）。
+第一次的结果在 `explain/runs/agent_live_20261008.md`：6 轮 $0.136，0 次回落，工具全部真的被调用。
 **它只证明链路跑得通，不证明收益**——见脚本说明与 F109 的「收益未测」。
 
 另外三件本轮新增、与本表相关的事，正本在 `f1_samples/README.md`：

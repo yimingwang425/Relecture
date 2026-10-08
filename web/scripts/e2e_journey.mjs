@@ -209,9 +209,19 @@ async function jwtOf(acc) {
 
 /** 用**用户自己的** token 读——走的是 RLS，与页面看到的是同一个视角。 */
 async function rest(jwt, path) {
-  const r = await fetch(`${SUPA_URL}/rest/v1/${path}`, { headers: { apikey: SUPA_KEY, Authorization: `Bearer ${jwt}` } });
-  if (!r.ok) throw new Error(`GET ${path} → HTTP ${r.status} ${await r.text()}`);
-  return r.json();
+  // 刚登录拿到的 token 偶尔被 PostgREST 以「JWT issued at future」（PGRST303）拒掉：
+  // 签发它的 auth 服务器时钟比数据库那台快了一点点（2026-10-08 生产跑，4 个账号里 1 个）。
+  // 等一秒重试，最多 3 次——这是两台服务器的时钟差，不是产品行为，不该让测试红。
+  for (let attempt = 1; ; attempt++) {
+    const r = await fetch(`${SUPA_URL}/rest/v1/${path}`, { headers: { apikey: SUPA_KEY, Authorization: `Bearer ${jwt}` } });
+    if (r.ok) return r.json();
+    const body = await r.text();
+    if (r.status === 401 && body.includes("PGRST303") && attempt < 4) {
+      await new Promise((res) => setTimeout(res, 1000 * attempt));
+      continue;
+    }
+    throw new Error(`GET ${path} → HTTP ${r.status} ${body}`);
+  }
 }
 
 // ---------------------------------------------------------------- 一个账号走一遍

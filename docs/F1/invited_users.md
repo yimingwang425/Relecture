@@ -23,7 +23,18 @@ cp scripts/.env.example scripts/.env && $EDITOR scripts/.env   # 填 URL 与 sec
 node scripts/invite_user.mjs --email someone@example.com --password '……' --note '内测第一批'
 ```
 
-建完**核对一次** `style_config` 里有没有那一行（口径 F09：没有配置行的用户是坏状态，
+批量（2026-10-08 起）：密码随机生成（14 位，去掉易抄错的字符），只写进本地
+`scripts/invited/<时间戳>.csv`（0600，已在 .gitignore 里）——**本账本仍然不写密码**。
+
+```bash
+node scripts/invite_user.mjs --count 10 --prefix tester --note '内测第一批'      # tester01…tester10@test.local
+node scripts/invite_user.mjs --emails 'a@x.com,b@y.com' --note '同学试用'          # 给真人用的邮箱
+```
+
+一个号失败（如邮箱已存在）不影响其余的；key 不对（401）时立即停。建完脚本自己核对
+每个号的 `style_config` 行，缺行会点名列出、退出码非 0。
+
+单个建号时仍需手工**核对一次** `style_config` 里有没有那一行（口径 F09：没有配置行的用户是坏状态，
 他进不了 onboarding、拿不到臂）——脚本会把这句 SQL 打出来。
 
 ## 清单

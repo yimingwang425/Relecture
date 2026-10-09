@@ -20,11 +20,12 @@ from explain.memory import MEMORY_OPEN, TOOL_READ, TOOL_WRITE, MemoryAgent
 
 from conftest import AUDIENCE, ISSUER, USER_A
 from fake_db import FakeRest, row
-from test_explain import SETTINGS, TestConversationHistoryReachesTheModel
+from test_explain import SETTINGS
+from test_explain import TestConversationHistoryReachesTheModel as _History  # 别名：不让 pytest 在这里再收一遍
 from test_stream import parse_sse
 
 CONV = "cccccccc-2222-4222-8222-cccccccccccc"
-Recorder = TestConversationHistoryReachesTheModel.Recorder
+Recorder = _History.Recorder
 
 
 def prior(n: int, start: int = 1) -> list[dict]:

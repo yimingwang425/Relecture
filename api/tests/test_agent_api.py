@@ -149,8 +149,15 @@ class TestAgentStream:
         assert any(e["type"] == "tool" and e["phase"] == "start" for e in events)
         done_tool = next(e for e in events if e["type"] == "tool" and e["phase"] == "done")
         assert done_tool["name"] == TOOL_SEARCH and "retrieval" in done_tool
-        # 第 1 步的正文还在闸门里（等兜底判断）时工具就开始了：那几个字**从没推出去**，
-        # 所以不需要 reset。推出去之后才开始调工具的那种情况，explain 侧有单测。
-        assert not any("让我查一下" in e.get("text", "") for e in events if e["type"] == "delta")
+        # 那几个字推没推出去**取决于线程调度**：兜底判断先回来、闸门先开，前言就已推出；
+        # 工具先开始，前言就被扔掉、从没推出。两条都合法——要钉的是不变量：
+        # **推出去了，就必须在工具开始之前收到 reset{reason:"tool"}**，最终屏幕上没有它。
+        # （原来断言「从没推出去」，钉的是其中一种调度；2026-10-09 CI 上撞到了另一种。）
+        idx_pre = [i for i, e in enumerate(events) if e["type"] == "delta" and "让我查一下" in e.get("text", "")]
+        idx_tool = next(i for i, e in enumerate(events) if e["type"] == "tool" and e["phase"] == "start")
+        if idx_pre:
+            assert any(e["type"] == "reset" and e.get("reason") == "tool"
+                       for e in events[idx_pre[-1]:idx_tool + 1]), "前言推出去了却没被收回"
+        assert "让我查一下" not in replay(events)
         assert replay(events) == events[-1]["response"]["text"]
         json.dumps(events)   # 全部可序列化

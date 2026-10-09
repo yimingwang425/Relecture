@@ -107,6 +107,17 @@ python3 -m venv .venv && ./.venv/bin/pip install -e ".[dev]"
 
 ---
 
+### 2026-10-09 · 上下文压缩 agent（口径 F116–F118，正本在 `f1_samples/README.md`）
+
+会话长了之后，最早的若干轮由 `memory.py` 的记忆整理员（Haiku + `read_turns` / `search_turns` / `write_memory`）
+整理成一份笔记，讲解请求用「笔记 + 最近几轮原文」代替原文。模型决定读哪几轮、整理到哪一轮；
+`write_memory` 的提交**由代码校验**（`check_note`），不通过退回重写。触发是纯计数（`plan_compaction`），
+整理在讲解返回之后跑，不在关键路径上。断言在 `tests/test_memory.py`（循环、工具、校验、注入）与
+`api/tests/test_memory_api.py`（落库、下一轮用上、失败不打断）。
+
+真模型验收：`explain/scripts/memory_live_check.py`（要钱；`--fake` 先跑通脚本本身），
+结果在 `explain/runs/memory_live_20261009.md`。
+
 ## 二、prompt caching：论断的前提在新架构下不成立
 
 PRD §7.3 写「**课件内容会话内不变 → 必须启用 prompt caching**」。

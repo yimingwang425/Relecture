@@ -9,7 +9,9 @@ class FakeRest:
     def __init__(self, rows_by_user: dict[str, list[dict[str, Any]]],
                  *, conversations: dict[str, dict[str, Any]] | None = None,
                  messages: list[dict[str, Any]] | None = None,
-                 fail_message_insert: bool = False) -> None:
+                 fail_message_insert: bool = False,
+                 memories: list[dict[str, Any]] | None = None,
+                 memories_table_missing: bool = False) -> None:
         self.rows_by_user = rows_by_user
         self.seen: list[tuple[str, dict[str, str]]] = []
         self.writes: list[tuple[str, Any]] = []
@@ -18,6 +20,10 @@ class FakeRest:
         self.conversations = conversations or {}
         self.messages = list(messages or [])
         self.fail_message_insert = fail_message_insert
+        #: F116–F118 · `conversation_memories`。`memories_table_missing` 模拟「构建先上、迁移没跑」：
+        #: 真 PostgREST 对不存在的表回 404（PGRST205），读写都抛。
+        self.memories = list(memories or [])
+        self.memories_table_missing = memories_table_missing
 
     def __call__(self, url: str, headers: dict[str, str], body: Any = None) -> Any:
         self.seen.append((url, dict(headers)))
@@ -33,6 +39,17 @@ class FakeRest:
             _json.dumps(body)
             if isinstance(body, list) and len({tuple(sorted(r)) for r in body}) > 1:
                 raise SupabaseError("PGRST102 All object keys must match", status=400)
+            if "/conversation_memories" in url:
+                if self.memories_table_missing:
+                    raise SupabaseError("数据库返回 404：PGRST205 relation conversation_memories 不存在", status=502)
+                for r in (body if isinstance(body, list) else [body]):
+                    # 照真库的部分唯一索引拒收：同一会话同一个 through_turn 只有一份 written。
+                    if r.get("status") == "written" and any(
+                            m.get("status") == "written" and m["conversation_id"] == r["conversation_id"]
+                            and m["through_turn"] == r["through_turn"] for m in self.memories):
+                        raise SupabaseError("数据库返回 409：23505 duplicate key", status=502)
+                    self.memories.append(dict(r))
+                return None
             if "/messages" in url:
                 if self.fail_message_insert:
                     from api.supabase import SupabaseError
@@ -60,6 +77,15 @@ class FakeRest:
         # ---- F5 的两张表。**先于兜底那一行判**：兜底返回的是风格行，
         # 而 `conversation()` 只看「是不是恰好 1 行」——不拦的话任何一个 id
         # 都会被读成一个存在的会话，404 那条断言就永远绿不了。
+        if "/conversation_memories" in url:
+            from api.supabase import SupabaseError
+            if self.memories_table_missing:
+                raise SupabaseError("数据库返回 404：PGRST205 relation conversation_memories 不存在", status=502)
+            cid = _eq(url, "conversation_id")
+            rows = [m for m in self.memories if m.get("conversation_id") == cid
+                    and m.get("owner") == sub and m.get("status") == "written"]
+            rows.sort(key=lambda m: m["through_turn"], reverse=True)
+            return rows[:1]
         if "/conversations" in url:
             cid = _eq(url, "id")
             conv = self.conversations.get(cid or "")
@@ -67,6 +93,16 @@ class FakeRest:
         if "/messages" in url:
             cid = _eq(url, "conversation_id")
             rows = [m for m in self.messages if m.get("conversation_id") == cid]
+            # turn_index 的范围过滤（前情笔记之后的原文、压缩 agent 的材料）。照 PostgREST 的
+            # 写法逐个解析：同一列可以出现多次，彼此是「且」。
+            import re as _re
+            for op, val in _re.findall(r"turn_index=(gt|gte|lte|lt)\.(\d+)", url):
+                v = int(val)
+                cmp = {"gt": lambda t: t > v, "gte": lambda t: t >= v,
+                       "lt": lambda t: t < v, "lte": lambda t: t <= v}[op]
+                rows = [m for m in rows if cmp(int(m["turn_index"]))]
+            if "order=created_at.asc" in url:
+                return [dict(m) for m in rows]
             if "order=turn_index.desc" in url:
                 if not rows:
                     return []

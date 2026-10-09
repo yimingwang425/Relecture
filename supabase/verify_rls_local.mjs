@@ -2324,6 +2324,98 @@ async function main() {
     await db.close();
   }
 
+  // ============================================================ 会话的前情笔记（2026-10-09，口径 F116–F118）
+  //
+  // 迁移 20261009100000_f5_conversation_memories.sql。上下文压缩 agent 写，讲解请求读。
+  // 会静默出错的几件事：跨 owner 引用、written 行没有笔记（会被读成「什么都不用记」）、
+  // 改写旧笔记（只追加）、同一个 through_turn 两份、删会话没删干净。每条「拒绝」配一条「允许」。
+  console.log("\n\x1b[1m会话的前情笔记 · conversation_memories（F116–F118）\x1b[0m");
+  {
+    const db = await freshDb();
+    const mkCourseM = async (uid, name) => asUser(db, uid, async () =>
+      (await db.query("insert into public.courses (owner, name) values ($1,$2) returning id", [uid, name])).rows[0].id);
+    const mkConvM = async (uid, courseId, title) => asUser(db, uid, async () =>
+      (await db.query("insert into public.conversations (owner, course_id, title) values ($1,$2,$3) returning id",
+        [uid, courseId, title])).rows[0].id);
+    const NOTE = JSON.stringify({ through_turn: 7, summary: "在学特征值", concepts: [], open_questions: [], preferences: [] });
+    const put = (uid, conv, { status = "written", through = 7, memory = NOTE, owner = uid } = {}) =>
+      errorOf(() => asUser(db, uid, () => db.query(
+        `insert into public.conversation_memories (owner, conversation_id, status, through_turn, memory, meta)
+         values ($1,$2,$3,$4,$5::jsonb,'{}'::jsonb)`, [owner, conv, status, through, memory])));
+
+    const cA = await mkConvM(UID_A, await mkCourseM(UID_A, "线性代数"), "week1");
+    const cA2 = await mkConvM(UID_A, await mkCourseM(UID_A, "另一门课"), "week1");
+    const cB = await mkConvM(UID_B, await mkCourseM(UID_B, "B 的课"), "B 的会话");
+
+    // ---- ① 允许控制
+    const okW = await put(UID_A, cA);
+    okW === null
+      ? ok("A 给自己的会话写一份笔记（允许控制）", "← 少了它，「一律拒」也会让下面全绿")
+      : bad("A 写自己的笔记被拒", `${okW.code} ${okW.message}`);
+
+    // ---- ② 跨用户
+    const seenB = await asUser(db, UID_B, async () =>
+      (await db.query("select count(*)::int c from public.conversation_memories")).rows[0].c);
+    seenB === 0 ? ok("B 读不到 A 的笔记", "0 行") : bad("B 读到了 A 的笔记", `${seenB} 行`);
+    const forged = await put(UID_B, cA, { owner: UID_A, through: 8 });
+    forged?.code === "42501"
+      ? ok("B 冒充 A 写笔记 → 42501", "← with check (owner = auth.uid())")
+      : bad("B 冒充 A 写笔记没被挡", forged?.code ?? "未报错");
+
+    // ---- ③ 跨 owner 引用：RLS 挡不住的那一类
+    const intoB = await put(UID_A, cB, { through: 3 });
+    intoB?.code === "42501"
+      ? ok("A 把笔记挂到 B 的会话上 → 42501", "← RLS 只看 owner，这一条是触发器挡的")
+      : bad("笔记挂到别人的会话上没被挡", intoB?.code ?? "未报错");
+
+    // ---- ④ written ⇔ 有笔记
+    const hollow = await put(UID_A, cA, { through: 9, memory: null });
+    hollow?.code === "23514" && /written_has_note/.test(hollow?.constraint ?? hollow?.message ?? "")
+      ? ok("written 却没有笔记 → 23514（written_has_note）", "← 否则会被读成「整理过、什么都不用记」")
+      : bad("没有笔记的 written 行写进去了", `${hollow?.code} ${hollow?.constraint ?? ""}`);
+    const failedRow = await put(UID_A, cA, { status: "failed", through: null, memory: null });
+    failedRow === null
+      ? ok("failed 行可以没有笔记（允许控制）", "← 失败也记一行：原因与花掉的钱在 meta 里")
+      : bad("failed 行写不进去", failedRow.code);
+    const failedWithNote = await put(UID_A, cA, { status: "failed", through: 9 });
+    failedWithNote?.code === "23514"
+      ? ok("failed 行带着笔记 → 23514", "← 两个方向都钉住，不是只钉一半")
+      : bad("failed 行带笔记写进去了", failedWithNote?.code ?? "未报错");
+    const arr = await put(UID_A, cA, { through: 10, memory: "[]" });
+    arr?.code === "23514"
+      ? ok("笔记写成数组 → 23514", "← 读的一侧按对象解析")
+      : bad("数组笔记写进去了", arr?.code ?? "未报错");
+
+    // ---- ⑤ 同一个 through_turn 只有一份 written
+    const dup = await put(UID_A, cA);
+    dup?.code === "23505"
+      ? ok("同一会话同一个 through_turn 再写一份 → 23505", "← 两次整理撞上时第二次被拒")
+      : bad("重复笔记写进去了", dup?.code ?? "未报错");
+    const again = await put(UID_A, cA, { status: "failed", through: null, memory: null });
+    const other = await put(UID_A, cA2);
+    again === null && other === null
+      ? ok("同一会话再记一次 failed、另一会话同一个 through_turn → 都写得进去（允许控制）")
+      : bad("唯一约束管得太宽", `${again?.code} / ${other?.code}`);
+
+    // ---- ⑥ 只追加
+    const upd = await errorOf(() => asUser(db, UID_A, () => db.query(
+      "update public.conversation_memories set through_turn = 99 where conversation_id=$1", [cA])));
+    upd?.code === "42501"
+      ? ok("改一份旧笔记 → 42501", "← 只追加：哪次整理折了什么，事后要查得到")
+      : bad("旧笔记被改掉了", upd?.code ?? "未报错");
+
+    // ---- ⑦ cascade：删会话 → 它的笔记一起没了；别的会话的还在
+    const before = (await db.query("select count(*)::int c from public.conversation_memories where conversation_id=$1", [cA])).rows[0].c;
+    await asUser(db, UID_A, () => db.query("delete from public.conversations where id=$1", [cA]));
+    const after = (await db.query("select count(*)::int c from public.conversation_memories where conversation_id=$1", [cA])).rows[0].c;
+    const keep = (await db.query("select count(*)::int c from public.conversation_memories where conversation_id=$1", [cA2])).rows[0].c;
+    before > 0 && after === 0 && keep === 1
+      ? ok("删会话 → 它的笔记一起没了；另一个会话的还在", `${before} → ${after}，另一会话 ${keep} ← 不是整表清空`)
+      : bad("cascade 不对", `${before} → ${after}，另一会话 ${keep}`);
+
+    await db.close();
+  }
+
   console.log(`\n\x1b[1m本地\x1b[0m  绿 ${passed} · 红 ${failed}`);
   console.log(
     `\x1b[1m待真库验证\x1b[0m  ${NOT_VERIFIABLE_LOCALLY.join(", ")} ` +

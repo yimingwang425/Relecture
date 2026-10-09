@@ -746,6 +746,7 @@ export function ExplainClient({
                                 ["重生成", `${t.answer.regenerations}（accepted=${String(t.answer.accepted)}）`],
                                 ["gap", t.answer.gap ? JSON.stringify(t.answer.gap) : "null（服务端没给）"],
                                 ["agent", t.answer.agent ? JSON.stringify(t.answer.agent) : "null（服务端没给）"],
+                                ["memory", t.answer.memory ? JSON.stringify(t.answer.memory) : "null（服务端没给）"],
                                 ["confusion", t.answer.confusion ? JSON.stringify(t.answer.confusion) : "null"],
                                 ["埋点结果", t.answer.events ? JSON.stringify(t.answer.events) : "—"],
                               ] as const

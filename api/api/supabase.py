@@ -415,17 +415,21 @@ class SupabaseClient:
         return out[0] if isinstance(out, list) and len(out) == 1 else None
 
     def conversation_history(self, token: str, conversation_id: str,
-                             limit: int = 40) -> list[dict[str, Any]]:
+                             limit: int = 40, after_turn: int | None = None) -> list[dict[str, Any]]:
         """这个会话已有的消息，**按时间正序**。
 
         `limit` 取的是**最近**的那些（PostgREST 只能先倒序取再翻回来）。
         取不完整的历史是刻意的：上下文窗口与钱都是有限的，而越早的轮次越可能
         已经被后面的轮次覆盖掉。**截断在这里发生，不在 prompt 拼装处**——
         放在那边的话，「这一轮模型看到了几轮历史」就散在两个地方决定。
+
+        `after_turn`（2026-10-09，口径 F117）：前情笔记已经覆盖到第几轮，只取之后的原文。
+        有笔记时原文通常只有 4–10 轮，`limit` 退回成一道保险。
         """
+        after = f"&turn_index=gt.{int(after_turn)}" if after_turn is not None else ""
         out = self._get(
             f"/messages?select={self.MESSAGE_COLUMNS}"
-            f"&conversation_id=eq.{conversation_id}"
+            f"&conversation_id=eq.{conversation_id}{after}"
             f"&order=created_at.desc&limit={limit}", token)
         rows = out if isinstance(out, list) else []
         return list(reversed(rows))
@@ -444,6 +448,39 @@ class SupabaseClient:
         if isinstance(out, list) and out:
             return int(out[0]["turn_index"]) + 1
         return 1
+
+    # ---------------------------------------------------------------- F5 · 前情笔记（口径 F116–F118）
+
+    #: 压缩 agent 要的列：原文 + 那一轮的信号（讲法档位、有没有注入「没看懂」）。
+    #: meta 整列读——只在触发整理时读、只读候选范围那十来行。
+    TURN_COLUMNS = "role,content,turn_index,meta"
+
+    def latest_memory(self, token: str, conversation_id: str) -> dict[str, Any] | None:
+        """这个会话**最新**的一份笔记（`through_turn` 最大的 written 行），没有就 None。
+
+        ⚠️ 迁移没跑时这张表不存在，这里会抛 `SupabaseError`——**调用方接住、当作没有笔记**，
+        并把错误放进响应（口径 F42）。不在这里吞：吞了的话「迁移没跑」与「还没整理过」
+        长得一模一样。
+        """
+        out = self._get(
+            "/conversation_memories?select=through_turn,memory,created_at"
+            f"&conversation_id=eq.{conversation_id}&status=eq.written"
+            "&order=through_turn.desc&limit=1", token)
+        return out[0] if isinstance(out, list) and out else None
+
+    def conversation_turns(self, token: str, conversation_id: str,
+                           lo: int, hi: int) -> list[dict[str, Any]]:
+        """第 lo–hi 轮的消息（含 meta），按时间正序。压缩 agent 的材料。"""
+        out = self._get(
+            f"/messages?select={self.TURN_COLUMNS}"
+            f"&conversation_id=eq.{conversation_id}"
+            f"&turn_index=gte.{int(lo)}&turn_index=lte.{int(hi)}"
+            "&order=created_at.asc", token)
+        return out if isinstance(out, list) else []
+
+    def insert_memory(self, *, token: str, row: dict[str, Any]) -> None:
+        """写一行笔记（written 或 failed）。只追加，表不授 update。"""
+        self._post("/conversation_memories", token, [row])
 
     def insert_messages(self, *, token: str, rows: list[dict[str, Any]]) -> None:
         """写一问一答。**不加 `Prefer: return=representation`**——

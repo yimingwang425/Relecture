@@ -86,6 +86,17 @@ export type TurnAnswer = {
   gap: GapInfo | null;
   /** 多智能体链路走了哪条路（口径 F109–F114）。`null` = 服务端没给（构建旧于 agent 链路）。 */
   agent: AgentInfo | null;
+  /** 前情笔记（口径 F116–F118）。`null` = 服务端没给（构建旧于压缩 agent，或从历史重建的轮次）。 */
+  memory: MemoryInfo | null;
+};
+
+export type MemoryInfo = {
+  /** 这一轮用的笔记覆盖到第几轮；`null` = 没有笔记。 */
+  throughTurn: number | null;
+  /** 这一轮之后要不要整理：`not_needed` / `pending` / `written` / `failed` / `unavailable` / `skipped`。 */
+  compaction: string;
+  /** 读笔记失败的原因（例如迁移没跑）。讲解照常，但要看得见（F42）。 */
+  loadError: string | null;
 };
 
 export type AgentInfo = {
@@ -225,6 +236,11 @@ export function answerFromResponse(body: {
     tools?: { name?: string }[];
     fallback_error?: string | null;
   } | null;
+  memory?: {
+    through_turn?: number | null;
+    load_error?: string | null;
+    compaction?: { status?: string } | null;
+  } | null;
 }): TurnAnswer {
   const c = body.confusion;
   const byFile = new Map<string, Set<number>>();
@@ -290,6 +306,13 @@ export function answerFromResponse(body: {
           route: body.agent.route?.route ?? null,
           tools: (body.agent.tools ?? []).map((t) => String(t.name ?? "?")),
           fallbackError: body.agent.fallback_error ?? null,
+        }
+      : null,
+    memory: body.memory
+      ? {
+          throughTurn: body.memory.through_turn ?? null,
+          compaction: body.memory.compaction?.status ?? "unknown",
+          loadError: body.memory.load_error ?? null,
         }
       : null,
   };

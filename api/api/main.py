@@ -23,6 +23,7 @@ F1 阶段 1.5 论证过：F1 全部读写落在一张表上，多一跳 FastAPI 
 
 from __future__ import annotations
 
+import threading
 from functools import lru_cache
 from typing import Any, Literal
 
@@ -168,6 +169,7 @@ def create_app(
     rag_model_factory: Any | None = None,
     vision_factory: Any | None = None,
     router_factory: Any | None = None,
+    memory_factory: Any | None = None,
 ) -> FastAPI:
     """组装。每个依赖都可注入，**为的是断言能喂真东西**。
 
@@ -200,6 +202,17 @@ def create_app(
         from explain.router import build_router
 
         return build_router()
+
+    # ---- 上下文压缩 agent（口径 F116–F118）。与路由同一条：注入了讲解模型而没注入它时
+    # **不造真的**，否则测试会真的出网。拿不到就是 None：到了该整理的时候记一句「不可用」，原文照带。
+    def make_memory_agent() -> Any | None:
+        if memory_factory is not None:
+            return memory_factory()
+        if model_factory is not None or cfg.anthropic_api_key is None:
+            return None
+        from explain.memory import build_memory_agent
+
+        return build_memory_agent()
 
     verify = verifier or TokenVerifier(HttpJwks(cfg.jwks_url), issuer=cfg.issuer)
     db = supabase or SupabaseClient(cfg.rest_url, cfg.supabase_publishable_key)
@@ -385,15 +398,35 @@ def create_app(
         #     让它对之后每一轮都生效，而用户只点了一次。
         # 代价如实记：历史里的提问不含它当时看到的材料，所以模型对旧轮的细节
         # 只能依赖自己上一轮说过的话。这是有意的取舍，不是疏漏。
+        #
+        # ---- 前情笔记（2026-10-09，口径 F116–F118）。会话长了之后，最早的若干轮由上下文压缩
+        # agent 整理成一份笔记：笔记覆盖到的轮次**不再取原文**，笔记拼在第一条留下来的
+        # 学生消息前面（`explain.memory.apply_memory`）。读不到笔记（表不存在 = 迁移没跑、
+        # 网络抖了）**不打断讲解**：当作没有笔记、原文照带，错误进响应（口径 F42）。
+        from explain.memory import MemoryNote, apply_memory
+
         history: list[dict[str, Any]] = []
+        history_rows: list[dict[str, Any]] = []
+        memory_note: Any = None
+        memory_load_error: str | None = None
         turn_index = req.turn_index
         if req.conversation_id:
             conv = db.conversation(p.token, req.conversation_id)
             if conv is None:
                 # 同 `course` 那条：**不区分「不存在」与「是别人的」**。
                 raise HTTPException(404, "找不到这个会话（可能不存在，也可能不是你的）")
-            for m in db.conversation_history(p.token, req.conversation_id):
-                history.append({"role": m["role"], "content": m["content"]})
+            try:
+                mrow = db.latest_memory(p.token, req.conversation_id)
+                if mrow is not None:
+                    memory_note = MemoryNote.from_dict(mrow.get("memory"))
+                    if memory_note is None:
+                        memory_load_error = "笔记的形状不对，这一轮按没有笔记处理"
+            except Exception as exc:  # noqa: BLE001
+                memory_load_error = f"{type(exc).__name__}: {str(exc)[:300]}"
+            history_rows = db.conversation_history(
+                p.token, req.conversation_id,
+                after_turn=memory_note.through_turn if memory_note is not None else None)
+            history = apply_memory(memory_note, history_rows)
             turn_index = db.next_turn_index(p.token, req.conversation_id)
 
         # 查询改写要用历史做指代消解（口径 F96）。**同一份历史**，不另读一遍。
@@ -401,7 +434,8 @@ def create_app(
             active.history = list(history)
 
         return {"style": style, "active": active, "label": label,
-                "history": history, "turn_index": turn_index}
+                "history": history, "turn_index": turn_index,
+                "memory_note": memory_note, "memory_load_error": memory_load_error}
 
     def _run_explain(req: ExplainRequest, p: Principal, row: StyleRow,
                      prep: dict[str, Any], emit: Any, started_at: float) -> dict[str, Any]:
@@ -602,7 +636,44 @@ def create_app(
                              "build_error": f"{type(exc).__name__}: {exc}"}
 
         ctx = result.context
+
+        # ---- 前情笔记（口径 F116–F118）。**这一轮用了哪份笔记、要不要整理**，从外面看得见（F53）。
+        # 整理本身不在这里跑：它要十几秒，而学生已经拿到讲解了。调用方在讲解返回之后再跑
+        # `prep["memory_job"]`——流式路由在 `done` 之后，JSON 路由在返回之前（脚本用，不在乎慢几秒）。
+        from explain.memory import plan_compaction
+
+        note = prep.get("memory_note")
+        memory: dict[str, Any] = {
+            "through_turn": note.through_turn if note is not None else None,
+            "chars": len(note.render()) if note is not None else 0,
+            "load_error": prep.get("memory_load_error"),
+        }
+        prep["memory_job"] = None
+        if not req.conversation_id:
+            memory["compaction"] = {"status": "not_needed", "reason": "没有会话"}
+        elif persisted.get("written") != 2:
+            # 这一轮没落库，库里的轮次与这里以为的不一致——不整理，下一轮再说。
+            memory["compaction"] = {"status": "skipped", "reason": "这一轮没能落库"}
+        else:
+            # 笔记之后的每一轮都算原文。**按编号数，不按读回来的行数**：历史只取最近 40 条，
+            # 一个功能上线前就有 30 轮的老会话，按行数数会从第 11 轮开始整理，前 10 轮永远丢了。
+            live = list(range((note.through_turn if note is not None else 0) + 1, turn_index + 1))
+            plan = plan_compaction(live)
+            agent = make_memory_agent() if plan is not None else None
+            if plan is None:
+                memory["compaction"] = {"status": "not_needed", "live_turns": len(live)}
+            elif agent is None:
+                memory["compaction"] = {"status": "unavailable", "live_turns": len(live),
+                                        "plan": plan.to_dict(),
+                                        "reason": "没有可用的整理模型（未配置 key，或测试替身）"}
+            else:
+                memory["compaction"] = {"status": "pending", "live_turns": len(live),
+                                        "plan": plan.to_dict()}
+                prep["memory_job"] = lambda: _run_memory_job(
+                    db, agent, p, req.conversation_id, note, plan, turn_index)
+
         return {
+            "memory": memory,
             # 埋点的结果**进响应**。写不进去不打断讲解，但也不许静默（口径 F42）。
             "events": events_result,
             # ---- F4（口径 F65）。这两个是 `POST /marks` 的入参来源：
@@ -665,7 +736,10 @@ def create_app(
         started = _time.perf_counter()
         p, row = both
         prep = _prepare_explain(req, p, row)
-        return _run_explain(req, p, row, prep, lambda _e: None, started)
+        out = _run_explain(req, p, row, prep, lambda _e: None, started)
+        if prep.get("memory_job") is not None:
+            out["memory"]["compaction"] = prep["memory_job"]()
+        return out
 
     @app.post("/explain/stream")
     def explain_stream(req: ExplainRequest,
@@ -682,6 +756,7 @@ def create_app(
         | `delta` | 每段正文 | `{"text": "..."}` |
         | `reset` | 审查不达标、要重生成 | 前端清掉已显示的那一版 |
         | `done` | 结束 | **与 `/explain` 的响应体逐字段相同** |
+        | `memory` | done 之后，触发了整理时 | 上下文压缩 agent 这次整理的结果（口径 F116） |
         | `error` | 开流之后失败 | `{"status", "detail"}` |
 
         ⚠️ **开流之前能判的错仍然走状态码**（`_prepare_explain`）：
@@ -708,6 +783,10 @@ def create_app(
             try:
                 out = _run_explain(req, p, row, prep, q.put, started)
                 q.put({"type": "done", "response": out})
+                # 前情笔记的整理在 `done` **之后**：页面在 done 就收尾了，学生不等它。
+                # 结果另发一条 `memory` 事件（页面不读；脚本与测试读），并且已经落库。
+                if prep.get("memory_job") is not None:
+                    q.put({"type": "memory", "compaction": prep["memory_job"]()})
             except HTTPException as exc:
                 q.put({"type": "error", "status": exc.status_code, "detail": exc.detail})
             except Exception as exc:  # noqa: BLE001 —— 开流之后只能用事件报错
@@ -1213,6 +1292,72 @@ def _default_embedder() -> Any:
     from retrieval.selection import SELECTED_DIMENSIONS, SELECTED_MODEL
 
     return OpenAIEmbedder(SELECTED_MODEL, SELECTED_DIMENSIONS)
+
+
+# ---------------------------------------------------------------- 前情笔记（口径 F116–F118）
+
+#: 正在整理的会话。同一会话两次整理撞上（学生连问两句，两轮都触发）时第二次直接跳过：
+#: 两次都会对，但钱花两遍；库里的唯一索引是第二道保险。只在本进程内有效，如实登记。
+_COMPACTING: set[str] = set()
+_COMPACTING_LOCK = threading.Lock()
+
+
+def _turns_from_rows(rows: list[dict[str, Any]]) -> list[Any]:
+    """`messages` 的行 → 压缩 agent 的 `Turn`。一问一答按 turn_index 配对；信号取自助手那一行的 meta。"""
+    from explain.memory import Turn
+
+    by: dict[int, dict[str, Any]] = {}
+    for r in rows:
+        t = by.setdefault(int(r["turn_index"]), {"q": "", "a": "", "meta": {}})
+        if r.get("role") == "user":
+            t["q"] = str(r.get("content") or "")
+        elif r.get("role") == "assistant":
+            t["a"] = str(r.get("content") or "")
+            t["meta"] = r.get("meta") if isinstance(r.get("meta"), dict) else {}
+    out = []
+    for i in sorted(by):
+        m = by[i]["meta"]
+        conf = m.get("confusion") if isinstance(m.get("confusion"), dict) else {}
+        out.append(Turn(index=i, question=by[i]["q"], answer=by[i]["a"],
+                        detail_level=m.get("detail_level"), confusion=bool(conf.get("injected"))))
+    return out
+
+
+def _run_memory_job(db: Any, agent: Any, p: Any, conversation_id: str, prev: Any,
+                    plan: Any, turn_index: int) -> dict[str, Any]:
+    """跑一次整理并落库。**永不抛**：讲解已经交给学生了，这里的任何失败都只进结果与库里那一行。"""
+    with _COMPACTING_LOCK:
+        if conversation_id in _COMPACTING:
+            return {"status": "skipped", "reason": "这个会话的上一次整理还没结束"}
+        _COMPACTING.add(conversation_id)
+    try:
+        last = plan.tail[-1] if plan.tail else plan.hi
+        try:
+            turns = _turns_from_rows(db.conversation_turns(p.token, conversation_id, plan.lo, last))
+        except Exception as exc:  # noqa: BLE001
+            return {"status": "failed", "error": f"读不到要整理的轮次：{type(exc).__name__}: {str(exc)[:300]}"}
+        run = agent.compact(prev=prev, turns=turns, plan=plan)
+        result = run.to_dict()
+        row = {
+            "owner": p.user_id, "conversation_id": conversation_id, "status": run.status,
+            "through_turn": run.note.through_turn if run.note is not None else None,
+            "memory": run.note.to_dict() if run.note is not None else None,
+            "meta": {**result, "triggered_by_turn": turn_index},
+        }
+        try:
+            db.insert_memory(token=p.token, row=row)
+            result["persisted"] = True
+        except Exception as exc:  # noqa: BLE001
+            # 迁移没跑（表不存在）就是这一支。讲解照常，下一轮还会再触发、再失败——
+            # 所以必须说出来，不然每一轮都在白花整理的钱（CLAUDE.md「迁移先于构建」）。
+            result["persisted"] = False
+            result["persist_error"] = f"{type(exc).__name__}: {str(exc)[:300]}"
+        return result
+    except Exception as exc:  # noqa: BLE001
+        return {"status": "failed", "error": f"{type(exc).__name__}: {str(exc)[:300]}"}
+    finally:
+        with _COMPACTING_LOCK:
+            _COMPACTING.discard(conversation_id)
 
 
 _COURSE_LABEL = "合成课件（未指定课程：检索走阶段 3 的替身）"

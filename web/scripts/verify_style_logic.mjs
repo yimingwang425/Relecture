@@ -2028,6 +2028,14 @@ await (async () => {
   check(chatAns.agent?.route === "chat", "响应里的 agent.route 读得出来", JSON.stringify(chatAns.agent));
   const oldAns = T.answerFromResponse({ text: "x", accepted: true, regenerations: 0, mean_paragraph_chars: 1, detail_level: "P2" });
   check(oldAns.agent === null, "旧构建没给 agent → null，不编", String(oldAns.agent));
+
+  // 前情笔记（口径 F116–F118）：响应里的 memory 读得出来；旧构建没给 → null。
+  const memAns = T.answerFromResponse({ text: "x", accepted: true, regenerations: 0, mean_paragraph_chars: 1,
+    detail_level: "P2", memory: { through_turn: 7, load_error: null, compaction: { status: "pending" } } });
+  check(memAns.memory?.throughTurn === 7 && memAns.memory?.compaction === "pending",
+    "响应里的 memory（笔记覆盖到第几轮、要不要整理）读得出来", JSON.stringify(memAns.memory));
+  check(oldAns.memory === null, "旧构建没给 memory → null，不编", String(oldAns.memory));
+  check(/\["memory", t\.answer\.memory/.test(clientCode), "诊断区有 memory 一行（验收时看笔记用上没有）");
 })();
 
 rmSync(out, { recursive: true, force: true });

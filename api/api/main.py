@@ -170,6 +170,7 @@ def create_app(
     vision_factory: Any | None = None,
     router_factory: Any | None = None,
     memory_factory: Any | None = None,
+    verify_factory: Any | None = None,
 ) -> FastAPI:
     """组装。每个依赖都可注入，**为的是断言能喂真东西**。
 
@@ -213,6 +214,17 @@ def create_app(
         from explain.memory import build_memory_agent
 
         return build_memory_agent()
+
+    # ---- 出处核对 agent（口径 F121–F123）。同一条：注入了讲解模型而没注入它时不造真的。
+    # 它查课件用的是这一轮讲解 agent 用的那个检索后端（关掉了查询改写的那份）。
+    def make_verify_agent(retriever: Any) -> Any | None:
+        if verify_factory is not None:
+            return verify_factory(retriever)
+        if model_factory is not None or cfg.anthropic_api_key is None:
+            return None
+        from explain.verify import build_verify_agent
+
+        return build_verify_agent(retriever)
 
     verify = verifier or TokenVerifier(HttpJwks(cfg.jwks_url), issuer=cfg.issuer)
     db = supabase or SupabaseClient(cfg.rest_url, cfg.supabase_publishable_key)
@@ -678,8 +690,35 @@ def create_app(
                 prep["memory_job"] = lambda: _run_memory_job(
                     db, agent, p, req.conversation_id, note, plan, turn_index)
 
+        # ---- 出处核对（口径 F121–F123）。与整理同一条：**这里只决定要不要核**，核本身在讲解返回之后跑
+        # （`prep["verify_job"]`）。不需要核的轮从外面看得见原因，不是静默地没有。
+        from explain.verify import course_part
+
+        verification: dict[str, Any]
+        prep["verify_job"] = None
+        if route is not None and route.answers_directly:
+            verification = {"status": "skipped", "reason": f"这一轮是 {route.route}，不讲课件"}
+        elif not result.context.slices:
+            verification = {"status": "skipped", "reason": "这一轮没有课件片段"}
+        elif not course_part(result.final_text).strip():
+            verification = {"status": "skipped", "reason": "没有课件部分可核"}
+        else:
+            checker = make_verify_agent(tool_backend)
+            if checker is None:
+                verification = {"status": "unavailable",
+                                "reason": "没有可用的核对模型（未配置 key，或测试替身）"}
+            else:
+                verification = {"status": "pending"}
+                stored = req.conversation_id if persisted.get("written") == 2 else None
+                answer, context = result.final_text, result.context
+                prep["verify_job"] = lambda: _run_verify_job(
+                    db, checker, p, stored, round_id, answer, context, turn_index)
+
         return {
             "memory": memory,
+            # 出处核对的计划（`pending` / `skipped` / `unavailable`）。结果在 `done` 之后另发 `verify` 事件；
+            # JSON 路由在返回之前跑完，这里被换成结果本身。
+            "verification": verification,
             # 埋点的结果**进响应**。写不进去不打断讲解，但也不许静默（口径 F42）。
             "events": events_result,
             # ---- F4（口径 F65）。这两个是 `POST /marks` 的入参来源：
@@ -743,6 +782,8 @@ def create_app(
         p, row = both
         prep = _prepare_explain(req, p, row)
         out = _run_explain(req, p, row, prep, lambda _e: None, started)
+        if prep.get("verify_job") is not None:
+            out["verification"] = prep["verify_job"]()
         if prep.get("memory_job") is not None:
             out["memory"]["compaction"] = prep["memory_job"]()
         return out
@@ -762,6 +803,7 @@ def create_app(
         | `delta` | 每段正文 | `{"text": "..."}` |
         | `reset` | 审查不达标、要重生成 | 前端清掉已显示的那一版 |
         | `done` | 结束 | **与 `/explain` 的响应体逐字段相同** |
+        | `verify` | done 之后，这一轮要核时 | 出处核对 agent 的结果（口径 F121），页面补在这一轮下面 |
         | `memory` | done 之后，触发了整理时 | 上下文压缩 agent 这次整理的结果（口径 F116） |
         | `error` | 开流之后失败 | `{"status", "detail"}` |
 
@@ -789,6 +831,10 @@ def create_app(
             try:
                 out = _run_explain(req, p, row, prep, q.put, started)
                 q.put({"type": "done", "response": out})
+                # 出处核对在 `done` **之后**：学生先看讲解，核对结果到了再补在那一轮下面。
+                # 先于整理——页面等的是它，整理的结果页面不读。
+                if prep.get("verify_job") is not None:
+                    q.put({"type": "verify", "verification": prep["verify_job"]()})
                 # 前情笔记的整理在 `done` **之后**：页面在 done 就收尾了，学生不等它。
                 # 结果另发一条 `memory` 事件（页面不读；脚本与测试读），并且已经落库。
                 if prep.get("memory_job") is not None:
@@ -1377,6 +1423,39 @@ def _run_memory_job(db: Any, agent: Any, p: Any, conversation_id: str, prev: Any
     finally:
         with _COMPACTING_LOCK:
             _COMPACTING.discard(conversation_id)
+
+
+def _run_verify_job(db: Any, checker: Any, p: Any, conversation_id: str | None, round_id: str,
+                    answer: str, context: Any, turn_index: int) -> dict[str, Any]:
+    """跑一次出处核对并落库。**永不抛**：讲解已经交给学生了，失败只进结果与库里那一行。
+
+    `conversation_id` 为 None（没有会话，或这一轮没落库）时只核不存——库里的触发器要求
+    这一轮的讲解消息先在，存了也会被拒。
+    """
+    try:
+        run = checker.verify(answer=answer, context=context)
+        result = run.to_dict()
+    except Exception as exc:  # noqa: BLE001 —— VerifyAgent 本身不抛；这里防的是替身与接线
+        return {"status": "failed", "error": f"{type(exc).__name__}: {str(exc)[:300]}", "persisted": False}
+    if run.status == "skipped":
+        result["persisted"] = False
+        return result
+    if conversation_id is None:
+        result["persisted"] = False
+        result["persist_error"] = "这一轮没有落库的会话，核对结果只在这一次响应里"
+        return result
+    try:
+        db.insert_answer_check(token=p.token, row={
+            "owner": p.user_id, "conversation_id": conversation_id, "round_id": round_id,
+            "status": run.status, "result": result,
+            "meta": {"model": run.model, "prompt_version": run.prompt_version, "turn_index": turn_index},
+        })
+        result["persisted"] = True
+    except Exception as exc:  # noqa: BLE001
+        # 迁移没跑（表不存在）就是这一支：页面这一次看得到，刷新后没了（CLAUDE.md「迁移先于构建」）。
+        result["persisted"] = False
+        result["persist_error"] = f"{type(exc).__name__}: {str(exc)[:300]}"
+    return result
 
 
 _COURSE_LABEL = "合成课件（未指定课程：检索走阶段 3 的替身）"

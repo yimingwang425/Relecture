@@ -118,7 +118,15 @@ export function Workspace({
         setLoaded({ id, turns: [] });
         return;
       }
-      setLoaded({ id, turns: turnsFromMessages(data ?? []) });
+      // 出处核对（口径 F121）。**读失败不挡会话**：没有核对结果的轮次照常显示，只是不带核对那一行——
+      // 迁移没跑时这张表不存在（PGRST205），那是部署顺序的问题，不该让整个会话打不开。
+      const { data: checks, error: ce } = await supabase()
+        .from("answer_checks")
+        .select("round_id, status, result")
+        .eq("conversation_id", id);
+      if (cancelled) return;
+      if (ce) console.warn(`读出处核对失败（历史轮次不显示核对结果）：${ce.message}（${ce.code}）`);
+      setLoaded({ id, turns: turnsFromMessages(data ?? [], checks ?? []) });
     })();
     return () => {
       cancelled = true;

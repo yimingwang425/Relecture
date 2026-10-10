@@ -88,7 +88,126 @@ export type TurnAnswer = {
   agent: AgentInfo | null;
   /** 前情笔记（口径 F116–F118）。`null` = 服务端没给（构建旧于压缩 agent，或从历史重建的轮次）。 */
   memory: MemoryInfo | null;
+  /**
+   * 出处核对（口径 F121–F123）。`null` = 服务端没给（构建旧于核对 agent，或历史轮次没有核对行）。
+   * 流式时 `done` 里只是计划（`pending`），结果随 `done` 之后的 `verify` 事件到，由页面补上。
+   */
+  verification: VerifyInfo | null;
 };
+
+/** 核对状态。`lost` = 等到流结束也没收到结果（连接断了；服务端多半核完并存了，刷新可见）。 */
+export type VerifyStatus = "pending" | "written" | "failed" | "skipped" | "unavailable" | "lost";
+
+export type VerifyClaim = {
+  claim: string;
+  verdict: "supported" | "wrong_page" | "contradicted" | "not_found";
+  citedPage: number | null;
+  evidencePage: number | null;
+  evidenceQuote: string;
+};
+
+export type VerifyInfo = {
+  status: VerifyStatus;
+  counts: { supported: number; wrongPage: number; contradicted: number; notFound: number; supplement: number } | null;
+  /** 判成不是 `supported` 的事实说法。讲解补充不在这里——它们不核对，不是问题。 */
+  problems: VerifyClaim[];
+  /** 存没存进库：`false` 时刷新会看不到（迁移没跑，或这一轮没落库）。`null` = 不适用。 */
+  persisted: boolean | null;
+  reason: string | null;
+};
+
+const VERIFY_STATUSES: readonly VerifyStatus[] = ["pending", "written", "failed", "skipped", "unavailable", "lost"];
+const FACT_VERDICTS = ["supported", "wrong_page", "contradicted", "not_found"] as const;
+
+/**
+ * 服务端的核对载荷 → 页面要的那几样。计划（`{status: "pending"}`）、`verify` 事件里的结果、
+ * 库里 `answer_checks.result` 都走这一个函数——**一处出处**（同 `answerFromResponse`）。
+ *
+ * 认不出的状态当 `null`，**不就近解释**（G01 同一条）：把一个新状态显示成「核对通过」比不显示更糟。
+ */
+export function verifyFromPayload(raw: unknown): VerifyInfo | null {
+  if (!raw || typeof raw !== "object") return null;
+  const v = raw as {
+    status?: unknown;
+    counts?: { supported?: number; wrong_page?: number; contradicted?: number; not_found?: number; supplement?: number };
+    claims?: { claim?: unknown; kind?: unknown; verdict?: unknown; cited_page?: unknown; evidence_page?: unknown; evidence_quote?: unknown }[];
+    persisted?: unknown;
+    reason?: unknown;
+    error?: unknown;
+    persist_error?: unknown;
+  };
+  const status = VERIFY_STATUSES.find((s) => s === v.status);
+  if (!status) return null;
+  const num = (x: unknown) => (typeof x === "number" && x > 0 ? x : null);
+  const problems: VerifyClaim[] = (Array.isArray(v.claims) ? v.claims : []).flatMap((c) => {
+    const verdict = FACT_VERDICTS.find((x) => x === c.verdict);
+    if (c.kind !== "fact" || !verdict || verdict === "supported") return [];
+    return [{
+      claim: String(c.claim ?? ""),
+      verdict,
+      citedPage: num(c.cited_page),
+      evidencePage: num(c.evidence_page),
+      evidenceQuote: String(c.evidence_quote ?? ""),
+    }];
+  });
+  return {
+    status,
+    counts:
+      status === "written" && v.counts
+        ? {
+            supported: v.counts.supported ?? 0,
+            wrongPage: v.counts.wrong_page ?? 0,
+            // v1 的结果没有这一项（历史轮次）——读成 0，不是「不知道」：v1 根本没有这个判定。
+            contradicted: v.counts.contradicted ?? 0,
+            notFound: v.counts.not_found ?? 0,
+            supplement: v.counts.supplement ?? 0,
+          }
+        : null,
+    problems,
+    persisted: typeof v.persisted === "boolean" ? v.persisted : null,
+    reason: [v.reason, v.error, v.persist_error].find((x): x is string => typeof x === "string" && x !== "") ?? null,
+  };
+}
+
+/**
+ * 核对结果下面那一行字。**措辞守口径 F122**：
+ *
+ * - 「有依据」= 核对员找到了课件原文的摘录，**代码确认了摘录真的在那一页**；
+ *   摘录支不支持这条说法是模型的判断——所以说「找到依据」，不说「已证实」。
+ * - 「课件里没找到」只在评测达标时显示（`VERIFY_SHOW_NOT_FOUND`，见 `explain/runs/verify_eval_*.md`）。
+ * - 讲解补充（举例、类比）**不核对**，单独说一句，不算问题。
+ *
+ * 返回 null = 这一轮不显示任何核对信息（不需要核、没有核对模型）。
+ */
+export function verifySummary(v: VerifyInfo | null): { kind: "pending" | "ok" | "warn" | "muted"; text: string } | null {
+  if (!v) return null;
+  switch (v.status) {
+    case "pending":
+      return { kind: "pending", text: "正在核对出处…" };
+    case "lost":
+      return { kind: "muted", text: "出处核对的结果没收到（连接断了），刷新后可能能看到。" };
+    case "failed":
+      return { kind: "muted", text: "这一轮的出处核对没有完成，讲解本身不受影响。" };
+    case "skipped":
+    case "unavailable":
+      return null;
+    case "written": {
+      const c = v.counts ?? { supported: 0, wrongPage: 0, contradicted: 0, notFound: 0, supplement: 0 };
+      const parts = [`${c.supported} 条找到课件依据`];
+      if (c.contradicted > 0) parts.push(`${c.contradicted} 条和课件原文对不上`);
+      if (c.wrongPage > 0) parts.push(`${c.wrongPage} 条页码可能不对`);
+      if (c.notFound > 0) parts.push(VERIFY_SHOW_NOT_FOUND ? `${c.notFound} 条课件里没找到` : `${c.notFound} 条没有核对上`);
+      if (c.supplement > 0) parts.push(`讲解补充 ${c.supplement} 条（举例、类比，不核对）`);
+      return { kind: c.wrongPage + c.contradicted + c.notFound > 0 ? "warn" : "ok", text: `出处核对：${parts.join(" · ")}` };
+    }
+  }
+}
+
+/**
+ * 「课件里没找到」这句话能不能说（口径 F123）。注入错误评测达标（三类检出率都 ≥ 70%、逐条误报率 ≤ 10%）
+ * 才是 true；不达标降级为「没有核对上」——它只说核对员没对上，不断言课件里没有。
+ */
+export const VERIFY_SHOW_NOT_FOUND = false;
 
 export type MemoryInfo = {
   /** 这一轮用的笔记覆盖到第几轮；`null` = 没有笔记。 */
@@ -265,6 +384,7 @@ export function answerFromResponse(body: {
     load_error?: string | null;
     compaction?: { status?: string } | null;
   } | null;
+  verification?: unknown;
 }): TurnAnswer {
   const c = body.confusion;
   const byFile = new Map<string, Set<number>>();
@@ -348,6 +468,7 @@ export function answerFromResponse(body: {
           loadError: body.memory.load_error ?? null,
         }
       : null,
+    verification: verifyFromPayload(body.verification),
   };
 }
 
@@ -422,7 +543,13 @@ export function turnsFromMessages(
     round_id?: string | null;
     meta?: unknown;
   }[],
+  /**
+   * 这个会话的核对结果（`answer_checks` 行，口径 F121）。按 `round_id` 挂回那一轮。
+   * 不给 / 读失败 = 历史轮次都没有核对信息（不是「核对通过」）。
+   */
+  checks: { round_id: string; status: string; result?: unknown }[] = [],
 ): Turn[] {
+  const checkByRound = new Map(checks.map((c) => [c.round_id, c]));
   const byTurn = new Map<
     number,
     { q?: string; a?: string; roundId?: string | null; meta?: Record<string, unknown> }
@@ -463,6 +590,11 @@ export function turnsFromMessages(
           confusion: m.confusion as never,
           gap: m.gap as never,
           agent: m.agent as never,
+          // 库里的 status 只有 written / failed；结果体的形状与 `verify` 事件同一个。
+          verification: (() => {
+            const c = v.roundId ? checkByRound.get(v.roundId) : undefined;
+            return c ? { ...(c.result as object), status: c.status, persisted: undefined } : undefined;
+          })(),
         }),
       };
     });

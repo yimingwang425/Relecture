@@ -11,7 +11,8 @@ class FakeRest:
                  messages: list[dict[str, Any]] | None = None,
                  fail_message_insert: bool = False,
                  memories: list[dict[str, Any]] | None = None,
-                 memories_table_missing: bool = False) -> None:
+                 memories_table_missing: bool = False,
+                 checks_table_missing: bool = False) -> None:
         self.rows_by_user = rows_by_user
         self.seen: list[tuple[str, dict[str, str]]] = []
         self.writes: list[tuple[str, Any]] = []
@@ -24,6 +25,9 @@ class FakeRest:
         #: 真 PostgREST 对不存在的表回 404（PGRST205），读写都抛。
         self.memories = list(memories or [])
         self.memories_table_missing = memories_table_missing
+        #: F121–F123 · `answer_checks`。同上：`checks_table_missing` 模拟迁移没跑。
+        self.checks: list[dict[str, Any]] = []
+        self.checks_table_missing = checks_table_missing
 
     def __call__(self, url: str, headers: dict[str, str], body: Any = None) -> Any:
         self.seen.append((url, dict(headers)))
@@ -49,6 +53,18 @@ class FakeRest:
                             and m["through_turn"] == r["through_turn"] for m in self.memories):
                         raise SupabaseError("数据库返回 409：23505 duplicate key", status=502)
                     self.memories.append(dict(r))
+                return None
+            if "/answer_checks" in url:
+                if self.checks_table_missing:
+                    raise SupabaseError("数据库返回 404：PGRST205 relation answer_checks 不存在", status=502)
+                for r in (body if isinstance(body, list) else [body]):
+                    # 照真库的触发器与唯一约束拒收：轮必须是这个会话里一条讲解的那一轮；一轮一行。
+                    if not any(m.get("conversation_id") == r["conversation_id"] and m.get("round_id") == r["round_id"]
+                               and m.get("role") == "assistant" for m in self.messages):
+                        raise SupabaseError("数据库返回 409：23503 会话里没有这一轮的讲解", status=502)
+                    if any(c["round_id"] == r["round_id"] for c in self.checks):
+                        raise SupabaseError("数据库返回 409：23505 duplicate key", status=502)
+                    self.checks.append(dict(r))
                 return None
             if "/messages" in url:
                 if self.fail_message_insert:

@@ -16,7 +16,11 @@ import {
   isDirectRoute,
   isFromRequestedCourse,
   nextTurnIndex,
+  VERIFY_SHOW_NOT_FOUND,
+  verifyFromPayload,
+  verifySummary,
   type Turn,
+  type VerifyInfo,
 } from "@/lib/explain/turns";
 import { EMPTY_DRAFT, readExplainStream } from "@/lib/explain/stream";
 import { Markdown } from "@/lib/style/markdown";
@@ -303,8 +307,23 @@ export function ExplainClient({
           failure: { status: r.status, message: "服务端返回了 200 但没有正文流。", retryable: true },
         });
       }
-      const outcome = await readExplainStream(r.body, (draft) =>
-        setTurns((prev) => prev.map((t, i) => (i === prev.length - 1 ? { ...t, draft } : t))),
+      // 这一轮在 `turns` 里的位置。轮次只追加不删，位置稳定——`done` 之后学生可能已经在问下一轮，
+      // 迟到的核对结果要挂回**这一轮**，不是「最后一轮」。
+      const slot = turns.length;
+      const patchVerification = (next: (v: VerifyInfo | null) => VerifyInfo | null) =>
+        setTurns((prev) =>
+          prev.map((t, i) =>
+            i === slot && t.answer ? { ...t, answer: { ...t.answer, verification: next(t.answer.verification) } } : t,
+          ),
+        );
+      const outcome = await readExplainStream(
+        r.body,
+        (draft) => setTurns((prev) => prev.map((t, i) => (i === prev.length - 1 ? { ...t, draft } : t))),
+        // `done` 之后的事件（口径 F121）：出处核对的结果。流结束还没等到 → 「没收到」，不让「正在核对」一直转。
+        (ev) => {
+          if (ev.type === "verify") patchVerification(() => verifyFromPayload(ev.data.verification));
+          if (ev.type === "end") patchVerification((v) => (v?.status === "pending" ? { ...v, status: "lost" } : v));
+        },
       );
       if (outcome.kind === "done") {
         // **终态只取响应体**，不取草稿（见组件说明）。
@@ -481,6 +500,7 @@ export function ExplainClient({
               const tab = tabs[index] ?? "answer";
               const sliceCount = t.answer?.slices.length ?? 0;
               const notice = t.answer ? gapNotice(t.answer) : null;
+              const verify = t.answer ? verifySummary(t.answer.verification) : null;
               return (
                 <li
                   key={index}
@@ -692,6 +712,39 @@ export function ExplainClient({
                               )}
                             </p>
 
+                            {/* 出处核对（口径 F121–F123）。讲解先给学生看，核对结果到了再补在这里。
+                                措辞守 F122：「找到课件依据」= 摘录真的在那一页（代码查过），
+                                摘录支不支持这句话仍是核对模型的判断——不说「已证实」。 */}
+                            {verify && (
+                              <div className="mt-3" data-field="verify" data-verify-status={t.answer.verification?.status}>
+                                <p className="t-caption row gap-2">
+                                  <StatusDot kind={verify.kind === "pending" ? "busy" : verify.kind === "muted" ? "idle" : verify.kind} />
+                                  <span>{verify.text}</span>
+                                </p>
+                                {(t.answer.verification?.problems.length ?? 0) > 0 && (
+                                  <details className="mt-1.5" data-field="verify-problems">
+                                    <summary className="t-caption link cursor-pointer">看是哪几句</summary>
+                                    <ul className="mt-1.5 flex flex-col gap-1.5">
+                                      {t.answer.verification!.problems.map((c, j) => (
+                                        <li key={j} className="t-caption">
+                                          「{c.claim}」——
+                                          {c.verdict === "wrong_page"
+                                            ? `标的是第 ${c.citedPage ?? "?"} 页，课件里对应的内容在第 ${c.evidencePage ?? "?"} 页`
+                                            : c.verdict === "contradicted"
+                                              ? `课件第 ${c.evidencePage ?? "?"} 页的原文是「${c.evidenceQuote}」，核对员认为两者对不上`
+                                              : VERIFY_SHOW_NOT_FOUND
+                                              ? "核对员在课件里没找到这句的依据"
+                                              : "核对员没有对上这句的课件依据"}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                    <p className="t-caption mt-1.5 opacity-80">
+                                      核对员是另一个模型：它找到的课件原文确实在那一页，但原文是否支持这句话仍是它的判断，可能出错。
+                                    </p>
+                                  </details>
+                                )}
+                              </div>
+                            )}
                           </>
                         )}
 
@@ -768,6 +821,7 @@ export function ExplainClient({
                                 ["gap", t.answer.gap ? JSON.stringify(t.answer.gap) : "null（服务端没给）"],
                                 ["agent", t.answer.agent ? JSON.stringify(t.answer.agent) : "null（服务端没给）"],
                                 ["memory", t.answer.memory ? JSON.stringify(t.answer.memory) : "null（服务端没给）"],
+                                ["verification", t.answer.verification ? JSON.stringify(t.answer.verification) : "null（服务端没给 / 这一轮没有核对行）"],
                                 ["confusion", t.answer.confusion ? JSON.stringify(t.answer.confusion) : "null"],
                                 ["埋点结果", t.answer.events ? JSON.stringify(t.answer.events) : "—"],
                               ] as const

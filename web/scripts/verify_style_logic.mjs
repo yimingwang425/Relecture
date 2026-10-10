@@ -2054,6 +2054,109 @@ await (async () => {
   check(/\["memory", t\.answer\.memory/.test(clientCode), "诊断区有 memory 一行（验收时看笔记用上没有）");
 })();
 
+// ================================================================ 二十二 · 出处核对（2026-10-10，口径 F121–F123）
+//
+// 守四件事：done 之后的 verify 真的读得到（同一包里跟在 done 后面也算）；流断了不让「正在核对」一直转；
+// 核对载荷读得对、讲解补充不算问题、认不出的状态不就近解释；措辞守 F122（不说「已证实」）。
+console.log("\n\x1b[1m二十二 · 出处核对 · done 之后的事件与措辞（口径 F121–F123）\x1b[0m");
+await (async () => {
+  const S = require_(join(outExplain, "stream.js"));
+  const T = require_(join(outExplain, "turns.js"));
+  const ev = (type, data) => `event: ${type}\ndata: ${JSON.stringify(data)}\n\n`;
+  const streamOf = (text) => new ReadableStream({
+    start(c) { c.enqueue(new TextEncoder().encode(text)); c.close(); },
+  });
+  const RESULT = { status: "written", counts: { supported: 2, wrong_page: 1, contradicted: 1, not_found: 1, supplement: 3 },
+    claims: [
+      { claim: "特征值是拉伸倍数", kind: "fact", verdict: "supported", cited_page: 2, evidence_page: 2, evidence_quote: "x" },
+      { claim: "见第5页", kind: "fact", verdict: "wrong_page", cited_page: 5, evidence_page: 2, evidence_quote: "y" },
+      { claim: "行列式等于特征值之和", kind: "fact", verdict: "not_found", cited_page: 0, evidence_page: 0 },
+      { claim: "平行于镜面的向量特征值为 -1", kind: "fact", verdict: "contradicted", cited_page: 3, evidence_page: 3,
+        evidence_quote: "Vectors perpendicular to it are sent to their opposites" },
+      { claim: "就像橡皮筋", kind: "supplement", verdict: "supplement" },
+    ], persisted: true };
+  const wire = ev("delta", { text: "讲" }) + ev("done", { response: { text: "讲", verification: { status: "pending" } } })
+    + ev("verify", { verification: RESULT }) + ev("memory", { compaction: { status: "written" } });
+
+  // -------- 22.1 done 之后的事件：同一包也读得到；end 永远最后到
+  const late = [];
+  const out = await S.readExplainStream(streamOf(wire), () => {}, (e) => late.push(e.type));
+  check(out.kind === "done", "done 仍然立刻交出终态（学生不等核对）");
+  await new Promise((r) => setTimeout(r, 20));
+  check(JSON.stringify(late) === JSON.stringify(["verify", "memory", "end"]),
+    "done 之后同一包里的 verify / memory 交给 onLate，最后一个是 end", JSON.stringify(late));
+  // 反向控制：不给 onLate 就和以前一样，done 即止（老调用方不受影响）。
+  const old = await S.readExplainStream(streamOf(wire), () => {});
+  check(old.kind === "done", "不给 onLate 的调用方行为不变");
+  // 逐字节分包：done 与 verify 落在不同包里也一样
+  const chunked = new ReadableStream({ start(c) { for (const ch of wire) c.enqueue(new TextEncoder().encode(ch)); c.close(); } });
+  const late2 = [];
+  await S.readExplainStream(chunked, () => {}, (e) => late2.push(e.type));
+  await new Promise((r) => setTimeout(r, 50));
+  check(JSON.stringify(late2) === JSON.stringify(["verify", "memory", "end"]), "逐字节分包时 late 事件一个不少",
+    JSON.stringify(late2));
+  // 流在 verify 之前断开：只有 end——页面据此把 pending 标成 lost
+  const late3 = [];
+  await S.readExplainStream(streamOf(ev("done", { response: { text: "讲" } })), () => {}, (e) => late3.push(e.type));
+  await new Promise((r) => setTimeout(r, 20));
+  check(JSON.stringify(late3) === JSON.stringify(["end"]), "没等到 verify 就断了 → 只有 end", JSON.stringify(late3));
+
+  // -------- 22.2 载荷 → 页面
+  const v = T.verifyFromPayload(RESULT);
+  check(v.status === "written" && v.counts.wrongPage === 1 && v.counts.supplement === 3,
+    "计数读得出（讲解补充单独计）", JSON.stringify(v.counts));
+  check(v.problems.length === 3 && v.problems.every((c) => c.verdict !== "supported")
+    && !v.problems.some((c) => c.claim === "就像橡皮筋"),
+    "问题清单只含没核对上的事实说法；讲解补充与有依据的都不在里面", JSON.stringify(v.problems.map((c) => c.claim)));
+  check(v.problems[2].verdict === "contradicted" && /perpendicular/.test(v.problems[2].evidenceQuote),
+    "contradicted 带着课件原文进问题清单（学生能看到原文说的是什么）");
+  const v1Old = T.verifyFromPayload({ status: "written", counts: { supported: 1, wrong_page: 0, not_found: 0, supplement: 0 } });
+  check(v1Old.counts.contradicted === 0, "v1 的历史结果没有 contradicted → 读成 0");
+  check(v.problems[1].citedPage === null, "没标页码（0）读成 null，不显示成「第 0 页」");
+  check(T.verifyFromPayload({ status: "verified_ok" }) === null && T.verifyFromPayload(null) === null,
+    "认不出的状态 → null，不就近解释成「核对通过」");
+  check(T.verifyFromPayload({ status: "pending" }).status === "pending", "done 里的计划读成 pending");
+  const ans = T.answerFromResponse({ text: "x", accepted: true, regenerations: 0, mean_paragraph_chars: 1,
+    detail_level: "P2", verification: { status: "pending" } });
+  check(ans.verification?.status === "pending", "answerFromResponse 带上 verification");
+  const oldAns = T.answerFromResponse({ text: "x", accepted: true, regenerations: 0, mean_paragraph_chars: 1, detail_level: "P2" });
+  check(oldAns.verification === null, "旧构建没给 verification → null");
+
+  // -------- 22.3 历史：按 round_id 挂回那一轮；没有核对行的轮次是 null，不是「通过」
+  const rows = [
+    { role: "user", content: "q1", turn_index: 1 }, { role: "assistant", content: "a1", turn_index: 1, round_id: "r1", meta: {} },
+    { role: "user", content: "q2", turn_index: 2 }, { role: "assistant", content: "a2", turn_index: 2, round_id: "r2", meta: {} },
+  ];
+  const hist = T.turnsFromMessages(rows, [{ round_id: "r2", status: "written", result: RESULT }]);
+  check(hist[0].answer.verification === null && hist[1].answer.verification?.counts?.notFound === 1,
+    "历史：核对结果挂回 round_id 对得上的那一轮，另一轮为 null",
+    JSON.stringify(hist.map((t) => t.answer.verification?.status ?? null)));
+  check(T.turnsFromMessages(rows).every((t) => t.answer.verification === null), "不给核对行（读失败）→ 全部 null，会话照常");
+
+  // -------- 22.4 措辞（F122 / F123）
+  const sum = T.verifySummary(v);
+  check(sum.kind === "warn" && /2 条找到课件依据/.test(sum.text) && /1 条页码可能不对/.test(sum.text)
+    && /1 条和课件原文对不上/.test(sum.text)
+    && /讲解补充 3 条（举例、类比，不核对）/.test(sum.text), "摘要分开说有依据 / 页码 / 讲解补充", sum.text);
+  check(!/证实|已验证|正确/.test(sum.text), "不说「证实 / 已验证 / 正确」——摘录支不支持说法是模型的判断");
+  check(T.VERIFY_SHOW_NOT_FOUND === /课件里没找到/.test(sum.text),
+    "「课件里没找到」只在评测达标（VERIFY_SHOW_NOT_FOUND）时出现", sum.text);
+  const allOk = T.verifySummary(T.verifyFromPayload({ status: "written", counts: { supported: 3, wrong_page: 0, not_found: 0, supplement: 0 } }));
+  check(allOk.kind === "ok" && !/讲解补充/.test(allOk.text), "全部有依据 → ok，不提补充", allOk.text);
+  check(T.verifySummary(T.verifyFromPayload({ status: "skipped" })) === null
+    && T.verifySummary(T.verifyFromPayload({ status: "unavailable" })) === null,
+    "不需要核 / 没有核对模型 → 不显示任何东西（寒暄下面不挂核对）");
+  check(T.verifySummary({ ...v, status: "lost" }).kind === "muted", "没收到 → 一句淡色说明，不是警告");
+  const clientCode = readFileSync(join(WEB, "app/explain/explain-client.tsx"), "utf8");
+  check(/ev\.type === "end"\) patchVerification\(\(v\) => \(v\?\.status === "pending"/.test(clientCode),
+    "页面：流结束仍在 pending 的核对标成 lost");
+  check(/i === slot && t\.answer/.test(clientCode), "页面：迟到的核对挂回发问时的那一轮，不是「最后一轮」");
+  check(/\["verification", t\.answer\.verification/.test(clientCode), "诊断区有 verification 一行");
+  const ws = readFileSync(join(WEB, "app/courses/[id]/workspace-client.tsx"), "utf8");
+  check(/\.from\("answer_checks"\)/.test(ws) && /turnsFromMessages\(data \?\? \[\], checks \?\? \[\]\)/.test(ws),
+    "重新打开会话时读 answer_checks 并挂回历史轮次");
+})();
+
 rmSync(out, { recursive: true, force: true });
 rmSync(outUpload, { recursive: true, force: true });
 rmSync(outExplain, { recursive: true, force: true });

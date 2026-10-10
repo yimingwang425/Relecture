@@ -483,6 +483,15 @@ class SupabaseClient:
         """写一行笔记（written 或 failed）。只追加，表不授 update。"""
         self._post("/conversation_memories", token, [row])
 
+    # ---------------------------------------------------------------- F5 · 出处核对（口径 F121–F123）
+
+    def insert_answer_check(self, *, token: str, row: dict[str, Any]) -> None:
+        """写一轮的核对结果（written 或 failed）。一轮一行，表不授 update。
+
+        ⚠️ 迁移没跑时这张表不存在，这里会抛——**调用方接住**，结果里 `persisted = false`。
+        """
+        self._post("/answer_checks", token, [row])
+
     def insert_messages(self, *, token: str, rows: list[dict[str, Any]]) -> None:
         """写一问一答。**不加 `Prefer: return=representation`**——
         这张表授了 select，所以带回读其实不会 42501，但回读的内容我们一个字都不用，

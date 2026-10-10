@@ -2416,6 +2416,107 @@ async function main() {
     await db.close();
   }
 
+  // ============================================================ 讲解的出处核对（2026-10-10，口径 F121–F123）
+  //
+  // 迁移 20261010100000_f5_answer_checks.sql。出处核对 agent 在讲解返回之后写，页面读。
+  // 会静默出错的几件事：跨 owner 引用、挂在一个不存在的轮上（读的一侧拼不回去）、
+  // 同一轮两份、改写旧结果、删会话没删干净。每条「拒绝」配一条「允许」。
+  console.log("\n\x1b[1m讲解的出处核对 · answer_checks（F121–F123）\x1b[0m");
+  {
+    const db = await freshDb();
+    const mkConvC = async (uid, name) => asUser(db, uid, async () => {
+      const course = (await db.query("insert into public.courses (owner, name) values ($1,$2) returning id",
+        [uid, name])).rows[0].id;
+      return (await db.query("insert into public.conversations (owner, course_id, title) values ($1,$2,'w') returning id",
+        [uid, course])).rows[0].id;
+    });
+    const say = (uid, conv, round, role = "assistant") => asUser(db, uid, () => db.query(
+      `insert into public.messages (owner, conversation_id, role, content, turn_index, round_id)
+       values ($1,$2,$3,'讲解',1,$4)`, [uid, conv, role, round]));
+    const RESULT = JSON.stringify({ status: "written", counts: { supported: 2, wrong_page: 0, not_found: 0, supplement: 1 } });
+    const put = (uid, conv, round, { status = "written", result = RESULT, owner = uid } = {}) =>
+      errorOf(() => asUser(db, uid, () => db.query(
+        `insert into public.answer_checks (owner, conversation_id, round_id, status, result)
+         values ($1,$2,$3,$4,$5::jsonb)`, [owner, conv, round, status, result])));
+
+    const cA = await mkConvC(UID_A, "线性代数");
+    const cA2 = await mkConvC(UID_A, "另一门课");
+    const cB = await mkConvC(UID_B, "B 的课");
+    const rA = "11111111-1111-4111-8111-111111111111";
+    const rA2 = "22222222-2222-4222-8222-222222222222";
+    const rB = "33333333-3333-4333-8333-333333333333";
+    await say(UID_A, cA, rA);
+    await say(UID_A, cA2, rA2);
+    await say(UID_B, cB, rB);
+
+    // ---- ① 允许控制
+    const okC = await put(UID_A, cA, rA);
+    okC === null
+      ? ok("A 给自己会话里的一轮写核对（允许控制）", "← 少了它，「一律拒」也会让下面全绿")
+      : bad("A 写自己的核对被拒", `${okC.code} ${okC.message}`);
+
+    // ---- ② 跨用户
+    const seenB = await asUser(db, UID_B, async () =>
+      (await db.query("select count(*)::int c from public.answer_checks")).rows[0].c);
+    seenB === 0 ? ok("B 读不到 A 的核对", "0 行") : bad("B 读到了 A 的核对", `${seenB} 行`);
+    const forged = await put(UID_B, cA2, rA2, { owner: UID_A });
+    forged?.code === "42501"
+      ? ok("B 冒充 A 写核对 → 42501", "← with check (owner = auth.uid())")
+      : bad("B 冒充 A 写核对没被挡", forged?.code ?? "未报错");
+    const intoB = await put(UID_A, cB, rB);
+    intoB?.code === "42501"
+      ? ok("A 把核对挂到 B 的会话上 → 42501", "← RLS 只看 owner，这一条是触发器挡的")
+      : bad("核对挂到别人的会话上没被挡", intoB?.code ?? "未报错");
+
+    // ---- ③ 挂靠：round_id 必须是这个会话里一条讲解的那一轮
+    const ghost = await put(UID_A, cA2, "44444444-4444-4444-8444-444444444444");
+    ghost?.code === "23503"
+      ? ok("挂到一个不存在的轮 → 23503", "← 否则读的一侧按 round_id 拼回去时静默对不上")
+      : bad("挂到不存在的轮写进去了", ghost?.code ?? "未报错");
+    const crossConv = await put(UID_A, cA2, rA);
+    crossConv?.code === "23503"
+      ? ok("轮是真的、但在另一个会话里 → 23503", "← 只查 round_id 存不存在不够")
+      : bad("别的会话的轮挂进来了", crossConv?.code ?? "未报错");
+    const ok2 = await put(UID_A, cA2, rA2, { status: "failed", result: "{}" });
+    ok2 === null
+      ? ok("同一个人、对的会话、对的轮、failed 行（允许控制）", "← 失败也记一行")
+      : bad("failed 行写不进去", `${ok2.code} ${ok2.message}`);
+
+    // ---- ④ 形状
+    const rA3 = "55555555-5555-4555-8555-555555555555";
+    await say(UID_A, cA, rA3);
+    const arr = await put(UID_A, cA, rA3, { result: "[]" });
+    arr?.code === "23514"
+      ? ok("result 写成数组 → 23514", "← 读的一侧按对象取 counts")
+      : bad("数组 result 写进去了", arr?.code ?? "未报错");
+
+    // ---- ⑤ 一轮一行
+    const dup = await put(UID_A, cA, rA);
+    dup?.code === "23505"
+      ? ok("同一轮再写一份 → 23505", "← 一轮至多一次核对")
+      : bad("重复核对写进去了", dup?.code ?? "未报错");
+
+    // ---- ⑥ 只追加
+    const upd = await errorOf(() => asUser(db, UID_A, () => db.query(
+      "update public.answer_checks set status = 'failed' where conversation_id=$1", [cA])));
+    upd?.code === "42501"
+      ? ok("改一份旧核对 → 42501", "← 一轮一次核对，写完不改")
+      : bad("旧核对被改掉了", upd?.code ?? "未报错");
+
+    // ---- ⑦ cascade
+    const count = async (conv) =>
+      (await db.query("select count(*)::int c from public.answer_checks where conversation_id=$1", [conv])).rows[0].c;
+    const before = await count(cA);
+    await asUser(db, UID_A, () => db.query("delete from public.conversations where id=$1", [cA]));
+    const after = await count(cA);
+    const keep = await count(cA2);
+    before === 1 && after === 0 && keep === 1
+      ? ok("删会话 → 它的核对一起没了；另一个会话的还在", `${before} → ${after}，另一会话 ${keep}`)
+      : bad("cascade 不对", `${before} → ${after}，另一会话 ${keep}`);
+
+    await db.close();
+  }
+
   console.log(`\n\x1b[1m本地\x1b[0m  绿 ${passed} · 红 ${failed}`);
   console.log(
     `\x1b[1m待真库验证\x1b[0m  ${NOT_VERIFIABLE_LOCALLY.join(", ")} ` +

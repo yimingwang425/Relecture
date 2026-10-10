@@ -13,6 +13,10 @@
  *    草稿进 `searching` 并说清它在做什么；查到的片随 `tool`（`phase: "done"`）一起到，
  *    出处面板跟着更新。`reset` 带 `reason`：只有 `review` 是「在重写」，
  *    `tool` / `fallback` 只清屏——那不是讲法没达标，说成「在重写」是错话。
+ * 5. **`done` 之后还有事件**（口径 F121）：出处核对在讲解返回之后才跑，结果作为 `verify` 事件到。
+ *    `readExplainStream` 在 `done` 就把终态交出去（学生不等核对），流**接着读完**，
+ *    之后的每个事件交给 `onLate`；流结束时再给一个 `{type: "end"}`，页面据此把还在
+ *    「正在核对」的那一轮标成「没收到」——否则断线后那一行字会永远转下去。
  * 4. **终态只有两个出口**：`done`（与 `/explain` 的响应体逐字段同形，交给
  *    `answerFromResponse()`）或 `error`（带 status，语义同状态码）。
  *    流在两者之前断掉，是第三种情况——**不是成功**，调用方要按失败处理。
@@ -148,6 +152,7 @@ export type StreamOutcome =
 export async function readExplainStream(
   body: ReadableStream<Uint8Array>,
   onDraft: (d: StreamDraft) => void,
+  onLate?: (ev: SseEvent) => void,
 ): Promise<StreamOutcome> {
   const reader = body.getReader();
   const decoder = new TextDecoder();
@@ -156,8 +161,13 @@ export async function readExplainStream(
   for (;;) {
     const { value, done } = await reader.read();
     const events = parser.push(done ? decoder.decode() : decoder.decode(value, { stream: true }));
-    for (const ev of events) {
-      if (ev.type === "done") return { kind: "done", response: ev.data.response as Record<string, unknown> };
+    for (const [i, ev] of events.entries()) {
+      if (ev.type === "done") {
+        // 同一包里跟在 done 后面的事件也算 late——网络把 done 与 verify 打成一包是常事。
+        if (onLate) void drainLate(reader, decoder, parser, events.slice(i + 1), done, onLate);
+        else void reader.cancel().catch(() => {});
+        return { kind: "done", response: ev.data.response as Record<string, unknown> };
+      }
       if (ev.type === "error") {
         return {
           kind: "error",
@@ -170,4 +180,29 @@ export async function readExplainStream(
     }
     if (done) return { kind: "cut", detail: "连接在讲解结束前断开了" };
   }
+}
+
+/** `done` 之后的事件。**永不抛**：讲解已经交出去了，这里的任何失败都只是「核对没收到」。 */
+async function drainLate(
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  decoder: TextDecoder,
+  parser: { push(chunk: string): SseEvent[] },
+  first: SseEvent[],
+  ended: boolean,
+  onLate: (ev: SseEvent) => void,
+): Promise<void> {
+  try {
+    // 先让出一拍（宏任务）：调用方拿到 done 之后要先把这一轮落成「已答」，
+    // 同一包里的 verify 才有地方挂。不让的话它先到，挂在一个还在 pending 的轮上，被丢掉。
+    await new Promise((r) => setTimeout(r, 0));
+    for (const ev of first) onLate(ev);
+    while (!ended) {
+      const { value, done } = await reader.read();
+      ended = done;
+      for (const ev of parser.push(done ? decoder.decode() : decoder.decode(value, { stream: true }))) onLate(ev);
+    }
+  } catch {
+    // 连接断了：交给下面那个 end。
+  }
+  onLate({ type: "end", data: {} });
 }

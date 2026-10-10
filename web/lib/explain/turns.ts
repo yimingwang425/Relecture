@@ -204,10 +204,11 @@ export function verifySummary(v: VerifyInfo | null): { kind: "pending" | "ok" | 
  * 「课件里没找到」这句话能不能说（口径 F123）。注入错误评测达标（三类检出率都 ≥ 70%、逐条误报率 ≤ 10%）
  * 才是 true；不达标降级为「没有核对上」——它只说核对员没对上，不断言课件里没有。
  *
- * 2026-10-10：Sonnet 在主集前一半达标，但 n = 9 / 11 / 13、留出集复核因额度用完没跑成
- * （`explain/runs/verify_eval_results.md`）——先保持 false，复核达标再改。
+ * 2026-10-10：Sonnet 在主集前一半（9/9 · 9/11 · 13/13）与留出集（14/16 · 14/18 · 32/33，误报 5.3%）
+ * 上都达标（`explain/runs/verify_eval_results.md`）→ true。被判「没找到」的误报复核下来都是讲解在课件之外
+ * 正确地多说了一步——对它们说「课件里没找到」本身是真话。
  */
-export const VERIFY_SHOW_NOT_FOUND = false;
+export const VERIFY_SHOW_NOT_FOUND = true;
 
 export type MemoryInfo = {
   /** 这一轮用的笔记覆盖到第几轮；`null` = 没有笔记。 */

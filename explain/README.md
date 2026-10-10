@@ -126,7 +126,7 @@ python3 -m venv .venv && ./.venv/bin/pip install -e ".[dev]"
   历史只留正文与链接，不留原始搜索结果。
 - **出处核对**（`verify.py`）：讲解返回后核对事实性说法，代码保证摘录真实存在且在标的那一页；
   「摘录支不支持说法」是模型的判断，由注入错误评测量（`scripts/verify_eval.py`，结果 `runs/verify_eval_results.md`）。
-  **用 Sonnet**：Haiku 换概念只抓到 14%–28%。
+  **用 Sonnet**：Haiku 换概念只抓到 14%–28%；Sonnet 留出集上 88% / 78% / 97%、误报 5.3%，单次 $0.033–0.045。
 
 ## 二、prompt caching：论断的前提在新架构下不成立
 

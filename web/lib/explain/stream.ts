@@ -78,6 +78,8 @@ export const TOOL_ACTIVITY: Record<string, string> = {
   search_slices: "正在课件里再找一找",
   read_page: "正在翻看原页",
   check_coverage: "正在确认材料够不够",
+  // 联网模式（口径 F120）：学生明确要求超出课件时才有。
+  web_search: "正在网上查资料",
 };
 
 function sourcesOf(retrieval: unknown): StreamDraft["sources"] {

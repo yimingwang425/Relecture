@@ -426,7 +426,7 @@ def create_app(
             history_rows = db.conversation_history(
                 p.token, req.conversation_id,
                 after_turn=memory_note.through_turn if memory_note is not None else None)
-            history = apply_memory(memory_note, history_rows)
+            history = apply_memory(memory_note, [_with_web_sources(r) for r in history_rows])
             turn_index = db.next_turn_index(p.token, req.conversation_id)
 
         # 查询改写要用历史做指代消解（口径 F96）。**同一份历史**，不另读一遍。
@@ -537,6 +537,8 @@ def create_app(
             retriever=active,
             tools=RetrieverTools(tool_backend),
             route=route,
+            # 学生明确要求超出课件（口径 F119 / F120）：讲解 agent 多一个联网搜索，这一轮跳过兜底判断。
+            web=route is not None and route.route == "web",
             context=ctx,
             model=make_model(),
             reviewer=RuleReviewer(style),
@@ -600,6 +602,10 @@ def create_app(
                          "gap": result.gap.to_dict(),
                          "agent": result.agent.to_dict() if result.agent is not None else None,
                          "slice_keys": slice_keys,
+                         # 联网轮正文引用了的网页（口径 F120）。重建历史时只取它与正文，
+                         # **不留原始搜索结果**——那些按输入 token 计费，留着就每轮再付一次。
+                         "web_sources": (list(result.agent.web_sources)
+                                         if result.agent is not None else []),
                          "confusion": confusion,
                          "accepted": result.accepted,
                          "regenerations": result.regenerations,
@@ -1300,6 +1306,19 @@ def _default_embedder() -> Any:
 #: 两次都会对，但钱花两遍；库里的唯一索引是第二道保险。只在本进程内有效，如实登记。
 _COMPACTING: set[str] = set()
 _COMPACTING_LOCK = threading.Lock()
+
+
+def _with_web_sources(row: dict[str, Any]) -> dict[str, Any]:
+    """联网轮的助手消息：正文后面接一行它引用过的网页（口径 F120）。
+
+    历史里**只有正文与链接**，没有原始搜索结果——后者按输入 token 计费，留在历史里就每轮再付一次。
+    链接要留：之后学生追问「刚才那个网页说的……」时，模型得知道当时引用的是哪几个网页。
+    """
+    srcs = row.get("web_sources")
+    if row.get("role") != "assistant" or not isinstance(srcs, list) or not srcs:
+        return row
+    refs = "；".join(f"{x.get('title') or x.get('url')} {x.get('url')}" for x in srcs if isinstance(x, dict))
+    return {**row, "content": f"{row['content']}\n\n（这一轮引用的网络来源：{refs}）"}
 
 
 def _turns_from_rows(rows: list[dict[str, Any]]) -> list[Any]:

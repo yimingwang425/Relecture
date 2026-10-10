@@ -99,15 +99,38 @@ export type MemoryInfo = {
   loadError: string | null;
 };
 
+/**
+ * 路由直接回复、不进讲解的几类（口径 F110 / F119）。这些轮**根本没去查课件**，
+ * 也不按讲法审查——「没有检索到」「重生成触顶」这类提示对它们都是错话。
+ */
+export const DIRECT_ROUTES: readonly string[] = ["chat", "off_topic", "crisis"];
+
+export function isDirectRoute(route: string | null | undefined): boolean {
+  return route != null && DIRECT_ROUTES.includes(route);
+}
+
 export type AgentInfo = {
   /** `"agent"` / `"pipeline"` / `"fallback"`。`fallback` 时 `fallbackError` 说明原因。 */
   mode: string;
-  /** 路由的判断：`"course"` / `"chat"`；`null` = 这一轮没有路由器。 */
+  /** 路由的判断：`course` / `web` / `chat` / `off_topic` / `crisis`；`null` = 这一轮没有路由器。 */
   route: string | null;
   /** 讲解 agent 调了哪些工具，按先后。 */
   tools: string[];
   fallbackError: string | null;
+  /** 联网轮（口径 F120）正文引用了的网页；不是联网轮为 `null`。 */
+  web: { searches: number; sources: { url: string; title: string }[] } | null;
 };
+
+/** 只认 http(s) 链接。别的协议（`javascript:` 之类）一律不当链接渲染——网页标题与地址都来自外部。 */
+export function safeHttpUrl(url: unknown): string | null {
+  if (typeof url !== "string") return null;
+  try {
+    const u = new URL(url);
+    return u.protocol === "https:" || u.protocol === "http:" ? u.toString() : null;
+  } catch {
+    return null;
+  }
+}
 
 export type GapVerdict = "covered" | "partial" | "insufficient";
 
@@ -235,6 +258,7 @@ export function answerFromResponse(body: {
     route?: { route?: string } | null;
     tools?: { name?: string }[];
     fallback_error?: string | null;
+    web?: { searches?: number; sources?: { url?: string; title?: string }[] } | null;
   } | null;
   memory?: {
     through_turn?: number | null;
@@ -306,6 +330,15 @@ export function answerFromResponse(body: {
           route: body.agent.route?.route ?? null,
           tools: (body.agent.tools ?? []).map((t) => String(t.name ?? "?")),
           fallbackError: body.agent.fallback_error ?? null,
+          web: body.agent.web
+            ? {
+                searches: body.agent.web.searches ?? 0,
+                sources: (body.agent.web.sources ?? []).flatMap((x) => {
+                  const url = safeHttpUrl(x.url);
+                  return url ? [{ url, title: String(x.title ?? url) }] : [];
+                }),
+              }
+            : null,
         }
       : null,
     memory: body.memory

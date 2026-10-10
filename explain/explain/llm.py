@@ -33,7 +33,7 @@ from typing import Any, Callable, Protocol
 
 __all__ = [
     "Usage", "Completion", "ToolCall", "Model", "AnthropicModel",
-    "cost_usd", "rates_for", "PRICING", "FAKE_PREFIX", "signature",
+    "cost_usd", "rates_for", "PRICING", "FAKE_PREFIX", "signature", "WEB_SEARCH_USD",
 ]
 
 #: 假模型的名字前缀。定价时剥掉，这样 --fake 也能走通成本核算链路——
@@ -87,12 +87,20 @@ _CACHE_WRITE_MULTIPLIER = 1.25
 _CACHE_READ_MULTIPLIER = 0.10
 
 
+#: 服务端联网搜索的单价（每次搜索，美元）。官方价目 $10 / 1,000 次（口径 F120）。
+#: **搜索结果本身按输入 token 另计**——它们进了上下文就和别的输入一样计费，
+#: 所以历史里不留原始搜索结果（见 `api/main.py` 拼历史那一段）。
+WEB_SEARCH_USD = 0.01
+
+
 @dataclass(frozen=True, slots=True)
 class Usage:
     input_tokens: int = 0
     output_tokens: int = 0
     cache_creation_input_tokens: int = 0
     cache_read_input_tokens: int = 0
+    #: 服务端联网搜索的次数（`usage.server_tool_use.web_search_requests`）。按次计费，见 `WEB_SEARCH_USD`。
+    web_search_requests: int = 0
 
     def __add__(self, other: "Usage") -> "Usage":
         return Usage(
@@ -100,15 +108,20 @@ class Usage:
             self.output_tokens + other.output_tokens,
             self.cache_creation_input_tokens + other.cache_creation_input_tokens,
             self.cache_read_input_tokens + other.cache_read_input_tokens,
+            self.web_search_requests + other.web_search_requests,
         )
 
     def to_dict(self) -> dict[str, int]:
-        return {
+        out = {
             "input_tokens": self.input_tokens,
             "output_tokens": self.output_tokens,
             "cache_creation_input_tokens": self.cache_creation_input_tokens,
             "cache_read_input_tokens": self.cache_read_input_tokens,
         }
+        # 只在真的搜过时出现：没联网的那几十条既有日志形状逐字节不变。
+        if self.web_search_requests:
+            out["web_search_requests"] = self.web_search_requests
+        return out
 
 
 def cost_usd(model: str, usage: Usage, on: date | None = None) -> float:
@@ -126,7 +139,7 @@ def cost_usd(model: str, usage: Usage, on: date | None = None) -> float:
         + usage.cache_creation_input_tokens * inp * _CACHE_WRITE_MULTIPLIER
         + usage.cache_read_input_tokens * inp * _CACHE_READ_MULTIPLIER
         + usage.output_tokens * out
-    ) / 1_000_000
+    ) / 1_000_000 + usage.web_search_requests * WEB_SEARCH_USD
 
 
 @dataclass(frozen=True, slots=True)
@@ -154,6 +167,9 @@ class Completion:
     #: 工具循环要把它**原封不动**接回 messages——拆成纯文本再拼回去会丢掉 thinking 块，
     #: 而带工具的多步对话里，上一步的 thinking 块必须原样回传。
     content: tuple[dict[str, Any], ...] = ()
+    #: 联网搜索时，正文**真正引用了**的网页（`{"url", "title"}`，按首次引用的顺序去重）。
+    #: 取自 API 给正文附的 citations，不是全部搜索结果——没被引用的结果不算出处。
+    web_sources: tuple[dict[str, str], ...] = ()
 
     @property
     def cost(self) -> float:
@@ -267,6 +283,7 @@ class AnthropicModel:
         tools: list[dict[str, Any]] | None = None,
         tool_choice: dict[str, Any] | None = None,
         on_tool: Callable[[str], None] | None = None,
+        on_server_tool: Callable[[str], None] | None = None,
     ) -> Completion:
         """流式调用：每来一段正文就交给 `on_delta`；`cancel` 被置位时中途停下。
 
@@ -286,6 +303,13 @@ class AnthropicModel:
         `content` 带着原样的内容块。`on_tool(name)` 在**某个工具调用块刚开始**时触发——
         讲解 agent 靠它知道「这一步不是最终讲解」，好让前端清掉已推出去的那几个字。
         不给 `tools` 时请求体与改动前逐字节相同。
+
+        ## 服务端工具（2026-10-10，口径 F120）
+
+        `tools` 里可以有服务端工具（联网搜索，`{"type": "web_search_…"}`）。它在**同一次调用里**
+        由 Anthropic 执行完，模型接着写正文——所以它开始时触发的是 `on_server_tool`，**不是** `on_tool`：
+        后者会让讲解 agent 把这一步之后的字全部静音，而联网之后的那段字正是讲解本身。
+        服务端循环到上限会以 `stop_reason="pause_turn"` 停下，由调用方把 `content` 接回去续上。
         """
         client = self._ensure_client()
         # 课件全量在 system 且会话内不变 → 必须开 prompt caching（PRD §7.3）。
@@ -339,6 +363,9 @@ class AnthropicModel:
                 elif (on_tool is not None and event.type == "content_block_start"
                         and getattr(event.content_block, "type", None) == "tool_use"):
                     on_tool(event.content_block.name)
+                elif (on_server_tool is not None and event.type == "content_block_start"
+                        and getattr(event.content_block, "type", None) == "server_tool_use"):
+                    on_server_tool(event.content_block.name)
             # 叫停时取当时的快照；没被叫停时循环已读完，快照就是最终消息。
             try:
                 message = stream.current_message_snapshot
@@ -357,6 +384,7 @@ class AnthropicModel:
                           for b in message.content if b.type == "tool_use")
             blocks = tuple(b.to_dict() for b in message.content)
         u = message.usage
+        stu = getattr(u, "server_tool_use", None)
         return Completion(
             text=text,
             usage=Usage(
@@ -364,7 +392,9 @@ class AnthropicModel:
                 output_tokens=u.output_tokens or 0,
                 cache_creation_input_tokens=getattr(u, "cache_creation_input_tokens", 0) or 0,
                 cache_read_input_tokens=getattr(u, "cache_read_input_tokens", 0) or 0,
+                web_search_requests=(getattr(stu, "web_search_requests", 0) or 0) if stu else 0,
             ),
+            web_sources=_cited_web_sources(message.content),
             latency_ms=latency,
             model=message.model,
             stop_reason="cancelled" if cancelled else message.stop_reason,
@@ -374,3 +404,16 @@ class AnthropicModel:
 
     def request_signature(self, system: str, messages: list[dict[str, Any]]) -> str:
         return signature(self.name, self.params, system, messages)
+
+
+def _cited_web_sources(content: Any) -> tuple[dict[str, str], ...]:
+    """正文 citations 里的网页，按首次引用的顺序去重。没联网就是空。"""
+    seen: dict[str, str] = {}
+    for b in content or ():
+        if getattr(b, "type", None) != "text":
+            continue
+        for c in getattr(b, "citations", None) or ():
+            url = getattr(c, "url", None)
+            if getattr(c, "type", None) == "web_search_result_location" and url and url not in seen:
+                seen[url] = getattr(c, "title", None) or url
+    return tuple({"url": u, "title": t} for u, t in seen.items())

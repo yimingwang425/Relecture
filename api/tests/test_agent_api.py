@@ -161,3 +161,54 @@ class TestAgentStream:
         assert "让我查一下" not in replay(events)
         assert replay(events) == events[-1]["response"]["text"]
         json.dumps(events)   # 全部可序列化
+
+
+class TestWebRound:
+    """联网轮从服务端外面看（口径 F120）：路由判 web → 讲解 agent 拿到联网工具；
+    引用的网页进响应与落库；下一轮的历史里只有正文 + 一行链接，没有原始搜索结果。"""
+
+    SRC = [{"url": "https://example.org/pagerank", "title": "PageRank 简介"}]
+    CONV = "cccccccc-3333-4333-8333-cccccccccccc"
+
+    def _rest(self, **over):
+        return FakeRest({USER_A: [row(USER_A, detail_level="P0")]},
+                        conversations={self.CONV: {"id": self.CONV, "course_id": None, "title": "w"}}, **over)
+
+    def test_web_route_gets_the_tool_and_persists_sources(self, keypair, jwks):
+        from explain.agent import TOOL_WEB, WEB_HEADING
+
+        rest = self._rest()
+        answer = "课件第 3 页讲了定义。\n\n" + f"{WEB_HEADING}：网上说 PageRank 用的是最大特征值对应的特征向量。"
+        model = ScriptedToolModel(script=[("web", answer, self.SRC)])
+        c = app_with(rest, jwks, model, route_raw='{"route": "web", "reply": ""}')
+        body = post(c, keypair, conversation_id=self.CONV).json()
+        assert TOOL_WEB in model.calls[0]["tools"]
+        assert body["agent"]["route"]["route"] == "web"
+        assert body["agent"]["web"] == {"searches": 1, "sources": self.SRC}
+        assert body["gap"]["gap_implementation"] == "null"            # 联网轮跳过兜底判断
+        saved = [m for m in rest.messages if m["role"] == "assistant"][-1]
+        assert saved["meta"]["web_sources"] == self.SRC
+
+    def test_course_route_does_not_get_the_tool(self, keypair, jwks, rest):
+        from explain.agent import TOOL_WEB
+
+        model = ScriptedToolModel()
+        post(app_with(rest, jwks, model), keypair)
+        assert TOOL_WEB not in model.calls[0]["tools"]
+
+    def test_next_round_history_has_text_and_links_only(self, keypair, jwks):
+        from explain.agent import WEB_HEADING
+
+        rest = self._rest()
+        answer = "课件第 3 页讲了定义。\n\n" + f"{WEB_HEADING}：网上说 PageRank 用最大特征值。"
+        first = post(app_with(rest, jwks, ScriptedToolModel(script=[("web", answer, self.SRC)]),
+                              route_raw='{"route": "web", "reply": ""}'), keypair,
+                     conversation_id=self.CONV).json()
+        nxt = ScriptedToolModel()
+        post(app_with(rest, jwks, nxt), keypair, conversation_id=self.CONV)
+        hist = nxt.calls[0]["messages"][:-1]
+        assert [m["role"] for m in hist] == ["user", "assistant"]
+        # 学生看到的那段正文（审查可能让它重写过）+ 一行链接
+        assert hist[1]["content"].startswith(first["text"])
+        assert "https://example.org/pagerank" in hist[1]["content"]          # 链接留着
+        assert "web_search_tool_result" not in repr(hist) and "encrypted" not in repr(hist)

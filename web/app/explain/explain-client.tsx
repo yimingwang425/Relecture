@@ -13,6 +13,7 @@ import {
   answeredCount,
   gapNotice,
   hasPending,
+  isDirectRoute,
   isFromRequestedCourse,
   nextTurnIndex,
   type Turn,
@@ -666,11 +667,11 @@ export function ExplainClient({
                                 </button>
                               </div>
                             ) : (
-                              t.answer.roundId && (
-                                // 路由判成寒暄（口径 F110）时根本没去查课件——说「没有检索到」是错话，
-                                // 听起来像检索失败了。
+                              t.answer.roundId && t.answer.agent?.route !== "crisis" && (
+                                // 路由直接回复的几类（口径 F110 / F119）根本没去查课件——说「没有检索到」
+                                // 是错话，听起来像检索失败了。危机回复下面什么都不加。
                                 <p className="t-caption mt-6" data-field="no-sources">
-                                  {t.answer.agent?.route === "chat"
+                                  {isDirectRoute(t.answer.agent?.route)
                                     ? "这句不需要查课件，所以没有出处。"
                                     : "这一轮没有检索到课件片段，所以没有出处。"}
                                 </p>
@@ -683,7 +684,7 @@ export function ExplainClient({
                                 // 「审查链路在工作」这件事可见。
                                 <>重生成 {t.answer.regenerations} 次（审查判不达标后改写，不占轮次）</>
                               )}
-                              {!t.answer.accepted && (
+                              {!t.answer.accepted && !isDirectRoute(t.answer.agent?.route) && (
                                 <>
                                   {t.answer.regenerations > 0 && " · "}
                                   <span className="text-[var(--c-warn)]">重生成触顶仍未达标，按原样输出</span>
@@ -699,7 +700,7 @@ export function ExplainClient({
                           <div data-field="slices">
                             {t.answer.slices.length === 0 ? (
                               <p className="t-meta">
-                                {t.answer.agent?.route === "chat" ? "这句不需要查课件。" : "这一轮没有检索到课件片段。"}
+                                {isDirectRoute(t.answer.agent?.route) ? "这句不需要查课件。" : "这一轮没有检索到课件片段。"}
                               </p>
                             ) : (
                               <>
@@ -719,6 +720,26 @@ export function ExplainClient({
                                   ))}
                                 </ol>
                               </>
+                            )}
+                            {t.answer.agent?.web && (
+                              // 联网轮（口径 F120）：网上的内容单独列，**不和课件片段混在一张表里**。
+                              <div className="mt-5" data-field="web-sources">
+                                <p className="t-meta mb-2">
+                                  {t.answer.agent.web.sources.length > 0
+                                    ? `课件之外：这一轮联网搜索 ${t.answer.agent.web.searches} 次，引用了这些网页（不是课件内容）：`
+                                    : `这一轮联网搜索 ${t.answer.agent.web.searches} 次，没有引用到网页。`}
+                                </p>
+                                <ol className="flex flex-col gap-1.5">
+                                  {t.answer.agent.web.sources.map((w, j) => (
+                                    <li key={w.url} className="t-caption">
+                                      {j + 1}.{" "}
+                                      <a className="link" href={w.url} target="_blank" rel="noopener noreferrer nofollow">
+                                        {w.title}
+                                      </a>
+                                    </li>
+                                  ))}
+                                </ol>
+                              </div>
                             )}
                             {t.answer.skippedPages.length > 0 && (
                               <div className="mt-5">

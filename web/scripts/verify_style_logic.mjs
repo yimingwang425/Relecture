@@ -2020,8 +2020,14 @@ await (async () => {
 
   // 路由判成寒暄时，「没有出处」那句话不许说成「没有检索到」（2026-10-08 部署后验收逮到）。
   const clientCode = readFileSync(join(WEB, "app/explain/explain-client.tsx"), "utf8");
-  check(/agent\?\.route === "chat"\s*\?\s*"这句不需要查课件，所以没有出处。"/.test(clientCode),
-    "chat 轮的「没有出处」说的是不需要查，不是没检索到");
+  check(/isDirectRoute\(t\.answer\.agent\?\.route\)\s*\?\s*"这句不需要查课件，所以没有出处。"/.test(clientCode),
+    "直接回复的几类（chat / off_topic / crisis）「没有出处」说的是不需要查，不是没检索到");
+  check(/!t\.answer\.accepted && !isDirectRoute\(t\.answer\.agent\?\.route\)/.test(clientCode),
+    "直接回复的几类不显示「重生成触顶仍未达标」（它们不按讲法审查）");
+  const T0 = require_(join(outExplain, "turns.js"));
+  check(["chat", "off_topic", "crisis"].every((r) => T0.isDirectRoute(r)) && !T0.isDirectRoute("course")
+    && !T0.isDirectRoute("web") && !T0.isDirectRoute(null),
+    "isDirectRoute：chat / off_topic / crisis 是，course / web / null 不是");
   const T = require_(join(outExplain, "turns.js"));
   const chatAns = T.answerFromResponse({ text: "不客气", accepted: false, regenerations: 0, mean_paragraph_chars: 3,
     detail_level: "P2", agent: { mode: "agent", route: { route: "chat" }, tools: [], fallback_error: null } });
@@ -2035,6 +2041,16 @@ await (async () => {
   check(memAns.memory?.throughTurn === 7 && memAns.memory?.compaction === "pending",
     "响应里的 memory（笔记覆盖到第几轮、要不要整理）读得出来", JSON.stringify(memAns.memory));
   check(oldAns.memory === null, "旧构建没给 memory → null，不编", String(oldAns.memory));
+
+  // 联网轮（口径 F120）：网页来源读得出；非 http(s) 链接一律丢掉（标题与地址来自外部网页）。
+  const webAns = T.answerFromResponse({ text: "x", accepted: true, regenerations: 0, mean_paragraph_chars: 1,
+    detail_level: "P2", agent: { mode: "agent", route: { route: "web" }, tools: [], fallback_error: null,
+      web: { searches: 2, sources: [{ url: "https://example.org/a", title: "A" }, { url: "javascript:alert(1)", title: "坏" }] } } });
+  check(webAns.agent?.web?.searches === 2 && webAns.agent.web.sources.length === 1
+    && webAns.agent.web.sources[0].url === "https://example.org/a",
+    "联网来源读得出，javascript: 链接被丢掉", JSON.stringify(webAns.agent?.web));
+  check(chatAns.agent?.web === null, "非联网轮 agent.web 为 null", String(chatAns.agent?.web));
+  check(/rel="noopener noreferrer nofollow"/.test(clientCode), "外部链接带 noopener noreferrer nofollow");
   check(/\["memory", t\.answer\.memory/.test(clientCode), "诊断区有 memory 一行（验收时看笔记用上没有）");
 })();
 

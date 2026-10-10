@@ -99,7 +99,9 @@ class ScriptedToolModel:
     `script` 逐次调用取一项：`("tool", [(name, input), ...])` 发起工具调用、
     `("text", "...")` 直接作答、`("preamble+tool", text, [(name, input), ...])`
     先吐几个字再调工具（system 不许这样，但模型不一定照做——测的是那条兜底）、
-    `("raise", "原因")` 抛异常。用完了就回默认讲解。
+    `("raise", "原因")` 抛异常、`("web", "正文", [{"url", "title"}, ...])` 先联网搜索一次再作答
+    （服务端工具：触发 `on_server_tool`，**不是** `on_tool`；`tools` 里没有联网工具时退回默认讲解）。
+    用完了就回默认讲解。
 
     **`tool_choice={"type": "none"}` 时不发工具调用**，与真 API 一致——
     否则轮数上限那条判据测的是假模型，不是链路。
@@ -112,7 +114,7 @@ class ScriptedToolModel:
     calls: list[dict[str, Any]] = field(default_factory=list)
 
     def stream(self, system, messages, *, on_delta=None, cancel=None, tools=None,
-               tool_choice=None, on_tool=None) -> Completion:
+               tool_choice=None, on_tool=None, on_server_tool=None) -> Completion:
         self.calls.append({"system": system, "messages": [dict(m) for m in messages],
                            "tools": [t["name"] for t in (tools or [])], "tool_choice": tool_choice})
         n = len(self.calls)
@@ -120,6 +122,26 @@ class ScriptedToolModel:
         kind = step[0]
         if kind == "raise":
             raise RuntimeError(step[1])
+        if kind == "web":
+            if not any(t.get("type", "").startswith("web_search") for t in (tools or [])):
+                step = ("text", self.answer)
+                kind = "text"
+            else:
+                if on_server_tool is not None:
+                    on_server_tool("web_search")
+                text = step[1]
+                if on_delta is not None:
+                    on_delta(text)
+                return Completion(
+                    text=text, usage=Usage(input_tokens=3000, output_tokens=len(text) + 10,
+                                           web_search_requests=1),
+                    latency_ms=2.0, model=self.name, stop_reason="end_turn",
+                    content=({"type": "server_tool_use", "id": f"srvtoolu_{n}", "name": "web_search",
+                              "input": {"query": "x"}},
+                             {"type": "web_search_tool_result", "tool_use_id": f"srvtoolu_{n}",
+                              "content": [{"type": "web_search_result", **w} for w in step[2]]},
+                             {"type": "text", "text": text}),
+                    web_sources=tuple(step[2]))
         forbid = tool_choice is not None and tool_choice.get("type") == "none"
         if kind in ("tool", "preamble+tool") and (forbid or not tools):
             kind, step = "text", ("text", self.answer)

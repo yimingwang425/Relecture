@@ -109,7 +109,12 @@ class FakeRest:
                 return [{"turn_index": max(int(m["turn_index"]) for m in rows)}]
             # 历史：服务端按 created_at.desc 取最近 N 条再自己翻回正序。
             limit = int(_eq(url, "limit") or len(rows) or 1)
-            return list(reversed(rows))[:limit]
+            out = list(reversed(rows))[:limit]
+            # PostgREST 的 JSON 路径别名 `web_sources:meta->web_sources`：照真库的形状给出这一列，
+            # 没有这个键时是 null（不是缺键）。
+            if "web_sources:meta-%3Eweb_sources" in url or "web_sources:meta->web_sources" in url:
+                out = [{**m, "web_sources": (m.get("meta") or {}).get("web_sources")} for m in out]
+            return out
 
         return list(self.rows_by_user.get(sub, []))
 

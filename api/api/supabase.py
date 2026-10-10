@@ -406,7 +406,8 @@ class SupabaseClient:
 
     #: 重建历史要用到的列。**不读 `meta`**：那里面是出处片段与兜底判断结果，
     #: 给模型看没有用（本轮会重新检索），而它会把请求体撑大好几倍。
-    MESSAGE_COLUMNS = "role,content,turn_index"
+    #: `web_sources` 取 meta 里的那一个键（口径 F120），**不取整个 meta**——理由同上。
+    MESSAGE_COLUMNS = "role,content,turn_index,web_sources:meta->web_sources"
 
     def conversation(self, token: str, conversation_id: str) -> dict[str, Any] | None:
         """一个会话。读不到返回 None —— 可能不存在，也可能是别人的（同 `course()`）。"""

@@ -100,7 +100,7 @@ export type VerifyStatus = "pending" | "written" | "failed" | "skipped" | "unava
 
 export type VerifyClaim = {
   claim: string;
-  verdict: "supported" | "wrong_page" | "contradicted" | "not_found";
+  verdict: "supported" | "wrong_page" | "not_found";
   citedPage: number | null;
   evidencePage: number | null;
   evidenceQuote: string;
@@ -108,7 +108,7 @@ export type VerifyClaim = {
 
 export type VerifyInfo = {
   status: VerifyStatus;
-  counts: { supported: number; wrongPage: number; contradicted: number; notFound: number; supplement: number } | null;
+  counts: { supported: number; wrongPage: number; notFound: number; supplement: number } | null;
   /** 判成不是 `supported` 的事实说法。讲解补充不在这里——它们不核对，不是问题。 */
   problems: VerifyClaim[];
   /** 存没存进库：`false` 时刷新会看不到（迁移没跑，或这一轮没落库）。`null` = 不适用。 */
@@ -117,7 +117,7 @@ export type VerifyInfo = {
 };
 
 const VERIFY_STATUSES: readonly VerifyStatus[] = ["pending", "written", "failed", "skipped", "unavailable", "lost"];
-const FACT_VERDICTS = ["supported", "wrong_page", "contradicted", "not_found"] as const;
+const FACT_VERDICTS = ["supported", "wrong_page", "not_found"] as const;
 
 /**
  * 服务端的核对载荷 → 页面要的那几样。计划（`{status: "pending"}`）、`verify` 事件里的结果、
@@ -129,7 +129,7 @@ export function verifyFromPayload(raw: unknown): VerifyInfo | null {
   if (!raw || typeof raw !== "object") return null;
   const v = raw as {
     status?: unknown;
-    counts?: { supported?: number; wrong_page?: number; contradicted?: number; not_found?: number; supplement?: number };
+    counts?: { supported?: number; wrong_page?: number; not_found?: number; supplement?: number };
     claims?: { claim?: unknown; kind?: unknown; verdict?: unknown; cited_page?: unknown; evidence_page?: unknown; evidence_quote?: unknown }[];
     persisted?: unknown;
     reason?: unknown;
@@ -157,8 +157,6 @@ export function verifyFromPayload(raw: unknown): VerifyInfo | null {
         ? {
             supported: v.counts.supported ?? 0,
             wrongPage: v.counts.wrong_page ?? 0,
-            // v1 的结果没有这一项（历史轮次）——读成 0，不是「不知道」：v1 根本没有这个判定。
-            contradicted: v.counts.contradicted ?? 0,
             notFound: v.counts.not_found ?? 0,
             supplement: v.counts.supplement ?? 0,
           }
@@ -192,13 +190,12 @@ export function verifySummary(v: VerifyInfo | null): { kind: "pending" | "ok" | 
     case "unavailable":
       return null;
     case "written": {
-      const c = v.counts ?? { supported: 0, wrongPage: 0, contradicted: 0, notFound: 0, supplement: 0 };
+      const c = v.counts ?? { supported: 0, wrongPage: 0, notFound: 0, supplement: 0 };
       const parts = [`${c.supported} 条找到课件依据`];
-      if (c.contradicted > 0) parts.push(`${c.contradicted} 条和课件原文对不上`);
       if (c.wrongPage > 0) parts.push(`${c.wrongPage} 条页码可能不对`);
       if (c.notFound > 0) parts.push(VERIFY_SHOW_NOT_FOUND ? `${c.notFound} 条课件里没找到` : `${c.notFound} 条没有核对上`);
       if (c.supplement > 0) parts.push(`讲解补充 ${c.supplement} 条（举例、类比，不核对）`);
-      return { kind: c.wrongPage + c.contradicted + c.notFound > 0 ? "warn" : "ok", text: `出处核对：${parts.join(" · ")}` };
+      return { kind: c.wrongPage + c.notFound > 0 ? "warn" : "ok", text: `出处核对：${parts.join(" · ")}` };
     }
   }
 }
@@ -206,6 +203,9 @@ export function verifySummary(v: VerifyInfo | null): { kind: "pending" | "ok" | 
 /**
  * 「课件里没找到」这句话能不能说（口径 F123）。注入错误评测达标（三类检出率都 ≥ 70%、逐条误报率 ≤ 10%）
  * 才是 true；不达标降级为「没有核对上」——它只说核对员没对上，不断言课件里没有。
+ *
+ * 2026-10-10：Sonnet 在主集前一半达标，但 n = 9 / 11 / 13、留出集复核因额度用完没跑成
+ * （`explain/runs/verify_eval_results.md`）——先保持 false，复核达标再改。
  */
 export const VERIFY_SHOW_NOT_FOUND = false;
 

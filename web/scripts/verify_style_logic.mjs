@@ -2066,13 +2066,11 @@ await (async () => {
   const streamOf = (text) => new ReadableStream({
     start(c) { c.enqueue(new TextEncoder().encode(text)); c.close(); },
   });
-  const RESULT = { status: "written", counts: { supported: 2, wrong_page: 1, contradicted: 1, not_found: 1, supplement: 3 },
+  const RESULT = { status: "written", counts: { supported: 2, wrong_page: 1, not_found: 1, supplement: 3 },
     claims: [
       { claim: "特征值是拉伸倍数", kind: "fact", verdict: "supported", cited_page: 2, evidence_page: 2, evidence_quote: "x" },
       { claim: "见第5页", kind: "fact", verdict: "wrong_page", cited_page: 5, evidence_page: 2, evidence_quote: "y" },
       { claim: "行列式等于特征值之和", kind: "fact", verdict: "not_found", cited_page: 0, evidence_page: 0 },
-      { claim: "平行于镜面的向量特征值为 -1", kind: "fact", verdict: "contradicted", cited_page: 3, evidence_page: 3,
-        evidence_quote: "Vectors perpendicular to it are sent to their opposites" },
       { claim: "就像橡皮筋", kind: "supplement", verdict: "supplement" },
     ], persisted: true };
   const wire = ev("delta", { text: "讲" }) + ev("done", { response: { text: "讲", verification: { status: "pending" } } })
@@ -2105,13 +2103,9 @@ await (async () => {
   const v = T.verifyFromPayload(RESULT);
   check(v.status === "written" && v.counts.wrongPage === 1 && v.counts.supplement === 3,
     "计数读得出（讲解补充单独计）", JSON.stringify(v.counts));
-  check(v.problems.length === 3 && v.problems.every((c) => c.verdict !== "supported")
+  check(v.problems.length === 2 && v.problems.every((c) => c.verdict !== "supported")
     && !v.problems.some((c) => c.claim === "就像橡皮筋"),
     "问题清单只含没核对上的事实说法；讲解补充与有依据的都不在里面", JSON.stringify(v.problems.map((c) => c.claim)));
-  check(v.problems[2].verdict === "contradicted" && /perpendicular/.test(v.problems[2].evidenceQuote),
-    "contradicted 带着课件原文进问题清单（学生能看到原文说的是什么）");
-  const v1Old = T.verifyFromPayload({ status: "written", counts: { supported: 1, wrong_page: 0, not_found: 0, supplement: 0 } });
-  check(v1Old.counts.contradicted === 0, "v1 的历史结果没有 contradicted → 读成 0");
   check(v.problems[1].citedPage === null, "没标页码（0）读成 null，不显示成「第 0 页」");
   check(T.verifyFromPayload({ status: "verified_ok" }) === null && T.verifyFromPayload(null) === null,
     "认不出的状态 → null，不就近解释成「核对通过」");
@@ -2136,7 +2130,6 @@ await (async () => {
   // -------- 22.4 措辞（F122 / F123）
   const sum = T.verifySummary(v);
   check(sum.kind === "warn" && /2 条找到课件依据/.test(sum.text) && /1 条页码可能不对/.test(sum.text)
-    && /1 条和课件原文对不上/.test(sum.text)
     && /讲解补充 3 条（举例、类比，不核对）/.test(sum.text), "摘要分开说有依据 / 页码 / 讲解补充", sum.text);
   check(!/证实|已验证|正确/.test(sum.text), "不说「证实 / 已验证 / 正确」——摘录支不支持说法是模型的判断");
   check(T.VERIFY_SHOW_NOT_FOUND === /课件里没找到/.test(sum.text),

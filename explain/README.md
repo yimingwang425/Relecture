@@ -118,6 +118,16 @@ python3 -m venv .venv && ./.venv/bin/pip install -e ".[dev]"
 真模型验收：`explain/scripts/memory_live_check.py`（要钱；`--fake` 先跑通脚本本身），
 结果在 `explain/runs/memory_live_20261009.md`。
 
+### 2026-10-10 · 意图路由五类、联网模式、出处核对 agent（口径 F119–F123，正本在 `f1_samples/README.md`）
+
+- **路由**（`router.py`）：course / web / chat / off_topic / crisis。off_topic 只共情、不劝，危机回复是固定文案；
+  代码兜底只在路由失败或判成 off_topic 时把危机词升级。
+- **联网**（`agent.py` 的 `web=True`）：只在学生明确要求超出课件时打开；网上的内容单独成段、以「课件之外（来自网络）」开头；
+  历史只留正文与链接，不留原始搜索结果。
+- **出处核对**（`verify.py`）：讲解返回后核对事实性说法，代码保证摘录真实存在且在标的那一页；
+  「摘录支不支持说法」是模型的判断，由注入错误评测量（`scripts/verify_eval.py`，结果 `runs/verify_eval_results.md`）。
+  **用 Sonnet**：Haiku 换概念只抓到 14%–28%。
+
 ## 二、prompt caching：论断的前提在新架构下不成立
 
 PRD §7.3 写「**课件内容会话内不变 → 必须启用 prompt caching**」。

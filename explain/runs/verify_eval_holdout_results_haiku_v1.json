@@ -3,7 +3,7 @@
   "set": "holdout",
   "tag": "v1",
   "prompt_version": "v1",
-  "spent_usd": 1.3146,
+  "spent_usd": 1.6373,
   "results": [
     {
       "item": "hold01:clean",
@@ -9343,6 +9343,2419 @@
           "cache_read_input_tokens": 0
         },
         "cost_usd": 0.037691,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v1"
+      }
+    },
+    {
+      "item": "hold26:page",
+      "kind": "page",
+      "answer_id": "hold26",
+      "run": {
+        "status": "written",
+        "counts": {
+          "supported": 2,
+          "wrong_page": 1,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [
+          {
+            "claim": "第5页说,特征值是使 $A-\\lambda I$ 不可逆的数。",
+            "kind": "fact",
+            "cited_page": 5,
+            "verdict": "wrong_page",
+            "evidence_quote": "Eigenvalues are the numbers λ for which A − λI fails to be invertible, because that is exactly when A v = λ v has a nonzero solution.",
+            "evidence_page": 8,
+            "evidence_file": "synthetic_deck.md"
+          },
+          {
+            "claim": "如果 0 是特征值,代入 $\\lambda=0$,就是说 $A-0I=A$ 本身不可逆。",
+            "kind": "fact",
+            "cited_page": null,
+            "verdict": "supported",
+            "evidence_quote": "Eigenvalues are the numbers λ for which A − λI fails to be invertible, because that is exactly when A v = λ v has a nonzero solution.",
+            "evidence_page": 8,
+            "evidence_file": "synthetic_deck.md"
+          },
+          {
+            "claim": "这和第3页讲的也对得上:特征值为零的方向被\"压缩到原点\",说明矩阵把某个非零向量映射成了零向量,这正是不可逆(不是单射)的表现。",
+            "kind": "fact",
+            "cited_page": 3,
+            "verdict": "supported",
+            "evidence_quote": "An eigenvalue of zero means that direction is collapsed to the origin.",
+            "evidence_page": 3,
+            "evidence_file": "synthetic_deck.md"
+          }
+        ],
+        "steps": 3,
+        "tools": [
+          {
+            "name": "read_page",
+            "input": {
+              "source_file": "synthetic_deck.md",
+              "page": 5
+            },
+            "ok": true,
+            "summary": "第 5 页：2 片"
+          },
+          {
+            "name": "read_page",
+            "input": {
+              "source_file": "synthetic_deck.md",
+              "page": 3
+            },
+            "ok": true,
+            "summary": "第 3 页：2 片"
+          },
+          {
+            "name": "search_slices",
+            "input": {
+              "query": "Eigenvalues are the numbers λ for which A − λI fails to be invertible"
+            },
+            "ok": true,
+            "summary": "5 片"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "第5页说,特征值是使 $A-\\lambda I$ 不可逆的数。",
+                  "kind": "fact",
+                  "cited_page": 5,
+                  "verdict": "wrong_page",
+                  "evidence_quote": "Eigenvalues are the numbers λ for which A − λI fails to be invertible, because that is exactly when A v = λ v has a nonzero solution.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 8
+                },
+                {
+                  "claim": "如果 0 是特征值,代入 $\\lambda=0$,就是说 $A-0I=A$ 本身不可逆。",
+                  "kind": "fact",
+                  "cited_page": 0,
+                  "verdict": "supported",
+                  "evidence_quote": "Eigenvalues are the numbers λ for which A − λI fails to be invertible, because that is exactly when A v = λ v has a nonzero solution.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 8
+                },
+                {
+                  "claim": "这和第3页讲的也对得上:特征值为零的方向被\"压缩到原点\",说明矩阵把某个非零向量映射成了零向量,这正是不可逆(不是单射)的表现。",
+                  "kind": "fact",
+                  "cited_page": 3,
+                  "verdict": "supported",
+                  "evidence_quote": "An eigenvalue of zero means that direction is collapsed to the origin.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 3
+                }
+              ]
+            },
+            "ok": true,
+            "summary": "通过：3 条"
+          }
+        ],
+        "rejected": 0,
+        "error": null,
+        "latency_ms": 12888.3,
+        "usage": {
+          "input_tokens": 11907,
+          "output_tokens": 878,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0.016297,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v1"
+      }
+    },
+    {
+      "item": "hold27:clean",
+      "kind": "clean",
+      "answer_id": "hold27",
+      "run": {
+        "status": "written",
+        "counts": {
+          "supported": 2,
+          "wrong_page": 0,
+          "not_found": 0,
+          "supplement": 1
+        },
+        "claims": [
+          {
+            "claim": "镜面上的向量满足 Av = v，也就是 λ=1 的情形，所以这些向量的特征值是 1",
+            "kind": "fact",
+            "cited_page": 3,
+            "verdict": "supported",
+            "evidence_quote": "Vectors along the mirror line are untouched, so their eigenvalue is one.",
+            "evidence_page": 3,
+            "evidence_file": "synthetic_deck.md"
+          },
+          {
+            "claim": "垂直于镜面的向量会被翻转到相反方向，即 Av = −v，对应特征值 −1",
+            "kind": "fact",
+            "cited_page": null,
+            "verdict": "supported",
+            "evidence_quote": "Vectors perpendicular to it are sent to their opposites, so their eigenvalue is minus one.",
+            "evidence_page": 3,
+            "evidence_file": "synthetic_deck.md"
+          },
+          {
+            "claim": "反射变换中，位于镜面线上的向量不会被移动——反射前后它们完全不变，还是原来的位置",
+            "kind": "supplement",
+            "cited_page": null,
+            "verdict": "supplement",
+            "evidence_quote": "",
+            "evidence_page": null,
+            "evidence_file": null
+          }
+        ],
+        "steps": 2,
+        "tools": [
+          {
+            "name": "read_page",
+            "input": {
+              "source_file": "synthetic_deck.md",
+              "page": 3
+            },
+            "ok": true,
+            "summary": "第 3 页：2 片"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "镜面上的向量满足 Av = v，也就是 λ=1 的情形，所以这些向量的特征值是 1",
+                  "kind": "fact",
+                  "cited_page": 3,
+                  "verdict": "supported",
+                  "evidence_quote": "Vectors along the mirror line are untouched, so their eigenvalue is one.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 3
+                },
+                {
+                  "claim": "垂直于镜面的向量会被翻转到相反方向，即 Av = −v，对应特征值 −1",
+                  "kind": "fact",
+                  "cited_page": 0,
+                  "verdict": "supported",
+                  "evidence_quote": "Vectors perpendicular to it are sent to their opposites, so their eigenvalue is minus one.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 3
+                },
+                {
+                  "claim": "反射变换中，位于镜面线上的向量不会被移动——反射前后它们完全不变，还是原来的位置",
+                  "kind": "supplement",
+                  "cited_page": 0,
+                  "verdict": "supplement",
+                  "evidence_quote": "",
+                  "evidence_file": "",
+                  "evidence_page": 0
+                }
+              ]
+            },
+            "ok": true,
+            "summary": "通过：3 条"
+          }
+        ],
+        "rejected": 0,
+        "error": null,
+        "latency_ms": 9299.5,
+        "usage": {
+          "input_tokens": 7330,
+          "output_tokens": 749,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0.011075,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v1"
+      }
+    },
+    {
+      "item": "hold27:number",
+      "kind": "number",
+      "answer_id": "hold27",
+      "run": {
+        "status": "written",
+        "counts": {
+          "supported": 2,
+          "wrong_page": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [
+          {
+            "claim": "根据特征值定义，若 Av = λv，说明变换后的向量是原向量的 λ 倍。镜面上的向量满足 Av = v，也就是 λ=3 的情形，所以这些向量的特征值是 1（第3页）。",
+            "kind": "fact",
+            "cited_page": 3,
+            "verdict": "supported",
+            "evidence_quote": "Vectors along the mirror line are untouched, so their eigenvalue is one.",
+            "evidence_page": 3,
+            "evidence_file": "synthetic_deck.md"
+          },
+          {
+            "claim": "垂直于镜面的向量会被翻转到相反方向，即 Av = −v，对应特征值 −1。",
+            "kind": "fact",
+            "cited_page": null,
+            "verdict": "supported",
+            "evidence_quote": "Vectors perpendicular to it are sent to their opposites, so their eigenvalue is minus one.",
+            "evidence_page": 3,
+            "evidence_file": "synthetic_deck.md"
+          }
+        ],
+        "steps": 3,
+        "tools": [
+          {
+            "name": "read_page",
+            "input": {
+              "source_file": "synthetic_deck.md",
+              "page": 3
+            },
+            "ok": true,
+            "summary": "第 3 页：2 片"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "镜面上的向量满足 Av = v，也就是 λ=3 的情形，所以这些向量的特征值是 1（第3页）",
+                  "kind": "fact",
+                  "cited_page": 3,
+                  "verdict": "wrong_page",
+                  "evidence_quote": "Vectors along the mirror line are untouched, so their eigenvalue is one.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 3
+                },
+                {
+                  "claim": "垂直于镜面的向量会被翻转到相反方向，即 Av = −v，对应特征值 −1。",
+                  "kind": "fact",
+                  "cited_page": 0,
+                  "verdict": "supported",
+                  "evidence_quote": "Vectors perpendicular to it are sent to their opposites, so their eigenvalue is minus one.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 3
+                }
+              ]
+            },
+            "ok": false,
+            "summary": "退回：1 处"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "\n根据特征值定义，若 Av = λv，说明变换后的向量是原向量的 λ 倍。镜面上的向量满足 Av = v，也就是 λ=3 的情形，所以这些向量的特征值是 1（第3页）。",
+                  "kind": "fact",
+                  "cited_page": 3,
+                  "verdict": "supported",
+                  "evidence_quote": "Vectors along the mirror line are untouched, so their eigenvalue is one.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 3
+                },
+                {
+                  "claim": "垂直于镜面的向量会被翻转到相反方向，即 Av = −v，对应特征值 −1。",
+                  "kind": "fact",
+                  "cited_page": 0,
+                  "verdict": "supported",
+                  "evidence_quote": "Vectors perpendicular to it are sent to their opposites, so their eigenvalue is minus one.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 3
+                }
+              ]
+            },
+            "ok": true,
+            "summary": "通过：2 条"
+          }
+        ],
+        "rejected": 1,
+        "error": null,
+        "latency_ms": 12279.9,
+        "usage": {
+          "input_tokens": 11548,
+          "output_tokens": 908,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0.016087999999999998,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v1"
+      }
+    },
+    {
+      "item": "hold27:concept",
+      "kind": "concept",
+      "answer_id": "hold27",
+      "run": {
+        "status": "written",
+        "counts": {
+          "supported": 1,
+          "wrong_page": 0,
+          "not_found": 1,
+          "supplement": 0
+        },
+        "claims": [
+          {
+            "claim": "所以这些向量的特征值是 1（第3页）",
+            "kind": "fact",
+            "cited_page": 3,
+            "verdict": "supported",
+            "evidence_quote": "Vectors along the mirror line are untouched, so their eigenvalue is one.",
+            "evidence_page": 3,
+            "evidence_file": "synthetic_deck.md"
+          },
+          {
+            "claim": "平行于镜面的向量会被翻转到相反方向，即 Av = −v，对应特征值 −1",
+            "kind": "fact",
+            "cited_page": null,
+            "verdict": "not_found",
+            "evidence_quote": "",
+            "evidence_page": null,
+            "evidence_file": null
+          }
+        ],
+        "steps": 2,
+        "tools": [
+          {
+            "name": "read_page",
+            "input": {
+              "source_file": "synthetic_deck.md",
+              "page": 3
+            },
+            "ok": true,
+            "summary": "第 3 页：2 片"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "所以这些向量的特征值是 1（第3页）",
+                  "kind": "fact",
+                  "cited_page": 3,
+                  "verdict": "supported",
+                  "evidence_quote": "Vectors along the mirror line are untouched, so their eigenvalue is one.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 3
+                },
+                {
+                  "claim": "平行于镜面的向量会被翻转到相反方向，即 Av = −v，对应特征值 −1",
+                  "kind": "fact",
+                  "cited_page": 0,
+                  "verdict": "not_found",
+                  "evidence_quote": "",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 0
+                }
+              ]
+            },
+            "ok": true,
+            "summary": "通过：2 条"
+          }
+        ],
+        "rejected": 0,
+        "error": null,
+        "latency_ms": 9426.0,
+        "usage": {
+          "input_tokens": 7099,
+          "output_tokens": 729,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0.010744,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v1"
+      }
+    },
+    {
+      "item": "hold27:page",
+      "kind": "page",
+      "answer_id": "hold27",
+      "run": {
+        "status": "written",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 2,
+          "not_found": 1,
+          "supplement": 0
+        },
+        "claims": [
+          {
+            "claim": "根据特征值定义，若 Av = λv，说明变换后的向量是原向量的 λ 倍。",
+            "kind": "fact",
+            "cited_page": 6,
+            "verdict": "not_found",
+            "evidence_quote": "",
+            "evidence_page": null,
+            "evidence_file": null
+          },
+          {
+            "claim": "镜面上的向量满足 Av = v，也就是 λ=1 的情形，所以这些向量的特征值是 1（第6页）。",
+            "kind": "fact",
+            "cited_page": 6,
+            "verdict": "wrong_page",
+            "evidence_quote": "Vectors along the mirror line are untouched, so their eigenvalue is one.",
+            "evidence_page": 3,
+            "evidence_file": "synthetic_deck.md"
+          },
+          {
+            "claim": "垂直于镜面的向量会被翻转到相反方向，即 Av = −v，对应特征值 −1",
+            "kind": "fact",
+            "cited_page": 6,
+            "verdict": "wrong_page",
+            "evidence_quote": "Vectors perpendicular to it are sent to their opposites, so their eigenvalue is minus one.",
+            "evidence_page": 3,
+            "evidence_file": "synthetic_deck.md"
+          }
+        ],
+        "steps": 2,
+        "tools": [
+          {
+            "name": "read_page",
+            "input": {
+              "source_file": "synthetic_deck.md",
+              "page": 6
+            },
+            "ok": true,
+            "summary": "第 6 页：2 片"
+          },
+          {
+            "name": "read_page",
+            "input": {
+              "source_file": "synthetic_deck.md",
+              "page": 3
+            },
+            "ok": true,
+            "summary": "第 3 页：2 片"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "根据特征值定义，若 Av = λv，说明变换后的向量是原向量的 λ 倍。",
+                  "kind": "fact",
+                  "cited_page": 6,
+                  "verdict": "not_found",
+                  "evidence_quote": "",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 0
+                },
+                {
+                  "claim": "镜面上的向量满足 Av = v，也就是 λ=1 的情形，所以这些向量的特征值是 1（第6页）。",
+                  "kind": "fact",
+                  "cited_page": 6,
+                  "verdict": "wrong_page",
+                  "evidence_quote": "Vectors along the mirror line are untouched, so their eigenvalue is one.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 3
+                },
+                {
+                  "claim": "垂直于镜面的向量会被翻转到相反方向，即 Av = −v，对应特征值 −1",
+                  "kind": "fact",
+                  "cited_page": 6,
+                  "verdict": "wrong_page",
+                  "evidence_quote": "Vectors perpendicular to it are sent to their opposites, so their eigenvalue is minus one.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 3
+                }
+              ]
+            },
+            "ok": true,
+            "summary": "通过：3 条"
+          }
+        ],
+        "rejected": 0,
+        "error": null,
+        "latency_ms": 14435.5,
+        "usage": {
+          "input_tokens": 7320,
+          "output_tokens": 910,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0.01187,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v1"
+      }
+    },
+    {
+      "item": "hold28:clean",
+      "kind": "clean",
+      "answer_id": "hold28",
+      "run": {
+        "status": "written",
+        "counts": {
+          "supported": 1,
+          "wrong_page": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [
+          {
+            "claim": "第10页只说幂法要反复乘矩阵再缩放",
+            "kind": "fact",
+            "cited_page": 10,
+            "verdict": "supported",
+            "evidence_quote": "multiply a starting vector by the matrix again and again, rescaling each time, and it converges to the direction with the largest factor.",
+            "evidence_page": 10,
+            "evidence_file": "synthetic_deck.md"
+          }
+        ],
+        "steps": 2,
+        "tools": [
+          {
+            "name": "read_page",
+            "input": {
+              "source_file": "synthetic_deck.md",
+              "page": 10
+            },
+            "ok": true,
+            "summary": "第 10 页：2 片"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "第10页只说幂法要反复乘矩阵再缩放",
+                  "kind": "fact",
+                  "cited_page": 10,
+                  "verdict": "supported",
+                  "evidence_quote": "multiply a starting vector by the matrix again and again, rescaling each time, and it converges to the direction with the largest factor.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 10
+                }
+              ]
+            },
+            "ok": true,
+            "summary": "通过：1 条"
+          }
+        ],
+        "rejected": 0,
+        "error": null,
+        "latency_ms": 10006.4,
+        "usage": {
+          "input_tokens": 6988,
+          "output_tokens": 786,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0.010918,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v1"
+      }
+    },
+    {
+      "item": "hold28:page",
+      "kind": "page",
+      "answer_id": "hold28",
+      "run": {
+        "status": "written",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 1,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [
+          {
+            "claim": "第7页只说幂法要反复乘矩阵再缩放",
+            "kind": "fact",
+            "cited_page": 7,
+            "verdict": "wrong_page",
+            "evidence_quote": "The power method is the simplest iterative idea and follows page 4 directly: multiply a starting vector by the matrix again and again, rescaling each time, and it converges to the direction with the largest factor.",
+            "evidence_page": 10,
+            "evidence_file": "synthetic_deck.md"
+          }
+        ],
+        "steps": 5,
+        "tools": [
+          {
+            "name": "read_page",
+            "input": {
+              "source_file": "synthetic_deck.md",
+              "page": 7
+            },
+            "ok": true,
+            "summary": "第 7 页：2 片"
+          },
+          {
+            "name": "search_slices",
+            "input": {
+              "query": "power method rescaling"
+            },
+            "ok": true,
+            "summary": "3 片"
+          },
+          {
+            "name": "search_slices",
+            "input": {
+              "query": "repeat multiply matrix rescale convergence"
+            },
+            "ok": true,
+            "summary": "5 片"
+          },
+          {
+            "name": "read_page",
+            "input": {
+              "source_file": "synthetic_deck.md",
+              "page": 10
+            },
+            "ok": true,
+            "summary": "第 10 页：2 片"
+          },
+          {
+            "name": "search_slices",
+            "input": {
+              "query": "power method page 7"
+            },
+            "ok": true,
+            "summary": "5 片"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "第7页只说幂法要反复乘矩阵再缩放",
+                  "kind": "fact",
+                  "cited_page": 7,
+                  "verdict": "wrong_page",
+                  "evidence_quote": "The power method is the simplest iterative idea and follows page 4 directly: multiply a starting vector by the matrix again and again, rescaling each time, and it converges to the direction with the largest factor.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 10
+                }
+              ]
+            },
+            "ok": true,
+            "summary": "通过：1 条"
+          }
+        ],
+        "rejected": 0,
+        "error": null,
+        "latency_ms": 18994.3,
+        "usage": {
+          "input_tokens": 21434,
+          "output_tokens": 1199,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0.027429000000000002,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v1"
+      }
+    },
+    {
+      "item": "hold29:clean",
+      "kind": "clean",
+      "answer_id": "hold29",
+      "run": {
+        "status": "written",
+        "counts": {
+          "supported": 1,
+          "wrong_page": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [
+          {
+            "claim": "2×2 矩阵的特征多项式是二次的（第8页）",
+            "kind": "fact",
+            "cited_page": 8,
+            "verdict": "supported",
+            "evidence_quote": "For a 2×2 matrix the polynomial is quadratic",
+            "evidence_page": 8,
+            "evidence_file": "synthetic_deck.md"
+          }
+        ],
+        "steps": 1,
+        "tools": [
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "2×2 矩阵的特征多项式是二次的（第8页）",
+                  "kind": "fact",
+                  "cited_page": 8,
+                  "verdict": "supported",
+                  "evidence_quote": "For a 2×2 matrix the polynomial is quadratic",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 8
+                }
+              ]
+            },
+            "ok": true,
+            "summary": "通过：1 条"
+          }
+        ],
+        "rejected": 0,
+        "error": null,
+        "latency_ms": 4214.9,
+        "usage": {
+          "input_tokens": 3124,
+          "output_tokens": 304,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0.004644,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v1"
+      }
+    },
+    {
+      "item": "hold29:number",
+      "kind": "number",
+      "answer_id": "hold29",
+      "run": {
+        "status": "written",
+        "counts": {
+          "supported": 1,
+          "wrong_page": 0,
+          "not_found": 1,
+          "supplement": 0
+        },
+        "claims": [
+          {
+            "claim": "3×2 矩阵的特征多项式是二次的（第8页）",
+            "kind": "fact",
+            "cited_page": 8,
+            "verdict": "not_found",
+            "evidence_quote": "",
+            "evidence_page": null,
+            "evidence_file": null
+          },
+          {
+            "claim": "因为是二次方程，两个特征值可直接用求根公式算出。另外有个检验技巧：两特征值之和等于矩阵的迹，之积等于行列式。",
+            "kind": "fact",
+            "cited_page": 8,
+            "verdict": "supported",
+            "evidence_quote": "The sum of the eigenvalues equals the trace, and their product equals the determinant, which is a quick check on any hand computation.",
+            "evidence_page": 8,
+            "evidence_file": "synthetic_deck.md"
+          }
+        ],
+        "steps": 4,
+        "tools": [
+          {
+            "name": "read_page",
+            "input": {
+              "source_file": "synthetic_deck.md",
+              "page": 8
+            },
+            "ok": true,
+            "summary": "第 8 页：2 片"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "3×2 矩阵的特征多项式是二次的（第8页）",
+                  "kind": "fact",
+                  "cited_page": 8,
+                  "verdict": "wrong_page",
+                  "evidence_quote": "For a 2×2 matrix the polynomial is quadratic, so the two eigenvalues follow from the quadratic formula.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 8
+                },
+                {
+                  "claim": "因为是二次方程，两个特征值可直接用求根公式算出。另外有个检验技巧：两特征值之和等于矩阵的迹，之积等于行列式。",
+                  "kind": "fact",
+                  "cited_page": 8,
+                  "verdict": "supported",
+                  "evidence_quote": "The sum of the eigenvalues equals the trace, and their product equals the determinant, which is a quick check on any hand computation.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 8
+                }
+              ]
+            },
+            "ok": false,
+            "summary": "退回：1 处"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "3\times2 \t\t\t\t\t\t\t\t矩阵的特征多项式是二次的\ndef\ndef",
+                  "kind": "fact",
+                  "cited_page": 8,
+                  "verdict": "not_found",
+                  "evidence_quote": "",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 0
+                },
+                {
+                  "claim": "\t\t\t\t\t\t\t因为是二次方程，两个特征值可直接用求根公式算出。另外有个检验技巧：两特征值之和等于矩阵的迹，之积等于行列式。",
+                  "kind": "fact",
+                  "cited_page": 8,
+                  "verdict": "supported",
+                  "evidence_quote": "The sum of the eigenvalues equals the trace, and their product equals the determinant, which is a quick check on any hand computation.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 8
+                }
+              ]
+            },
+            "ok": false,
+            "summary": "退回：1 处"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "3×2 矩阵的特征多项式是二次的（第8页）",
+                  "kind": "fact",
+                  "cited_page": 8,
+                  "verdict": "not_found",
+                  "evidence_quote": "",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 0
+                },
+                {
+                  "claim": "因为是二次方程，两个特征值可直接用求根公式算出。另外有个检验技巧：两特征值之和等于矩阵的迹，之积等于行列式。",
+                  "kind": "fact",
+                  "cited_page": 8,
+                  "verdict": "supported",
+                  "evidence_quote": "The sum of the eigenvalues equals the trace, and their product equals the determinant, which is a quick check on any hand computation.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 8
+                }
+              ]
+            },
+            "ok": true,
+            "summary": "通过：2 条"
+          }
+        ],
+        "rejected": 2,
+        "error": null,
+        "latency_ms": 18273.4,
+        "usage": {
+          "input_tokens": 15973,
+          "output_tokens": 1467,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0.023308,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v1"
+      }
+    },
+    {
+      "item": "hold29:concept",
+      "kind": "concept",
+      "answer_id": "hold29",
+      "run": {
+        "status": "written",
+        "counts": {
+          "supported": 1,
+          "wrong_page": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [
+          {
+            "claim": "2×2 矩阵的特征多项式是二次的（第8页）",
+            "kind": "fact",
+            "cited_page": 8,
+            "verdict": "supported",
+            "evidence_quote": "For a 2×2 matrix the polynomial is quadratic",
+            "evidence_page": 8,
+            "evidence_file": "synthetic_deck.md"
+          }
+        ],
+        "steps": 4,
+        "tools": [
+          {
+            "name": "read_page",
+            "input": {
+              "source_file": "synthetic_deck.md",
+              "page": 8
+            },
+            "ok": true,
+            "summary": "第 8 页：2 片"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "2×2 矩阵的特征多项式是二次的（第8页）",
+                  "kind": "fact",
+                  "cited_page": 8,
+                  "verdict": "supported",
+                  "evidence_quote": "For a 2×2 matrix the polynomial is quadratic",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 8
+                },
+                {
+                  "claim": "两特征值之和等于矩阵的行列式，之积等于行列式",
+                  "kind": "fact",
+                  "cited_page": 8,
+                  "verdict": "wrong_page",
+                  "evidence_quote": "The sum of the eigenvalues equals the trace, and their product equals the determinant",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 8
+                }
+              ]
+            },
+            "ok": false,
+            "summary": "退回：1 处"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "2\nnew2 \nnew矩\nnew阵\nnew的\nnew特\nnew征\nnew多\nnew项\nnew式\nnew是\nnew二\nnew次\nnew的\nnew（\nnew第\nnew8\nnew页\nnew）",
+                  "kind": "fact",
+                  "cited_page": 8,
+                  "verdict": "supported",
+                  "evidence_quote": "For a 2\nnew2 matrix the polynomial is quadratic",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 8
+                }
+              ]
+            },
+            "ok": false,
+            "summary": "退回：2 处"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "2×2 矩阵的特征多项式是二次的（第8页）",
+                  "kind": "fact",
+                  "cited_page": 8,
+                  "verdict": "supported",
+                  "evidence_quote": "For a 2×2 matrix the polynomial is quadratic",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 8
+                }
+              ]
+            },
+            "ok": true,
+            "summary": "通过：1 条"
+          }
+        ],
+        "rejected": 2,
+        "error": null,
+        "latency_ms": 16169.1,
+        "usage": {
+          "input_tokens": 15516,
+          "output_tokens": 1228,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0.021656,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v1"
+      }
+    },
+    {
+      "item": "hold29:page",
+      "kind": "page",
+      "answer_id": "hold29",
+      "run": {
+        "status": "written",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 1,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [
+          {
+            "claim": "2×2 矩阵的特征多项式是二次的",
+            "kind": "fact",
+            "cited_page": 5,
+            "verdict": "wrong_page",
+            "evidence_quote": "For a 2×2 matrix the polynomial is quadratic, so the two eigenvalues follow from the quadratic formula.",
+            "evidence_page": 8,
+            "evidence_file": "synthetic_deck.md"
+          }
+        ],
+        "steps": 2,
+        "tools": [
+          {
+            "name": "read_page",
+            "input": {
+              "source_file": "synthetic_deck.md",
+              "page": 5
+            },
+            "ok": true,
+            "summary": "第 5 页：2 片"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "2×2 矩阵的特征多项式是二次的",
+                  "kind": "fact",
+                  "cited_page": 5,
+                  "verdict": "wrong_page",
+                  "evidence_quote": "For a 2×2 matrix the polynomial is quadratic, so the two eigenvalues follow from the quadratic formula.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 8
+                }
+              ]
+            },
+            "ok": true,
+            "summary": "通过：1 条"
+          }
+        ],
+        "rejected": 0,
+        "error": null,
+        "latency_ms": 8258.7,
+        "usage": {
+          "input_tokens": 6569,
+          "output_tokens": 586,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0.009499,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v1"
+      }
+    },
+    {
+      "item": "hold30:clean",
+      "kind": "clean",
+      "answer_id": "hold30",
+      "run": {
+        "status": "written",
+        "counts": {
+          "supported": 3,
+          "wrong_page": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [
+          {
+            "claim": "矩阵对角化后 $A = PDP^{-1}$，其中 $P$ 的列是 $A$ 的特征向量，$D$ 是由特征值组成的对角矩阵。",
+            "kind": "fact",
+            "cited_page": null,
+            "verdict": "supported",
+            "evidence_quote": "collect them as the columns of P and the eigenvalues into a diagonal matrix D. Then A = P D P inverse",
+            "evidence_page": 9,
+            "evidence_file": "synthetic_deck.md"
+          },
+          {
+            "claim": "而 $D$ 是对角矩阵，对角矩阵的幂只需把对角线上每个元素各自取 10 次方即可，不涉及矩阵乘法运算",
+            "kind": "fact",
+            "cited_page": null,
+            "verdict": "supported",
+            "evidence_quote": "powers of A cost only powers of the diagonal entries",
+            "evidence_page": 9,
+            "evidence_file": "synthetic_deck.md"
+          },
+          {
+            "claim": "相比之下，如果直接算 $A^{10}$，需要做 9 次完整的矩阵乘法，计算量随矩阵规模迅速增大；而对角化之后，核心运算退化成对若干个标量分别做乘方，再加一次首尾的矩阵乘法 $P(\\cdot)P^{-1}$，复杂度大大降低（第 9 页）。",
+            "kind": "fact",
+            "cited_page": 9,
+            "verdict": "supported",
+            "evidence_quote": "powers of A cost only powers of the diagonal entries",
+            "evidence_page": 9,
+            "evidence_file": "synthetic_deck.md"
+          }
+        ],
+        "steps": 5,
+        "tools": [
+          {
+            "name": "read_page",
+            "input": {
+              "source_file": "synthetic_deck.md",
+              "page": 9
+            },
+            "ok": true,
+            "summary": "第 9 页：2 片"
+          },
+          {
+            "name": "search_slices",
+            "input": {
+              "query": "对角化 A = PDP^{-1} 特征向量 特征值 对角矩阵"
+            },
+            "ok": true,
+            "summary": "0 片"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "P 的列是 A 的特征向量，D 是由特征值组成的对角矩阵。然后 A = P D P inverse",
+                  "kind": "fact",
+                  "cited_page": 9,
+                  "verdict": "supported",
+                  "evidence_quote": "collect them as the columns of P and the eigenvalues into a diagonal matrix D. Then A = P D P inverse",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 9
+                },
+                {
+                  "claim": "powers of A cost only powers of the diagonal entries",
+                  "kind": "fact",
+                  "cited_page": 9,
+                  "verdict": "supported",
+                  "evidence_quote": "powers of A cost only powers of the diagonal entries",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 9
+                },
+                {
+                  "claim": "对角化之后，核心运算退化成对若干个标量分别做乘方，再加一次首尾的矩阵乘法 P(·)P^{-1}，复杂度大大降低（第 9 页）",
+                  "kind": "supplement",
+                  "cited_page": 9,
+                  "verdict": "supplement",
+                  "evidence_quote": "",
+                  "evidence_file": "",
+                  "evidence_page": 0
+                }
+              ]
+            },
+            "ok": false,
+            "summary": "退回：4 处"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "矩阵对角化后 $A = PDP^{-1}$，其中 $P$ 的列是 $A$ 的特征向量，$D$ 是由特征值组成的对角矩阵",
+                  "kind": "fact",
+                  "cited_page": 0,
+                  "verdict": "supported",
+                  "evidence_quote": "collect them as the columns of P and the eigenvalues into a diagonal matrix D. Then A = P D P inverse",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 9
+                },
+                {
+                  "claim": "$D$ 是对角矩阵，对角矩阵的幂只需把对角线上每个元素各自取 10 次方即可，不涉及矩阵乘法运算",
+                  "kind": "fact",
+                  "cited_page": 0,
+                  "verdict": "supported",
+                  "evidence_quote": "powers of A cost only powers of the diagonal entries",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 9
+                },
+                {
+                  "claim": "而对角化之后，核心运算退化成对若干个标量分别做乘方，再加一次首尾的矩阵乘法 $P(\\cdot)P^{-1}$，复杂度大大降低（第 9 页）",
+                  "kind": "supplement",
+                  "cited_page": 9,
+                  "verdict": "supplement",
+                  "evidence_quote": "",
+                  "evidence_file": "",
+                  "evidence_page": 0
+                }
+              ]
+            },
+            "ok": false,
+            "summary": "退回：1 处"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "矩阵对角化后 $A = PDP^{-1}$\ff0c其中 $P$ 的列是 $A$ 的特征向量\ff0c$D$ 是由特征值组成的对角矩阵",
+                  "kind": "fact",
+                  "cited_page": 0,
+                  "verdict": "supported",
+                  "evidence_quote": "collect them as the columns of P and the eigenvalues into a diagonal matrix D. Then A = P D P inverse",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 9
+                },
+                {
+                  "claim": "$D$ 是对角矩阵\ff0c对角矩阵的幂只需把对角线上每个元素各自取 10 次方即可\ff0c不涉及矩阵乘法运算",
+                  "kind": "fact",
+                  "cited_page": 0,
+                  "verdict": "supported",
+                  "evidence_quote": "powers of A cost only powers of the diagonal entries",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 9
+                },
+                {
+                  "claim": "对角化之后\ff0c核心运算退化成对若干个标量分别做乘方\ff0c再加一次首尾的矩阵乘法 $P(\\cdot)P^{-1}$\ff0c复杂度大大降低\ff08第 9 页\ff09",
+                  "kind": "fact",
+                  "cited_page": 9,
+                  "verdict": "supported",
+                  "evidence_quote": "powers of A cost only powers of the diagonal entries",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 9
+                }
+              ]
+            },
+            "ok": false,
+            "summary": "退回：4 处"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "矩阵对角化后 $A = PDP^{-1}$，其中 $P$ 的列是 $A$ 的特征向量，$D$ 是由特征值组成的对角矩阵。",
+                  "kind": "fact",
+                  "cited_page": 0,
+                  "verdict": "supported",
+                  "evidence_quote": "collect them as the columns of P and the eigenvalues into a diagonal matrix D. Then A = P D P inverse",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 9
+                },
+                {
+                  "claim": "而 $D$ 是对角矩阵，对角矩阵的幂只需把对角线上每个元素各自取 10 次方即可，不涉及矩阵乘法运算",
+                  "kind": "fact",
+                  "cited_page": 0,
+                  "verdict": "supported",
+                  "evidence_quote": "powers of A cost only powers of the diagonal entries",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 9
+                },
+                {
+                  "claim": "相比之下，如果直接算 $A^{10}$，需要做 9 次完整的矩阵乘法，计算量随矩阵规模迅速增大；而对角化之后，核心运算退化成对若干个标量分别做乘方，再加一次首尾的矩阵乘法 $P(\\cdot)P^{-1}$，复杂度大大降低（第 9 页）。",
+                  "kind": "fact",
+                  "cited_page": 9,
+                  "verdict": "supported",
+                  "evidence_quote": "powers of A cost only powers of the diagonal entries",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 9
+                }
+              ]
+            },
+            "ok": true,
+            "summary": "通过：3 条"
+          }
+        ],
+        "rejected": 3,
+        "error": null,
+        "latency_ms": 27995.7,
+        "usage": {
+          "input_tokens": 24384,
+          "output_tokens": 2396,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0.036364,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v1"
+      }
+    },
+    {
+      "item": "hold30:number",
+      "kind": "number",
+      "answer_id": "hold30",
+      "run": {
+        "status": "written",
+        "counts": {
+          "supported": 1,
+          "wrong_page": 0,
+          "not_found": 1,
+          "supplement": 0
+        },
+        "claims": [
+          {
+            "claim": "矩阵对角化后 $A = PDP^{-2}$，其中 $P$ 的列是 $A$ 的特征向量，$D$ 是由特征值组成的对角矩阵。",
+            "kind": "fact",
+            "cited_page": null,
+            "verdict": "not_found",
+            "evidence_quote": "",
+            "evidence_page": null,
+            "evidence_file": null
+          },
+          {
+            "claim": "复杂度大大降低（第 9 页）",
+            "kind": "fact",
+            "cited_page": 9,
+            "verdict": "supported",
+            "evidence_quote": "powers of A cost only powers of the diagonal entries",
+            "evidence_page": 9,
+            "evidence_file": "synthetic_deck.md"
+          }
+        ],
+        "steps": 2,
+        "tools": [
+          {
+            "name": "read_page",
+            "input": {
+              "source_file": "synthetic_deck.md",
+              "page": 9
+            },
+            "ok": true,
+            "summary": "第 9 页：2 片"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "矩阵对角化后 $A = PDP^{-2}$，其中 $P$ 的列是 $A$ 的特征向量，$D$ 是由特征值组成的对角矩阵。",
+                  "kind": "fact",
+                  "cited_page": 0,
+                  "verdict": "not_found",
+                  "evidence_quote": "",
+                  "evidence_file": "",
+                  "evidence_page": 0
+                },
+                {
+                  "claim": "复杂度大大降低（第 9 页）",
+                  "kind": "fact",
+                  "cited_page": 9,
+                  "verdict": "supported",
+                  "evidence_quote": "powers of A cost only powers of the diagonal entries",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 9
+                }
+              ]
+            },
+            "ok": true,
+            "summary": "通过：2 条"
+          }
+        ],
+        "rejected": 0,
+        "error": null,
+        "latency_ms": 7046.7,
+        "usage": {
+          "input_tokens": 6962,
+          "output_tokens": 478,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0.009352,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v1"
+      }
+    },
+    {
+      "item": "hold30:page",
+      "kind": "page",
+      "answer_id": "hold30",
+      "run": {
+        "status": "written",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 1,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [
+          {
+            "claim": "复杂度大大降低（第6页）",
+            "kind": "fact",
+            "cited_page": 6,
+            "verdict": "wrong_page",
+            "evidence_quote": "powers of A cost only powers of the diagonal entries",
+            "evidence_page": 9,
+            "evidence_file": "synthetic_deck.md"
+          }
+        ],
+        "steps": 4,
+        "tools": [
+          {
+            "name": "read_page",
+            "input": {
+              "source_file": "synthetic_deck.md",
+              "page": 6
+            },
+            "ok": true,
+            "summary": "第 6 页：2 片"
+          },
+          {
+            "name": "search_slices",
+            "input": {
+              "query": "matrix powers diagonal A = PDP^-1 complexity"
+            },
+            "ok": true,
+            "summary": "5 片"
+          },
+          {
+            "name": "search_slices",
+            "input": {
+              "query": "powers of A cost powers of diagonal entries"
+            },
+            "ok": true,
+            "summary": "4 片"
+          },
+          {
+            "name": "search_slices",
+            "input": {
+              "query": "diagonalization reduces complexity matrix multiplication"
+            },
+            "ok": true,
+            "summary": "5 片"
+          },
+          {
+            "name": "read_page",
+            "input": {
+              "source_file": "synthetic_deck.md",
+              "page": 9
+            },
+            "ok": true,
+            "summary": "第 9 页：2 片"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "复杂度大大降低（第6页）",
+                  "kind": "fact",
+                  "cited_page": 6,
+                  "verdict": "wrong_page",
+                  "evidence_quote": "powers of A cost only powers of the diagonal entries",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 9
+                }
+              ]
+            },
+            "ok": true,
+            "summary": "通过：1 条"
+          }
+        ],
+        "rejected": 0,
+        "error": null,
+        "latency_ms": 11716.3,
+        "usage": {
+          "input_tokens": 16765,
+          "output_tokens": 634,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0.019935,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v1"
+      }
+    },
+    {
+      "item": "hold31:clean",
+      "kind": "clean",
+      "answer_id": "hold31",
+      "run": {
+        "status": "written",
+        "counts": {
+          "supported": 1,
+          "wrong_page": 0,
+          "not_found": 0,
+          "supplement": 1
+        },
+        "claims": [
+          {
+            "claim": "经过多步后，绝对值最大的特征值会主导结果（第4页）",
+            "kind": "fact",
+            "cited_page": 4,
+            "verdict": "supported",
+            "evidence_quote": "after many steps the largest factor dominates what you see",
+            "evidence_page": 4,
+            "evidence_file": "synthetic_deck.md"
+          },
+          {
+            "claim": "这结论隐含在第4页\"grows without bound, settles down, or dies away\"这句话里，但没展开具体数值条件",
+            "kind": "supplement",
+            "cited_page": 4,
+            "verdict": "supplement",
+            "evidence_quote": "",
+            "evidence_page": null,
+            "evidence_file": null
+          }
+        ],
+        "steps": 3,
+        "tools": [
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "经过多步后，绝对值最大的特征值会主导结果（第4页）",
+                  "kind": "fact",
+                  "cited_page": 4,
+                  "verdict": "supported",
+                  "evidence_quote": "after many steps the largest factor dominates what you see",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 4
+                },
+                {
+                  "claim": "这个主导地位不依赖初始状态，迭代足够多次之后总会显现出来",
+                  "kind": "fact",
+                  "cited_page": 4,
+                  "verdict": "supported",
+                  "evidence_quote": "it does so after enough steps regardless of the starting state",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 4
+                },
+                {
+                  "claim": "这结论隐含在第4页'grows without bound, settles down, or dies away'这句话里",
+                  "kind": "fact",
+                  "cited_page": 4,
+                  "verdict": "supported",
+                  "evidence_quote": "It decides whether repeated application grows without bound, settles down, or dies away",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 4
+                }
+              ]
+            },
+            "ok": false,
+            "summary": "退回：1 处"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {},
+            "ok": false,
+            "summary": "退回：1 处"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "经过多步后，绝对值最大的特征值会主导结果（第4页）",
+                  "kind": "fact",
+                  "cited_page": 4,
+                  "verdict": "supported",
+                  "evidence_quote": "after many steps the largest factor dominates what you see",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 4
+                },
+                {
+                  "claim": "这结论隐含在第4页\"grows without bound, settles down, or dies away\"这句话里，但没展开具体数值条件",
+                  "kind": "supplement",
+                  "cited_page": 4,
+                  "verdict": "supplement",
+                  "evidence_quote": "",
+                  "evidence_file": "",
+                  "evidence_page": 0
+                }
+              ]
+            },
+            "ok": true,
+            "summary": "通过：2 条"
+          }
+        ],
+        "rejected": 2,
+        "error": null,
+        "latency_ms": 30952.0,
+        "usage": {
+          "input_tokens": 13108,
+          "output_tokens": 3894,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0.032578,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v1"
+      }
+    },
+    {
+      "item": "hold31:concept",
+      "kind": "concept",
+      "answer_id": "hold31",
+      "run": {
+        "status": "written",
+        "counts": {
+          "supported": 1,
+          "wrong_page": 0,
+          "not_found": 2,
+          "supplement": 0
+        },
+        "claims": [
+          {
+            "claim": "绝对值最小的特征值会主导结果（第4页）",
+            "kind": "fact",
+            "cited_page": 4,
+            "verdict": "not_found",
+            "evidence_quote": "",
+            "evidence_page": null,
+            "evidence_file": null
+          },
+          {
+            "claim": "系统按 $x_{n+1} = A x_n$ 迭代，沿特征方向每一步乘以对应特征值。经过多步后，绝对值最小的特征值会主导结果（第4页）。",
+            "kind": "fact",
+            "cited_page": 4,
+            "verdict": "not_found",
+            "evidence_quote": "",
+            "evidence_page": null,
+            "evidence_file": null
+          },
+          {
+            "claim": "这结论隐含在第4页\"grows without bound, settles down, or dies away\"这句话里",
+            "kind": "fact",
+            "cited_page": 4,
+            "verdict": "supported",
+            "evidence_quote": "It decides whether repeated application grows without bound, settles down, or dies away",
+            "evidence_page": 4,
+            "evidence_file": "synthetic_deck.md"
+          }
+        ],
+        "steps": 4,
+        "tools": [
+          {
+            "name": "read_page",
+            "input": {
+              "source_file": "synthetic_deck.md",
+              "page": 4
+            },
+            "ok": true,
+            "summary": "第 4 页：2 片"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "绝对值最小的特征值会主导结果（第4页）",
+                  "kind": "fact",
+                  "cited_page": 4,
+                  "verdict": "wrong_page",
+                  "evidence_quote": "the largest factor dominates what you see",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 4
+                },
+                {
+                  "claim": "系统按 $x_{n+1} = A x_n$ 迭代，沿特征方向每一步乘以对应特征值。经过多步后，绝对值最小的特征值会主导结果（第4页）。",
+                  "kind": "fact",
+                  "cited_page": 4,
+                  "verdict": "wrong_page",
+                  "evidence_quote": "after many steps the largest factor dominates what you see",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 4
+                },
+                {
+                  "claim": "这结论隐含在第4页\"grows without bound, settles down, or dies away\"这句话里",
+                  "kind": "fact",
+                  "cited_page": 4,
+                  "verdict": "supported",
+                  "evidence_quote": "It decides whether repeated application grows without bound, settles down, or dies away",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 4
+                }
+              ]
+            },
+            "ok": false,
+            "summary": "退回：2 处"
+          },
+          {
+            "name": "search_slices",
+            "input": {
+              "query": "largest eigenvalue dominates smallest"
+            },
+            "ok": true,
+            "summary": "5 片"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "绝对值最小的特征值会主导结果（第4页）",
+                  "kind": "fact",
+                  "cited_page": 4,
+                  "verdict": "not_found",
+                  "evidence_quote": "",
+                  "evidence_file": "",
+                  "evidence_page": 0
+                },
+                {
+                  "claim": "系统按 $x_{n+1} = A x_n$ 迭代，沿特征方向每一步乘以对应特征值。经过多步后，绝对值最小的特征值会主导结果（第4页）。",
+                  "kind": "fact",
+                  "cited_page": 4,
+                  "verdict": "not_found",
+                  "evidence_quote": "",
+                  "evidence_file": "",
+                  "evidence_page": 0
+                },
+                {
+                  "claim": "这结论隐含在第4页\"grows without bound, settles down, or dies away\"这句话里",
+                  "kind": "fact",
+                  "cited_page": 4,
+                  "verdict": "supported",
+                  "evidence_quote": "It decides whether repeated application grows without bound, settles down, or dies away",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 4
+                }
+              ]
+            },
+            "ok": true,
+            "summary": "通过：3 条"
+          }
+        ],
+        "rejected": 1,
+        "error": null,
+        "latency_ms": 19222.2,
+        "usage": {
+          "input_tokens": 18499,
+          "output_tokens": 1473,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0.025864,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v1"
+      }
+    },
+    {
+      "item": "hold31:page",
+      "kind": "page",
+      "answer_id": "hold31",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 4,
+        "tools": [
+          {
+            "name": "read_page",
+            "input": {
+              "source_file": "synthetic_deck.md",
+              "page": 4
+            },
+            "ok": true,
+            "summary": "第 4 页：2 片"
+          },
+          {
+            "name": "read_page",
+            "input": {
+              "source_file": "synthetic_deck.md",
+              "page": 7
+            },
+            "ok": true,
+            "summary": "第 7 页：2 片"
+          },
+          {
+            "name": "search_slices",
+            "input": {
+              "query": "spectral radius convergence divergence threshold"
+            },
+            "ok": true,
+            "summary": "0 片"
+          },
+          {
+            "name": "search_slices",
+            "input": {
+              "query": "eigenvalue less than 1 greater than 1 equals 1"
+            },
+            "ok": true,
+            "summary": "5 片"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "经过多步后，绝对值最大的特征值会主导结果（第4页）",
+                  "kind": "fact",
+                  "cited_page": 4,
+                  "verdict": "supported",
+                  "evidence_quote": "Along a direction that `A` only scales, each step multiplies by that one factor, so after many steps the largest factor dominates what you see.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 4
+                },
+                {
+                  "claim": "这结论隐含在第4页\"grows without bound, settles down, or dies away\"这句话里",
+                  "kind": "fact",
+                  "cited_page": 4,
+                  "verdict": "supported",
+                  "evidence_quote": "It decides whether repeated application grows without bound, settles down, or dies away, and it does so after enough steps regardless of the starting state.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 4
+                },
+                {
+                  "claim": "第7页讲到了这个问题的核心逻辑，但没有直接点明\"小于1\"这个具体阈值",
+                  "kind": "fact",
+                  "cited_page": 7,
+                  "verdict": "wrong_page",
+                  "evidence_quote": "The directions that a vibration update leaves in place are the modes the structure prefers to move in, and the associated factors say how fast each mode grows or decays under a periodic push.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 7
+                },
+                {
+                  "claim": "按这个逻辑推：如果最大特征值的绝对值（谱半径）小于1，主导因子每乘一次都在变小",
+                  "kind": "supplement",
+                  "cited_page": 0,
+                  "verdict": "supplement",
+                  "evidence_quote": "",
+                  "evidence_file": "",
+                  "evidence_page": 0
+                },
+                {
+                  "claim": "课件原文没有直接写出\"小于1收敛、大于1发散、等于1维持\"这三种情况的完整总结",
+                  "kind": "fact",
+                  "cited_page": 0,
+                  "verdict": "not_found",
+                  "evidence_quote": "",
+                  "evidence_file": "",
+                  "evidence_page": 0
+                }
+              ]
+            },
+            "ok": false,
+            "summary": "退回：1 处"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "\tz\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\t\t",
+                  "kind": "fact",
+                  "cited_page": 4,
+                  "verdict": "supported",
+                  "evidence_quote": "Along a direction that `A` only scales, each step multiplies by that one factor, so after many steps the largest factor dominates what you see.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 4
+                },
+                {
+                  "claim": "This is why the largest factor is often the only one anyone quotes. It decides whether repeated application grows without bound, settles down, or dies away, and it does so after enough steps regardless of the starting state.\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t",
+                  "kind": "fact",
+                  "cited_page": 4,
+                  "verdict": "supported",
+                  "evidence_quote": "It decides whether repeated application grows without bound, settles down, or dies away, and it does so after enough steps regardless of the starting state.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 4
+                },
+                {
+                  "claim": "\tz\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\tat\t\t\t",
+                  "kind": "fact",
+                  "cited_page": 7,
+                  "verdict": "supported",
+                  "evidence_quote": "The directions that a vibration update leaves in place are the modes the structure prefers to move in, and the associated factors say how fast each mode grows or decays under a periodic push.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 7
+                },
+                {
+                  "claim": "\tAccording to this logic: if the maximum eigenvalue's absolute value (spectral radius) is less than 1, the dominant factor becomes smaller with each multiplication.\t\t",
+                  "kind": "supplement",
+                  "cited_page": 0,
+                  "verdict": "supplement",
+                  "evidence_quote": "",
+                  "evidence_file": "",
+                  "evidence_page": 0
+                },
+                {
+                  "claim": "\tThe lecture text does not directly write out the complete summary of \"less than 1 converges, greater than 1 diverges, equals 1 maintains\" these three cases.\t\t\t\t\t",
+                  "kind": "fact",
+                  "cited_page": 0,
+                  "verdict": "not_found",
+                  "evidence_quote": "",
+                  "evidence_file": "",
+                  "evidence_page": 0
+                }
+              ]
+            },
+            "ok": false,
+            "summary": "退回：6 处"
+          }
+        ],
+        "rejected": 2,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 33379.2,
+        "usage": {
+          "input_tokens": 20208,
+          "output_tokens": 2969,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0.035053,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v1"
+      }
+    },
+    {
+      "item": "hold32:clean",
+      "kind": "clean",
+      "answer_id": "hold32",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 167.8,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v1"
+      }
+    },
+    {
+      "item": "hold32:number",
+      "kind": "number",
+      "answer_id": "hold32",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 141.8,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v1"
+      }
+    },
+    {
+      "item": "hold32:concept",
+      "kind": "concept",
+      "answer_id": "hold32",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 176.1,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v1"
+      }
+    },
+    {
+      "item": "hold32:page",
+      "kind": "page",
+      "answer_id": "hold32",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 159.6,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v1"
+      }
+    },
+    {
+      "item": "hold33:clean",
+      "kind": "clean",
+      "answer_id": "hold33",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 163.7,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v1"
+      }
+    },
+    {
+      "item": "hold33:number",
+      "kind": "number",
+      "answer_id": "hold33",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 295.5,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v1"
+      }
+    },
+    {
+      "item": "hold33:page",
+      "kind": "page",
+      "answer_id": "hold33",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 167.6,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v1"
+      }
+    },
+    {
+      "item": "hold34:clean",
+      "kind": "clean",
+      "answer_id": "hold34",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 146.6,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v1"
+      }
+    },
+    {
+      "item": "hold34:page",
+      "kind": "page",
+      "answer_id": "hold34",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 185.5,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v1"
+      }
+    },
+    {
+      "item": "hold35:clean",
+      "kind": "clean",
+      "answer_id": "hold35",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 151.1,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v1"
+      }
+    },
+    {
+      "item": "hold35:number",
+      "kind": "number",
+      "answer_id": "hold35",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 177.7,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v1"
+      }
+    },
+    {
+      "item": "hold35:concept",
+      "kind": "concept",
+      "answer_id": "hold35",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 209.2,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v1"
+      }
+    },
+    {
+      "item": "hold35:page",
+      "kind": "page",
+      "answer_id": "hold35",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 141.6,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v1"
+      }
+    },
+    {
+      "item": "hold36:clean",
+      "kind": "clean",
+      "answer_id": "hold36",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 149.5,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v1"
+      }
+    },
+    {
+      "item": "hold36:concept",
+      "kind": "concept",
+      "answer_id": "hold36",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 164.9,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v1"
+      }
+    },
+    {
+      "item": "hold36:page",
+      "kind": "page",
+      "answer_id": "hold36",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 137.2,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
         "cost_known": true,
         "model": "claude-haiku-4-5-20251001",
         "prompt_version": "v1"

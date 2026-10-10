@@ -7,8 +7,6 @@
 
 from __future__ import annotations
 
-import re
-
 from explain.agent import WEB_HEADING as AGENT_WEB_HEADING
 from explain.context import ContextPack, ContextSlice
 from explain.fake import ScriptedToolModel
@@ -22,8 +20,6 @@ from explain.verify import (
     _Seen,
     check_verdicts,
     cited_pages,
-    claim_numbers,
-    quote_numbers,
     course_part,
     normalize,
 )
@@ -52,16 +48,13 @@ class Deck:
         return ContextPack(question="", slices=tuple(s for s in self.slices if p in s.page_indices), meta={})
 
 
-def fact(claim, page, verdict, quote="", ev_page=0, comparison=None):
-    # 缺省的 comparison 把说法里的数都对照一遍——v2 要求每个数都出现在对照里（单独的测试钉这一条）。
-    if comparison is None:
-        comparison = "对照：" + "、".join(re.findall(r"\d+", re.sub(r"第\s*\d+\s*页", "", claim))) + " 一致"
-    return {"claim": claim, "kind": "fact", "cited_page": page, "comparison": comparison, "verdict": verdict,
+def fact(claim, page, verdict, quote="", ev_page=0):
+    return {"claim": claim, "kind": "fact", "cited_page": page, "verdict": verdict,
             "evidence_quote": quote, "evidence_file": "deck.pdf" if quote else "", "evidence_page": ev_page}
 
 
 SUPP = {"claim": "就像照镜子：镜面上的东西不动，垂直的被翻过去。", "kind": "supplement", "cited_page": 0,
-        "comparison": "", "verdict": "supplement", "evidence_quote": "", "evidence_file": "", "evidence_page": 0}
+        "verdict": "supplement", "evidence_quote": "", "evidence_file": "", "evidence_page": 0}
 GOOD = {"claims": [fact("镜面方向上的向量特征值是 1，垂直方向是 -1（第3页）", 3, "supported",
                         "vectors on the line have eigenvalue 1", 3), SUPP]}
 
@@ -147,7 +140,7 @@ class TestLoop:
                       ("tool", [(TOOL_SUBMIT, GOOD)])])
         run = a.verify(answer=ANSWER, context=ctx())
         assert run.status == "written", run.error
-        assert run.counts == {"supported": 1, "wrong_page": 0, "contradicted": 0, "not_found": 0, "supplement": 1}
+        assert run.counts == {"supported": 1, "wrong_page": 0, "not_found": 0, "supplement": 1}
         assert len(m.calls) == 2
 
     def test_reject_then_fix(self):
@@ -188,55 +181,8 @@ class TestLoop:
         assert run.status == "skipped" and m.calls == []
 
 
-class TestV2Contradicted:
-    """v2（口径 F123）：评测里 v1 的漏检是「摘录真的在那一页，说的却是另一件事」。
-    这些测试钉的是**代码那一半**——摘录与说法对不对得上，仍是模型的判断（注入评测量它）。"""
-
-    WRONG = "反射时，镜面方向上的向量特征值是 3（第3页）。"
-
-    def test_contradicted_needs_a_real_quote(self):
-        sub = {"claims": [fact("镜面方向上的向量特征值是 3（第3页）", 3, "contradicted",
-                               "vectors on the line have eigenvalue 1", 3, "说法 3 ↔ 摘录 1：不一致")]}
-        claims, p = check_verdicts(sub, self.WRONG, _Seen([P3]))
-        assert p == [] and claims[0].verdict == "contradicted" and claims[0].evidence_page == 3
-        sub["claims"][0]["evidence_quote"] = "vectors on the line have eigenvalue 3"     # 编的摘录
-        assert check_verdicts(sub, self.WRONG, _Seen([P3]))[1]
-
-    def test_number_missing_from_quote_is_not_supported(self):
-        """「数字对不上就不是 supported」是代码里的检查，不只是 prompt 里的一句话。"""
-        sub = {"claims": [fact("镜面方向上的向量特征值是 3（第3页）", 3, "supported",
-                               "vectors on the line have eigenvalue 1", 3)]}
-        _, p = check_verdicts(sub, self.WRONG, _Seen([P3]))
-        assert any("不在摘录里" in x and "contradicted" in x for x in p)
-
-    def test_number_written_another_way_is_accepted(self):
-        """允许控制：摘录用英文数词、「half turn」写同一个数，不误退回。"""
-        assert {1.0, 2.0} <= quote_numbers("the eigenvalue is minus one, and scaling doubles it")
-        assert 180.0 in quote_numbers("not a multiple of a half turn")
-        p4 = ContextSlice(source_file="deck.pdf", slice_id="s4", page_indices=(4,), title=None,
-                          text="Vectors perpendicular to it are sent to their opposites, so their eigenvalue is minus one.",
-                          char_count=90)
-        ans = "垂直方向的向量特征值是 -1（第4页）。"
-        sub = {"claims": [fact("垂直方向的向量特征值是 -1（第4页）", 4, "supported",
-                               "so their eigenvalue is minus one", 4)]}
-        assert check_verdicts(sub, ans, _Seen([p4]))[1] == []
-
-    def test_claim_numbers_skip_pages_and_subscripts(self):
-        assert claim_numbers("λ_1 是最大的，v2 方向，特征值为 -1（第3页）") == [-1.0]
-        assert claim_numbers("整体放大两倍") == [2.0]
-        assert claim_numbers("2×2 矩阵") == [2.0, 2.0]
-
-    def test_comparison_is_required_and_must_cover_numbers(self):
-        no_cmp = {"claims": [fact("镜面方向上的向量特征值是 1，垂直方向是 -1（第3页）", 3, "supported",
-                                  "vectors on the line have eigenvalue 1", 3, comparison=""), SUPP]}
-        assert any("没有写 comparison" in x for x in check_verdicts(no_cmp, ANSWER, _Seen([P3]))[1])
-        skips = {"claims": [fact("镜面方向上的向量特征值是 1，垂直方向是 -1（第3页）", 3, "supported",
-                                 "vectors on the line have eigenvalue 1", 3, comparison="方向一致"), SUPP]}
-        assert any("没有对照说法里的数" in x for x in check_verdicts(skips, ANSWER, _Seen([P3]))[1])
-        assert check_verdicts(GOOD, ANSWER, _Seen([P3]))[1] == []        # 允许控制
-
     def test_rejection_reason_is_recorded(self):
-        """v1 只记「退回 N 处」，评测里 10% 的失败查不出卡在哪。"""
+        """只记「退回 N 处」的话，评测里那些失败查不出卡在哪一条（2026-10-10，留出集上 v2 就是靠它查出来的）。"""
         bad = {"claims": [fact("镜面方向上的向量特征值是 1，垂直方向是 -1（第3页）", 3, "supported",
                                "made up quote not in deck", 3), SUPP]}
         a, _ = agent([("tool", [(TOOL_SUBMIT, bad)]), ("tool", [(TOOL_SUBMIT, GOOD)])])

@@ -3,7 +3,7 @@
   "set": "holdout",
   "tag": "v2",
   "prompt_version": "v2",
-  "spent_usd": 1.1551,
+  "spent_usd": 1.5033,
   "results": [
     {
       "item": "hold01:clean",
@@ -6940,6 +6940,2949 @@
           "cache_read_input_tokens": 0
         },
         "cost_usd": 0.024017999999999998,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold18:number",
+      "kind": "number",
+      "answer_id": "hold18",
+      "run": {
+        "status": "written",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 1,
+          "not_found": 1,
+          "supplement": 2
+        },
+        "claims": [
+          {
+            "claim": "对3×2矩阵,两个特征值之和等于迹,之积等于行列式",
+            "kind": "fact",
+            "cited_page": 8,
+            "verdict": "contradicted",
+            "evidence_quote": "For a 2×2 matrix the polynomial is quadratic, so the two eigenvalues follow from the quadratic formula. The sum of the eigenvalues equals the trace, and their product equals the determinant, which is a quick check on any hand computation.",
+            "evidence_page": 8,
+            "evidence_file": "synthetic_deck.md",
+            "comparison": "说法：3×2矩阵 ↔ 原文：2×2 matrix\n说法：两个特征值之和等于迹 ↔ 原文：The sum of the eigenvalues equals the trace：一致\n说法：之积等于行列式 ↔ 原文：their product equals the determinant：一致\n结论：矩阵维度不一致"
+          },
+          {
+            "claim": "设两个特征值为 λ₁、λ₂,由题意 λ₁+λ₂=5,λ₁·λ₂=6。把这两个条件代入标准的二次方程形式,就是 λ²−5λ+6=0，这其实就是矩阵的特征多项式",
+            "kind": "fact",
+            "cited_page": 8,
+            "verdict": "not_found",
+            "evidence_quote": "",
+            "evidence_page": null,
+            "evidence_file": null,
+            "comparison": "说法讲的是通过迹（5）和行列式（6）直接写出特征多项式 λ²−5λ+6=0 ↔ 原文讲特征多项式的定义（Setting the determinant of A − λI to zero gives the characteristic polynomial）但没有给出具体的数值例子"
+          },
+          {
+            "claim": "对这个二次方程做因式分解,得到 (λ−2)(λ−3)=0,于是两个根分别是 2 和 3",
+            "kind": "supplement",
+            "cited_page": null,
+            "verdict": "supplement",
+            "evidence_quote": "",
+            "evidence_page": null,
+            "evidence_file": null,
+            "comparison": ""
+          },
+          {
+            "claim": "验证一下:2+3=5 正好是给定的迹,2×3=6 正好是给定的行列式,两个条件都满足，说明结果是对的",
+            "kind": "supplement",
+            "cited_page": null,
+            "verdict": "supplement",
+            "evidence_quote": "",
+            "evidence_page": null,
+            "evidence_file": null,
+            "comparison": ""
+          }
+        ],
+        "steps": 5,
+        "tools": [
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "对3×2矩阵,两个特征值之和等于迹,之积等于行列式",
+                  "kind": "fact",
+                  "cited_page": 8,
+                  "comparison": "说法：3×2矩阵 ↔ 原文：2×2矩阵：不一致；说法：特征值之和等于迹 ↔ 原文：The sum of the eigenvalues equals the trace：一致；说法：之积等于行列式 ↔ 原文：their product equals the determinant：一致",
+                  "verdict": "contradicted",
+                  "evidence_quote": "For a 2×2 matrix the polynomial is quadratic, so the two eigenvalues follow from the quadratic formula. The sum of the eigenvalues equals the trace, and their product equals the determinant, which is a quick check on any hand computation.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 8
+                },
+                {
+                  "claim": "λ²−5λ+6=0,这其实就是矩阵的特征多项式",
+                  "kind": "fact",
+                  "cited_page": 8,
+                  "comparison": "说法：λ²−5λ+6=0是矩阵的特征多项式 ↔ 原文：Setting the determinant of A − λI to zero gives the characteristic polynomial, whose roots are the eigenvalues：一致（特征多项式的定义是det(A-λI)=0的形式）",
+                  "verdict": "supported",
+                  "evidence_quote": "Eigenvalues are the numbers λ for which A − λI fails to be invertible, because that is exactly when A v = λ v has a nonzero solution. Setting the determinant of A − λI to zero gives the characteristic polynomial, whose roots are the eigenvalues.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 8
+                },
+                {
+                  "claim": "用迹和行列式直接写出来,不需要先求出矩阵本身的具体元素",
+                  "kind": "supplement",
+                  "cited_page": 0,
+                  "comparison": "",
+                  "verdict": "supplement",
+                  "evidence_quote": "",
+                  "evidence_file": "",
+                  "evidence_page": 0
+                }
+              ]
+            },
+            "ok": false,
+            "summary": "退回 1 处：第 2 条（λ²−5λ+6=0,这其实就是矩…）判 supported，但说法里的数 2 不在摘录里——换一句写了这个数的原文；课件里的数和它不一样就判 con"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "\n\n对3×2矩阵,两个特征值之和等于迹,之积等于行列式",
+                  "kind": "fact",
+                  "cited_page": 8,
+                  "comparison": "说法：3×2矩阵 ↔ 原文：2×2 matrix：不一致；说法：特征值之和等于迹 ↔ 原文：The sum of the eigenvalues equals the trace：一致；说法：之积等于行列式 ↔ 原文：their product equals the determinant：一致",
+                  "verdict": "contradicted",
+                  "evidence_quote": "For a 2×2 matrix the polynomial is quadratic, so the two eigenvalues follow from the quadratic formula. The sum of the eigenvalues equals the trace, and their product equals the determinant, which is a quick check on any hand computation.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 8
+                },
+                {
+                  "claim": "设两个特征值为 λ₁、λ₂,由题意 λ₁+λ₂=5,λ₁·λ₂=6。把这两个条件代入标准的二次方程形式,就是 λ²−5λ+6=0，这其实就是矩阵的特征多项式",
+                  "kind": "fact",
+                  "cited_page": 8,
+                  "comparison": "说法：将和与积代入二次方程形式得到λ²−5λ+6=0是矩阵的特征多项式 ↔ 原文：Setting the determinant of A − λI to zero gives the characteristic polynomial，原文讲的是特征多项式的定义和形式，但没有给出具体的数值例子（5和6）",
+                  "verdict": "not_found",
+                  "evidence_quote": "",
+                  "evidence_file": "",
+                  "evidence_page": 0
+                },
+                {
+                  "claim": "对这个二次方程做因式分解,得到 (λ−2)(λ−3)=0,于是两个根分别是 2 和 3",
+                  "kind": "supplement",
+                  "cited_page": 0,
+                  "comparison": "",
+                  "verdict": "supplement",
+                  "evidence_quote": "",
+                  "evidence_file": "",
+                  "evidence_page": 0
+                },
+                {
+                  "claim": "验证一下:2+3=5 正好是给定的迹,2×3=6 正好是给定的行列式,两个条件都满足，说明结果是对的",
+                  "kind": "supplement",
+                  "cited_page": 0,
+                  "comparison": "",
+                  "verdict": "supplement",
+                  "evidence_quote": "",
+                  "evidence_file": "",
+                  "evidence_page": 0
+                }
+              ]
+            },
+            "ok": false,
+            "summary": "退回 1 处：第 2 条（设两个特征值为 λ₁、λ₂,由题…）判 not_found，但这次核对一次都没查过——先用 search_slices 或 read_page 找过"
+          },
+          {
+            "name": "search_slices",
+            "input": {
+              "query": "eigenvalues 5 6 2 3 trace determinant example"
+            },
+            "ok": true,
+            "summary": "5 片"
+          },
+          {
+            "name": "search_slices",
+            "input": {
+              "query": "λ²−5λ+6"
+            },
+            "ok": true,
+            "summary": "2 片"
+          },
+          {
+            "name": "read_page",
+            "input": {
+              "source_file": "synthetic_deck.md",
+              "page": 8
+            },
+            "ok": true,
+            "summary": "第 8 页：2 片"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n对3×2矩阵,两个特征值之和等于迹,之积等于行列式",
+                  "kind": "fact",
+                  "cited_page": 8,
+                  "comparison": "\n说法：3×2矩阵 ↔ 原文：2×2 matrix\n说法：两个特征值之和等于迹 ↔ 原文：The sum of the eigenvalues equals the trace：一致\n说法：之积等于行列式 ↔ 原文：their product equals the determinant：一致\n结论：矩阵维度不一致",
+                  "verdict": "contradicted",
+                  "evidence_quote": "For a 2×2 matrix the polynomial is quadratic, so the two eigenvalues follow from the quadratic formula. The sum of the eigenvalues equals the trace, and their product equals the determinant, which is a quick check on any hand computation.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 8
+                },
+                {
+                  "claim": "设两个特征值为 λ₁、λ₂,由题意 λ₁+λ₂=5,λ₁·λ₂=6。把这两个条件代入标准的二次方程形式,就是 λ²−5λ+6=0，这其实就是矩阵的特征多项式",
+                  "kind": "fact",
+                  "cited_page": 8,
+                  "comparison": "说法讲的是通过迹（5）和行列式（6）直接写出特征多项式 λ²−5λ+6=0 ↔ 原文讲特征多项式的定义（Setting the determinant of A − λI to zero gives the characteristic polynomial）但没有给出具体的数值例子",
+                  "verdict": "not_found",
+                  "evidence_quote": "",
+                  "evidence_file": "",
+                  "evidence_page": 0
+                },
+                {
+                  "claim": "对这个二次方程做因式分解,得到 (λ−2)(λ−3)=0,于是两个根分别是 2 和 3",
+                  "kind": "supplement",
+                  "cited_page": 0,
+                  "comparison": "",
+                  "verdict": "supplement",
+                  "evidence_quote": "",
+                  "evidence_file": "",
+                  "evidence_page": 0
+                },
+                {
+                  "claim": "验证一下:2+3=5 正好是给定的迹,2×3=6 正好是给定的行列式,两个条件都满足，说明结果是对的",
+                  "kind": "supplement",
+                  "cited_page": 0,
+                  "comparison": "",
+                  "verdict": "supplement",
+                  "evidence_quote": "",
+                  "evidence_file": "",
+                  "evidence_page": 0
+                }
+              ]
+            },
+            "ok": true,
+            "summary": "通过：4 条"
+          }
+        ],
+        "rejected": 2,
+        "error": null,
+        "latency_ms": 31495.4,
+        "usage": {
+          "input_tokens": 34562,
+          "output_tokens": 2686,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0.047992,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold18:concept",
+      "kind": "concept",
+      "answer_id": "hold18",
+      "run": {
+        "status": "written",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 1,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [
+          {
+            "claim": "第8页提到:对2×2矩阵,两个特征值之和等于行列式,之积等于行列式",
+            "kind": "fact",
+            "cited_page": 8,
+            "verdict": "contradicted",
+            "evidence_quote": "For a 2×2 matrix the polynomial is quadratic, so the two eigenvalues follow from the quadratic formula. The sum of the eigenvalues equals the trace, and their product equals the determinant",
+            "evidence_page": 8,
+            "evidence_file": "synthetic_deck.md",
+            "comparison": "讲解说对2×2矩阵，两个特征值之和等于行列式，但课件第8页说\"The sum of the eigenvalues equals the trace\"，则：数字\"2×2\"↔\"2×2 matrix\"：一致；\"之和等于行列式\"↔\"sum equals trace\"：\"行列式\"↔\"trace\"（迹）不一致"
+          }
+        ],
+        "steps": 5,
+        "tools": [
+          {
+            "name": "read_page",
+            "input": {
+              "source_file": "synthetic_deck.md",
+              "page": 8
+            },
+            "ok": true,
+            "summary": "第 8 页：2 片"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "对2×2矩阵,两个特征值之和等于行列式",
+                  "kind": "fact",
+                  "cited_page": 8,
+                  "comparison": "讲解说「两个特征值之和等于行列式」，但课件第8页说「The sum of the eigenvalues equals the trace」——「之和」↔「equals the trace」：「行列式」与「迹」不一致",
+                  "verdict": "contradicted",
+                  "evidence_quote": "The sum of the eigenvalues equals the trace, and their product equals the determinant",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 8
+                },
+                {
+                  "claim": "对2×2矩阵,两个特征值之积等于行列式",
+                  "kind": "fact",
+                  "cited_page": 8,
+                  "comparison": "讲解说「两个特征值之积等于行列式」，课件第8页说「their product equals the determinant」——「之积」↔「product」：一致；「行列式」↔「determinant」：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "their product equals the determinant",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 8
+                },
+                {
+                  "claim": "对2×2矩阵的特征值,两个特征值之和等于迹",
+                  "kind": "fact",
+                  "cited_page": 8,
+                  "comparison": "讲解虽然表述有误，但其后正文中说「λ₁+λ₂=5 正好是给定的迹」表明讲解者知道之和等于迹。课件说「The sum of the eigenvalues equals the trace」——一致",
+                  "verdict": "supported",
+                  "evidence_quote": "The sum of the eigenvalues equals the trace",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 8
+                },
+                {
+                  "claim": "对2×2矩阵,这是手算时一个很方便的验证方式",
+                  "kind": "fact",
+                  "cited_page": 8,
+                  "comparison": "讲解说「这是手算时一个很方便的验证方式」，课件说「which is a quick check on any hand computation」——「方便」↔「quick」：一致；「验证方式」↔「check」：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "which is a quick check on any hand computation",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 8
+                }
+              ]
+            },
+            "ok": false,
+            "summary": "退回 4 处：第 1 条（对2×2矩阵,两个特征值之和等于…）的 comparison 没有对照说法里的数 2——每个数都要对照；第 2 条（对2×2矩阵,两个特征值之积等于…）不是从讲解里原样摘出的——请照抄讲解里的原句；第 3 条（对2×2矩阵的特征值,两个特征值…）不是从讲解里原样摘出的——请照抄讲解里的原句"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "\n\n第8页提到:对2×2矩阵,两个特征值之和等于行列式,之积等于行列式",
+                  "kind": "fact",
+                  "cited_page": 8,
+                  "comparison": "讲解说「两个特征值之和等于行列式」，但课件第8页说「The sum of the eigenvalues equals the trace」，「行列式」↔「trace（迹）」：不一致；讲解说「之积等于行列式」，课件说「their product equals the determinant」，「之积等于行列式」↔「product equals determinant」：一致",
+                  "verdict": "contradicted",
+                  "evidence_quote": "The sum of the eigenvalues equals the trace, and their product equals the determinant",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 8
+                },
+                {
+                  "claim": "这是手算时一个很方便的验证方式，省去直接求解特征多项式根的麻烦。",
+                  "kind": "fact",
+                  "cited_page": 8,
+                  "comparison": "讲解说「很方便的验证方式」、「省去...麻烦」，课件说「which is a quick check on any hand computation」，「方便」↔「quick」：一致；概念指的都是用迹和行列式快速验证特征值",
+                  "verdict": "supported",
+                  "evidence_quote": "which is a quick check on any hand computation",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 8
+                }
+              ]
+            },
+            "ok": false,
+            "summary": "退回 1 处：第 1 条（第8页提到:对2×2矩阵,两个特…）的 comparison 没有对照说法里的数 2——每个数都要对照"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {},
+            "ok": false,
+            "summary": "退回 1 处：claims 不能为空"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "第8页提到:对2×2矩阵,两个特征值之和等于行列式,之积等于行列式",
+                  "kind": "fact",
+                  "cited_page": 8,
+                  "comparison": "讲解说对2×2矩阵，两个特征值之和等于行列式，但课件第8页说\"The sum of the eigenvalues equals the trace\"，则：数字\"2×2\"↔\"2×2 matrix\"：一致；\"之和等于行列式\"↔\"sum equals trace\"：\"行列式\"↔\"trace\"（迹）不一致",
+                  "verdict": "contradicted",
+                  "evidence_quote": "For a 2×2 matrix the polynomial is quadratic, so the two eigenvalues follow from the quadratic formula. The sum of the eigenvalues equals the trace, and their product equals the determinant",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 8
+                }
+              ]
+            },
+            "ok": true,
+            "summary": "通过：1 条"
+          }
+        ],
+        "rejected": 3,
+        "error": null,
+        "latency_ms": 43022.0,
+        "usage": {
+          "input_tokens": 31549,
+          "output_tokens": 4798,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0.055539000000000005,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold18:page",
+      "kind": "page",
+      "answer_id": "hold18",
+      "run": {
+        "status": "written",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 1,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [
+          {
+            "claim": "对2×2矩阵,两个特征值之和等于迹,之积等于行列式,这是手算时一个很方便的验证方式",
+            "kind": "fact",
+            "cited_page": 5,
+            "verdict": "wrong_page",
+            "evidence_quote": "For a 2×2 matrix the polynomial is quadratic, so the two eigenvalues follow from the quadratic formula. The sum of the eigenvalues equals the trace, and their product equals the determinant, which is a quick check on any hand computation.",
+            "evidence_page": 8,
+            "evidence_file": "synthetic_deck.md",
+            "comparison": "说法：2×2矩阵特征值之和=迹、之积=行列式 ↔ 摘录内容：sum of eigenvalues equals trace, product equals determinant"
+          }
+        ],
+        "steps": 3,
+        "tools": [
+          {
+            "name": "search_slices",
+            "input": {
+              "query": "2×2 matrix eigenvalues trace determinant quadratic formula"
+            },
+            "ok": true,
+            "summary": "5 片"
+          },
+          {
+            "name": "read_page",
+            "input": {
+              "source_file": "synthetic_deck.md",
+              "page": 5
+            },
+            "ok": true,
+            "summary": "第 5 页：2 片"
+          },
+          {
+            "name": "read_page",
+            "input": {
+              "source_file": "synthetic_deck.md",
+              "page": 8
+            },
+            "ok": true,
+            "summary": "第 8 页：2 片"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "对2×2矩阵,两个特征值之和等于迹,之积等于行列式,这是手算时一个很方便的验证方式",
+                  "kind": "fact",
+                  "cited_page": 5,
+                  "comparison": "说法：2×2矩阵特征值之和=迹、之积=行列式 ↔ 摘录内容：sum of eigenvalues equals trace, product equals determinant",
+                  "verdict": "wrong_page",
+                  "evidence_quote": "For a 2×2 matrix the polynomial is quadratic, so the two eigenvalues follow from the quadratic formula. The sum of the eigenvalues equals the trace, and their product equals the determinant, which is a quick check on any hand computation.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 8
+                }
+              ]
+            },
+            "ok": true,
+            "summary": "通过：1 条"
+          }
+        ],
+        "rejected": 0,
+        "error": null,
+        "latency_ms": 11346.0,
+        "usage": {
+          "input_tokens": 14641,
+          "output_tokens": 705,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0.018166,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold19:clean",
+      "kind": "clean",
+      "answer_id": "hold19",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 6,
+        "tools": [
+          {
+            "name": "read_page",
+            "input": {
+              "source_file": "synthetic_deck.md",
+              "page": 6
+            },
+            "ok": true,
+            "summary": "第 6 页：2 片"
+          },
+          {
+            "name": "read_page",
+            "input": {
+              "source_file": "synthetic_deck.md",
+              "page": 8
+            },
+            "ok": true,
+            "summary": "第 8 页：2 片"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "旋转矩阵的特征值是 i 和 -i，以及这对复特征值代表旋转加缩放（第6页）",
+                  "kind": "fact",
+                  "cited_page": 6,
+                  "comparison": "说法 'i and minus i' ↔ 课件 'i and minus i'：一致；说法'旋转加缩放'↔课件'a rotation combined with a scaling by the modulus'：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "A quarter turn of the plane has eigenvalues i and minus i, and the pair encodes both the turning and the fact that no real line survives. For a real matrix, a complex eigenvalue and its conjugate describe a rotation combined with a scaling by the modulus.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 6
+                },
+                {
+                  "claim": "按第8页的方法，求 det(A−λI)=0",
+                  "kind": "fact",
+                  "cited_page": 8,
+                  "comparison": "说法'求det(A−λI)=0'↔课件'Setting the determinant of A − λI to zero gives the characteristic polynomial'：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "Setting the determinant of A − λI to zero gives the characteristic polynomial, whose roots are the eigenvalues.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 8
+                },
+                {
+                  "claim": "这是个二次特征多项式（第8页提到2×2矩阵对应二次多项式）",
+                  "kind": "fact",
+                  "cited_page": 8,
+                  "comparison": "说法'2×2矩阵对应二次多项式'↔课件'For a 2×2 matrix the polynomial is quadratic'：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "For a 2×2 matrix the polynomial is quadratic, so the two eigenvalues follow from the quadratic formula.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 8
+                },
+                {
+                  "claim": "实矩阵的复特征值必然共轭成对出现",
+                  "kind": "fact",
+                  "cited_page": 6,
+                  "comparison": "说法'复特征值共轭成对出现'↔课件'Complex eigenvalues always come in conjugate pairs'：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "Complex eigenvalues always come in conjugate pairs.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 6
+                },
+                {
+                  "claim": "模长 |i| = 1，说明旋转不改变向量长度，只改变方向",
+                  "kind": "supplement",
+                  "cited_page": 0,
+                  "comparison": "",
+                  "verdict": "supplement",
+                  "evidence_quote": "",
+                  "evidence_file": "",
+                  "evidence_page": 0
+                }
+              ]
+            },
+            "ok": false,
+            "summary": "退回 1 处：第 1 条（旋转矩阵的特征值是 i 和 -i…）的 evidence_quote 不在你读到过的任何一页里——请从课件原文里原样摘出，或者先用 read_pag"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "\tur\n旋转矩阵的特征值是 i 和 -i（第6页）",
+                  "kind": "fact",
+                  "cited_page": 6,
+                  "comparison": "说法 'i and minus i' ↔ 课件 'i and minus i'：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "A quarter turn of the plane has eigenvalues i and minus i",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 6
+                },
+                {
+                  "claim": "这对复特征值代表旋转加缩放（第6页）",
+                  "kind": "fact",
+                  "cited_page": 6,
+                  "comparison": "说法'旋转加缩放'↔课件'a rotation combined with a scaling by the modulus'：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "For a real matrix, a complex eigenvalue and its conjugate describe a rotation combined with a scaling by the modulus.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 6
+                },
+                {
+                  "claim": "按第8页的方法，求 det(A−λI)=0",
+                  "kind": "fact",
+                  "cited_page": 8,
+                  "comparison": "说法'求det(A−λI)=0'↔课件'Setting the determinant of A − λI to zero'：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "Setting the determinant of A − λI to zero gives the characteristic polynomial, whose roots are the eigenvalues.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 8
+                },
+                {
+                  "claim": "这是个二次特征多项式（第8页提到2×2矩阵对应二次多项式）",
+                  "kind": "fact",
+                  "cited_page": 8,
+                  "comparison": "说法'二次特征多项式'↔课件'quadratic'：一致；说法'2×2矩阵对应'↔课件'For a 2×2 matrix'：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "For a 2×2 matrix the polynomial is quadratic",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 8
+                },
+                {
+                  "claim": "实矩阵的复特征值必然共轭成对出现",
+                  "kind": "fact",
+                  "cited_page": 6,
+                  "comparison": "说法'复特征值必然共轭成对'↔课件'Complex eigenvalues always come in conjugate pairs'：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "Complex eigenvalues always come in conjugate pairs.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 6
+                },
+                {
+                  "claim": "模长 |i| = 1，说明旋转不改变向量长度，只改变方向",
+                  "kind": "supplement",
+                  "cited_page": 0,
+                  "comparison": "",
+                  "verdict": "supplement",
+                  "evidence_quote": "",
+                  "evidence_file": "",
+                  "evidence_page": 0
+                }
+              ]
+            },
+            "ok": false,
+            "summary": "退回 1 处：第 1 条（ur\n旋转矩阵的特征值是 i 和…）不是从讲解里原样摘出的——请照抄讲解里的原句"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "\tur\n旋转矩阵的特征值是 i 和 -i，以及这对复特征值代表旋转加缩放（第6页）",
+                  "kind": "fact",
+                  "cited_page": 6,
+                  "comparison": "\tur\n说法 'i and minus i' ↔ 课件 'i and minus i'：一致；说法'旋转加缩放'↔课件'a rotation combined with a scaling by the modulus'：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "A quarter turn of the plane has eigenvalues i and minus i, and the pair encodes both the turning and the fact that no real line survives. For a real matrix, a complex eigenvalue and its conjugate describe a rotation combined with a scaling by the modulus.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 6
+                },
+                {
+                  "claim": "按第8页的方法，求 det(A−λI)=0",
+                  "kind": "fact",
+                  "cited_page": 8,
+                  "comparison": "说法'求 det(A−λI)=0'↔课件'Setting the determinant of A − λI to zero'：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "Setting the determinant of A − λI to zero gives the characteristic polynomial, whose roots are the eigenvalues.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 8
+                },
+                {
+                  "claim": "这是个二次特征多项式（第8页提到2×2矩阵对应二次多项式）",
+                  "kind": "fact",
+                  "cited_page": 8,
+                  "comparison": "说法'二次特征多项式'↔课件'quadratic'：一致；说法'2×2矩阵对应'↔课件'For a 2×2 matrix'：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "For a 2×2 matrix the polynomial is quadratic",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 8
+                },
+                {
+                  "claim": "实矩阵的复特征值必然共轭成对出现",
+                  "kind": "fact",
+                  "cited_page": 6,
+                  "comparison": "说法'复特征值必然共轭成对出现'↔课件'Complex eigenvalues always come in conjugate pairs'：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "Complex eigenvalues always come in conjugate pairs.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 6
+                },
+                {
+                  "claim": "模长 |i| = 1，说明旋转不改变向量长度，只改变方向",
+                  "kind": "supplement",
+                  "cited_page": 0,
+                  "comparison": "",
+                  "verdict": "supplement",
+                  "evidence_quote": "",
+                  "evidence_file": "",
+                  "evidence_page": 0
+                }
+              ]
+            },
+            "ok": false,
+            "summary": "退回 1 处：第 1 条（ur\n旋转矩阵的特征值是 i 和…）不是从讲解里原样摘出的——请照抄讲解里的原句"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "\tur\n旋转矩阵的特征值是 i 和 -i，以及这对复特征值代表旋转加缩放（第6页）",
+                  "kind": "fact",
+                  "cited_page": 6,
+                  "comparison": "说法 'i and minus i' ↔ 课件 'i and minus i'：一致；说法'旋转加缩放'↔课件'a rotation combined with a scaling by the modulus'：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "A quarter turn of the plane has eigenvalues i and minus i, and the pair encodes both the turning and the fact that no real line survives. For a real matrix, a complex eigenvalue and its conjugate describe a rotation combined with a scaling by the modulus.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 6
+                },
+                {
+                  "claim": "按第8页的方法，求 det(A−λI)=0",
+                  "kind": "fact",
+                  "cited_page": 8,
+                  "comparison": "说法'求 det(A−λI)=0'↔课件'Setting the determinant of A − λI to zero'：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "Setting the determinant of A − λI to zero gives the characteristic polynomial, whose roots are the eigenvalues.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 8
+                },
+                {
+                  "claim": "这是个二次特征多项式（第8页提到2×2矩阵对应二次多项式）",
+                  "kind": "fact",
+                  "cited_page": 8,
+                  "comparison": "说法'二次特征多项式'↔课件'quadratic'：一致；说法'2×2矩阵对应'↔课件'For a 2×2 matrix'：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "For a 2×2 matrix the polynomial is quadratic",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 8
+                },
+                {
+                  "claim": "实矩阵的复特征值必然共轭成对出现",
+                  "kind": "fact",
+                  "cited_page": 6,
+                  "comparison": "说法'复特征值必然共轭成对出现'↔课件'Complex eigenvalues always come in conjugate pairs'：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "Complex eigenvalues always come in conjugate pairs.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 6
+                },
+                {
+                  "claim": "模长 |i| = 1，说明旋转不改变向量长度，只改变方向",
+                  "kind": "supplement",
+                  "cited_page": 0,
+                  "comparison": "",
+                  "verdict": "supplement",
+                  "evidence_quote": "",
+                  "evidence_file": "",
+                  "evidence_page": 0
+                }
+              ]
+            },
+            "ok": false,
+            "summary": "退回 1 处：第 1 条（ur\n旋转矩阵的特征值是 i 和…）不是从讲解里原样摘出的——请照抄讲解里的原句"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "\tur\n\n\tur\n\n\tur\n\tur\n\tur\n旋转矩阵的特征值是 i 和 -i，以及这对复特征值代表旋转加缩放（第6页）",
+                  "kind": "fact",
+                  "cited_page": 6,
+                  "comparison": "\tur\n\n\tur\n\n\tur\n\tur\n\tur\n说法 'i and minus i' ↔ 课件 'i and minus i'：一致；说法'旋转加缩放'↔课件'a rotation combined with a scaling by the modulus'：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "A quarter turn of the plane has eigenvalues i and minus i, and the pair encodes both the turning and the fact that no real line survives. For a real matrix, a complex eigenvalue and its conjugate describe a rotation combined with a scaling by the modulus.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 6
+                },
+                {
+                  "claim": "\tur\n\n\tur\n\n\tur\n\tur\n\tur\n按第8页的方法，求 det(A−λI)=0",
+                  "kind": "fact",
+                  "cited_page": 8,
+                  "comparison": "\tur\n\n\tur\n\n\tur\n\tur\n\tur\n说法'求 det(A−λI)=0'↔课件'Setting the determinant of A − λI to zero'：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "Setting the determinant of A − λI to zero gives the characteristic polynomial, whose roots are the eigenvalues.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 8
+                },
+                {
+                  "claim": "\tur\n\n\tur\n\n\tur\n\tur\n\tur\n这是个二次特征多项式（第8页提到2×2矩阵对应二次多项式）",
+                  "kind": "fact",
+                  "cited_page": 8,
+                  "comparison": "\tur\n\n\tur\n\n\tur\n\tur\n\tur\n说法'二次特征多项式'↔课件'quadratic'：一致；说法'2×2矩阵对应'↔课件'For a 2×2 matrix'：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "For a 2×2 matrix the polynomial is quadratic",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 8
+                },
+                {
+                  "claim": "\tur\n\n\tur\n\n\tur\n\tur\n\tur\n实矩阵的复特征值必然共轭成对出现",
+                  "kind": "fact",
+                  "cited_page": 6,
+                  "comparison": "\tur\n\n\tur\n\n\tur\n\tur\n\tur\n说法'复特征值必然共轭成对出现'↔课件'Complex eigenvalues always come in conjugate pairs'：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "Complex eigenvalues always come in conjugate pairs.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 6
+                }
+              ]
+            },
+            "ok": false,
+            "summary": "退回 5 处：第 1 条（ur\n\n\tur\n\n\tur\n\tur…）不是从讲解里原样摘出的——请照抄讲解里的原句；第 2 条（ur\n\n\tur\n\n\tur\n\tur…）不是从讲解里原样摘出的——请照抄讲解里的原句；第 3 条（ur\n\n\tur\n\n\tur\n\tur…）不是从讲解里原样摘出的——请照抄讲解里的原句"
+          }
+        ],
+        "rejected": 5,
+        "error": "6 步之内没有交出通过检查的判定（退回 5 次）",
+        "latency_ms": 56094.8,
+        "usage": {
+          "input_tokens": 49467,
+          "output_tokens": 5414,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0.076537,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold19:page",
+      "kind": "page",
+      "answer_id": "hold19",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 6,
+        "tools": [
+          {
+            "name": "read_page",
+            "input": {
+              "source_file": "synthetic_deck.md",
+              "page": 9
+            },
+            "ok": true,
+            "summary": "第 9 页：2 片"
+          },
+          {
+            "name": "read_page",
+            "input": {
+              "source_file": "synthetic_deck.md",
+              "page": 6
+            },
+            "ok": true,
+            "summary": "第 6 页：2 片"
+          },
+          {
+            "name": "read_page",
+            "input": {
+              "source_file": "synthetic_deck.md",
+              "page": 8
+            },
+            "ok": true,
+            "summary": "第 8 页：2 片"
+          },
+          {
+            "name": "search_slices",
+            "input": {
+              "query": "旋转矩阵特征值 i -i rotation eigenvalues"
+            },
+            "ok": true,
+            "summary": "5 片"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "旋转矩阵的特征值是 i 和 -i，以及这对复特征值代表旋转加缩放（第9页）",
+                  "kind": "fact",
+                  "cited_page": 9,
+                  "comparison": "说法：旋转矩阵特征值 i 和 -i，以及旋转加缩放 ↔ 第9页原文：关于矩阵对角化和Jordan形式，没有提及旋转矩阵特征值或旋转加缩放",
+                  "verdict": "wrong_page",
+                  "evidence_quote": "For a real matrix, a complex eigenvalue and its conjugate describe a rotation combined with a scaling by the modulus.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 6
+                },
+                {
+                  "claim": "这是个二次特征多项式（第8页提到2×2矩阵对应二次多项式）",
+                  "kind": "fact",
+                  "cited_page": 8,
+                  "comparison": "说法：2×2矩阵对应二次多项式 ↔ 第8页原文 \"For a 2×2 matrix the polynomial is quadratic\"：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "For a 2×2 matrix the polynomial is quadratic, so the two eigenvalues follow from the quadratic formula.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 8
+                },
+                {
+                  "claim": "实矩阵的复特征值必然共轭成对出现（第6页）",
+                  "kind": "fact",
+                  "cited_page": 6,
+                  "comparison": "说法：复特征值共轭成对出现 ↔ 第6页原文 \"Complex eigenvalues always come in conjugate pairs\"：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "Complex eigenvalues always come in conjugate pairs.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 6
+                },
+                {
+                  "claim": "这对纯虚数（实部为0）表示'只转不缩放'——模长 |i| = 1，说明旋转不改变向量长度（第6页）",
+                  "kind": "fact",
+                  "cited_page": 6,
+                  "comparison": "说法：纯虚特征值代表旋转不缩放，模长1表示向量长度不变 ↔ 第6页原文 \"a complex eigenvalue and its conjugate describe a rotation combined with a scaling by the modulus. The modulus is what decides growth or decay\"：一致（模长决定缩放幅度，i的模长为1意味着无缩放，只有旋转）",
+                  "verdict": "supported",
+                  "evidence_quote": "For a real matrix, a complex eigenvalue and its conjugate describe a rotation combined with a scaling by the modulus. The modulus is what decides growth or decay, exactly as the absolute value of a real eigenvalue does.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 6
+                }
+              ]
+            },
+            "ok": false,
+            "summary": "退回 3 处：第 3 条（实矩阵的复特征值必然共轭成对出现…）不是从讲解里原样摘出的——请照抄讲解里的原句；第 4 条（这对纯虚数（实部为0）表示'只转…）不是从讲解里原样摘出的——请照抄讲解里的原句；讲解里标了 第 6 页，但没有一条 fact 去核它"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "\rift\n\n旋转矩阵的特征值是 i 和 -i，以及这对复特征值代表旋转加缩放（第9页）",
+                  "kind": "fact",
+                  "cited_page": 9,
+                  "comparison": "说法：旋转矩阵的特征值是 i 和 -i，旋转加缩放，标在第9页 ↔ 第9页原文：关于矩阵对角化和Jordan形式，不涉及旋转矩阵特征值或旋转加缩放的内容",
+                  "verdict": "wrong_page",
+                  "evidence_quote": "For a real matrix, a complex eigenvalue and its conjugate describe a rotation combined with a scaling by the modulus.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 6
+                },
+                {
+                  "claim": "这是个二次特征多项式（第8页提到2×2矩阵对应二次多项式）",
+                  "kind": "fact",
+                  "cited_page": 8,
+                  "comparison": "说法：2×2矩阵对应二次多项式 ↔ 第8页原文 \"For a 2×2 matrix the polynomial is quadratic\"：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "For a 2×2 matrix the polynomial is quadratic, so the two eigenvalues follow from the quadratic formula.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 8
+                },
+                {
+                  "claim": "按课件思路（第8页）补一下这个计算",
+                  "kind": "fact",
+                  "cited_page": 8,
+                  "comparison": "说法：特征多项式求解方法在第8页 ↔ 第8页原文 \"Setting the determinant of A − λI to zero gives the characteristic polynomial, whose roots are the eigenvalues\"：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "Setting the determinant of A − λI to zero gives the characteristic polynomial, whose roots are the eigenvalues.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 8
+                },
+                {
+                  "claim": "实矩阵的复特征值必然共轭成对出现",
+                  "kind": "fact",
+                  "cited_page": 6,
+                  "comparison": "说法：复特征值共轭成对 ↔ 第6页原文 \"Complex eigenvalues always come in conjugate pairs\"：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "Complex eigenvalues always come in conjugate pairs.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 6
+                },
+                {
+                  "claim": "这对纯虚数（实部为0）表示\"只转不缩放\"——模长 |i| = 1，说明旋转不改变向量长度，只改变方向",
+                  "kind": "fact",
+                  "cited_page": 6,
+                  "comparison": "说法：纯虚数特征值代表旋转不缩放，模长1 ↔ 第6页原文 \"a complex eigenvalue and its conjugate describe a rotation combined with a scaling by the modulus. The modulus is what decides growth or decay\"：一致（模长决定缩放幅度，模长1表示无缩放）",
+                  "verdict": "supported",
+                  "evidence_quote": "For a real matrix, a complex eigenvalue and its conjugate describe a rotation combined with a scaling by the modulus.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 6
+                }
+              ]
+            },
+            "ok": false,
+            "summary": "退回 3 处：第 1 条（ift\n\n旋转矩阵的特征值是 i…）不是从讲解里原样摘出的——请照抄讲解里的原句；第 5 条（这对纯虚数（实部为0）表示\"只转…）的 comparison 没有对照说法里的数 0——每个数都要对照；讲解里标了 第 9 页，但没有一条 fact 去核它"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "课件里只给出了结论——旋转矩阵的特征值是 i 和 -i，以及这对复特征值代表旋转加缩放（第9页）。",
+                  "kind": "fact",
+                  "cited_page": 9,
+                  "comparison": "说法：旋转矩阵的特征值是 i 和 -i，旋转加缩放，标在第9页 ↔ 第9页原文：关于矩阵对角化和Jordan形式，不涉及旋转矩阵特征值或旋转加缩放的内容：不一致",
+                  "verdict": "wrong_page",
+                  "evidence_quote": "For a real matrix, a complex eigenvalue and its conjugate describe a rotation combined with a scaling by the modulus.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 6
+                },
+                {
+                  "claim": "按课件思路（第8页）补一下这个计算",
+                  "kind": "fact",
+                  "cited_page": 8,
+                  "comparison": "说法：特征多项式求解方法在第8页 ↔ 第8页原文 \"Setting the determinant of A − λI to zero gives the characteristic polynomial, whose roots are the eigenvalues\"：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "Setting the determinant of A − λI to zero gives the characteristic polynomial, whose roots are the eigenvalues.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 8
+                },
+                {
+                  "claim": "这是个二次特征多项式（第8页提到2×2矩阵对应二次多项式）",
+                  "kind": "fact",
+                  "cited_page": 8,
+                  "comparison": "说法：2×2矩阵对应二次多项式 ↔ 第8页原文 \"For a 2×2 matrix the polynomial is quadratic\"：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "For a 2×2 matrix the polynomial is quadratic, so the two eigenvalues follow from the quadratic formula.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 8
+                },
+                {
+                  "claim": "实矩阵的复特征值必然共轭成对出现",
+                  "kind": "fact",
+                  "cited_page": 6,
+                  "comparison": "说法：复特征值共轭成对出现 ↔ 第6页原文 \"Complex eigenvalues always come in conjugate pairs\"：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "Complex eigenvalues always come in conjugate pairs.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 6
+                },
+                {
+                  "claim": "这对纯虚数（实部为0）表示'只转不缩放'——模长 |i| = 1，说明旋转不改变向量长度，只改变方向。",
+                  "kind": "fact",
+                  "cited_page": 6,
+                  "comparison": "说法：纯虚数 实部 0，模长 |i| = 1，表示只转不缩放 ↔ 第6页原文 \"a complex eigenvalue and its conjugate describe a rotation combined with a scaling by the modulus. The modulus is what decides growth or decay\"：一致（模长决定缩放幅度，模长1表示无缩放）",
+                  "verdict": "supported",
+                  "evidence_quote": "For a real matrix, a complex eigenvalue and its conjugate describe a rotation combined with a scaling by the modulus.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 6
+                }
+              ]
+            },
+            "ok": false,
+            "summary": "退回 1 处：第 5 条（这对纯虚数（实部为0）表示'只转…）不是从讲解里原样摘出的——请照抄讲解里的原句"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {},
+            "ok": false,
+            "summary": "退回 1 处：claims 不能为空"
+          }
+        ],
+        "rejected": 4,
+        "error": "6 步之内没有交出通过检查的判定（退回 4 次）",
+        "latency_ms": 60407.3,
+        "usage": {
+          "input_tokens": 46728,
+          "output_tokens": 6650,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0.079978,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold20:clean",
+      "kind": "clean",
+      "answer_id": "hold20",
+      "run": {
+        "status": "written",
+        "counts": {
+          "supported": 4,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 1,
+          "supplement": 0
+        },
+        "claims": [
+          {
+            "claim": "第3页纯缩放例子里 λ=2 就是这种情形",
+            "kind": "fact",
+            "cited_page": 3,
+            "verdict": "supported",
+            "evidence_quote": "A pure scaling that doubles every vector has the single eigenvalue two, and every direction is an eigenvector.",
+            "evidence_page": 3,
+            "evidence_file": "synthetic_deck.md",
+            "comparison": "说法\"λ=2\" ↔ 摘录\"A pure scaling that doubles every vector has the single eigenvalue two\"：一致"
+          },
+          {
+            "claim": "沿特征向量方向，每迭代一次就乘一次特征值 λ（第4页所说\"每一步乘那个因子\"）",
+            "kind": "fact",
+            "cited_page": 4,
+            "verdict": "supported",
+            "evidence_quote": "Along a direction that `A` only scales, each step multiplies by that one factor, so after many steps the largest factor dominates what you see.",
+            "evidence_page": 4,
+            "evidence_file": "synthetic_deck.md",
+            "comparison": "说法\"每一步乘那个因子\" ↔ 摘录\"each step multiplies by that one factor\"：一致"
+          },
+          {
+            "claim": "第4页还指出，反复迭代后是模最大的特征值主导整个系统",
+            "kind": "fact",
+            "cited_page": 4,
+            "verdict": "supported",
+            "evidence_quote": "This is why the largest factor is often the only one anyone quotes. It decides whether repeated application grows without bound, settles down, or dies away, and it does so after enough steps regardless of the starting state.",
+            "evidence_page": 4,
+            "evidence_file": "synthetic_deck.md",
+            "comparison": "说法\"模最大的特征值主导整个系统\" ↔ 摘录\"the largest factor is often the only one anyone quotes. It decides whether repeated application grows without bound, settles down, or dies away\"：一致"
+          },
+          {
+            "claim": "第6页复数特征值 i、−i 对应旋转，模长为1，转而不放大也不缩小",
+            "kind": "fact",
+            "cited_page": 6,
+            "verdict": "not_found",
+            "evidence_quote": "",
+            "evidence_page": null,
+            "evidence_file": null,
+            "comparison": "说法\"i、−i 对应旋转\" ↔ 摘录\"A quarter turn of the plane has eigenvalues i and minus i\"：一致；说法\"模长为1\" ↔ 摘录中\"a rotation combined with a scaling by the modulus\"未明确说明i的模为1"
+          },
+          {
+            "claim": "第10页幂法正是利用这点，反复乘矩阵再归一化,收敛到最大特征值方向",
+            "kind": "fact",
+            "cited_page": 10,
+            "verdict": "supported",
+            "evidence_quote": "The power method is the simplest iterative idea and follows page 4 directly: multiply a starting vector by the matrix again and again, rescaling each time, and it converges to the direction with the largest factor.",
+            "evidence_page": 10,
+            "evidence_file": "synthetic_deck.md",
+            "comparison": "说法\"反复乘矩阵再归一化\" ↔ 摘录\"multiply a starting vector by the matrix again and again, rescaling each time\"：一致；说法\"收敛到最大特征值方向\" ↔ 摘录\"converges to the direction with the largest factor\"：一致"
+          }
+        ],
+        "steps": 4,
+        "tools": [
+          {
+            "name": "read_page",
+            "input": {
+              "source_file": "synthetic_deck.md",
+              "page": 3
+            },
+            "ok": true,
+            "summary": "第 3 页：2 片"
+          },
+          {
+            "name": "read_page",
+            "input": {
+              "source_file": "synthetic_deck.md",
+              "page": 4
+            },
+            "ok": true,
+            "summary": "第 4 页：2 片"
+          },
+          {
+            "name": "read_page",
+            "input": {
+              "source_file": "synthetic_deck.md",
+              "page": 6
+            },
+            "ok": true,
+            "summary": "第 6 页：2 片"
+          },
+          {
+            "name": "read_page",
+            "input": {
+              "source_file": "synthetic_deck.md",
+              "page": 10
+            },
+            "ok": true,
+            "summary": "第 10 页：2 片"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "第3页纯缩放例子里 λ=2 就是这种情形",
+                  "kind": "fact",
+                  "cited_page": 3,
+                  "comparison": "说法 λ=2 ↔ 摘录「A pure scaling that doubles every vector has the single eigenvalue two」：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "A pure scaling that doubles every vector has the single eigenvalue two, and every direction is an eigenvector.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 3
+                },
+                {
+                  "claim": "每迭代一次就乘一次特征值 λ（第4页所说\"每一步乘那个因子\"）",
+                  "kind": "fact",
+                  "cited_page": 4,
+                  "comparison": "说法「每一步乘那个因子」↔ 摘录「each step multiplies by that one factor」：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "Along a direction that `A` only scales, each step multiplies by that one factor, so after many steps the largest factor dominates what you see.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 4
+                },
+                {
+                  "claim": "第4页还指出，反复迭代后是模最大的特征值主导整个系统",
+                  "kind": "fact",
+                  "cited_page": 4,
+                  "comparison": "说法「模最大的特征值主导」↔ 摘录「the largest factor is often the only one anyone quotes. It decides whether repeated application grows without bound, settles down, or dies away」：对应「largest factor」即最大特征值，「dominates」与摘录含义一致",
+                  "verdict": "supported",
+                  "evidence_quote": "This is why the largest factor is often the only one anyone quotes. It decides whether repeated application grows without bound, settles down, or dies away, and it does so after enough steps regardless of the starting state.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 4
+                },
+                {
+                  "claim": "第6页复数特征值 i、−i 对应旋转，模长为1，转而不放大也不缩小",
+                  "kind": "fact",
+                  "cited_page": 6,
+                  "comparison": "说法「i、−i 对应旋转」↔ 摘录「A quarter turn of the plane has eigenvalues i and minus i」：一致；说法「模长为1」↔ 摘录「The modulus is what decides growth or decay」及「a rotation combined with a scaling by the modulus」：i和−i的模均为1（|i|=1），摘录未直接陈述但通过旋转不放缩暗示；说法「不放大也不缩小」↔ 摘录「the pair encodes both the turning and the fact that no real line survives」和「a rotation combined with a scaling by the modulus」：旋转对应不放大不缩小",
+                  "verdict": "supported",
+                  "evidence_quote": "A quarter turn of the plane has eigenvalues i and minus i, and the pair encodes both the turning and the fact that no real line survives.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 6
+                },
+                {
+                  "claim": "第10页幂法正是利用这点，反复乘矩阵再归一化,收敛到最大特征值方向",
+                  "kind": "fact",
+                  "cited_page": 10,
+                  "comparison": "说法「反复乘矩阵再归一化」↔ 摘录「multiply a starting vector by the matrix again and again, rescaling each time」：一致；说法「收敛到最大特征值方向」↔ 摘录「it converges to the direction with the largest factor」：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "The power method is the simplest iterative idea and follows page 4 directly: multiply a starting vector by the matrix again and again, rescaling each time, and it converges to the direction with the largest factor.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 10
+                }
+              ]
+            },
+            "ok": false,
+            "summary": "退回 1 处：第 4 条（第6页复数特征值 i、−i 对应…）判 supported，但说法里的数 1 不在摘录里——换一句写了这个数的原文；课件里的数和它不一样就判 con"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "\ná\npage 3纯缩放例子里 λ=2 就是这种情形",
+                  "kind": "fact",
+                  "cited_page": 3,
+                  "comparison": "说法 λ=2 ↔ 摘录\"A pure scaling that doubles every vector has the single eigenvalue two\"：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "A pure scaling that doubles every vector has the single eigenvalue two, and every direction is an eigenvector.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 3
+                },
+                {
+                  "claim": "沿特征向量方向，每迭代一次就乘一次特征值 λ（第4页所说\"每一步乘那个因子\"）",
+                  "kind": "fact",
+                  "cited_page": 4,
+                  "comparison": "说法\"每一步乘那个因子\" ↔ 摘录\"each step multiplies by that one factor\"：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "Along a direction that `A` only scales, each step multiplies by that one factor, so after many steps the largest factor dominates what you see.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 4
+                },
+                {
+                  "claim": "第4页还指出，反复迭代后是模最大的特征值主导整个系统",
+                  "kind": "fact",
+                  "cited_page": 4,
+                  "comparison": "说法\"模最大的特征值主导\" ↔ 摘录\"the largest factor is often the only one anyone quotes. It decides whether repeated application grows without bound\"：\"largest\"与\"主导\"含义一致",
+                  "verdict": "supported",
+                  "evidence_quote": "This is why the largest factor is often the only one anyone quotes. It decides whether repeated application grows without bound, settles down, or dies away, and it does so after enough steps regardless of the starting state.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 4
+                },
+                {
+                  "claim": "第6页复数特征值 i、−i 对应旋转，模长为1，转而不放大也不缩小",
+                  "kind": "fact",
+                  "cited_page": 6,
+                  "comparison": "说法\"i、−i 对应旋转\" ↔ 摘录\"A quarter turn of the plane has eigenvalues i and minus i\"：一致；说法\"模长为1\" ↔ 摘录\"The modulus is what decides growth or decay, exactly as the absolute value of a real eigenvalue does\"中暗示旋转时modulus=1：需查证",
+                  "verdict": "supported",
+                  "evidence_quote": "For a real matrix, a complex eigenvalue and its conjugate describe a rotation combined with a scaling by the modulus. The modulus is what decides growth or decay, exactly as the absolute value of a real eigenvalue does.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 6
+                },
+                {
+                  "claim": "第10页幂法正是利用这点，反复乘矩阵再归一化,收敛到最大特征值方向",
+                  "kind": "fact",
+                  "cited_page": 10,
+                  "comparison": "说法\"反复乘矩阵再归一化\" ↔ 摘录\"multiply a starting vector by the matrix again and again, rescaling each time\"：一致；说法\"收敛到最大特征值方向\" ↔ 摘录\"converges to the direction with the largest factor\"：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "The power method is the simplest iterative idea and follows page 4 directly: multiply a starting vector by the matrix again and again, rescaling each time, and it converges to the direction with the largest factor.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 10
+                }
+              ]
+            },
+            "ok": false,
+            "summary": "退回 3 处：第 1 条（á\npage 3纯缩放例子里 λ…）不是从讲解里原样摘出的——请照抄讲解里的原句；第 4 条（第6页复数特征值 i、−i 对应…）判 supported，但说法里的数 1 不在摘录里——换一句写了这个数的原文；课件里的数和它不一样就判 con；讲解里标了 第 3 页，但没有一条 fact 去核它"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "第3页纯缩放例子里 λ=2 就是这种情形",
+                  "kind": "fact",
+                  "cited_page": 3,
+                  "comparison": "说法\"λ=2\" ↔ 摘录\"A pure scaling that doubles every vector has the single eigenvalue two\"：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "A pure scaling that doubles every vector has the single eigenvalue two, and every direction is an eigenvector.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 3
+                },
+                {
+                  "claim": "沿特征向量方向，每迭代一次就乘一次特征值 λ（第4页所说\"每一步乘那个因子\"）",
+                  "kind": "fact",
+                  "cited_page": 4,
+                  "comparison": "说法\"每一步乘那个因子\" ↔ 摘录\"each step multiplies by that one factor\"：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "Along a direction that `A` only scales, each step multiplies by that one factor, so after many steps the largest factor dominates what you see.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 4
+                },
+                {
+                  "claim": "第4页还指出，反复迭代后是模最大的特征值主导整个系统",
+                  "kind": "fact",
+                  "cited_page": 4,
+                  "comparison": "说法\"模最大的特征值主导整个系统\" ↔ 摘录\"the largest factor is often the only one anyone quotes. It decides whether repeated application grows without bound, settles down, or dies away\"：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "This is why the largest factor is often the only one anyone quotes. It decides whether repeated application grows without bound, settles down, or dies away, and it does so after enough steps regardless of the starting state.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 4
+                },
+                {
+                  "claim": "第6页复数特征值 i、−i 对应旋转，模长为1，转而不放大也不缩小",
+                  "kind": "fact",
+                  "cited_page": 6,
+                  "comparison": "说法\"i、−i 对应旋转\" ↔ 摘录\"A quarter turn of the plane has eigenvalues i and minus i\"：一致；说法\"模长为1\" ↔ 摘录中\"a rotation combined with a scaling by the modulus\"未明确说明i的模为1",
+                  "verdict": "not_found",
+                  "evidence_quote": "",
+                  "evidence_file": "",
+                  "evidence_page": 0
+                },
+                {
+                  "claim": "第10页幂法正是利用这点，反复乘矩阵再归一化,收敛到最大特征值方向",
+                  "kind": "fact",
+                  "cited_page": 10,
+                  "comparison": "说法\"反复乘矩阵再归一化\" ↔ 摘录\"multiply a starting vector by the matrix again and again, rescaling each time\"：一致；说法\"收敛到最大特征值方向\" ↔ 摘录\"converges to the direction with the largest factor\"：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "The power method is the simplest iterative idea and follows page 4 directly: multiply a starting vector by the matrix again and again, rescaling each time, and it converges to the direction with the largest factor.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 10
+                }
+              ]
+            },
+            "ok": true,
+            "summary": "通过：5 条"
+          }
+        ],
+        "rejected": 2,
+        "error": null,
+        "latency_ms": 40740.7,
+        "usage": {
+          "input_tokens": 29125,
+          "output_tokens": 3683,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0.04754,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold20:concept",
+      "kind": "concept",
+      "answer_id": "hold20",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 2,
+        "tools": [
+          {
+            "name": "read_page",
+            "input": {
+              "source_file": "synthetic_deck.md",
+              "page": 3
+            },
+            "ok": true,
+            "summary": "第 3 页：2 片"
+          },
+          {
+            "name": "read_page",
+            "input": {
+              "source_file": "synthetic_deck.md",
+              "page": 4
+            },
+            "ok": true,
+            "summary": "第 4 页：2 片"
+          },
+          {
+            "name": "read_page",
+            "input": {
+              "source_file": "synthetic_deck.md",
+              "page": 6
+            },
+            "ok": true,
+            "summary": "第 6 页：2 片"
+          },
+          {
+            "name": "read_page",
+            "input": {
+              "source_file": "synthetic_deck.md",
+              "page": 10
+            },
+            "ok": true,
+            "summary": "第 10 页：2 片"
+          },
+          {
+            "name": "submit_verdicts",
+            "input": {
+              "claims": [
+                {
+                  "claim": "第3页纯缩放例子里 λ=2 就是这种情形",
+                  "kind": "fact",
+                  "cited_page": 3,
+                  "comparison": "说法：λ=2 的纯缩放 ↔ 原文 \"A pure scaling that doubles every vector has the single eigenvalue two\"：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "A pure scaling that doubles every vector has the single eigenvalue two, and every direction is an eigenvector.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 3
+                },
+                {
+                  "claim": "每迭代一次就乘一次特征值 λ（第4页所说\"每一步乘那个因子\"）",
+                  "kind": "fact",
+                  "cited_page": 4,
+                  "comparison": "说法：每一步乘特征值因子 ↔ 原文 \"each step multiplies by that one factor\"：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "Along a direction that `A` only scales, each step multiplies by that one factor, so after many steps the largest factor dominates what you see.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 4
+                },
+                {
+                  "claim": "第4页还指出，反复迭代后是模最大的特征值主导整个系统。不管初始状态如何,足够多步后其余方向都会被这个最大因子压制下去",
+                  "kind": "fact",
+                  "cited_page": 4,
+                  "comparison": "说法：最大特征值主导系统、压制其他方向 ↔ 原文 \"after many steps the largest factor dominates what you see\" 和 \"It decides whether repeated application grows without bound, settles down, or dies away, and it does so after enough steps regardless of the starting state\"：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "This is why the largest factor is often the only one anyone quotes. It decides whether repeated application grows without bound, settles down, or dies away, and it does so after enough steps regardless of the starting state.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 4
+                },
+                {
+                  "claim": "第6页实数特征值 i、−i 对应旋转，模长为1，转而不放大也不缩小",
+                  "kind": "fact",
+                  "cited_page": 6,
+                  "comparison": "说法：特征值 i、−i、对应旋转、模长为1 ↔ 原文 \"A quarter turn of the plane has eigenvalues i and minus i\" 和 \"For a real matrix, a complex eigenvalue and its conjugate describe a rotation combined with a scaling by the modulus\"：i和−i是特征值一致✓，对应旋转一致✓，模长为1(|i|=1)一致✓",
+                  "verdict": "supported",
+                  "evidence_quote": "Allowing complex numbers restores the eigenvalues of a rotation. A quarter turn of the plane has eigenvalues i and minus i, and the pair encodes both the turning and the fact that no real line survives.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 6
+                },
+                {
+                  "claim": "第10页幂法正是利用这点，反复乘矩阵再归一化,收敛到最大特征值方向",
+                  "kind": "fact",
+                  "cited_page": 10,
+                  "comparison": "说法：幂法、反复乘矩阵、归一化、收敛到最大特征值方向 ↔ 原文 \"The power method is the simplest iterative idea and follows page 4 directly: multiply a starting vector by the matrix again and again, rescaling each time, and it converges to the direction with the largest factor\"：一致",
+                  "verdict": "supported",
+                  "evidence_quote": "The power method is the simplest iterative idea and follows page 4 directly: multiply a starting vector by the matrix again and again, rescaling each time, and it converges to the direction with the largest factor.",
+                  "evidence_file": "synthetic_deck.md",
+                  "evidence_page": 10
+                }
+              ]
+            },
+            "ok": false,
+            "summary": "退回 1 处：第 4 条（第6页实数特征值 i、−i 对应…）判 supported，但说法里的数 1 不在摘录里——换一句写了这个数的原文；课件里的数和它不一样就判 con"
+          }
+        ],
+        "rejected": 1,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 22610.7,
+        "usage": {
+          "input_tokens": 10656,
+          "output_tokens": 2347,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0.022391,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold20:page",
+      "kind": "page",
+      "answer_id": "hold20",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 159.4,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold21:clean",
+      "kind": "clean",
+      "answer_id": "hold21",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 145.9,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold21:concept",
+      "kind": "concept",
+      "answer_id": "hold21",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 176.3,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold21:page",
+      "kind": "page",
+      "answer_id": "hold21",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 185.0,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold22:clean",
+      "kind": "clean",
+      "answer_id": "hold22",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 175.8,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold23:clean",
+      "kind": "clean",
+      "answer_id": "hold23",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 173.3,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold23:page",
+      "kind": "page",
+      "answer_id": "hold23",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 182.9,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold24:clean",
+      "kind": "clean",
+      "answer_id": "hold24",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 189.7,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold24:page",
+      "kind": "page",
+      "answer_id": "hold24",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 197.2,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold25:clean",
+      "kind": "clean",
+      "answer_id": "hold25",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 178.6,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold25:number",
+      "kind": "number",
+      "answer_id": "hold25",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 187.2,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold25:concept",
+      "kind": "concept",
+      "answer_id": "hold25",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 185.9,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold25:page",
+      "kind": "page",
+      "answer_id": "hold25",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 150.8,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold26:clean",
+      "kind": "clean",
+      "answer_id": "hold26",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 179.7,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold26:page",
+      "kind": "page",
+      "answer_id": "hold26",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 203.9,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold27:clean",
+      "kind": "clean",
+      "answer_id": "hold27",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 179.9,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold27:number",
+      "kind": "number",
+      "answer_id": "hold27",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 162.2,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold27:concept",
+      "kind": "concept",
+      "answer_id": "hold27",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 183.1,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold27:page",
+      "kind": "page",
+      "answer_id": "hold27",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 179.7,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold28:clean",
+      "kind": "clean",
+      "answer_id": "hold28",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 220.4,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold28:page",
+      "kind": "page",
+      "answer_id": "hold28",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 171.5,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold29:clean",
+      "kind": "clean",
+      "answer_id": "hold29",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 154.4,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold29:number",
+      "kind": "number",
+      "answer_id": "hold29",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 178.2,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold29:concept",
+      "kind": "concept",
+      "answer_id": "hold29",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 147.0,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold29:page",
+      "kind": "page",
+      "answer_id": "hold29",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 143.5,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold30:clean",
+      "kind": "clean",
+      "answer_id": "hold30",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 202.1,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold30:number",
+      "kind": "number",
+      "answer_id": "hold30",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 169.3,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold30:page",
+      "kind": "page",
+      "answer_id": "hold30",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 161.9,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold31:clean",
+      "kind": "clean",
+      "answer_id": "hold31",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 158.3,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold31:concept",
+      "kind": "concept",
+      "answer_id": "hold31",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 199.1,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold31:page",
+      "kind": "page",
+      "answer_id": "hold31",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 186.8,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold32:clean",
+      "kind": "clean",
+      "answer_id": "hold32",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 152.9,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold32:number",
+      "kind": "number",
+      "answer_id": "hold32",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 214.8,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold32:concept",
+      "kind": "concept",
+      "answer_id": "hold32",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 205.1,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold32:page",
+      "kind": "page",
+      "answer_id": "hold32",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 182.5,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold33:clean",
+      "kind": "clean",
+      "answer_id": "hold33",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 198.3,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold33:number",
+      "kind": "number",
+      "answer_id": "hold33",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 183.5,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold33:page",
+      "kind": "page",
+      "answer_id": "hold33",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 239.1,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold34:clean",
+      "kind": "clean",
+      "answer_id": "hold34",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 224.9,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold34:page",
+      "kind": "page",
+      "answer_id": "hold34",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 209.6,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold35:clean",
+      "kind": "clean",
+      "answer_id": "hold35",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 235.6,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold35:number",
+      "kind": "number",
+      "answer_id": "hold35",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 200.1,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold35:concept",
+      "kind": "concept",
+      "answer_id": "hold35",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 170.2,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold35:page",
+      "kind": "page",
+      "answer_id": "hold35",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 185.2,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold36:clean",
+      "kind": "clean",
+      "answer_id": "hold36",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 212.5,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold36:concept",
+      "kind": "concept",
+      "answer_id": "hold36",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 206.2,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
+        "cost_known": true,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "v2"
+      }
+    },
+    {
+      "item": "hold36:page",
+      "kind": "page",
+      "answer_id": "hold36",
+      "run": {
+        "status": "failed",
+        "counts": {
+          "supported": 0,
+          "wrong_page": 0,
+          "contradicted": 0,
+          "not_found": 0,
+          "supplement": 0
+        },
+        "claims": [],
+        "steps": 0,
+        "tools": [],
+        "rejected": 0,
+        "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purcha",
+        "latency_ms": 169.5,
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        },
+        "cost_usd": 0,
         "cost_known": true,
         "model": "claude-haiku-4-5-20251001",
         "prompt_version": "v2"

@@ -730,9 +730,7 @@ export function ExplainClient({
                                           「{c.claim}」——
                                           {c.verdict === "wrong_page"
                                             ? `标的是第 ${c.citedPage ?? "?"} 页，课件里对应的内容在第 ${c.evidencePage ?? "?"} 页`
-                                            : c.verdict === "contradicted"
-                                              ? `课件第 ${c.evidencePage ?? "?"} 页的原文是「${c.evidenceQuote}」，核对员认为两者对不上`
-                                              : VERIFY_SHOW_NOT_FOUND
+                                            : VERIFY_SHOW_NOT_FOUND
                                               ? "核对员在课件里没找到这句的依据"
                                               : "核对员没有对上这句的课件依据"}
                                         </li>

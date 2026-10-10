@@ -79,7 +79,7 @@ class TestCourseRoundIsChecked:
         out = ask(build(rest, jwks, box=box), keypair).json()
         v = out["verification"]
         assert v["status"] == "written" and v["persisted"] is True, v
-        assert v["counts"] == {"supported": 1, "wrong_page": 0, "contradicted": 0, "not_found": 0, "supplement": 1}
+        assert v["counts"] == {"supported": 1, "wrong_page": 0, "not_found": 0, "supplement": 1}
         # 核的是**这一轮学生看到的那段**，用的是这一轮的上下文
         assert box[0]["answer"] == out["text"]
         assert len(box[0]["context"].slices) == len(out["retrieval"]["slices"]) > 0

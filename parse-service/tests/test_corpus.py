@@ -115,13 +115,17 @@ class TestScannedDetection:
         assert min(other_cov) < min(scan_cov)
 
     def test_embedded_font_count_alone_cannot_separate(self, parsed):
-        """把「内嵌字体数不可判别」钉成回归：非扫描件里也大量存在 0 内嵌字体的页。"""
+        """把「内嵌字体数不可判别」钉成回归：非扫描件里也大量存在 0 内嵌字体的页。
+
+        不数 empty：14.129 里置空的 8 页（第三方保留权利，见 测试集/SOURCES.md）
+        也是 0 字体，但它们没有内容，数进来会把这条证据冲淡成「空白页没字体」。
+        """
         zero_in_digital = sum(
             1
             for name, doc in parsed.items()
             if name != self.SCAN
             for p in doc.pages
-            if p.evidence.embedded_font_count == 0
+            if p.evidence.embedded_font_count == 0 and p.kind != "empty"
         )
         assert zero_in_digital == 26
 

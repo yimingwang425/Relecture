@@ -91,7 +91,11 @@ class TestPageNumberContinuity:
         F3 要靠这条写出「这部分在第 N 页的图里，我读不了图」，
         而不是 PRD §10 现有的「课件里没提到」——后者是错的。
         """
-        skipped = sliced[GAPPY].manifest.skipped_pages
+        all_skipped = sliced[GAPPY].manifest.skipped_pages
+        # 第三方保留权利的 8 页在入库副本里已置空（见 测试集/SOURCES.md），按 empty 跳过——
+        # 与 image_only 分开断言：空白页不能被说成「内容在图里」。
+        assert [s.index for s in all_skipped if s.kind == "empty"] == [10, 11, 25, 26, 31, 38, 40, 42]
+        skipped = [s for s in all_skipped if s.kind != "empty"]
         assert [s.index for s in skipped] == [33, 34, 35, 36]
         for s in skipped:
             assert s.kind == "image_only"

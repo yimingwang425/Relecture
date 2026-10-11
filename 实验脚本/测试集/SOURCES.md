@@ -34,7 +34,6 @@
 | `MIT22_081JF10_lec01b.pdf` | 22.081J *Introduction to Sustainable Energy*, Fall 2010 | 能源工程 | Lecture 1b: Overview of energy use and related issues（39 页） | [课程页](https://ocw.mit.edu/courses/22-081j-introduction-to-sustainable-energy-fall-2010/) · [PDF](https://ocw.mit.edu/courses/22-081j-introduction-to-sustainable-energy-fall-2010/a0eac4cd3f655795dad62021b1a4c769_MIT22_081JF10_lec01b.pdf) | CC BY-NC-SA | 2026-08-19 |
 | `MIT11_201F07_slides2.pdf` | 11.201 *Gateway: Planning Action*, Fall 2007 | 城市规划 / 公共政策 | Planning History and Traditions: Overview（15 页） | [课程页](https://ocw.mit.edu/courses/11-201-gateway-planning-action-fall-2007/) · [PDF](https://ocw.mit.edu/courses/11-201-gateway-planning-action-fall-2007/5457ed17ee1ba51263c309c8e20ec2c0_slides2.pdf) | CC BY-NC-SA | 2026-08-19 |
 | `MIT15_316SU05_leader_dev.pdf` | 15.316 *Building and Leading Effective Teams*, Summer 2005 | 管理 / 领导力 | How do you develop leadership?（19 页） | [课程页](https://ocw.mit.edu/courses/15-316-building-and-leading-effective-teams-summer-2005/) · [PDF](https://ocw.mit.edu/courses/15-316-building-and-leading-effective-teams-summer-2005/c5a0d8dea9e3b0e77777f4358691f907_leader_dev.pdf) | CC BY-NC-SA | 2026-08-19 |
-| `MIT14_129S25_lec02.pdf` | 14.129 *Blockchain and the Design of Financial Systems*, Spring 2025 | 金融 / 计算机 | Lecture 2: Blockchain as a Database（50 页） | [课程页](https://ocw.mit.edu/courses/14-129-blockchain-and-the-design-of-financial-systems-spring-2025/) · [PDF](https://ocw.mit.edu/courses/14-129-blockchain-and-the-design-of-financial-systems-spring-2025/mit14_129_s25_lec02.pdf) | CC BY-NC-SA **部分除外，见下** | 2026-08-19 |
 
 文件已按 MIT 命名惯例重命名（原始 OCW 文件名带哈希前缀，不具可读性）；
 原始直链保留在上表中，出处不丢。
@@ -46,7 +45,6 @@
 > - 22.081J *Introduction to Sustainable Energy*, Fall 2010.
 > - 11.201 *Gateway: Planning Action*, Fall 2007.
 > - 15.316 *Building and Leading Effective Teams*, Summer 2005.
-> - 14.129 *Blockchain and the Design of Financial Systems*, Spring 2025.
 
 CC BY-NC-SA 的三项义务对本项目的含义：
 
@@ -54,28 +52,6 @@ CC BY-NC-SA 的三项义务对本项目的含义：
 - **NC（非商业）**：仅用于本项目的评测与实验。这与 PRD §3.3「v1 不追求盈利与
   商业化验证」一致；若产品后续商业化，测试集需重新审视。
 - **SA（相同方式共享）**：约束改编作品，是「使用范围」一节的直接来源。
-
-## ⚠️ 14.129 含第三方保留权利内容
-
-**OCW 课件不必然整份都是 CC 授权的。** 14.129 这份 50 页的讲义里有 **8 页**明确
-标注：
-
-> © … All rights reserved. This content is excluded from our Creative Commons
-> license. For more information, see https://ocw.mit.edu/help/faq-fair-use/
-
-涉及 6 个权利人：Cambridge University Press、Federal Reserve Bank of Boston、
-Federal Reserve Bank of Kansas City、Goldstein et al.、Legare Street Press，
-以及一条 **© source unknown**（最麻烦的一种——想取得授权都不知道找谁）。
-
-另外三份经检查为 0 页。
-
-**处置**：
-
-1. 这 8 页的内容**不适用**本文件「使用范围」一节给 CC 材料留的内部使用空间——
-   它们是 all rights reserved，连内部复制的依据都比 CC 材料弱。
-2. 用作评测输入时应跳过这些页；若切片流程无法按页排除，则本文件只用于
-   **术语提取**（术语是事实性词汇，不构成对表达的复制），不用于生成讲解样本。
-3. 对外展示本就一律用合成课件，不受影响。
 
 **这条经验要带进产品**：F2 的课件处理流程应当识别并记录此类版权声明。
 用户上传的教材同样可能夹带第三方保留权利的图表，PRD §12.1 的上传确认文案
@@ -91,7 +67,6 @@ Federal Reserve Bank of Kansas City、Goldstein et al.、Legare Street Press，
 | `MIT22_081JF10_lec01b.pdf` | 12 | 20（插图） | 2549 | 文字型（LaTeX beamer） |
 | `MIT11_201F07_slides2.pdf` | 1 | 2 | 271 | 文字型，图少、纯文字幻灯片 |
 | `MIT15_316SU05_leader_dev.pdf` | **0** | 22，**每页一张全页图**（3134×2271 铺满 805×621 版面） | 589 | **扫描件 + OCR 文本层** |
-| `MIT14_129S25_lec02.pdf` | 0 | 228（每页 4–5 张局部插图） | 1431 | 文字型，图表密集 |
 
 ### 15.316 是 bad case 样本，不是术语提取样本
 

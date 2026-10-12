@@ -1,0 +1,6748 @@
+{
+  "model": "haiku",
+  "results": [
+    {
+      "id": "m01-detail_level-P0~fit",
+      "set": "fit",
+      "text_id": "m01-detail_level-P0",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征值和特征向量是什么？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 8002,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [],
+        "steps": 0,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 8001.8,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m01-detail_level-P0~dev",
+      "set": "deviate",
+      "text_id": "m01-detail_level-P0",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征值和特征向量是什么？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 8003,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [],
+        "steps": 0,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 8002.6,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m01-detail_level-P3~fit",
+      "set": "fit",
+      "text_id": "m01-detail_level-P3",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征值和特征向量是什么？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 8004,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [],
+        "steps": 0,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 8004.4,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m01-detail_level-P3~dev",
+      "set": "deviate",
+      "text_id": "m01-detail_level-P3",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征值和特征向量是什么？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 8003,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [],
+        "steps": 0,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 8003.2,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m01-use_examples-more~fit",
+      "set": "fit",
+      "text_id": "m01-use_examples-more",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征值和特征向量是什么？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 8001,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [],
+        "steps": 0,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 8000.6,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m01-use_examples-more~dev",
+      "set": "deviate",
+      "text_id": "m01-use_examples-more",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征值和特征向量是什么？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 8003,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [],
+        "steps": 0,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 8002.9,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m01-use_examples-fewer~fit",
+      "set": "fit",
+      "text_id": "m01-use_examples-fewer",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征值和特征向量是什么？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 8008,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [],
+        "steps": 0,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 8007.9,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m01-use_examples-fewer~dev",
+      "set": "deviate",
+      "text_id": "m01-use_examples-fewer",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征值和特征向量是什么？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 8006,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [],
+        "steps": 0,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 8006.1,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m01-structure-conclusion_first~fit",
+      "set": "fit",
+      "text_id": "m01-structure-conclusion_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征值和特征向量是什么？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 14761,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "5 段 / 414 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 14760.8,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m01-structure-conclusion_first~dev",
+      "set": "deviate",
+      "text_id": "m01-structure-conclusion_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "buildup_first",
+        "depth": "why"
+      },
+      "question": "特征值和特征向量是什么？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 14873,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "5 段 / 414 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 14872.6,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m01-structure-buildup_first~fit",
+      "set": "fit",
+      "text_id": "m01-structure-buildup_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "buildup_first",
+        "depth": "why"
+      },
+      "question": "特征值和特征向量是什么？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 14919,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "7 段 / 472 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 14919.1,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m01-structure-buildup_first~dev",
+      "set": "deviate",
+      "text_id": "m01-structure-buildup_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征值和特征向量是什么？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 14792,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "7 段 / 472 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 14792.1,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m01-depth-what~fit",
+      "set": "fit",
+      "text_id": "m01-depth-what",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "特征值和特征向量是什么？",
+      "expect": "ok",
+      "verdict": "ok",
+      "status": "submitted",
+      "wall_ms": 13812,
+      "run": {
+        "verdict": "ok",
+        "status": "submitted",
+        "notes": [
+          {
+            "aspect": "overall",
+            "comment": "大体符合学生要求。开头给出结论，后续逐层解释定义、参数含义、具体例子，结构清晰；两个例子（镜像和缩放）具代表性；全程中文，未涉及推导——符合「先结论、只讲是什么、多举例」的风格。"
+          }
+        ],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "6 段 / 307 字"
+          },
+          {
+            "name": "submit_review",
+            "ok": true,
+            "summary": "ok（0 条问题）"
+          }
+        ],
+        "steps": 2,
+        "rejected": 0,
+        "error": null,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 13812.3,
+        "cost_usd": 0.011755
+      }
+    },
+    {
+      "id": "m01-depth-what~dev",
+      "set": "deviate",
+      "text_id": "m01-depth-what",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "derivation"
+      },
+      "question": "特征值和特征向量是什么？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 14860,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "6 段 / 307 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 14860.1,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m01-depth-derivation~fit",
+      "set": "fit",
+      "text_id": "m01-depth-derivation",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "derivation"
+      },
+      "question": "特征值和特征向量是什么？",
+      "expect": "ok",
+      "verdict": "rewrite",
+      "status": "submitted",
+      "wall_ms": 14579,
+      "run": {
+        "verdict": "rewrite",
+        "status": "submitted",
+        "notes": [
+          {
+            "aspect": "structure",
+            "comment": "第一段虽有定义，但表述过于公式化。根据「先给结论」的要求，应该开篇就用更直白的语句说明特征值/特征向量的核心含义，再用公式标注。"
+          },
+          {
+            "aspect": "use_examples",
+            "comment": "举例充足且多样，符合要求。"
+          }
+        ],
+        "issues": [
+          {
+            "aspect": "structure",
+            "paragraph": 1,
+            "quote": "特征值和特征向量的定义：给定方阵 A、非零向量 v 和数 λ，如果 A v = λ v，那么 v 就是 A 的特征向量",
+            "fix": "改为先说核心判断（例如「有些向量乘以矩阵后，只是被拉伸或压缩，不改变方向」），然后在后面用公式 A v = λ v 来定义"
+          }
+        ],
+        "feedback": "1. 第 1 段（结构）「特征值和特征向量的定义：给定方阵 A、非零向量 v 和数 λ，如果 A v = λ v，那么 v 就是 A 的特征向量」：改为先说核心判断（例如「有些向量乘以矩阵后，只是被拉伸或压缩，不改变方向」），然后在后面用公式 A v = λ v 来定义",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "6 段 / 385 字"
+          },
+          {
+            "name": "submit_review",
+            "ok": true,
+            "summary": "rewrite（1 条问题）"
+          }
+        ],
+        "steps": 2,
+        "rejected": 0,
+        "error": null,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 14578.8,
+        "cost_usd": 0.01204
+      }
+    },
+    {
+      "id": "m01-depth-derivation~dev",
+      "set": "deviate",
+      "text_id": "m01-depth-derivation",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "特征值和特征向量是什么？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 14776,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "6 段 / 385 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 14775.6,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m02-detail_level-P0~fit",
+      "set": "fit",
+      "text_id": "m02-detail_level-P0",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么特征向量在变换之后方向不变？",
+      "expect": "ok",
+      "verdict": "ok",
+      "status": "submitted",
+      "wall_ms": 7925,
+      "run": {
+        "verdict": "ok",
+        "status": "submitted",
+        "notes": [
+          {
+            "aspect": "overall",
+            "comment": "五项偏好都贯彻得很好：结论开篇就给，用两个反射例子和旋转对比深化理解，段落长度适中，全程中文讲解。"
+          }
+        ],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "submit_review",
+            "ok": true,
+            "summary": "ok（0 条问题）"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": null,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 7925.0,
+        "cost_usd": 0.007291
+      }
+    },
+    {
+      "id": "m02-detail_level-P0~dev",
+      "set": "deviate",
+      "text_id": "m02-detail_level-P0",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么特征向量在变换之后方向不变？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9518,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 414 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9517.9,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m02-detail_level-P3~fit",
+      "set": "fit",
+      "text_id": "m02-detail_level-P3",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么特征向量在变换之后方向不变？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 10130,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "3 段 / 191 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 10130.2,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m02-detail_level-P3~dev",
+      "set": "deviate",
+      "text_id": "m02-detail_level-P3",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么特征向量在变换之后方向不变？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 10043,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "3 段 / 191 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 10043.1,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m02-use_examples-more~fit",
+      "set": "fit",
+      "text_id": "m02-use_examples-more",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么特征向量在变换之后方向不变？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 10134,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 373 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 10134.3,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m02-use_examples-more~dev",
+      "set": "deviate",
+      "text_id": "m02-use_examples-more",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么特征向量在变换之后方向不变？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 14413,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 373 字"
+          },
+          {
+            "name": "submit_review",
+            "ok": false,
+            "summary": "退回：1 处"
+          },
+          {
+            "name": "submit_review",
+            "ok": false,
+            "summary": "退回：1 处"
+          }
+        ],
+        "steps": 3,
+        "rejected": 2,
+        "error": "3 步之内没有交出通过检查的结论（退回 2 次）",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 14412.5,
+        "cost_usd": 0.018185
+      }
+    },
+    {
+      "id": "m02-use_examples-fewer~fit",
+      "set": "fit",
+      "text_id": "m02-use_examples-fewer",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么特征向量在变换之后方向不变？",
+      "expect": "ok",
+      "verdict": "ok",
+      "status": "submitted",
+      "wall_ms": 9950,
+      "run": {
+        "verdict": "ok",
+        "status": "submitted",
+        "notes": [
+          {
+            "aspect": "overall",
+            "comment": "结构、详细度、深度、语言都符合学生选择。开头直接给结论，逐层解释机制和边界情况，无冗余例子。"
+          }
+        ],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "3 段 / 320 字"
+          },
+          {
+            "name": "submit_review",
+            "ok": true,
+            "summary": "ok（0 条问题）"
+          }
+        ],
+        "steps": 2,
+        "rejected": 0,
+        "error": null,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9949.8,
+        "cost_usd": 0.011812
+      }
+    },
+    {
+      "id": "m02-use_examples-fewer~dev",
+      "set": "deviate",
+      "text_id": "m02-use_examples-fewer",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么特征向量在变换之后方向不变？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 10214,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "3 段 / 320 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 10213.8,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m02-structure-conclusion_first~fit",
+      "set": "fit",
+      "text_id": "m02-structure-conclusion_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么特征向量在变换之后方向不变？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9876,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 350 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9876.4,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m02-structure-conclusion_first~dev",
+      "set": "deviate",
+      "text_id": "m02-structure-conclusion_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "buildup_first",
+        "depth": "why"
+      },
+      "question": "为什么特征向量在变换之后方向不变？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9933,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 350 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9932.7,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m02-structure-buildup_first~fit",
+      "set": "fit",
+      "text_id": "m02-structure-buildup_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "buildup_first",
+        "depth": "why"
+      },
+      "question": "为什么特征向量在变换之后方向不变？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 8001,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [],
+        "steps": 0,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 8001.2,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m02-structure-buildup_first~dev",
+      "set": "deviate",
+      "text_id": "m02-structure-buildup_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么特征向量在变换之后方向不变？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 10070,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 433 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 10070.0,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m02-depth-what~fit",
+      "set": "fit",
+      "text_id": "m02-depth-what",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "为什么特征向量在变换之后方向不变？",
+      "expect": "ok",
+      "verdict": "rewrite",
+      "status": "submitted",
+      "wall_ms": 11443,
+      "run": {
+        "verdict": "rewrite",
+        "status": "submitted",
+        "notes": [],
+        "issues": [
+          {
+            "aspect": "use_examples",
+            "paragraph": 1,
+            "quote": "Av = λv 这个式子本身就表示，矩阵 A 作用在 v 上之后，结果只是 v 被数 λ 放大或缩小",
+            "fix": "在讲完第1、2段关键概念后，加一个简单例子（如旋转90度、缩放、或其他变换），说明某向量满足特征向量条件"
+          }
+        ],
+        "feedback": "1. 第 1 段（举例）「Av = λv 这个式子本身就表示，矩阵 A 作用在 v 上之后，结果只是 v 被数 λ 放大或缩小」：在讲完第1、2段关键概念后，加一个简单例子（如旋转90度、缩放、或其他变换），说明某向量满足特征向量条件",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 370 字"
+          },
+          {
+            "name": "submit_review",
+            "ok": false,
+            "summary": "退回：1 处"
+          },
+          {
+            "name": "submit_review",
+            "ok": true,
+            "summary": "rewrite（1 条问题）"
+          }
+        ],
+        "steps": 3,
+        "rejected": 1,
+        "error": null,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 11443.3,
+        "cost_usd": 0.017891
+      }
+    },
+    {
+      "id": "m02-depth-what~dev",
+      "set": "deviate",
+      "text_id": "m02-depth-what",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "derivation"
+      },
+      "question": "为什么特征向量在变换之后方向不变？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 10028,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 370 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 10027.9,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m02-depth-derivation~fit",
+      "set": "fit",
+      "text_id": "m02-depth-derivation",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "derivation"
+      },
+      "question": "为什么特征向量在变换之后方向不变？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 11004,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 387 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 11004.1,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m02-depth-derivation~dev",
+      "set": "deviate",
+      "text_id": "m02-depth-derivation",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "为什么特征向量在变换之后方向不变？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9912,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 387 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9911.9,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m03-detail_level-P0~fit",
+      "set": "fit",
+      "text_id": "m03-detail_level-P0",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征值是负数是什么意思？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9922,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "3 段 / 242 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9922.0,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m03-detail_level-P0~dev",
+      "set": "deviate",
+      "text_id": "m03-detail_level-P0",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征值是负数是什么意思？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 11006,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "3 段 / 242 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 11005.5,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m03-detail_level-P3~fit",
+      "set": "fit",
+      "text_id": "m03-detail_level-P3",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征值是负数是什么意思？",
+      "expect": "ok",
+      "verdict": "ok",
+      "status": "submitted",
+      "wall_ms": 9352,
+      "run": {
+        "verdict": "ok",
+        "status": "submitted",
+        "notes": [
+          {
+            "aspect": "detail_level",
+            "comment": "整体精简，两段略长但不违和"
+          },
+          {
+            "aspect": "use_examples",
+            "comment": "用反射变换和特征值 −1 做具体例子，贴切有力"
+          },
+          {
+            "aspect": "structure",
+            "comment": "第 1 段直接给结论，符合先给结论的要求"
+          },
+          {
+            "aspect": "depth",
+            "comment": "不仅定义方向翻转，还解释为何仍算保持直线"
+          }
+        ],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "2 段 / 104 字"
+          },
+          {
+            "name": "submit_review",
+            "ok": true,
+            "summary": "ok（0 条问题）"
+          }
+        ],
+        "steps": 2,
+        "rejected": 0,
+        "error": null,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9352.2,
+        "cost_usd": 0.011214
+      }
+    },
+    {
+      "id": "m03-detail_level-P3~dev",
+      "set": "deviate",
+      "text_id": "m03-detail_level-P3",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征值是负数是什么意思？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "status": "submitted",
+      "wall_ms": 8545,
+      "run": {
+        "verdict": "ok",
+        "status": "submitted",
+        "notes": [
+          {
+            "aspect": "overall",
+            "comment": "结论在开头、配了具体例子、解释了机制成立的原因，符合所有五项要求。"
+          },
+          {
+            "aspect": "use_examples",
+            "comment": "只举了反射变换一个例子，对于'多举例'的要求略有保守，但对单句讲解来说已足够，总体仍在接受范围。"
+          }
+        ],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "2 段 / 104 字"
+          },
+          {
+            "name": "submit_review",
+            "ok": true,
+            "summary": "ok（0 条问题）"
+          }
+        ],
+        "steps": 2,
+        "rejected": 0,
+        "error": null,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 8544.8,
+        "cost_usd": 0.010567
+      }
+    },
+    {
+      "id": "m03-use_examples-more~fit",
+      "set": "fit",
+      "text_id": "m03-use_examples-more",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征值是负数是什么意思？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9236,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "3 段 / 238 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9235.6,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m03-use_examples-more~dev",
+      "set": "deviate",
+      "text_id": "m03-use_examples-more",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征值是负数是什么意思？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 8001,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [],
+        "steps": 0,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 8000.9,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m03-use_examples-fewer~fit",
+      "set": "fit",
+      "text_id": "m03-use_examples-fewer",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征值是负数是什么意思？",
+      "expect": "ok",
+      "verdict": "rewrite",
+      "status": "submitted",
+      "wall_ms": 9530,
+      "run": {
+        "verdict": "rewrite",
+        "status": "submitted",
+        "notes": [
+          {
+            "aspect": "use_examples",
+            "comment": "第2段的反射矩阵例子是额外补充的，不是必需的——学生只要把要点讲清楚，不加类比和例子。"
+          }
+        ],
+        "issues": [
+          {
+            "aspect": "use_examples",
+            "paragraph": 2,
+            "quote": "举反射矩阵的例子（第3页）：垂直于镜面线的向量会被映射成自己的相反数",
+            "fix": "删除整个第2段，或将其合并入第1段作为进一步说明（但不要称为\"举例\"）。保留第1段的核心论述即可，第3段如果是为了深化理解而非举例，可根据讲解的必要性重新评估。"
+          }
+        ],
+        "feedback": "1. 第 2 段（举例）「举反射矩阵的例子（第3页）：垂直于镜面线的向量会被映射成自己的相反数」：删除整个第2段，或将其合并入第1段作为进一步说明（但不要称为\"举例\"）。保留第1段的核心论述即可，第3段如果是为了深化理解而非举例，可根据讲解的必要性重新评估。",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "3 段 / 237 字"
+          },
+          {
+            "name": "submit_review",
+            "ok": true,
+            "summary": "rewrite（1 条问题）"
+          }
+        ],
+        "steps": 2,
+        "rejected": 0,
+        "error": null,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9530.2,
+        "cost_usd": 0.011638
+      }
+    },
+    {
+      "id": "m03-use_examples-fewer~dev",
+      "set": "deviate",
+      "text_id": "m03-use_examples-fewer",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征值是负数是什么意思？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9989,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "3 段 / 237 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9989.2,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m03-structure-conclusion_first~fit",
+      "set": "fit",
+      "text_id": "m03-structure-conclusion_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征值是负数是什么意思？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 10037,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "3 段 / 335 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 10036.4,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m03-structure-conclusion_first~dev",
+      "set": "deviate",
+      "text_id": "m03-structure-conclusion_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "buildup_first",
+        "depth": "why"
+      },
+      "question": "特征值是负数是什么意思？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 10350,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "3 段 / 335 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 10349.6,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m03-structure-buildup_first~fit",
+      "set": "fit",
+      "text_id": "m03-structure-buildup_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "buildup_first",
+        "depth": "why"
+      },
+      "question": "特征值是负数是什么意思？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 10281,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 338 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 10281.0,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m03-structure-buildup_first~dev",
+      "set": "deviate",
+      "text_id": "m03-structure-buildup_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征值是负数是什么意思？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 10696,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 338 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 10696.4,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m03-depth-what~fit",
+      "set": "fit",
+      "text_id": "m03-depth-what",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "特征值是负数是什么意思？",
+      "expect": "ok",
+      "verdict": "ok",
+      "status": "submitted",
+      "wall_ms": 7952,
+      "run": {
+        "verdict": "ok",
+        "status": "submitted",
+        "notes": [
+          {
+            "aspect": "overall",
+            "comment": "开头直接给结论，用镜像反射作为具体例子，篇幅简洁，语言纯中文，符合偏好。"
+          }
+        ],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "3 段 / 221 字"
+          },
+          {
+            "name": "submit_review",
+            "ok": true,
+            "summary": "ok（0 条问题）"
+          }
+        ],
+        "steps": 2,
+        "rejected": 0,
+        "error": null,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 7951.8,
+        "cost_usd": 0.010492
+      }
+    },
+    {
+      "id": "m03-depth-what~dev",
+      "set": "deviate",
+      "text_id": "m03-depth-what",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "derivation"
+      },
+      "question": "特征值是负数是什么意思？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9534,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "3 段 / 221 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9534.1,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m03-depth-derivation~fit",
+      "set": "fit",
+      "text_id": "m03-depth-derivation",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "derivation"
+      },
+      "question": "特征值是负数是什么意思？",
+      "expect": "ok",
+      "verdict": "ok",
+      "status": "submitted",
+      "wall_ms": 8382,
+      "run": {
+        "verdict": "ok",
+        "status": "submitted",
+        "notes": [
+          {
+            "aspect": "overall",
+            "comment": "讲解完整符合学生要求：开头即给出核心结论，第二段配具体的镜面反射例子，第三段用对比加深理解并展开推导逻辑。三段层层推进，约230字，举例充分，推导清晰。"
+          }
+        ],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "3 段 / 230 字"
+          },
+          {
+            "name": "submit_review",
+            "ok": true,
+            "summary": "ok（0 条问题）"
+          }
+        ],
+        "steps": 2,
+        "rejected": 0,
+        "error": null,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 8381.8,
+        "cost_usd": 0.011233
+      }
+    },
+    {
+      "id": "m03-depth-derivation~dev",
+      "set": "deviate",
+      "text_id": "m03-depth-derivation",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "特征值是负数是什么意思？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "status": "submitted",
+      "wall_ms": 9884,
+      "run": {
+        "verdict": "ok",
+        "status": "submitted",
+        "notes": [
+          {
+            "aspect": "structure",
+            "comment": "第1段直接亮出结论，后续段落逐层解释，符合'先给结论'的要求。"
+          },
+          {
+            "aspect": "use_examples",
+            "comment": "镜面反射的具体例子 + 第3段的三种情况对比，举例恰当有力。"
+          },
+          {
+            "aspect": "detail_level",
+            "comment": "总字数230字，远低于360字上限，但三段内容完整充实，详略得当。"
+          },
+          {
+            "aspect": "depth",
+            "comment": "纯粹讲解特征值为负数的含义和作用，未涉及推导或设计原理，符合'只讲是什么'。"
+          }
+        ],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "3 段 / 230 字"
+          },
+          {
+            "name": "submit_review",
+            "ok": true,
+            "summary": "ok（0 条问题）"
+          }
+        ],
+        "steps": 2,
+        "rejected": 0,
+        "error": null,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9884.0,
+        "cost_usd": 0.011939
+      }
+    },
+    {
+      "id": "m04-detail_level-P0~fit",
+      "set": "fit",
+      "text_id": "m04-detail_level-P0",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "怎么求一个矩阵的特征值？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 10235,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "5 段 / 420 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 10235.3,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m04-detail_level-P0~dev",
+      "set": "deviate",
+      "text_id": "m04-detail_level-P0",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "怎么求一个矩阵的特征值？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9837,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "5 段 / 420 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9836.5,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m04-detail_level-P3~fit",
+      "set": "fit",
+      "text_id": "m04-detail_level-P3",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "怎么求一个矩阵的特征值？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 10066,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 186 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 10066.2,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m04-detail_level-P3~dev",
+      "set": "deviate",
+      "text_id": "m04-detail_level-P3",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "怎么求一个矩阵的特征值？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 10018,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 186 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 10017.9,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m04-use_examples-more~fit",
+      "set": "fit",
+      "text_id": "m04-use_examples-more",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "怎么求一个矩阵的特征值？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9407,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "6 段 / 422 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9406.5,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m04-use_examples-more~dev",
+      "set": "deviate",
+      "text_id": "m04-use_examples-more",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "怎么求一个矩阵的特征值？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 10036,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "6 段 / 422 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 10035.5,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m04-use_examples-fewer~fit",
+      "set": "fit",
+      "text_id": "m04-use_examples-fewer",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "怎么求一个矩阵的特征值？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 10046,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 370 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 10045.9,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m04-use_examples-fewer~dev",
+      "set": "deviate",
+      "text_id": "m04-use_examples-fewer",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "怎么求一个矩阵的特征值？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 10560,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 370 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 10560.3,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m04-structure-conclusion_first~fit",
+      "set": "fit",
+      "text_id": "m04-structure-conclusion_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "怎么求一个矩阵的特征值？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9896,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "5 段 / 416 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9896.4,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m04-structure-conclusion_first~dev",
+      "set": "deviate",
+      "text_id": "m04-structure-conclusion_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "buildup_first",
+        "depth": "why"
+      },
+      "question": "怎么求一个矩阵的特征值？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9908,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "5 段 / 416 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9908.2,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m04-structure-buildup_first~fit",
+      "set": "fit",
+      "text_id": "m04-structure-buildup_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "buildup_first",
+        "depth": "why"
+      },
+      "question": "怎么求一个矩阵的特征值？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9892,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 361 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9892.2,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m04-structure-buildup_first~dev",
+      "set": "deviate",
+      "text_id": "m04-structure-buildup_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "怎么求一个矩阵的特征值？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9948,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 361 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9947.7,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m04-depth-what~fit",
+      "set": "fit",
+      "text_id": "m04-depth-what",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "怎么求一个矩阵的特征值？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 8001,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [],
+        "steps": 0,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 8001.3,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m04-depth-what~dev",
+      "set": "deviate",
+      "text_id": "m04-depth-what",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "derivation"
+      },
+      "question": "怎么求一个矩阵的特征值？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9961,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 425 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9960.8,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m04-depth-derivation~fit",
+      "set": "fit",
+      "text_id": "m04-depth-derivation",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "derivation"
+      },
+      "question": "怎么求一个矩阵的特征值？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 16070,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "read_recent_turns",
+            "ok": true,
+            "summary": "0 轮"
+          },
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "5 段 / 500 字"
+          },
+          {
+            "name": "submit_review",
+            "ok": false,
+            "summary": "退回：1 处"
+          }
+        ],
+        "steps": 3,
+        "rejected": 1,
+        "error": "3 步之内没有交出通过检查的结论（退回 1 次）",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 16069.6,
+        "cost_usd": 0.020209
+      }
+    },
+    {
+      "id": "m04-depth-derivation~dev",
+      "set": "deviate",
+      "text_id": "m04-depth-derivation",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "怎么求一个矩阵的特征值？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9980,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "5 段 / 500 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9979.5,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m05-detail_level-P0~fit",
+      "set": "fit",
+      "text_id": "m05-detail_level-P0",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "什么是对角化？有什么用？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 10048,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "7 段 / 330 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 10048.1,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m05-detail_level-P0~dev",
+      "set": "deviate",
+      "text_id": "m05-detail_level-P0",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "什么是对角化？有什么用？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 10335,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "7 段 / 330 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 10334.6,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m05-detail_level-P3~fit",
+      "set": "fit",
+      "text_id": "m05-detail_level-P3",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "什么是对角化？有什么用？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9874,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "3 段 / 163 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9873.4,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m05-detail_level-P3~dev",
+      "set": "deviate",
+      "text_id": "m05-detail_level-P3",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "什么是对角化？有什么用？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9870,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "3 段 / 163 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9870.4,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m05-use_examples-more~fit",
+      "set": "fit",
+      "text_id": "m05-use_examples-more",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "什么是对角化？有什么用？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9987,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "3 段 / 303 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9987.1,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m05-use_examples-more~dev",
+      "set": "deviate",
+      "text_id": "m05-use_examples-more",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "什么是对角化？有什么用？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "status": "submitted",
+      "wall_ms": 7474,
+      "run": {
+        "verdict": "ok",
+        "status": "submitted",
+        "notes": [
+          {
+            "aspect": "structure",
+            "comment": "开篇直接给出对角化的定义和核心公式，符合先给结论的要求"
+          },
+          {
+            "aspect": "depth",
+            "comment": "第2段用 P⁻¹P 抵消的推导，以及对照第4页应用场景来解释为什么有用，很好地回答了「为什么」；第3段解释了为什么不是所有矩阵都能对角化"
+          },
+          {
+            "aspect": "detail_level",
+            "comment": "三段共约210字，详细但不冗长，适当比例"
+          },
+          {
+            "aspect": "use_examples",
+            "comment": "只用剪切作为反例说明局限，没有额外堆砌例子"
+          }
+        ],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "submit_review",
+            "ok": true,
+            "summary": "ok（0 条问题）"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": null,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 7474.1,
+        "cost_usd": 0.007366
+      }
+    },
+    {
+      "id": "m05-use_examples-fewer~fit",
+      "set": "fit",
+      "text_id": "m05-use_examples-fewer",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "什么是对角化？有什么用？",
+      "expect": "ok",
+      "verdict": "ok",
+      "status": "submitted",
+      "wall_ms": 9727,
+      "run": {
+        "verdict": "ok",
+        "status": "submitted",
+        "notes": [
+          {
+            "aspect": "overall",
+            "comment": "结构清晰、详略恰当，先给定义再解释用处和机制，符合预期。"
+          }
+        ],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "3 段 / 299 字"
+          },
+          {
+            "name": "submit_review",
+            "ok": true,
+            "summary": "ok（0 条问题）"
+          }
+        ],
+        "steps": 2,
+        "rejected": 0,
+        "error": null,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9727.1,
+        "cost_usd": 0.011542
+      }
+    },
+    {
+      "id": "m05-use_examples-fewer~dev",
+      "set": "deviate",
+      "text_id": "m05-use_examples-fewer",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "什么是对角化？有什么用？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9993,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "3 段 / 299 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9992.7,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m05-structure-conclusion_first~fit",
+      "set": "fit",
+      "text_id": "m05-structure-conclusion_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "什么是对角化？有什么用？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 10113,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "3 段 / 336 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 10112.8,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m05-structure-conclusion_first~dev",
+      "set": "deviate",
+      "text_id": "m05-structure-conclusion_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "buildup_first",
+        "depth": "why"
+      },
+      "question": "什么是对角化？有什么用？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 10086,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "3 段 / 336 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 10086.3,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m05-structure-buildup_first~fit",
+      "set": "fit",
+      "text_id": "m05-structure-buildup_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "buildup_first",
+        "depth": "why"
+      },
+      "question": "什么是对角化？有什么用？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 10366,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 416 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 10366.4,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m05-structure-buildup_first~dev",
+      "set": "deviate",
+      "text_id": "m05-structure-buildup_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "什么是对角化？有什么用？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9975,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 416 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9975.4,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m05-depth-what~fit",
+      "set": "fit",
+      "text_id": "m05-depth-what",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "什么是对角化？有什么用？",
+      "expect": "ok",
+      "verdict": "ok",
+      "status": "submitted",
+      "wall_ms": 8096,
+      "run": {
+        "verdict": "ok",
+        "status": "submitted",
+        "notes": [
+          {
+            "aspect": "structure",
+            "comment": "结论前置清晰，第1段直接说明对角化的定义形式"
+          },
+          {
+            "aspect": "use_examples",
+            "comment": "两处例子（剪切矩阵、迭代系统）都有实例支撑，配置适当"
+          },
+          {
+            "aspect": "detail_level",
+            "comment": "325字三段的篇幅在参考范围内，详细程度恰当"
+          },
+          {
+            "aspect": "depth",
+            "comment": "只讲了定义和用处，未涉及证明或设计原理，符合要求"
+          },
+          {
+            "aspect": "language",
+            "comment": "全中文讲解，术语括注英文，格式规范"
+          }
+        ],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "3 段 / 325 字"
+          },
+          {
+            "name": "submit_review",
+            "ok": true,
+            "summary": "ok（0 条问题）"
+          }
+        ],
+        "steps": 2,
+        "rejected": 0,
+        "error": null,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 8095.5,
+        "cost_usd": 0.011815
+      }
+    },
+    {
+      "id": "m05-depth-what~dev",
+      "set": "deviate",
+      "text_id": "m05-depth-what",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "derivation"
+      },
+      "question": "什么是对角化？有什么用？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "status": "submitted",
+      "wall_ms": 8611,
+      "run": {
+        "verdict": "ok",
+        "status": "submitted",
+        "notes": [
+          {
+            "aspect": "overall",
+            "comment": "结论开头放得好，分解形式清晰；用剪切矩阵和迭代场景作举例，推导步骤交代得也明白"
+          }
+        ],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "3 段 / 325 字"
+          },
+          {
+            "name": "submit_review",
+            "ok": true,
+            "summary": "ok（0 条问题）"
+          }
+        ],
+        "steps": 2,
+        "rejected": 0,
+        "error": null,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 8610.7,
+        "cost_usd": 0.01141
+      }
+    },
+    {
+      "id": "m05-depth-derivation~fit",
+      "set": "fit",
+      "text_id": "m05-depth-derivation",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "derivation"
+      },
+      "question": "什么是对角化？有什么用？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9980,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "6 段 / 427 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9980.2,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m05-depth-derivation~dev",
+      "set": "deviate",
+      "text_id": "m05-depth-derivation",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "什么是对角化？有什么用？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9986,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "6 段 / 427 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9986.1,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m06-detail_level-P0~fit",
+      "set": "fit",
+      "text_id": "m06-detail_level-P0",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么平面旋转没有实数特征值？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9929,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "3 段 / 299 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9928.8,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m06-detail_level-P0~dev",
+      "set": "deviate",
+      "text_id": "m06-detail_level-P0",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么平面旋转没有实数特征值？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 10065,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "3 段 / 299 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 10065.4,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m06-detail_level-P3~fit",
+      "set": "fit",
+      "text_id": "m06-detail_level-P3",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么平面旋转没有实数特征值？",
+      "expect": "ok",
+      "verdict": "rewrite",
+      "status": "submitted",
+      "wall_ms": 9344,
+      "run": {
+        "verdict": "rewrite",
+        "status": "submitted",
+        "notes": [
+          {
+            "aspect": "use_examples",
+            "comment": "只在最后提了一个例子，前两段要点都没有配例子，不符合『每讲一个要点，配一个具体例子』的要求。"
+          }
+        ],
+        "issues": [
+          {
+            "aspect": "use_examples",
+            "paragraph": 1,
+            "quote": "旋转没有实数特征值，因为特征向量要求 `A` 只把它沿原方向缩放，不改变方向。",
+            "fix": "在这段说清特征值的定义后，加一个具体例子。比如：『比如一个向量本来指向东方，旋转90度后指向北方，这个方向就改变了，所以东方这个方向不是特征向量。』"
+          }
+        ],
+        "feedback": "1. 第 1 段（举例）「旋转没有实数特征值，因为特征向量要求 `A` 只把它沿原方向缩放，不改变方向。」：在这段说清特征值的定义后，加一个具体例子。比如：『比如一个向量本来指向东方，旋转90度后指向北方，这个方向就改变了，所以东方这个方向不是特征向量。』",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "3 段 / 146 字"
+          },
+          {
+            "name": "submit_review",
+            "ok": true,
+            "summary": "rewrite（1 条问题）"
+          }
+        ],
+        "steps": 2,
+        "rejected": 0,
+        "error": null,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9344.4,
+        "cost_usd": 0.011716
+      }
+    },
+    {
+      "id": "m06-detail_level-P3~dev",
+      "set": "deviate",
+      "text_id": "m06-detail_level-P3",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么平面旋转没有实数特征值？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "status": "submitted",
+      "wall_ms": 8702,
+      "run": {
+        "verdict": "ok",
+        "status": "submitted",
+        "notes": [
+          {
+            "aspect": "overall",
+            "comment": "开头直接给结论，中间逐层解释机制，结尾补充复数例子。结构清晰，详略得当，充分说明了\"为什么\"。"
+          }
+        ],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "3 段 / 146 字"
+          },
+          {
+            "name": "submit_review",
+            "ok": true,
+            "summary": "ok（0 条问题）"
+          }
+        ],
+        "steps": 2,
+        "rejected": 0,
+        "error": null,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 8701.8,
+        "cost_usd": 0.010914
+      }
+    },
+    {
+      "id": "m06-use_examples-more~fit",
+      "set": "fit",
+      "text_id": "m06-use_examples-more",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么平面旋转没有实数特征值？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9799,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 367 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9798.4,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m06-use_examples-more~dev",
+      "set": "deviate",
+      "text_id": "m06-use_examples-more",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么平面旋转没有实数特征值？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 12600,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 367 字"
+          },
+          {
+            "name": "submit_review",
+            "ok": false,
+            "summary": "退回：1 处"
+          },
+          {
+            "name": "submit_review",
+            "ok": false,
+            "summary": "退回：1 处"
+          }
+        ],
+        "steps": 3,
+        "rejected": 2,
+        "error": "3 步之内没有交出通过检查的结论（退回 2 次）",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 12599.5,
+        "cost_usd": 0.019211
+      }
+    },
+    {
+      "id": "m06-use_examples-fewer~fit",
+      "set": "fit",
+      "text_id": "m06-use_examples-fewer",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么平面旋转没有实数特征值？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9868,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "3 段 / 300 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9867.5,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m06-use_examples-fewer~dev",
+      "set": "deviate",
+      "text_id": "m06-use_examples-fewer",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么平面旋转没有实数特征值？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9813,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "3 段 / 300 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9813.1,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m06-structure-conclusion_first~fit",
+      "set": "fit",
+      "text_id": "m06-structure-conclusion_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么平面旋转没有实数特征值？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 10056,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 352 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 10055.9,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m06-structure-conclusion_first~dev",
+      "set": "deviate",
+      "text_id": "m06-structure-conclusion_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "buildup_first",
+        "depth": "why"
+      },
+      "question": "为什么平面旋转没有实数特征值？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 8001,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [],
+        "steps": 0,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 8001.3,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m06-structure-buildup_first~fit",
+      "set": "fit",
+      "text_id": "m06-structure-buildup_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "buildup_first",
+        "depth": "why"
+      },
+      "question": "为什么平面旋转没有实数特征值？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 10024,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 388 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 10024.0,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m06-structure-buildup_first~dev",
+      "set": "deviate",
+      "text_id": "m06-structure-buildup_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么平面旋转没有实数特征值？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "status": "submitted",
+      "wall_ms": 9823,
+      "run": {
+        "verdict": "ok",
+        "status": "submitted",
+        "notes": [
+          {
+            "aspect": "use_examples",
+            "comment": "第 1–2 段以机制阐述为主，例子较少，但第 3 段的 90° 旋转具体例子弥补了这一点，整体达到了'多举例'的预期"
+          },
+          {
+            "aspect": "detail_level",
+            "comment": "总字数 388 字在参考范围内，各段长度适中，信息量符合'详细'的要求"
+          }
+        ],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 388 字"
+          },
+          {
+            "name": "submit_review",
+            "ok": true,
+            "summary": "ok（0 条问题）"
+          }
+        ],
+        "steps": 2,
+        "rejected": 0,
+        "error": null,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9822.4,
+        "cost_usd": 0.011739
+      }
+    },
+    {
+      "id": "m06-depth-what~fit",
+      "set": "fit",
+      "text_id": "m06-depth-what",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "为什么平面旋转没有实数特征值？",
+      "expect": "ok",
+      "verdict": "ok",
+      "status": "submitted",
+      "wall_ms": 5788,
+      "run": {
+        "verdict": "ok",
+        "status": "submitted",
+        "notes": [
+          {
+            "aspect": "structure",
+            "comment": "开头第一段就给出了关键判断（特征向量需要保留在原直线上），后续段落展开解释为什么平面旋转做不到这点。符合先给结论的要求。"
+          },
+          {
+            "aspect": "detail_level",
+            "comment": "全文约280字，分4段展开。每段30-90字，整体详细程度恰当，不显得冗长。"
+          },
+          {
+            "aspect": "use_examples",
+            "comment": "第3段给了90度旋转的具体例子（右→上），配合总体论述。例子数量恰当，不显少。"
+          },
+          {
+            "aspect": "depth",
+            "comment": "重点讲清楚了「旋转为什么没有实数特征值」这个是什么，以及涉及什么条件（旋转角度不是半圆整数倍时）。第4段提到复数特征值是作为对比补充，不走向推导，分寸恰当。"
+          },
+          {
+            "aspect": "language",
+            "comment": "全用中文讲解，专业术语（如 Av = λv、特征值）都给了清晰的中文语境说明，没有大段英文。"
+          }
+        ],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "submit_review",
+            "ok": true,
+            "summary": "ok（0 条问题）"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": null,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 5788.3,
+        "cost_usd": 0.006189
+      }
+    },
+    {
+      "id": "m06-depth-what~dev",
+      "set": "deviate",
+      "text_id": "m06-depth-what",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "derivation"
+      },
+      "question": "为什么平面旋转没有实数特征值？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9942,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 320 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9942.1,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m06-depth-derivation~fit",
+      "set": "fit",
+      "text_id": "m06-depth-derivation",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "derivation"
+      },
+      "question": "为什么平面旋转没有实数特征值？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 10021,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "read_recent_turns",
+            "ok": true,
+            "summary": "0 轮"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 10021.3,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m06-depth-derivation~dev",
+      "set": "deviate",
+      "text_id": "m06-depth-derivation",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "为什么平面旋转没有实数特征值？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9915,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 340 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9914.5,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m07-detail_level-P0~fit",
+      "set": "fit",
+      "text_id": "m07-detail_level-P0",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "幂法是怎么回事？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 10164,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 429 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 10164.1,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m07-detail_level-P0~dev",
+      "set": "deviate",
+      "text_id": "m07-detail_level-P0",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "幂法是怎么回事？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9951,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 429 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9951.0,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m07-detail_level-P3~fit",
+      "set": "fit",
+      "text_id": "m07-detail_level-P3",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "幂法是怎么回事？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9940,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 205 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9939.8,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m07-detail_level-P3~dev",
+      "set": "deviate",
+      "text_id": "m07-detail_level-P3",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "幂法是怎么回事？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9841,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 205 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9840.8,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m07-use_examples-more~fit",
+      "set": "fit",
+      "text_id": "m07-use_examples-more",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "幂法是怎么回事？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9862,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "5 段 / 391 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9861.9,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m07-use_examples-more~dev",
+      "set": "deviate",
+      "text_id": "m07-use_examples-more",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "幂法是怎么回事？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "status": "submitted",
+      "wall_ms": 9396,
+      "run": {
+        "verdict": "ok",
+        "status": "submitted",
+        "notes": [
+          {
+            "aspect": "overall",
+            "comment": "讲解按学生的偏好展开：第1段直接给出核心结论，第2段说做法，第3段深入解释机制原理，第4段说明算法设计的来由。字数和结构均符合'详细但精（约390字）、先结论、讲机制'的要求。"
+          }
+        ],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "5 段 / 391 字"
+          },
+          {
+            "name": "submit_review",
+            "ok": true,
+            "summary": "ok（0 条问题）"
+          }
+        ],
+        "steps": 2,
+        "rejected": 0,
+        "error": null,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9395.7,
+        "cost_usd": 0.011807
+      }
+    },
+    {
+      "id": "m07-use_examples-fewer~fit",
+      "set": "fit",
+      "text_id": "m07-use_examples-fewer",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "幂法是怎么回事？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9959,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "5 段 / 434 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9958.9,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m07-use_examples-fewer~dev",
+      "set": "deviate",
+      "text_id": "m07-use_examples-fewer",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "幂法是怎么回事？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 10190,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "5 段 / 434 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 10189.7,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m07-structure-conclusion_first~fit",
+      "set": "fit",
+      "text_id": "m07-structure-conclusion_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "幂法是怎么回事？",
+      "expect": "ok",
+      "verdict": "ok",
+      "status": "submitted",
+      "wall_ms": 8994,
+      "run": {
+        "verdict": "ok",
+        "status": "submitted",
+        "notes": [
+          {
+            "aspect": "detail_level",
+            "comment": "整篇504字略超参考的360字以内，但考虑到深度要求，这个超量在可接受范围内"
+          }
+        ],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 504 字"
+          },
+          {
+            "name": "submit_review",
+            "ok": true,
+            "summary": "ok（0 条问题）"
+          }
+        ],
+        "steps": 2,
+        "rejected": 0,
+        "error": null,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 8994.3,
+        "cost_usd": 0.011763
+      }
+    },
+    {
+      "id": "m07-structure-conclusion_first~dev",
+      "set": "deviate",
+      "text_id": "m07-structure-conclusion_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "buildup_first",
+        "depth": "why"
+      },
+      "question": "幂法是怎么回事？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9953,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 504 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9952.6,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m07-structure-buildup_first~fit",
+      "set": "fit",
+      "text_id": "m07-structure-buildup_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "buildup_first",
+        "depth": "why"
+      },
+      "question": "幂法是怎么回事？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 10113,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "5 段 / 405 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 10112.5,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m07-structure-buildup_first~dev",
+      "set": "deviate",
+      "text_id": "m07-structure-buildup_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "幂法是怎么回事？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9485,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "5 段 / 405 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9485.1,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m07-depth-what~fit",
+      "set": "fit",
+      "text_id": "m07-depth-what",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "幂法是怎么回事？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9827,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 376 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9826.7,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m07-depth-what~dev",
+      "set": "deviate",
+      "text_id": "m07-depth-what",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "derivation"
+      },
+      "question": "幂法是怎么回事？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "status": "submitted",
+      "wall_ms": 10283,
+      "run": {
+        "verdict": "ok",
+        "status": "submitted",
+        "notes": [
+          {
+            "aspect": "overall",
+            "comment": "讲解整体符合详细、多举例、先结论、讲推导的要求。第1段结论清晰，第2段推导链条明确（每步乘以特征值、最大值主导），第3段配有直观的人群类比。篇幅和结构都恰当。"
+          }
+        ],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 376 字"
+          },
+          {
+            "name": "submit_review",
+            "ok": true,
+            "summary": "ok（0 条问题）"
+          }
+        ],
+        "steps": 2,
+        "rejected": 0,
+        "error": null,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 10283.0,
+        "cost_usd": 0.012045
+      }
+    },
+    {
+      "id": "m07-depth-derivation~fit",
+      "set": "fit",
+      "text_id": "m07-depth-derivation",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "derivation"
+      },
+      "question": "幂法是怎么回事？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9913,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 388 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9912.6,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m07-depth-derivation~dev",
+      "set": "deviate",
+      "text_id": "m07-depth-derivation",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "幂法是怎么回事？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 10046,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 388 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 10045.8,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m08-detail_level-P0~fit",
+      "set": "fit",
+      "text_id": "m08-detail_level-P0",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "PCA 和特征向量有什么关系？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9833,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "3 段 / 295 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9833.0,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m08-detail_level-P0~dev",
+      "set": "deviate",
+      "text_id": "m08-detail_level-P0",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "PCA 和特征向量有什么关系？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9855,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "3 段 / 295 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9854.8,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m08-detail_level-P3~fit",
+      "set": "fit",
+      "text_id": "m08-detail_level-P3",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "PCA 和特征向量有什么关系？",
+      "expect": "ok",
+      "verdict": "rewrite",
+      "status": "submitted",
+      "wall_ms": 10024,
+      "run": {
+        "verdict": "rewrite",
+        "status": "submitted",
+        "notes": [
+          {
+            "aspect": "use_examples",
+            "comment": "讲解逻辑清晰，但缺少具体例子或类比来辅助理解。学生偏好每个要点都配一个例子。"
+          }
+        ],
+        "issues": [
+          {
+            "aspect": "use_examples",
+            "paragraph": 1,
+            "quote": "PCA 用协方差矩阵，找它伸缩最大的方向，这些方向就是最大特征值对应的特征向量",
+            "fix": "在说明 PCA 和特征向量的关系后，加一个简单的具体例子，比如用二维散点数据说明：数据点沿某个方向分散最广，这个方向就是第一特征向量；或用生活类比（如山坡上的水往最陡的方向流）帮助理解。"
+          }
+        ],
+        "feedback": "1. 第 1 段（举例）「PCA 用协方差矩阵，找它伸缩最大的方向，这些方向就是最大特征值对应的特征向量」：在说明 PCA 和特征向量的关系后，加一个简单的具体例子，比如用二维散点数据说明：数据点沿某个方向分散最广，这个方向就是第一特征向量；或用生活类比（如山坡上的水往最陡的方向流）帮助理解。",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "2 段 / 133 字"
+          },
+          {
+            "name": "submit_review",
+            "ok": true,
+            "summary": "rewrite（1 条问题）"
+          }
+        ],
+        "steps": 2,
+        "rejected": 0,
+        "error": null,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 10024.1,
+        "cost_usd": 0.011809
+      }
+    },
+    {
+      "id": "m08-detail_level-P3~dev",
+      "set": "deviate",
+      "text_id": "m08-detail_level-P3",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "PCA 和特征向量有什么关系？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9020,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "2 段 / 133 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9019.9,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m08-use_examples-more~fit",
+      "set": "fit",
+      "text_id": "m08-use_examples-more",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "PCA 和特征向量有什么关系？",
+      "expect": "ok",
+      "verdict": "ok",
+      "status": "submitted",
+      "wall_ms": 8176,
+      "run": {
+        "verdict": "ok",
+        "status": "submitted",
+        "notes": [
+          {
+            "aspect": "overall",
+            "comment": "结论第一，逐层深化（对称矩阵性质→PCA 拆分机理→具体数据例子），椭圆例子直观有效。字数、结构、举例比例都符合风格。"
+          }
+        ],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "3 段 / 325 字"
+          },
+          {
+            "name": "submit_review",
+            "ok": true,
+            "summary": "ok（0 条问题）"
+          }
+        ],
+        "steps": 2,
+        "rejected": 0,
+        "error": null,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 8176.1,
+        "cost_usd": 0.011411
+      }
+    },
+    {
+      "id": "m08-use_examples-more~dev",
+      "set": "deviate",
+      "text_id": "m08-use_examples-more",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "PCA 和特征向量有什么关系？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9942,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "3 段 / 325 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9941.5,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m08-use_examples-fewer~fit",
+      "set": "fit",
+      "text_id": "m08-use_examples-fewer",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "PCA 和特征向量有什么关系？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 10007,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "3 段 / 282 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 10006.5,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m08-use_examples-fewer~dev",
+      "set": "deviate",
+      "text_id": "m08-use_examples-fewer",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "PCA 和特征向量有什么关系？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9845,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "3 段 / 282 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9844.8,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m08-structure-conclusion_first~fit",
+      "set": "fit",
+      "text_id": "m08-structure-conclusion_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "PCA 和特征向量有什么关系？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 10182,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 417 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 10182.0,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m08-structure-conclusion_first~dev",
+      "set": "deviate",
+      "text_id": "m08-structure-conclusion_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "buildup_first",
+        "depth": "why"
+      },
+      "question": "PCA 和特征向量有什么关系？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9970,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 417 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9970.4,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m08-structure-buildup_first~fit",
+      "set": "fit",
+      "text_id": "m08-structure-buildup_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "buildup_first",
+        "depth": "why"
+      },
+      "question": "PCA 和特征向量有什么关系？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9103,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 285 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9102.5,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m08-structure-buildup_first~dev",
+      "set": "deviate",
+      "text_id": "m08-structure-buildup_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "PCA 和特征向量有什么关系？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9846,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 285 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9846.0,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m08-depth-what~fit",
+      "set": "fit",
+      "text_id": "m08-depth-what",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "PCA 和特征向量有什么关系？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9855,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 320 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9854.5,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m08-depth-what~dev",
+      "set": "deviate",
+      "text_id": "m08-depth-what",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "derivation"
+      },
+      "question": "PCA 和特征向量有什么关系？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 8002,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [],
+        "steps": 0,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 8001.8,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m08-depth-derivation~fit",
+      "set": "fit",
+      "text_id": "m08-depth-derivation",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "derivation"
+      },
+      "question": "PCA 和特征向量有什么关系？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9972,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "3 段 / 372 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9972.4,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "m08-depth-derivation~dev",
+      "set": "deviate",
+      "text_id": "m08-depth-derivation",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "PCA 和特征向量有什么关系？",
+      "expect": "rewrite",
+      "verdict": "rewrite",
+      "status": "submitted",
+      "wall_ms": 12831,
+      "run": {
+        "verdict": "rewrite",
+        "status": "submitted",
+        "notes": [
+          {
+            "aspect": "structure",
+            "comment": "第2段整段用英文引文，打破了讲解流。应该用中文叙述，英文术语可括注。"
+          },
+          {
+            "aspect": "detail_level",
+            "comment": "第1段关于对称矩阵特征向量的数学性质讲得较深，对初学者可能有点绕。可以简化为主要结论。"
+          },
+          {
+            "aspect": "use_examples",
+            "comment": "第3段椭圆类比很好，符合多举例的要求。"
+          }
+        ],
+        "issues": [
+          {
+            "aspect": "language",
+            "paragraph": 2,
+            "quote": "第7页原文：",
+            "fix": "删除整个第2段。将其信息用中文改写到其他段落中，例如在第1段或第3段补充说明'PCA报告的就是协方差矩阵拉伸最大的方向'这一点。"
+          }
+        ],
+        "feedback": "1. 第 2 段（讲解语言）「第7页原文：」：删除整个第2段。将其信息用中文改写到其他段落中，例如在第1段或第3段补充说明'PCA报告的就是协方差矩阵拉伸最大的方向'这一点。",
+        "tools": [
+          {
+            "name": "read_recent_turns",
+            "ok": true,
+            "summary": "0 轮"
+          },
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "3 段 / 372 字"
+          },
+          {
+            "name": "submit_review",
+            "ok": true,
+            "summary": "rewrite（1 条问题）"
+          }
+        ],
+        "steps": 3,
+        "rejected": 0,
+        "error": null,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 12831.3,
+        "cost_usd": 0.016868
+      }
+    },
+    {
+      "id": "c01-detail_level~conflict",
+      "set": "conflict",
+      "text_id": "c01-detail_level",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征方程是怎么来的？请讲得详细一些，把每个点都展开讲。",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9941,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "5 段 / 537 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9941.1,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "c01-detail_level~control",
+      "set": "control",
+      "text_id": "c01-detail_level",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征方程是怎么来的？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9964,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "5 段 / 537 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9963.9,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "c01-use_examples~conflict",
+      "set": "conflict",
+      "text_id": "c01-use_examples",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征方程是怎么来的？能多举几个具体的例子吗？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9347,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "3 段 / 301 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9347.4,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "c01-use_examples~control",
+      "set": "control",
+      "text_id": "c01-use_examples",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征方程是怎么来的？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9154,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "3 段 / 301 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9154.0,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "c01-structure~conflict",
+      "set": "conflict",
+      "text_id": "c01-structure",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征方程是怎么来的？先别直接告诉我结论，一步步带我推出来。",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 10063,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "7 段 / 505 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 10062.4,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "c01-structure~control",
+      "set": "control",
+      "text_id": "c01-structure",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征方程是怎么来的？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9173,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "7 段 / 505 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9172.4,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "c01-depth~conflict",
+      "set": "conflict",
+      "text_id": "c01-depth",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "特征方程是怎么来的？请把推导过程一步步写出来。",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9917,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 397 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9917.1,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "c01-depth~control",
+      "set": "control",
+      "text_id": "c01-depth",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "特征方程是怎么来的？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 10008,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 397 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 10007.9,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "c02-detail_level~conflict",
+      "set": "conflict",
+      "text_id": "c02-detail_level",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "对称矩阵的特征值有什么特点？请讲得详细一些，把每个点都展开讲。",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9333,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "5 段 / 625 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9333.1,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "c02-detail_level~control",
+      "set": "control",
+      "text_id": "c02-detail_level",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "对称矩阵的特征值有什么特点？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9957,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "5 段 / 625 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9957.0,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "c02-use_examples~conflict",
+      "set": "conflict",
+      "text_id": "c02-use_examples",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "对称矩阵的特征值有什么特点？能多举几个具体的例子吗？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 11047,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "7 段 / 522 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 11047.3,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "c02-use_examples~control",
+      "set": "control",
+      "text_id": "c02-use_examples",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "对称矩阵的特征值有什么特点？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9850,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "7 段 / 522 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9850.3,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "c02-structure~conflict",
+      "set": "conflict",
+      "text_id": "c02-structure",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "对称矩阵的特征值有什么特点？先别直接告诉我结论，一步步带我推出来。",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 8002,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [],
+        "steps": 0,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 8001.8,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "c02-structure~control",
+      "set": "control",
+      "text_id": "c02-structure",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "对称矩阵的特征值有什么特点？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9118,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 421 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9118.2,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "c02-depth~conflict",
+      "set": "conflict",
+      "text_id": "c02-depth",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "对称矩阵的特征值有什么特点？请把推导过程一步步写出来。",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 8002,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [],
+        "steps": 0,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 8001.9,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "c02-depth~control",
+      "set": "control",
+      "text_id": "c02-depth",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "对称矩阵的特征值有什么特点？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 10122,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "read_recent_turns",
+            "ok": true,
+            "summary": "0 轮"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 10121.9,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "c03-detail_level~conflict",
+      "set": "conflict",
+      "text_id": "c03-detail_level",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "迹和行列式跟特征值是什么关系？请讲得详细一些，把每个点都展开讲。",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 10190,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "5 段 / 533 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 10190.0,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "c03-detail_level~control",
+      "set": "control",
+      "text_id": "c03-detail_level",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "迹和行列式跟特征值是什么关系？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9986,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "5 段 / 533 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9985.6,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "c03-use_examples~conflict",
+      "set": "conflict",
+      "text_id": "c03-use_examples",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "迹和行列式跟特征值是什么关系？能多举几个具体的例子吗？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 15792,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "5 段 / 422 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 15792.3,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "c03-use_examples~control",
+      "set": "control",
+      "text_id": "c03-use_examples",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "迹和行列式跟特征值是什么关系？",
+      "expect": "rewrite",
+      "verdict": "rewrite",
+      "status": "submitted",
+      "wall_ms": 6809,
+      "run": {
+        "verdict": "rewrite",
+        "status": "submitted",
+        "notes": [
+          {
+            "aspect": "use_examples",
+            "comment": "结论和机制解释清楚了，但补充的三个具体例子（反射、缩放、旋转矩阵）与「不额外补例子」的要求不符。"
+          }
+        ],
+        "issues": [
+          {
+            "aspect": "use_examples",
+            "paragraph": 3,
+            "quote": "举例子（结合课件提到的几种矩阵类型）：",
+            "fix": "删除第3、4段所有具体例子。可保留第1段的原理解释和第2段的检查方法，这些是讲要点本身，不是额外补例。"
+          }
+        ],
+        "feedback": "1. 第 3 段（举例）「举例子（结合课件提到的几种矩阵类型）：」：删除第3、4段所有具体例子。可保留第1段的原理解释和第2段的检查方法，这些是讲要点本身，不是额外补例。",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "5 段 / 422 字"
+          },
+          {
+            "name": "submit_review",
+            "ok": true,
+            "summary": "rewrite（1 条问题）"
+          }
+        ],
+        "steps": 2,
+        "rejected": 0,
+        "error": null,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 6808.6,
+        "cost_usd": 0.011094
+      }
+    },
+    {
+      "id": "c03-structure~conflict",
+      "set": "conflict",
+      "text_id": "c03-structure",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "迹和行列式跟特征值是什么关系？先别直接告诉我结论，一步步带我推出来。",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 10938,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "9 段 / 432 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 10938.2,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "c03-structure~control",
+      "set": "control",
+      "text_id": "c03-structure",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "迹和行列式跟特征值是什么关系？",
+      "expect": "rewrite",
+      "verdict": "rewrite",
+      "status": "submitted",
+      "wall_ms": 9547,
+      "run": {
+        "verdict": "rewrite",
+        "status": "submitted",
+        "notes": [
+          {
+            "aspect": "structure",
+            "comment": "其他方面如详细程度、举例、深度、语言都符合要求；问题只在第一段没有先给出核心结论。"
+          },
+          {
+            "aspect": "detail_level",
+            "comment": "总体字数和各段长度合理，详细程度恰当。"
+          }
+        ],
+        "issues": [
+          {
+            "aspect": "structure",
+            "paragraph": 1,
+            "quote": "先从特征值的定义出发：λ 是特征值，意味着 A−λI 不可逆，即 det(A−λI)=0",
+            "fix": "改为在第1段开头直接说出结论：「特征值之和等于迹，特征值之积等于行列式。」然后再逐步推导这是为什么成立——用定义和2×2矩阵的例子来论证。"
+          }
+        ],
+        "feedback": "1. 第 1 段（结构）「先从特征值的定义出发：λ 是特征值，意味着 A−λI 不可逆，即 det(A−λI)=0」：改为在第1段开头直接说出结论：「特征值之和等于迹，特征值之积等于行列式。」然后再逐步推导这是为什么成立——用定义和2×2矩阵的例子来论证。",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "9 段 / 432 字"
+          },
+          {
+            "name": "submit_review",
+            "ok": true,
+            "summary": "rewrite（1 条问题）"
+          }
+        ],
+        "steps": 2,
+        "rejected": 0,
+        "error": null,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9546.6,
+        "cost_usd": 0.01193
+      }
+    },
+    {
+      "id": "c03-depth~conflict",
+      "set": "conflict",
+      "text_id": "c03-depth",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "迹和行列式跟特征值是什么关系？请把推导过程一步步写出来。",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9877,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "8 段 / 397 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9876.6,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "c03-depth~control",
+      "set": "control",
+      "text_id": "c03-depth",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "迹和行列式跟特征值是什么关系？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9925,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "8 段 / 397 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9924.6,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "c04-detail_level~conflict",
+      "set": "conflict",
+      "text_id": "c04-detail_level",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么剪切变换不能对角化？请讲得详细一些，把每个点都展开讲。",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9958,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 383 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9957.9,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "c04-detail_level~control",
+      "set": "control",
+      "text_id": "c04-detail_level",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么剪切变换不能对角化？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 10037,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 383 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 10037.2,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "c04-use_examples~conflict",
+      "set": "conflict",
+      "text_id": "c04-use_examples",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么剪切变换不能对角化？能多举几个具体的例子吗？",
+      "expect": "ok",
+      "verdict": "rewrite",
+      "status": "submitted",
+      "wall_ms": 9824,
+      "run": {
+        "verdict": "rewrite",
+        "status": "submitted",
+        "notes": [
+          {
+            "aspect": "communication",
+            "comment": "助手误解了学生的要求。学生问'能多举几个具体的例子吗？'是对这一轮的明确要求，应该优先于存好的'少举例'偏好。"
+          }
+        ],
+        "issues": [
+          {
+            "aspect": "use_examples",
+            "paragraph": 4,
+            "quote": "课件里只给了剪切这一个具体例子，没有列举更多类型的不可对角化矩阵，所以没法替你补充课件之外没提到的其他例子。",
+            "fix": "删除这段说明，改为补充给出 2–3 个具体的不可对角化矩阵的例子（例如含有 Jordan 块的矩阵，或其他特征向量不足的情况），每个例子用矩阵形式简洁展示。"
+          }
+        ],
+        "feedback": "1. 第 4 段（举例）「课件里只给了剪切这一个具体例子，没有列举更多类型的不可对角化矩阵，所以没法替你补充课件之外没提到的其他例子。」：删除这段说明，改为补充给出 2–3 个具体的不可对角化矩阵的例子（例如含有 Jordan 块的矩阵，或其他特征向量不足的情况），每个例子用矩阵形式简洁展示。",
+        "tools": [
+          {
+            "name": "read_recent_turns",
+            "ok": true,
+            "summary": "0 轮"
+          },
+          {
+            "name": "submit_review",
+            "ok": true,
+            "summary": "rewrite（1 条问题）"
+          }
+        ],
+        "steps": 2,
+        "rejected": 0,
+        "error": null,
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9824.2,
+        "cost_usd": 0.012044
+      }
+    },
+    {
+      "id": "c04-use_examples~control",
+      "set": "control",
+      "text_id": "c04-use_examples",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么剪切变换不能对角化？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9949,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "4 段 / 377 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9949.0,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "c04-structure~conflict",
+      "set": "conflict",
+      "text_id": "c04-structure",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么剪切变换不能对角化？先别直接告诉我结论，一步步带我推出来。",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9884,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "7 段 / 612 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9884.4,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "c04-structure~control",
+      "set": "control",
+      "text_id": "c04-structure",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么剪切变换不能对角化？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 8002,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [],
+        "steps": 0,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 8001.4,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "c04-depth~conflict",
+      "set": "conflict",
+      "text_id": "c04-depth",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "为什么剪切变换不能对角化？请把推导过程一步步写出来。",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 10991,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "7 段 / 447 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 10990.8,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "c04-depth~control",
+      "set": "control",
+      "text_id": "c04-depth",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "为什么剪切变换不能对角化？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 10283,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "7 段 / 447 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 10283.0,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "c05-detail_level~conflict",
+      "set": "conflict",
+      "text_id": "c05-detail_level",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "反复作用一个矩阵之后，为什么最大的特征值最重要？请讲得详细一些，把每个点都展开讲。",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 10286,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "5 段 / 427 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 10285.8,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "c05-detail_level~control",
+      "set": "control",
+      "text_id": "c05-detail_level",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "反复作用一个矩阵之后，为什么最大的特征值最重要？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 10656,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "5 段 / 427 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 10655.9,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "c05-use_examples~conflict",
+      "set": "conflict",
+      "text_id": "c05-use_examples",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "反复作用一个矩阵之后，为什么最大的特征值最重要？能多举几个具体的例子吗？",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9254,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "5 段 / 488 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9254.1,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "c05-use_examples~control",
+      "set": "control",
+      "text_id": "c05-use_examples",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "反复作用一个矩阵之后，为什么最大的特征值最重要？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9850,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "5 段 / 488 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9850.3,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "c05-structure~conflict",
+      "set": "conflict",
+      "text_id": "c05-structure",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "反复作用一个矩阵之后，为什么最大的特征值最重要？先别直接告诉我结论，一步步带我推出来。",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9449,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "7 段 / 420 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9448.6,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "c05-structure~control",
+      "set": "control",
+      "text_id": "c05-structure",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "反复作用一个矩阵之后，为什么最大的特征值最重要？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9088,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "7 段 / 420 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9088.1,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "c05-depth~conflict",
+      "set": "conflict",
+      "text_id": "c05-depth",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "反复作用一个矩阵之后，为什么最大的特征值最重要？请把推导过程一步步写出来。",
+      "expect": "ok",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9847,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "10 段 / 422 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9846.6,
+        "cost_usd": null
+      }
+    },
+    {
+      "id": "c05-depth~control",
+      "set": "control",
+      "text_id": "c05-depth",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "反复作用一个矩阵之后，为什么最大的特征值最重要？",
+      "expect": "rewrite",
+      "verdict": null,
+      "status": "failed",
+      "wall_ms": 9870,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "notes": [],
+        "issues": [],
+        "feedback": "",
+        "tools": [
+          {
+            "name": "measure_explanation",
+            "ok": true,
+            "summary": "10 段 / 422 字"
+          }
+        ],
+        "steps": 1,
+        "rejected": 0,
+        "error": "TimeoutError: 超过 8 秒未返回",
+        "model": "claude-haiku-4-5-20251001",
+        "prompt_version": "sr1",
+        "latency_ms": 9870.3,
+        "cost_usd": null
+      }
+    }
+  ]
+}

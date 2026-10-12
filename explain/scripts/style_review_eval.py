@@ -176,7 +176,16 @@ def build_items() -> list[dict[str, Any]]:
 # ---------------------------------------------------------------- run
 
 
-def make_agent(model: str) -> StyleReviewAgent:
+def make_agent(model: str, no_timeout: bool = False) -> StyleReviewAgent:
+    a = _make_agent(model)
+    if no_timeout:
+        # 偏离预登记的诊断跑（见结果文件）：生产的 8 s / 15 s 时限下大多数审查超时，
+        # 这一跑放开时限，只为看「审完的话判得准不准」。prompt、工具、校验都不变。
+        a.call_timeout_s, a.deadline_s = 120.0, 300.0
+    return a
+
+
+def _make_agent(model: str) -> StyleReviewAgent:
     if model == "haiku":
         return build_style_review_agent()
     from explain.llm import AnthropicModel
@@ -185,16 +194,18 @@ def make_agent(model: str) -> StyleReviewAgent:
                                            cache_system=False, cache_conversation=False))
 
 
-def results_path(model: str) -> Path:
-    return RUNS / f"style_review_eval_results_{model}.json"
+def results_path(model: str, no_timeout: bool = False) -> Path:
+    return RUNS / f"style_review_eval_results_{model}{'_notimeout' if no_timeout else ''}.json"
 
 
 def cmd_run(args: Any) -> int:
     texts = {r["id"]: r for r in json.loads(BASE.read_text(encoding="utf-8"))["texts"]}
     items = build_items()
+    if args.sets:
+        items = [it for it in items if it["set"] in args.sets.split(",")]
     if args.limit:
         items = items[: args.limit]
-    path = results_path(args.model)
+    path = results_path(args.model, args.no_timeout)
     done = {r["id"]: r for r in json.loads(path.read_text(encoding="utf-8"))["results"]} if path.exists() else {}
     todo = [it for it in items if it["id"] not in done]
     print(f"{args.model}：已有 {len(done)} 条，要跑 {len(todo)} 条")
@@ -204,7 +215,7 @@ def cmd_run(args: Any) -> int:
         prefs = render_preferences(style_config_for(p["detail_level"]), p["detail_level"],
                                    {k: p[k] for k in ("use_examples", "structure", "depth")})
         started = time.perf_counter()
-        r = make_agent(args.model).review(preferences=prefs, question=it["question"],
+        r = make_agent(args.model, args.no_timeout).review(preferences=prefs, question=it["question"],
                                           text=texts[it["text_id"]]["text"], history=())
         d = r.to_dict()
         return {**it, "verdict": r.verdict, "status": r.status, "wall_ms": round((time.perf_counter() - started) * 1000),
@@ -256,10 +267,11 @@ def pct(a: int, n: int) -> str:
 
 
 def cmd_report(args: Any) -> int:
-    res = json.loads(results_path(args.model).read_text(encoding="utf-8"))["results"]
+    res = json.loads(results_path(args.model, args.no_timeout).read_text(encoding="utf-8"))["results"]
     by = lambda s, axis=None: [r for r in res if r["set"] == s and (axis is None or r["axis"] == axis)]  # noqa: E731
     sus = suspicious_detail_pairs()
-    lines = [f"# 风格审查 agent 评测 · 原始汇总（{args.model}）", ""]
+    tag = f"{args.model}{'_notimeout' if args.no_timeout else ''}"
+    lines = [f"# 风格审查 agent 评测 · 原始汇总（{tag}）", ""]
     x, y, z, ctl = rate(by("deviate"), "rewrite"), rate(by("fit"), "rewrite"), rate(by("conflict"), "ok"), \
         rate(by("control"), "rewrite")
     lines += [
@@ -299,13 +311,13 @@ def cmd_report(args: Any) -> int:
         lines.append(f"- 去掉可疑对之后（参考，不是标题数字）：X {pct(*sx)}，Y {pct(*sy)}")
     lines += ["", "## 判错的条目", ""]
     for r in res:
-        if (r["verdict"] or "ok") == ("ok" if r["expect"] == "ok" else "rewrite") or \
-                (r["expect"] == "ok" and r["verdict"] != "rewrite"):
+        passed_it = r["verdict"] != "rewrite"
+        if passed_it == (r["expect"] == "ok"):
             continue
         iss = "；".join(f"第{i['paragraph']}段 {i['aspect']}「{i['quote'][:20]}」{i['fix'][:40]}"
                        for i in r["run"]["issues"]) or "；".join(n["comment"][:50] for n in r["run"]["notes"][:2])
         lines.append(f"- `{r['id']}` 期望 {r['expect']}、得到 {r['verdict']}：{iss}")
-    out = RUNS / f"style_review_eval_report_raw_{args.model}.md"
+    out = RUNS / f"style_review_eval_report_raw_{tag}.md"
     out.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print("\n".join(lines[:22]))
     print(f"→ {out}")
@@ -320,9 +332,12 @@ def main() -> int:
     r = sub.add_parser("run")
     r.add_argument("--model", choices=["haiku", "sonnet"], default="haiku")
     r.add_argument("--limit", type=int, default=0)
+    r.add_argument("--sets", default="", help="只跑这些集，逗号分隔：fit,deviate,conflict,control")
     r.add_argument("--workers", type=int, default=8)
+    r.add_argument("--no-timeout", action="store_true", help="放开生产时限的诊断跑（偏离预登记）")
     p = sub.add_parser("report")
     p.add_argument("--model", choices=["haiku", "sonnet"], default="haiku")
+    p.add_argument("--no-timeout", action="store_true")
     args = ap.parse_args()
     return {"generate": cmd_generate, "run": cmd_run, "report": cmd_report}[args.cmd](args)
 

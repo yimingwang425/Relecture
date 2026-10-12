@@ -200,10 +200,9 @@ class TestDomains:
         else:  # pragma: no cover
             raise AssertionError("P1 没有被拒 —— 它被当成某个默认档位处理了")
 
-    def test_only_detail_level_is_enforced(self):
-        """四条轴里只有一条被 A 类审查执行（PRD §8.5 未校准前，B 类只进 prompt）。"""
-        assert ENFORCED["detail_level"] is True
-        assert not any(ENFORCED[a] for a in ("use_examples", "structure", "depth"))
+    def test_all_axes_are_reviewed(self):
+        """四条轴都交给风格审查 agent（2026-10-12）。"""
+        assert all(ENFORCED[a] for a in ("detail_level", "use_examples", "structure", "depth"))
 
 
 class TestDiscrimination:

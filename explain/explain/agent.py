@@ -20,7 +20,7 @@
 
 | 交给模型 | 留在代码里 |
 | --- | --- |
-| 要不要再检索、用什么查询 | 风格审查与重写（`RuleReviewer`） |
+| 要不要再检索、用什么查询 | 风格审查与重写（`StyleReviewer`：版权规则 + 风格审查 agent） |
 | 翻看某一页的全文 | 首轮检索与首轮兜底判断（F70：接进生产、不加开关） |
 | 查完后要不要再请判断员确认 | 受限页（入库时就没切片，工具碰不到） |
 | 这一句需不需要查课件（路由） | 工具轮数上限、失败回落 |
@@ -57,7 +57,7 @@ from .llm import Completion, ToolCall, Usage
 from .observe import observe
 from .pipeline import Attempt, RoundResult, Trajectory, generate, run_round
 from .prompt import build_system, build_user_turn, render_gap_note
-from .review import RuleReviewer
+from .review import Reviewer
 
 __all__ = [
     "AGENT_PROMPT_VERSION",
@@ -511,7 +511,7 @@ def run_agent_round(
     trajectory: Trajectory,
     tools: Any,
     model: Any,
-    reviewer: RuleReviewer,
+    reviewer: Reviewer,
     style_rules: str,
     course_label: str,
     context: ContextPack,
@@ -550,7 +550,8 @@ def run_agent_round(
     if route is not None and getattr(route, "answers_directly", False):
         text = route.reply
         emit_delta(text)
-        review = reviewer.review(text)
+        # 只跑规则、不问风格审查员：直接回复不按讲法审查（下面也不据此重写）。
+        review = reviewer.review(text, question=question, judge=False)
         completion = route.completion or Completion(text=text, usage=Usage(), latency_ms=0.0,
                                                     model=getattr(route, "model", None) or "router")
         attempt = Attempt(0, completion, review)
@@ -682,7 +683,8 @@ def run_agent_round(
             emit({"type": "reset", "reason": "review", "attempt": attempt_index})
             completion = call(working, _Speaker(emit_delta, emit, gated=False), allow_tools=False)
             critical += completion.latency_ms
-        review = reviewer.review(completion.text)
+        review = reviewer.review(completion.text, question=question)
+        critical += review.latency_ms
         attempts.append(Attempt(attempt_index, completion, review))
         final_text = completion.text
         if review.passed:
@@ -813,7 +815,7 @@ def run_with_fallback(
     retriever: Any,
     tools: Any,
     model: Any,
-    reviewer: RuleReviewer,
+    reviewer: Reviewer,
     style_rules: str,
     course_label: str,
     context: ContextPack,

@@ -271,7 +271,7 @@ export function StyleSettings({
               <legend className="contents">
                 <span className="t-heading mb-3 flex flex-wrap items-center gap-2">
                   语气
-                  <span className="t-caption font-[var(--fw-regular)]">只作倾向，不做判定</span>
+                  <span className="chip chip--accent h-6 px-2 text-[11.5px]">会被自动审查</span>
                 </span>
               </legend>
               <div className="grid gap-2 sm:grid-cols-3">

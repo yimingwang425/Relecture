@@ -7,9 +7,8 @@
 在 `scripts/acceptance_p0_p3.py`，属人工验收。
 
 但第四段不是唯一的下游：配置**同时驱动判定**（口径 X05）。
-`TestConfigReachesTheJudgement` 用同一段固定文本在 P0 与 P3 下各判一次，
-结论必须相反——那证明库里那一行真的进了 `RuleReviewer`，
-**不需要模型参与**，也就不受「模型这次恰好听话」的影响。
+`TestConfigReachesTheJudgement` 证明库里那一行真的进了风格审查 agent
+（审查员用假模型，不受「模型这次恰好听话」的影响）。
 """
 
 from __future__ import annotations
@@ -111,30 +110,70 @@ class TestConfigReachesThePrompt:
 
 
 class TestConfigReachesTheJudgement:
-    """库里那一行 → `RuleReviewer`。**同一段文本，两个档位下结论相反。**
+    """库里那一行 → 风格审查 agent（2026-10-12）。
 
-    这一条不需要模型参与，所以它不受「模型这次恰好听话」影响——
-    它单独证明了配置真的驱动判定（口径 X05：配置同时驱动 prompt 与判定）。
+    审查员是假的（不断言模型判得准不准），这里只证明两件事：
+    **它读到的偏好是这个用户库里那一行**；**只有它说 rewrite 才打回**——
+    段落长度出了区间照算、只记录，不再单独决定重写。
     """
 
-    def test_same_text_passes_p0_and_fails_p3(self, keypair, jwks, rest):
+    @staticmethod
+    def _build(jwks, rest, verdicts, seen, *, model=None):
+        from explain.fake import FakeExplainModel
+        from explain.llm import Completion, Usage
+        from explain.style_review import StyleJudge
+
+        class JudgeModel:
+            name = "fake:claude-haiku-4-5"
+
+            def complete(self, system, messages):
+                seen.append(messages[0]["content"])
+                v = verdicts[min(len(seen), len(verdicts)) - 1]
+                fb = "第 1 段铺垫太长，把结论提到开头。" if v == "rewrite" else ""
+                return Completion(text=f'{{"verdict": "{v}", "notes": [], "feedback": "{fb}"}}',
+                                  usage=Usage(input_tokens=300, output_tokens=40),
+                                  latency_ms=1.0, model=self.name)
+
+        app = create_app(
+            settings=SETTINGS,
+            verifier=TokenVerifier(jwks, issuer=ISSUER, audience=AUDIENCE),
+            supabase=SupabaseClient(SETTINGS.rest_url, SETTINGS.supabase_publishable_key, transport=rest),
+            model_factory=lambda: model or FakeExplainModel(),
+            style_judge_factory=lambda: StyleJudge(JudgeModel()),
+        )
+        return TestClient(app, raise_server_exceptions=False)
+
+    def test_judge_reads_this_users_row(self, keypair, jwks, rest):
+        seen: list[str] = []
+        c = self._build(jwks, rest, ["ok"], seen)
+        ask(c, keypair, USER_A)
+        ask(c, keypair, USER_B)
+        assert "详细" in seen[0] and "精简" in seen[1]
+        assert "先铺垫后收结论" in seen[1] and "先铺垫后收结论" not in seen[0]
+
+    def test_only_the_judge_sends_it_back(self, keypair, jwks, rest):
         from explain.fake import FakeExplainModel
 
-        # 每段约 70 字：落在 P0 的 30–120 里，落在 P3 的 15–40 之外。
-        # `corrected_chars` 也设成 70 —— 不让假模型「收到反馈就改好」，
-        # 否则 P3 那条会因为重生成成功而变绿，测到的就不是判定了。
+        # 每段约 70 字：落在 P3 的 15–40 之外。审查员说 ok → 放行，段长只记录。
         stubborn = FakeExplainModel(target_chars=70, corrected_chars=70)
-        c = build(jwks, rest, model=stubborn)
+        b = ask(self._build(jwks, rest, ["ok"], [], model=stubborn), keypair, USER_B).json()
+        assert b["all_activated_passed"] is False
+        assert b["accepted"] is True and b["regenerations"] == 0
+        assert b["style_review"]["verdict"] == "ok"
 
-        a = ask(c, keypair, USER_A).json()
-        b = ask(c, keypair, USER_B).json()
+        # 审查员一直说 rewrite → 重生成到触顶，降级输出（PRD §10）
+        b = ask(self._build(jwks, rest, ["rewrite"], [], model=stubborn), keypair, USER_B).json()
+        assert b["accepted"] is False and b["regenerations"] == 2
+        assert [x["verdict"] for x in b["style_review"]["attempts"]] == ["rewrite"] * 3
 
-        assert a["all_activated_passed"] is True, f"P0 下 70 字/段应当达标：{a}"
-        assert b["all_activated_passed"] is False, f"P3 下 70 字/段应当不达标：{b}"
-        assert a["accepted"] is True and b["accepted"] is False
-        # P3 不达标 → 触发重生成直到触顶（PRD §10 降级输出）
-        assert b["regenerations"] > 0, "P3 下不达标却没有触发重生成"
-        assert a["regenerations"] == 0
+    def test_no_judge_means_no_style_rewrites(self, keypair, jwks, rest):
+        """没注入审查员（也没配真的）→ 只剩版权那一条，讲法不审。"""
+        from explain.fake import FakeExplainModel
+
+        stubborn = FakeExplainModel(target_chars=70, corrected_chars=70)
+        b = ask(build(jwks, rest, model=stubborn), keypair, USER_B).json()
+        assert b["accepted"] is True and b["regenerations"] == 0
+        assert b["style_review"] is None
 
     def test_target_range_comes_from_the_row(self, keypair, jwks, rest):
         c = build(jwks, rest)

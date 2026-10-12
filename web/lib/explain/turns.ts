@@ -93,6 +93,20 @@ export type TurnAnswer = {
    * 流式时 `done` 里只是计划（`pending`），结果随 `done` 之后的 `verify` 事件到，由页面补上。
    */
   verification: VerifyInfo | null;
+  /**
+   * 风格审查 agent 对最终那一版的判断（2026-10-12）。`null` = 这一轮没问审查员
+   * （直接回复、服务端没配，或构建旧于审查 agent）。
+   */
+  styleReview: StyleReviewInfo | null;
+};
+
+export type StyleReviewInfo = {
+  /** `ok` / `rewrite`；`null` = 审查员没判成（报错、超时、输出读不懂），按通过处理。 */
+  verdict: "ok" | "rewrite" | null;
+  notes: { aspect: string; comment: string }[];
+  /** 每一版各自的结论，按顺序。打回过几次、为什么，从这里看。 */
+  attempts: ("ok" | "rewrite" | null)[];
+  error: string | null;
 };
 
 /** 核对状态。`lost` = 等到流结束也没收到结果（连接断了；服务端多半核完并存了，刷新可见）。 */
@@ -386,6 +400,12 @@ export function answerFromResponse(body: {
     compaction?: { status?: string } | null;
   } | null;
   verification?: unknown;
+  style_review?: {
+    verdict?: string | null;
+    notes?: { aspect?: string; comment?: string }[];
+    attempts?: { verdict?: string | null }[];
+    error?: string | null;
+  } | null;
 }): TurnAnswer {
   const c = body.confusion;
   const byFile = new Map<string, Set<number>>();
@@ -470,6 +490,33 @@ export function answerFromResponse(body: {
         }
       : null,
     verification: verifyFromPayload(body.verification),
+    styleReview: styleReviewFromPayload(body.style_review),
+  };
+}
+
+const STYLE_VERDICTS = ["ok", "rewrite"] as const;
+
+/** 认不出的结论当 null，**不就近解释**成「通过」（G01 同一条）。 */
+function styleVerdict(v: unknown): "ok" | "rewrite" | null {
+  return STYLE_VERDICTS.find((x) => x === v) ?? null;
+}
+
+/** 风格审查的结果体。缺了就是 null，不编。 */
+export function styleReviewFromPayload(
+  r: { verdict?: unknown; notes?: unknown; attempts?: unknown; error?: unknown } | null | undefined,
+): StyleReviewInfo | null {
+  if (!r || typeof r !== "object") return null;
+  const notes = Array.isArray(r.notes) ? r.notes : [];
+  const attempts = Array.isArray(r.attempts) ? r.attempts : [];
+  return {
+    verdict: styleVerdict(r.verdict),
+    notes: notes.flatMap((n) =>
+      n && typeof n === "object"
+        ? [{ aspect: String((n as { aspect?: unknown }).aspect ?? ""), comment: String((n as { comment?: unknown }).comment ?? "") }]
+        : [],
+    ),
+    attempts: attempts.map((a) => styleVerdict(a && typeof a === "object" ? (a as { verdict?: unknown }).verdict : null)),
+    error: typeof r.error === "string" ? r.error : null,
   };
 }
 
@@ -591,6 +638,7 @@ export function turnsFromMessages(
           confusion: m.confusion as never,
           gap: m.gap as never,
           agent: m.agent as never,
+          style_review: m.style_review as never,
           // 库里的 status 只有 written / failed；结果体的形状与 `verify` 事件同一个。
           verification: (() => {
             const c = v.roundId ? checkByRound.get(v.roundId) : undefined;

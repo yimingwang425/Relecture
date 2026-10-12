@@ -2150,6 +2150,30 @@ await (async () => {
     "重新打开会话时读 answer_checks 并挂回历史轮次");
 })();
 
+// ================================================================ 二十三 · 风格审查 agent（2026-10-12）
+
+console.log("\n\x1b[1m二十三 · 风格审查 agent · 结果体与诊断行\x1b[0m");
+await (async () => {
+  const T = require_(join(outExplain, "turns.js"));
+  const r = T.styleReviewFromPayload({
+    verdict: "ok", notes: [{ aspect: "结构", comment: "先给了结论" }],
+    attempts: [{ verdict: "rewrite" }, { verdict: "ok" }], error: null,
+  });
+  check(r.verdict === "ok" && r.attempts.join(",") === "rewrite,ok" && r.notes[0].aspect === "结构",
+    "结论、各版结论、印象读得出", JSON.stringify(r));
+  check(T.styleReviewFromPayload({ verdict: "pass" }).verdict === null,
+    "认不出的结论 → null，不就近解释成「通过」");
+  check(T.styleReviewFromPayload(null) === null && T.styleReviewFromPayload(undefined) === null,
+    "没给 → null，不编");
+  const a = T.answerFromResponse({ text: "x", accepted: true, regenerations: 0, mean_paragraph_chars: 10,
+    detail_level: "P0", style_review: { verdict: "rewrite", attempts: [{ verdict: "rewrite" }] } });
+  check(a.styleReview?.verdict === "rewrite", "answerFromResponse 带上 styleReview");
+  check(T.answerFromResponse({ text: "x", accepted: true, regenerations: 0, mean_paragraph_chars: 10,
+    detail_level: "P0" }).styleReview === null, "旧构建没给 style_review → null");
+  const clientCode = readFileSync(join(WEB, "app/explain/explain-client.tsx"), "utf8");
+  check(/\["style_review", t\.answer\.styleReview/.test(clientCode), "诊断区有 style_review 一行");
+})();
+
 rmSync(out, { recursive: true, force: true });
 rmSync(outUpload, { recursive: true, force: true });
 rmSync(outExplain, { recursive: true, force: true });

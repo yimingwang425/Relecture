@@ -62,7 +62,7 @@ from .gap import GapChecker, GapResult, NullGapChecker
 from .llm import Completion, Model, Usage
 from .observe import Observations, observe
 from .prompt import build_system, build_user_turn, render_gap_note
-from .review import Review, RuleReviewer
+from .review import Review, Reviewer, RuleReviewer
 
 __all__ = ["Attempt", "RoundResult", "Trajectory", "run_round", "generate"]
 
@@ -119,7 +119,7 @@ class RoundResult:
     def usage(self) -> Usage:
         total = Usage()
         for a in self.attempts:
-            total = total + a.completion.usage
+            total = total + a.completion.usage + a.review.usage
         for d in self.discarded:
             total = total + d.usage
         if self.agent is not None:
@@ -128,7 +128,8 @@ class RoundResult:
 
     @property
     def cost_usd(self) -> float:
-        return (sum(a.completion.cost for a in self.attempts)
+        # 风格审查 agent 的调用也计入（`Review.cost_usd`，规则审查是 0）。
+        return (sum(a.completion.cost + a.review.cost_usd for a in self.attempts)
                 + sum(d.cost for d in self.discarded) + self.gap.cost_usd
                 + self.retrieval_llm_cost_usd
                 + (self.agent.cost_usd if self.agent is not None else 0.0))
@@ -171,7 +172,8 @@ class RoundResult:
     @property
     def generation_latency_ms(self) -> float:
         """只算正式各版的生成，用于分离出兜底判断的延迟增量。"""
-        return sum(a.completion.latency_ms for a in self.attempts)
+        # 每一版之后都要等审查（风格审查 agent 是一次模型调用），它在关键路径上。
+        return sum(a.completion.latency_ms + a.review.latency_ms for a in self.attempts)
 
     @property
     def final_review(self) -> Review:
@@ -267,7 +269,7 @@ def run_round(
     trajectory: Trajectory,
     retriever: Retriever,
     model: Model,
-    reviewer: RuleReviewer,
+    reviewer: Reviewer,
     style_rules: str,
     course_label: str,
     review_enabled: bool,
@@ -365,7 +367,7 @@ def run_round(
                 # 上一版已经给用户看过了，告诉前端清掉（口径 F94）。
                 emit({"type": "reset", "reason": "review", "attempt": attempt_index})
             completion = _generate(model, system, working, emit_delta)
-        review = reviewer.review(completion.text)
+        review = reviewer.review(completion.text, question=question)
         attempt = Attempt(attempt_index, completion, review)
         attempts.append(attempt)
         if on_attempt is not None:

@@ -23,13 +23,15 @@ PRD §7.2 的论证是「生成方与审查方的目标相反」。v1 把这一�
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Protocol
 
 from a_rules.config import StyleConfig
 from a_rules.evaluator import Evaluation, evaluate
 from a_rules.glossary import Glossary
 
-__all__ = ["Review", "RuleReviewer"]
+from .llm import Usage
+
+__all__ = ["Review", "Reviewer", "RuleReviewer"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -38,6 +40,21 @@ class Review:
     evaluation: Evaluation
     failed_dimensions: tuple[str, ...]
     feedback: str
+    #: 风格审查 agent 的判断（`style_review.StyleJudgment`）。规则审查、或这一版没问审查员时为 None。
+    judge: Any = None
+
+    @property
+    def usage(self) -> Usage:
+        return self.judge.usage if self.judge is not None else Usage()
+
+    @property
+    def cost_usd(self) -> float:
+        """计入单轮总成本。超时时金额未知（`judge.cost_usd is None`），这里按 0 加，原值在 `judge` 里。"""
+        return (self.judge.cost_usd or 0.0) if self.judge is not None else 0.0
+
+    @property
+    def latency_ms(self) -> float:
+        return self.judge.latency_ms if self.judge is not None else 0.0
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -45,6 +62,7 @@ class Review:
             "failed_dimensions": list(self.failed_dimensions),
             "feedback": self.feedback,
             "evaluation": self.evaluation.to_dict(),
+            "judge": self.judge.to_dict() if self.judge is not None else None,
         }
 
 
@@ -73,6 +91,12 @@ def _feedback_for(name: str, d: Any) -> str:
     return f"{name} 不达标（当前 {d.raw}，要求 {d.target}）。"
 
 
+class Reviewer(Protocol):
+    """讲解链路要的审查器接口。`RuleReviewer`（实验侧）与 `style_review.StyleReviewer`（生产）都满足它。"""
+
+    def review(self, text: str, *, question: str = "", judge: bool = True) -> Review: ...
+
+
 @dataclass(frozen=True, slots=True)
 class RuleReviewer:
     """三维规则审查。
@@ -85,7 +109,8 @@ class RuleReviewer:
     config: StyleConfig
     glossary: Glossary | None = None
 
-    def review(self, text: str) -> Review:
+    def review(self, text: str, *, question: str = "", judge: bool = True) -> Review:
+        """`question` / `judge` 与 `style_review.StyleReviewer` 同一个接口，这里用不到。"""
         ev = evaluate(text, self.config, self.glossary)
         failed = tuple(d.name for d in ev.scored if not d.passed)
         if not failed:

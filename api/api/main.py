@@ -171,6 +171,7 @@ def create_app(
     router_factory: Any | None = None,
     memory_factory: Any | None = None,
     verify_factory: Any | None = None,
+    style_judge_factory: Any | None = None,
 ) -> FastAPI:
     """组装。每个依赖都可注入，**为的是断言能喂真东西**。
 
@@ -225,6 +226,17 @@ def create_app(
         from explain.verify import build_verify_agent
 
         return build_verify_agent(retriever)
+
+    # ---- 风格审查 agent（2026-10-12）。同一条：注入了讲解模型而没注入它时不造真的。
+    # 拿不到就是 None：只剩版权那一条硬规则，讲法不审。
+    def make_style_judge() -> Any | None:
+        if style_judge_factory is not None:
+            return style_judge_factory()
+        if model_factory is not None or cfg.anthropic_api_key is None:
+            return None
+        from explain.style_review import build_style_judge
+
+        return build_style_judge()
 
     verify = verifier or TokenVerifier(HttpJwks(cfg.jwks_url), issuer=cfg.issuer)
     db = supabase or SupabaseClient(cfg.rest_url, cfg.supabase_publishable_key)
@@ -458,7 +470,7 @@ def create_app(
         import dataclasses
 
         from explain.pipeline import Trajectory
-        from explain.review import RuleReviewer
+        from explain.style_review import StyleReviewer, render_preferences
         from explain.style_prompt import render_all_style_rules
 
         style, active, label = prep["style"], prep["active"], prep["label"]
@@ -553,7 +565,10 @@ def create_app(
             web=route is not None and route.route == "web",
             context=ctx,
             model=make_model(),
-            reviewer=RuleReviewer(style),
+            # 风格审查 agent：把学生**当前**存的偏好交给它，大致符合就放行，明显偏离才打回。
+            # 偏好每轮从 style_config 现读，用户改了下一轮就按新的审。
+            reviewer=StyleReviewer(style, render_preferences(style, row.detail_level, row.b_class, row.tone),
+                                   make_style_judge()),
             # ← A 类 + B 类，拼法与 pairs.json 里 16 个样例逐字节同形（口径 F19/F45）
             # 语气那一行：默认 neutral 渲染成空，这一段与样例的生成条件逐字节相同。
             style_rules=render_all_style_rules(style, row.b_class, row.tone),
@@ -623,6 +638,7 @@ def create_app(
                          "regenerations": result.regenerations,
                          "detail_level": row.detail_level,
                          "mean_paragraph_chars": ev.by_name("paragraph_length").raw,
+                         "style_review": _style_review_of(result),
                      }},
                 ])
                 persisted["written"] = 2
@@ -763,6 +779,8 @@ def create_app(
             "paragraph_length_target": style.paragraph_length.to_dict(),
             "mean_paragraph_chars": ev.by_name("paragraph_length").raw,
             "all_activated_passed": ev.all_activated_passed,
+            # 风格审查 agent 对最终那一版的判断，加上每一版各自的结论（打回了几次、为什么）。
+            "style_review": _style_review_of(result),
             "style_rules": result.system_text.split("## 材料范围")[0].strip(),
         }
 
@@ -1492,6 +1510,20 @@ def _default_model() -> Any:
     from explain.llm import AnthropicModel
 
     return AnthropicModel()
+
+
+def _style_review_of(result: Any) -> dict[str, Any] | None:
+    """最终那一版的风格审查结论 + 每一版的判断。整轮都没问审查员（直接回复、没配）时为 None。"""
+    judged = [a.review.judge for a in result.attempts if getattr(a.review, "judge", None) is not None]
+    if not judged:
+        return None
+    final = result.final_review.judge
+    return {
+        **(final.to_dict() if final is not None else {"verdict": None}),
+        "attempts": [a.review.judge.to_dict() if a.review.judge is not None
+                     else {"verdict": None, "failed_dimensions": list(a.review.failed_dimensions)}
+                     for a in result.attempts],
+    }
 
 
 def _default_gap_checker() -> Any:

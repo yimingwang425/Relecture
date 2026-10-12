@@ -250,6 +250,7 @@ class TestCostAndLatencyAccounting:
 
         class _R:
             passed = True
+            latency_ms = 0.0   # 规则审查不花时间（风格审查 agent 的耗时另算，见 Review.latency_ms）
 
         gen = Completion(text="x", usage=Usage(), latency_ms=2000.0, model="fake:m")
         gap = GapResult(verdict="covered", latency_ms=1500.0, implementation="model")

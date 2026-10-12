@@ -67,12 +67,13 @@ DEFAULTS: dict[str, str] = {
     "depth": "why",
 }
 
-#: 哪条轴被 A 类审查执行（F1方案 §2.2）。四条里只有一条。
+#: 哪条轴会被审查。2026-10-12 起四条都交给风格审查 agent（`explain.style_review`），
+#: 按「大致符合」判，明显偏离才打回。
 ENFORCED: dict[str, bool] = {
     "detail_level": True,
-    "use_examples": False,
-    "structure": False,
-    "depth": False,
+    "use_examples": True,
+    "structure": True,
+    "depth": True,
 }
 
 #: 产品档位按区间从宽到窄排序。反馈按钮「太啰嗦」沿它下移一格（口径 F05）。

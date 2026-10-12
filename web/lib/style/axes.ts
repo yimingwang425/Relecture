@@ -67,16 +67,14 @@ export const DEFAULTS = {
 } as const satisfies { [A in AxisId]: AxisValue<A> };
 
 /**
- * 哪条轴被 A 类审查执行。四条里只有一条。
- *
- * `enforced: false` 不是装饰：B 类只进 prompt、不进判定（PRD §8.5 未校准前），
- * 页面上必须说出来，否则用户会以为四条轴一样硬。
+ * 哪条轴会被审查。2026-10-12 起四条都交给风格审查 agent，按「大致符合」判，明显偏离才打回。
+ * 与 `explain/explain/style_axes.py` 的 `ENFORCED` 相等（verify:axes 护栏断言）。
  */
 export const ENFORCED = {
   detail_level: true,
-  use_examples: false,
-  structure: false,
-  depth: false,
+  use_examples: true,
+  structure: true,
+  depth: true,
 } as const satisfies Record<AxisId, boolean>;
 
 /**

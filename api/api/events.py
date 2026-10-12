@@ -274,10 +274,10 @@ def build_explain_events(
         "all_activated_passed": ev.all_activated_passed,
         "counted_dimensions": [d.name for d in ev.scored],
         "config_version": ev.config_version,
-        # 风格审查 agent 对最终那一版的判断（2026-10-12）。上面三维照算、只记录；
-        # 打不打回由它与版权那一条决定。没问审查员时为 null。可选字段，不进 REQUIRED_KEYS。
-        "judge": (result.final_review.judge.to_dict()
-                  if getattr(result.final_review, "judge", None) is not None else None),
+        # 风格审查 agent 对最终那一版的结论（2026-10-12）。上面三维照算、只记录；
+        # 打不打回由它与版权那一条决定。没叫它时为 null。可选字段，不进 REQUIRED_KEYS。
+        "style_run": (result.final_review.style_run.to_dict()
+                      if getattr(result.final_review, "style_run", None) is not None else None),
     }))
 
     # ---------------------------------------------------------------- regeneration_triggered

@@ -550,8 +550,8 @@ def run_agent_round(
     if route is not None and getattr(route, "answers_directly", False):
         text = route.reply
         emit_delta(text)
-        # 只跑规则、不问风格审查员：直接回复不按讲法审查（下面也不据此重写）。
-        review = reviewer.review(text, question=question, judge=False)
+        # 只跑规则、不叫风格审查 agent：直接回复不按讲法审查（下面也不据此重写）。
+        review = reviewer.review(text, question=question, use_agent=False)
         completion = route.completion or Completion(text=text, usage=Usage(), latency_ms=0.0,
                                                     model=getattr(route, "model", None) or "router")
         attempt = Attempt(0, completion, review)

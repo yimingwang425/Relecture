@@ -2156,11 +2156,16 @@ console.log("\n\x1b[1m二十三 · 风格审查 agent · 结果体与诊断行\x
 await (async () => {
   const T = require_(join(outExplain, "turns.js"));
   const r = T.styleReviewFromPayload({
-    verdict: "ok", notes: [{ aspect: "结构", comment: "先给了结论" }],
+    verdict: "rewrite", notes: [{ aspect: "结构", comment: "结论在最后" }],
+    issues: [{ aspect: "structure", paragraph: 3, quote: "所以效率小于一", fix: "把结论提到开头" }],
+    tools: [{ name: "measure_explanation", ok: true }, { name: "submit_review", ok: true }], rejected: 1,
     attempts: [{ verdict: "rewrite" }, { verdict: "ok" }], error: null,
   });
-  check(r.verdict === "ok" && r.attempts.join(",") === "rewrite,ok" && r.notes[0].aspect === "结构",
+  check(r.verdict === "rewrite" && r.attempts.join(",") === "rewrite,ok" && r.notes[0].aspect === "结构",
     "结论、各版结论、印象读得出", JSON.stringify(r));
+  check(r.issues[0].paragraph === 3 && r.issues[0].quote === "所以效率小于一"
+    && r.tools.join(",") === "measure_explanation,submit_review" && r.rejected === 1,
+    "打回理由（段号 + 引文）、调过的工具、退回次数读得出", JSON.stringify(r));
   check(T.styleReviewFromPayload({ verdict: "pass" }).verdict === null,
     "认不出的结论 → null，不就近解释成「通过」");
   check(T.styleReviewFromPayload(null) === null && T.styleReviewFromPayload(undefined) === null,

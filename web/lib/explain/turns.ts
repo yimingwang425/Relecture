@@ -94,16 +94,22 @@ export type TurnAnswer = {
    */
   verification: VerifyInfo | null;
   /**
-   * 风格审查 agent 对最终那一版的判断（2026-10-12）。`null` = 这一轮没问审查员
+   * 风格审查 agent 对最终那一版的结论（2026-10-12）。`null` = 这一轮没叫它
    * （直接回复、服务端没配，或构建旧于审查 agent）。
    */
   styleReview: StyleReviewInfo | null;
 };
 
 export type StyleReviewInfo = {
-  /** `ok` / `rewrite`；`null` = 审查员没判成（报错、超时、输出读不懂），按通过处理。 */
+  /** `ok` / `rewrite`；`null` = agent 没审成（报错、超时、步数用完），按放行处理。 */
   verdict: "ok" | "rewrite" | null;
   notes: { aspect: string; comment: string }[];
+  /** 打回的理由：哪一项偏好、第几段、照抄的引文、怎么改。 */
+  issues: { aspect: string; paragraph: number; quote: string; fix: string }[];
+  /** agent 这一次调过的工具（按顺序），看得出它是直接交的、还是先量了 / 回看了再交。 */
+  tools: string[];
+  /** 提交被代码退回了几次（引文对不上等）。 */
+  rejected: number;
   /** 每一版各自的结论，按顺序。打回过几次、为什么，从这里看。 */
   attempts: ("ok" | "rewrite" | null)[];
   error: string | null;
@@ -403,6 +409,9 @@ export function answerFromResponse(body: {
   style_review?: {
     verdict?: string | null;
     notes?: { aspect?: string; comment?: string }[];
+    issues?: { aspect?: string; paragraph?: number; quote?: string; fix?: string }[];
+    tools?: { name?: string }[];
+    rejected?: number;
     attempts?: { verdict?: string | null }[];
     error?: string | null;
   } | null;
@@ -503,10 +512,15 @@ function styleVerdict(v: unknown): "ok" | "rewrite" | null {
 
 /** 风格审查的结果体。缺了就是 null，不编。 */
 export function styleReviewFromPayload(
-  r: { verdict?: unknown; notes?: unknown; attempts?: unknown; error?: unknown } | null | undefined,
+  r: {
+    verdict?: unknown; notes?: unknown; issues?: unknown; tools?: unknown; rejected?: unknown;
+    attempts?: unknown; error?: unknown;
+  } | null | undefined,
 ): StyleReviewInfo | null {
   if (!r || typeof r !== "object") return null;
   const notes = Array.isArray(r.notes) ? r.notes : [];
+  const issues = Array.isArray(r.issues) ? r.issues : [];
+  const tools = Array.isArray(r.tools) ? r.tools : [];
   const attempts = Array.isArray(r.attempts) ? r.attempts : [];
   return {
     verdict: styleVerdict(r.verdict),
@@ -515,6 +529,18 @@ export function styleReviewFromPayload(
         ? [{ aspect: String((n as { aspect?: unknown }).aspect ?? ""), comment: String((n as { comment?: unknown }).comment ?? "") }]
         : [],
     ),
+    issues: issues.flatMap((i) => {
+      if (!i || typeof i !== "object") return [];
+      const x = i as { aspect?: unknown; paragraph?: unknown; quote?: unknown; fix?: unknown };
+      return [{
+        aspect: String(x.aspect ?? ""),
+        paragraph: typeof x.paragraph === "number" ? x.paragraph : 0,
+        quote: String(x.quote ?? ""),
+        fix: String(x.fix ?? ""),
+      }];
+    }),
+    tools: tools.map((t) => String(t && typeof t === "object" ? ((t as { name?: unknown }).name ?? "?") : "?")),
+    rejected: typeof r.rejected === "number" ? r.rejected : 0,
     attempts: attempts.map((a) => styleVerdict(a && typeof a === "object" ? (a as { verdict?: unknown }).verdict : null)),
     error: typeof r.error === "string" ? r.error : null,
   };

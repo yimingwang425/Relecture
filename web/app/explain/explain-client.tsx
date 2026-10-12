@@ -820,7 +820,7 @@ export function ExplainClient({
                                 ["agent", t.answer.agent ? JSON.stringify(t.answer.agent) : "null（服务端没给）"],
                                 ["memory", t.answer.memory ? JSON.stringify(t.answer.memory) : "null（服务端没给）"],
                                 ["verification", t.answer.verification ? JSON.stringify(t.answer.verification) : "null（服务端没给 / 这一轮没有核对行）"],
-                                ["style_review", t.answer.styleReview ? JSON.stringify(t.answer.styleReview) : "null（这一轮没问风格审查员）"],
+                                ["style_review", t.answer.styleReview ? JSON.stringify(t.answer.styleReview) : "null（这一轮没叫风格审查 agent）"],
                                 ["confusion", t.answer.confusion ? JSON.stringify(t.answer.confusion) : "null"],
                                 ["埋点结果", t.answer.events ? JSON.stringify(t.answer.events) : "—"],
                               ] as const

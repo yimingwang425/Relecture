@@ -71,6 +71,22 @@ def run(script, *, text=TEXT, history=HISTORY, **kw):
 # ---------------------------------------------------------------- 输入
 
 
+class TestPriorities:
+    """讲法让位于「只讲课件」、这一句的要求优先于存好的偏好——讲解 agent 与审查 agent 两边都写了。"""
+
+    def test_reviewer_knows_style_yields_to_grounding(self):
+        from explain.style_review import STYLE_REVIEW_MODEL_NAME, STYLE_REVIEW_SYSTEM
+
+        assert "讲法让位于「只讲课件」" in STYLE_REVIEW_SYSTEM and "不要按字数卡" in STYLE_REVIEW_SYSTEM
+        assert "sonnet" in STYLE_REVIEW_MODEL_NAME
+
+    def test_explainer_agent_section_states_the_priorities(self):
+        from explain.agent import render_agent_section, tool_specs
+
+        text = render_agent_section(tool_specs(can_read_page=True, can_check=True))
+        assert "材料范围优先于讲法" in text and "优先于上面存好的讲解风格要求" in text
+
+
 class TestBrief:
     def test_b_class_wording_is_the_same_as_the_explainer_gets(self):
         prefs = render_preferences(style_config_for("P3"), "P3", B)
@@ -163,7 +179,20 @@ class TestSubmissionCheck:
 
     def test_empty_looking_quote_is_rejected(self):
         _, problems = self.check(rewrite(quote="**")[1])
-        assert any("quote 不能为空" in p for p in problems)
+        assert any("quote 太短" in p for p in problems)
+
+    def test_one_letter_quote_and_placeholder_fix_are_rejected(self):
+        """评测里真的出现过：引文 "e"、修改意见 "placeholder"，旧校验让它过了。"""
+        args = rewrite(quote="热")[1]
+        args["issues"][0]["fix"] = "改"
+        _, problems = self.check(args)
+        assert any("quote 太短" in p for p in problems) and any("fix 太短" in p for p in problems)
+
+    def test_at_most_three_issues(self):
+        args = rewrite()[1]
+        args["issues"] = args["issues"] * 4
+        _, problems = self.check(args)
+        assert any("至多 3 条" in p for p in problems)
 
     def test_paragraph_must_exist(self):
         _, problems = self.check(rewrite(paragraph=9)[1])

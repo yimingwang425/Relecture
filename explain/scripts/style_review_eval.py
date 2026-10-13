@@ -29,7 +29,6 @@ import explain  # noqa: E402,F401
 from explain.style_axes import DEFAULTS, style_config_for  # noqa: E402
 from explain.style_review import (  # noqa: E402
     StyleReviewAgent,
-    build_style_review_agent,
     render_preferences,
     split_paragraphs,
 )
@@ -187,7 +186,12 @@ def make_agent(model: str, no_timeout: bool = False) -> StyleReviewAgent:
 
 def _make_agent(model: str) -> StyleReviewAgent:
     if model == "haiku":
-        return build_style_review_agent()
+        # 评测那一轮（sr1）的生产配置。2026-10-13 起生产换成 Sonnet，这里写死 Haiku，重跑时口径不变。
+        from explain.llm import AnthropicModel
+
+        return StyleReviewAgent(AnthropicModel(name="claude-haiku-4-5-20251001", effort=None, thinking="disabled",
+                                               max_tokens=1200, cache_system=False, cache_conversation=False),
+                                call_timeout_s=8.0, deadline_s=15.0)
     from explain.llm import AnthropicModel
 
     return StyleReviewAgent(AnthropicModel(name="claude-sonnet-5", thinking="disabled", max_tokens=1200,

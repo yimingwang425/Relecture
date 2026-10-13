@@ -59,18 +59,24 @@ __all__ = [
     "render_preferences", "split_paragraphs", "check_submission", "build_style_review_agent",
 ]
 
-#: 审查 agent 用的模型。与路由、记忆整理员同一档：低成本、快。
-STYLE_REVIEW_MODEL_NAME = "claude-haiku-4-5-20251001"
+#: 审查 agent 用的模型。**Sonnet，不是 Haiku**（2026-10-13，评测 `explain/runs/style_review_eval_results.md`）：
+#: 放开时限后 Haiku 打回率与偏好无关（同一段讲解两个相反偏好下结论不同时，方向对 18、反 16——掷硬币）；
+#: Sonnet 方向对 17、反 4，检出 66%、误打回 25%、冲突时放行 80%。单次约 $0.025。
+STYLE_REVIEW_MODEL_NAME = "claude-sonnet-5"
 
 #: system 与工具说明的版本号。措辞一改就要抬；进 `StyleReviewRun.to_dict()`，于是进响应与埋点。
-STYLE_REVIEW_PROMPT_VERSION = "sr1"
+#: sr1 → sr2（2026-10-13）：换 Sonnet；加「讲法让位于材料范围」；详略不按参考字数卡；问题至多 3 条、印象至多 4 条
+#: （提交那一步要写的字越少越快——评测里 Haiku 单次提交写到 912 token、10.4 s）。
+STYLE_REVIEW_PROMPT_VERSION = "sr2"
 
 #: 工具往返的上限。最后一步只给 `submit_review`、强制调用。
 #: 它在学生等待的路径上：通常一步就交，查一次再交是两步，3 步之外的都是在绕圈。
 MAX_STEPS = 3
 #: 每一步模型调用的超时，与整次审查的总时限。到点按放行处理。
-CALL_TIMEOUT_S = 8.0
-DEADLINE_S = 15.0
+#: 锚在评测实测上（Sonnet，整次审查中位 6.8 s、P90 14.0 s）：原先的 8 s / 15 s 是拍的数，
+#: 上线配置下 168 条里 140 条超时放行——等于没有审查，学生却白等。
+CALL_TIMEOUT_S = 15.0
+DEADLINE_S = 25.0
 
 #: 审查 agent 看的讲解最多多少字。讲解本来就有整篇长度要求，这里只挡异常长的输出撑爆请求。
 MAX_REVIEWED_CHARS = 6000
@@ -79,6 +85,12 @@ RECENT_TURNS_MAX = 3
 RECENT_ANSWER_CHARS = 300
 #: 引文的长度：照抄一小句即可，太长说明在整段复制。
 QUOTE_MAX_CHARS = 60
+#: 引文至少多少字（去空白与 markdown 符号后）。太短的引文几乎哪一段都有，证明不了什么——
+#: 评测里有一次交了引文 "e"、修改意见 "placeholder"，原先的校验让它过了。同 `verify.MIN_QUOTE_CHARS` 的道理。
+QUOTE_MIN_CHARS = 6
+#: 一次至多指出几处问题、写几条印象。多了不会更准，只会让提交那一步更慢。
+MAX_ISSUES = 3
+MAX_NOTES = 4
 
 TOOL_MEASURE = "measure_explanation"
 TOOL_RECENT = "read_recent_turns"
@@ -181,7 +193,7 @@ _SUBMIT_SPEC = {
                         "description": "ok = 大体符合，放行；rewrite = 明显偏离，打回重写。"},
             "notes": {
                 "type": "array",
-                "description": "你对各方面的印象，每条一句话。可以为空。",
+                "description": f"你对各方面的印象，每条一句话，至多 {MAX_NOTES} 条。可以为空。",
                 "items": {
                     "type": "object",
                     "properties": {"aspect": {"type": "string"}, "comment": {"type": "string"}},
@@ -191,7 +203,7 @@ _SUBMIT_SPEC = {
             },
             "issues": {
                 "type": "array",
-                "description": "打回的理由，每条一个明显偏离的地方。verdict 为 ok 时必须为空。",
+                "description": f"打回的理由，每条一个明显偏离的地方，至多 {MAX_ISSUES} 条。verdict 为 ok 时必须为空。",
                 "items": {
                     "type": "object",
                     "properties": {
@@ -199,7 +211,7 @@ _SUBMIT_SPEC = {
                                    "description": "偏离的是哪一项偏好。"},
                         "paragraph": {"type": "integer", "description": "第几段（方括号里的段号）。"},
                         "quote": {"type": "string",
-                                  "description": f"从那一段**照抄**的一小句，至多 {QUOTE_MAX_CHARS} 字。"},
+                                  "description": f"从那一段**照抄**的一小句，{QUOTE_MIN_CHARS}–{QUOTE_MAX_CHARS} 字。"},
                         "fix": {"type": "string", "description": "给讲解助手的修改意见：改成什么样。"},
                     },
                     "required": ["aspect", "paragraph", "quote", "fix"],
@@ -230,6 +242,10 @@ STYLE_REVIEW_SYSTEM = f"""你是课件讲解助手的「风格审查员」。学
   - 大段用英文讲解（专业术语括注英文原文不算）；
   - 语气和学生选的明显相反。
 - **学生这一句的要求优先于存好的偏好。** 他存的是「精简」，这一句却说「详细推导一下」——那这一轮讲得长、讲了推导就是对的。
+- **讲法让位于「只讲课件」。** 讲解助手被要求不编课件里没有的东西：
+  - 学生要「讲到推导」而课件没给推导，讲解说明没有、没有硬编——这**不算**偏离；
+  - 学生要「少举例」，讲解讲到的是课件自己的例子——这**不算**多举例（少的是额外补的例子）。
+- 详略看整体：比「详细」那一档明显短、没有展开枝节，就是精简。参考字数只是参考，**不要按字数卡**。
 - 只看讲法，**不评价内容对不对**，也不管出处页码——那是别的环节的事。
 - 拿不准时放行。
 
@@ -333,6 +349,8 @@ def check_submission(args: dict[str, Any], paragraphs: list[str], *,
         problems.append("verdict 是 ok 却列了 issues：要么改成 rewrite，要么把小出入挪进 notes、issues 留空")
     if verdict == "rewrite" and not raw_issues:
         problems.append("verdict 是 rewrite 却没有 issues：打回必须指出哪一段、哪里偏离、怎么改")
+    if len(raw_issues) > MAX_ISSUES:
+        problems.append(f"issues 有 {len(raw_issues)} 条，至多 {MAX_ISSUES} 条——只留最明显的偏离")
 
     issues: list[dict[str, Any]] = []
     for k, it in enumerate(raw_issues, 1):
@@ -348,23 +366,24 @@ def check_submission(args: dict[str, Any], paragraphs: list[str], *,
         if isinstance(para, bool) or not isinstance(para, int) or not 1 <= para <= len(paragraphs):
             problems.append(f"{where}：段号 {para!r} 不存在（这一版共 {len(paragraphs)} 段）")
             continue
-        if not isinstance(quote, str) or not _norm(quote):   # 只有空白 / 星号的「引文」会匹配任何一段
-            problems.append(f"{where}：quote 不能为空，从第 {para} 段照抄一小句")
+        if not isinstance(quote, str) or len(_norm(quote)) < QUOTE_MIN_CHARS:
+            # 太短的引文（"e"、"**"）几乎匹配任何一段，证明不了什么
+            problems.append(f"{where}：quote 太短，从第 {para} 段照抄一小句（至少 {QUOTE_MIN_CHARS} 个字）")
         elif len(quote.strip()) > QUOTE_MAX_CHARS:
             problems.append(f"{where}：quote 太长（{len(quote.strip())} 字），照抄一小句即可，至多 {QUOTE_MAX_CHARS} 字")
         elif _norm(quote) not in _norm(paragraphs[para - 1]):
             hit = next((i for i, p in enumerate(paragraphs, 1) if _norm(quote) in _norm(p)), None)
             hint = f"它在第 {hit} 段" if hit else "讲解里没有这句话，请照抄原文"
             problems.append(f"{where}：引文「{quote.strip()[:30]}」不在第 {para} 段——{hint}")
-        if not isinstance(fix, str) or not fix.strip():
-            problems.append(f"{where}：fix 不能为空，写明改成什么样")
+        if not isinstance(fix, str) or len(fix.strip()) < QUOTE_MIN_CHARS:
+            problems.append(f"{where}：fix 太短，写明改成什么样")
         issues.append({"aspect": aspect, "paragraph": para, "quote": str(quote or "").strip(),
                        "fix": str(fix or "").strip()})
 
     if problems:
         return None, problems
     notes = [{"aspect": str(n.get("aspect", ""))[:40], "comment": str(n.get("comment", ""))[:200]}
-             for n in raw_notes if isinstance(n, dict)][:8]
+             for n in raw_notes if isinstance(n, dict)][:MAX_NOTES]
     return {"verdict": verdict, "notes": notes, "issues": issues}, []
 
 
@@ -567,10 +586,10 @@ def build_style_review_agent(model: Any = None) -> StyleReviewAgent:
 
         model = AnthropicModel(
             name=STYLE_REVIEW_MODEL_NAME,
-            effort=None,            # Haiku 4.5 不支持 effort（gap.py 同一条，实测 400）
+            effort="medium",        # 评测时的那一档（与出处核对同）
             thinking="disabled",    # 强制提交（tool_choice: tool）要求关 thinking
             max_tokens=1200,
-            cache_system=False,     # 系统提示 + 工具低于 Haiku 的最小可缓存长度
+            cache_system=False,     # 单次审查、调用稀疏，缓存写入费用不划算
             cache_conversation=False,
         )
     return StyleReviewAgent(model)

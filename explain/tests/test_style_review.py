@@ -297,3 +297,39 @@ class TestNextTurnReminder:
         first = model.calls[0]
         assert note in str(first["messages"][-1]["content"])
         assert note not in first["system"]
+
+
+# ---------------------------------------------------------------- j5：分档打分，代码按阈值定（2026-10-13）
+
+
+def scored(**over: int) -> str:
+    s = {"detail_level": 0, "use_examples": 0, "structure": 0, "depth": 0, "language": 0, "tone": 0, **over}
+    hi = max(s.values())
+    return json.dumps({"scores": s, "reason": "整体印象", "feedback": "把结论提到开头" if hi >= 2 else "",
+                       "reminder": "这次请先给结论" if hi >= 2 else ""}, ensure_ascii=False)
+
+
+class TestScores:
+    def test_code_decides_by_threshold(self):
+        from explain.style_review import REWRITE_THRESHOLD
+
+        r, _ = reviewer(scored(structure=REWRITE_THRESHOLD))
+        rv = r.review(TEXT, question=Q)
+        assert not rv.passed and rv.style_run.scores["structure"] == REWRITE_THRESHOLD
+        r, _ = reviewer(scored(structure=REWRITE_THRESHOLD - 1))
+        assert r.review(TEXT, question=Q).passed
+
+    def test_partial_or_out_of_range_scores_count_as_failed_and_pass(self):
+        bad = json.dumps({"scores": {"structure": 3}, "reason": "r", "feedback": "f"}, ensure_ascii=False)
+        r, _ = reviewer(bad)
+        rv = r.review(TEXT, question=Q)
+        assert rv.passed and rv.style_run.status == "failed"
+        r, _ = reviewer(scored(depth=7))
+        assert r.review(TEXT, question=Q).style_run.status == "failed"
+
+    def test_rewrite_without_feedback_falls_back_to_reason(self):
+        s = {"detail_level": 3, "use_examples": 0, "structure": 0, "depth": 0, "language": 0, "tone": 0}
+        r, _ = reviewer(json.dumps({"scores": s, "reason": "整篇展开了太多枝节", "feedback": "", "reminder": ""},
+                                   ensure_ascii=False))
+        rv = r.review(TEXT, question=Q)
+        assert not rv.passed and "整篇展开了太多枝节" in rv.feedback

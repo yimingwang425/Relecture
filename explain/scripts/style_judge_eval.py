@@ -115,6 +115,48 @@ def cmd_report(_args: Any) -> int:
     return 0
 
 
+def cmd_thresholds(_args: Any) -> int:
+    """j5：按预登记（`style_judge_j5_prereg.md`）在开发集上选阈值，只在留出集上报成绩。不花钱。"""
+    res = [r for r in json.loads(OUT.read_text(encoding="utf-8"))["results"]]
+    dev_q = {"m01", "m02", "m03", "m04"}
+
+    def verdict(r: dict[str, Any], th: int) -> str | None:
+        sc = r["run"].get("scores")
+        return None if not sc else ("rewrite" if max(sc.values()) >= th else "ok")
+
+    def split(rows, s):
+        return [r for r in rows if r["set"] == s]
+
+    def stats(rows, th):
+        rw = lambda s: sum(1 for r in split(rows, s) if verdict(r, th) == "rewrite")  # noqa: E731
+        ok = lambda s: sum(1 for r in split(rows, s) if verdict(r, th) != "rewrite")  # noqa: E731
+        return {"检出": (rw("deviate"), len(split(rows, "deviate"))), "误报": (rw("fit"), len(split(rows, "fit"))),
+                "冲突放行": (ok("conflict"), len(split(rows, "conflict"))),
+                "对照打回": (rw("control"), len(split(rows, "control")))}
+
+    dev = [r for r in res if r["text_id"][:3] in dev_q]
+    hold = [r for r in res if r["text_id"][:3] not in dev_q]
+    lines = [f"# 风格审查员 j5 · 阈值（开发集选、留出集报）", "", "| 阈值 | 开发集 检出 | 开发集 误报 | 留出集 检出 | 留出集 误报 | 留出集 冲突放行 | 留出集 对照打回 |",
+             "| --- | --- | --- | --- | --- | --- | --- |"]
+    pick = None
+    cands = []
+    for th in (2, 3):
+        d, h = stats(dev, th), stats(hold, th)
+        f = lambda x: f"{x[0]}/{x[1]}（{100 * x[0] / x[1]:.0f}%）" if x[1] else "—"  # noqa: E731
+        lines.append(f"| ≥ {th} | {f(d['检出'])} | {f(d['误报'])} | {f(h['检出'])} | {f(h['误报'])} | "
+                     f"{f(h['冲突放行'])} | {f(h['对照打回'])} |")
+        det, fp = d["检出"][0] / d["检出"][1], d["误报"][0] / d["误报"][1]
+        cands.append((th, det, fp))
+    ok70 = [c for c in cands if c[1] >= 0.7]
+    pick = min(ok70, key=lambda c: c[2])[0] if ok70 else max(cands, key=lambda c: c[1] - c[2])[0]
+    failed = sum(1 for r in res if not r["run"].get("scores"))
+    lines += ["", f"- 按预登记的规则选出的阈值：**≥ {pick}**", f"- 没给出合格分数（按放行计）：{failed} 条"]
+    out = RUNS / f"style_judge_eval_thresholds_{STYLE_JUDGE_PROMPT_VERSION}.md"
+    out.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print("\n".join(lines))
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -122,8 +164,9 @@ def main() -> int:
     r.add_argument("--workers", type=int, default=8)
     r.add_argument("--fit-sample", type=int, default=0, help="只测误报：等距抽 N 条「符合」条目")
     sub.add_parser("report")
+    sub.add_parser("thresholds")
     args = ap.parse_args()
-    return {"run": cmd_run, "report": cmd_report}[args.cmd](args)
+    return {"run": cmd_run, "report": cmd_report, "thresholds": cmd_thresholds}[args.cmd](args)
 
 
 if __name__ == "__main__":

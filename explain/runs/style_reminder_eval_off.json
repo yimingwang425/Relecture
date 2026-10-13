@@ -1,0 +1,159 @@
+{
+  "arm": "off",
+  "spent_usd": 0.1273,
+  "turns": [
+    {
+      "conv": 1,
+      "turn": 1,
+      "question": "特征值和特征向量是什么？",
+      "prefs": {
+        "detail_level": "P3",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "what",
+        "tone": "neutral"
+      },
+      "status": 200,
+      "error": null,
+      "regenerations": 0,
+      "accepted": true,
+      "route": "course",
+      "reminder": {
+        "applied": null,
+        "next": null
+      },
+      "would_carry": null,
+      "style_attempts": [
+        "ok"
+      ],
+      "style_feedback": [],
+      "verification": "unavailable",
+      "cost": 0.02259,
+      "by_kind": {
+        "router": 0.00115,
+        "gap": 0.00204,
+        "explain": 0.0148,
+        "style_judge": 0.0046
+      },
+      "wall_ms": 5927,
+      "text": "特征向量是方阵A作用后方向不变、只被拉伸或翻转的向量；对应的拉伸倍数就是特征值。\n\n数学表达：A v = λv（v非零）。大多数向量被A转到新方向，但特征向量保持原直线，只按λ缩放（第2页）。\n\nλ为负时方向翻转但仍算同一条线；λ为零时该方向被压缩到原点。"
+    },
+    {
+      "conv": 1,
+      "turn": 2,
+      "question": "为什么特征向量在变换之后方向不变？",
+      "prefs": {
+        "detail_level": "P3",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "what",
+        "tone": "neutral"
+      },
+      "status": 200,
+      "error": null,
+      "regenerations": 2,
+      "accepted": false,
+      "route": "course",
+      "reminder": {
+        "applied": null,
+        "next": "避免额外举例和解释性铺垫，直接给结论并精简陈述定义即可。"
+      },
+      "would_carry": "避免额外举例和解释性铺垫，直接给结论并精简陈述定义即可。",
+      "style_attempts": [
+        "rewrite",
+        "rewrite",
+        "rewrite"
+      ],
+      "style_feedback": [
+        "学生偏好是'只讲是什么'，不解释为什么这样设计。但[1]段'不是因为矩阵对它特殊优待，而是定义本身就是这么选的'是在做解释性铺垫；[3]段的镜面反射属于额外举例，学生要求少举例子、不额外补例子；[4]段提及'为什么存在'的话题也偏离了只讲是什么的要求。应精简为：第1段直接给出结论（特征向量定义：变换后仍在原直线上，即Av=λv），第2段简要说明这是定义使然，去掉镜面反射的举例和额外解释。",
+        "学生问的是'为什么'，但偏好设定为只讲是什么，不做解释和推导。段[2]实际上是在解释原因（'不是……而是……'），这超出了只讲是什么的范围。应改为：第1段直接给出定义作为结论（特征向量就是满足Av=λv的向量，方向不变是其定义特征），不再展开为什么这是定义本身的要求，避免解释性语言。",
+        "开头应先给出结论式判断（如：特征向量方向不变是因为它满足Av=λv这一定义，变换结果与原向量共线），然后简要说明Av=λv是什么、用来做什么，不要展开解释'为什么方向不变'这种推导性内容，第1段偏向解释原因而非陈述是什么"
+      ],
+      "verification": "unavailable",
+      "cost": 0.05526,
+      "by_kind": {
+        "router": 0.00135,
+        "gap": 0.00208,
+        "explain": 0.02941,
+        "style_judge": 0.02243
+      },
+      "wall_ms": 20703,
+      "text": "特征向量满足Av=λv：经过A变换后，结果仍在原来那条直线上，只是长度按λ缩放（第2页）。"
+    },
+    {
+      "conv": 1,
+      "turn": 3,
+      "question": "特征值是负数是什么意思？",
+      "prefs": {
+        "detail_level": "P3",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "what",
+        "tone": "neutral"
+      },
+      "status": 200,
+      "error": null,
+      "regenerations": 0,
+      "accepted": true,
+      "route": "course",
+      "reminder": {
+        "applied": null,
+        "next": null
+      },
+      "would_carry": null,
+      "style_attempts": [
+        "ok"
+      ],
+      "style_feedback": [],
+      "verification": "unavailable",
+      "cost": 0.0188,
+      "by_kind": {
+        "router": 0.00123,
+        "gap": 0.00204,
+        "explain": 0.01102,
+        "style_judge": 0.00451
+      },
+      "wall_ms": 4122,
+      "text": "负特征值就是方向翻转。\n\n比如镜面反射：垂直于镜面的向量，被变换后指向正好相反的方向，但仍在同一条直线上——这时特征值就是 −1（第3页）。\n\n直线没变，只是箭头掉了个头。"
+    },
+    {
+      "conv": 1,
+      "turn": 4,
+      "question": "那怎么求一个矩阵的特征值？",
+      "prefs": {
+        "detail_level": "P3",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "what",
+        "tone": "neutral"
+      },
+      "status": 200,
+      "error": null,
+      "regenerations": 1,
+      "accepted": true,
+      "route": "course",
+      "reminder": {
+        "applied": null,
+        "next": "回答时只讲课件主干内容，不要补充延伸知识点。"
+      },
+      "would_carry": "回答时只讲课件主干内容，不要补充延伸知识点。",
+      "style_attempts": [
+        "rewrite",
+        "ok"
+      ],
+      "style_feedback": [
+        "第4段关于计算机实际求解方法（QR算法）属于课件主干之外的延伸拓展，与学生要求的'只讲主干、不展开枝节'不符，应删去。"
+      ],
+      "verification": "unavailable",
+      "cost": 0.03066,
+      "by_kind": {
+        "router": 0.00146,
+        "gap": 0.00203,
+        "explain": 0.01674,
+        "style_judge": 0.01044
+      },
+      "wall_ms": 9320,
+      "text": "求特征值的方法：让 A − λI 不可逆，也就是它的行列式等于零。\n\n这个方程叫特征多项式，解出来的根就是特征值（第8页）。\n\n2×2矩阵的特征多项式是二次方程，可直接用求根公式。有个检验技巧：两特征值之和等于矩阵的迹，乘积等于行列式（第8页）。"
+    }
+  ]
+}

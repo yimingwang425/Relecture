@@ -1,0 +1,46 @@
+{
+  "arm": "on",
+  "spent_usd": 0.0506,
+  "turns": [
+    {
+      "conv": 1,
+      "turn": 1,
+      "question": "特征值和特征向量是什么？",
+      "prefs": {
+        "detail_level": "P3",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "what",
+        "tone": "neutral"
+      },
+      "status": 200,
+      "error": null,
+      "regenerations": 1,
+      "accepted": true,
+      "route": "course",
+      "reminder": {
+        "applied": null,
+        "next": "讲解应只说清概念是什么，不要展开额外解释细节，保持精简。"
+      },
+      "would_carry": null,
+      "style_attempts": [
+        "rewrite",
+        "ok"
+      ],
+      "style_feedback": [
+        "第[3]段对特征值正负、零的具体含义做了展开说明，属于额外的解释/推导性质的内容，应删去，只保留[1][2]中“是什么”的核心定义即可。"
+      ],
+      "verification": "written",
+      "cost": 0.05056,
+      "by_kind": {
+        "router": 0.00115,
+        "gap": 0.00205,
+        "explain": 0.0195,
+        "style_judge": 0.01062,
+        "verify": 0.01725
+      },
+      "wall_ms": 16986,
+      "text": "特征向量是矩阵作用后方向不变、只被拉伸或翻转的向量；对应的拉伸倍数就是特征值。\n\n具体地，若 A 是方阵，v 是非零向量，满足 Av = λv，则 v 是 A 的特征向量，λ 是其特征值（第2页）。"
+    }
+  ]
+}

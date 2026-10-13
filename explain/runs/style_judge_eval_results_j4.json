@@ -1,0 +1,335 @@
+{
+  "prompt_version": "j4",
+  "results": [
+    {
+      "id": "m01-detail_level-P0~fit",
+      "set": "fit",
+      "text_id": "m01-detail_level-P0",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征值和特征向量是什么？",
+      "expect": "ok",
+      "verdict": "rewrite",
+      "run": {
+        "verdict": "rewrite",
+        "status": "judged",
+        "reason": "未先给出结论句，且缺少对“为什么这样设计/为什么成立”的解释",
+        "feedback": "学生要求先给结论，但[1]段是先给定义再解释，没有开门见山一句话点出最核心判断（比如先说“特征向量是矩阵作用下方向不变的特殊向量，特征值是其伸缩倍数”这类总括句，再展开）。另外学生要求讲到“为什么”机制成立/为什么这样设计，但全文只讲了“是什么”（定义+例子），没有解释为什么矩阵会有这种方向不变的向量、这种设计（特征值分解）为何有意义或为何这样定义，建议补充这部分。",
+        "reminder": "请先用一句话给出最核心结论，再展开；并补充“为什么”这一层的解释，不要只停留在是",
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j4",
+        "latency_ms": 6427.4,
+        "cost_usd": 0.008853
+      },
+      "usage": {
+        "input_tokens": 1441,
+        "output_tokens": 302,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m01-depth-what~fit",
+      "set": "fit",
+      "text_id": "m01-depth-what",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "特征值和特征向量是什么？",
+      "expect": "ok",
+      "verdict": "rewrite",
+      "run": {
+        "verdict": "rewrite",
+        "status": "judged",
+        "reason": "缺少开头结论句，且例子只在最后出现一次，未做到每个要点配例子",
+        "feedback": "开头[1]应直接给出最核心判断（如'特征向量是方阵作用下方向不变的向量，特征值是对应的伸缩倍数'这类结论句），而不是先说用途。另外按偏好每个要点都要配例子或类比，但[2]（特征向量定义）、[5]（λ正负大小的意义）都没有配例子，只在[6]集中给了一个例子，应该拆开分别配例。",
+        "reminder": "开头先给最核心结论句，每个要点都要配一个例子，不要集中到最后。",
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j4",
+        "latency_ms": 5563.7,
+        "cost_usd": 0.007956
+      },
+      "usage": {
+        "input_tokens": 1452,
+        "output_tokens": 240,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m02-structure-conclusion_first~fit",
+      "set": "fit",
+      "text_id": "m02-structure-conclusion_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么特征向量在变换之后方向不变？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "开头给出结论，配例子并解释了为什么，符合详细+举例+先结论+讲为什么的偏好",
+        "feedback": "",
+        "reminder": "",
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j4",
+        "latency_ms": 3046.6,
+        "cost_usd": 0.005445
+      },
+      "usage": {
+        "input_tokens": 1455,
+        "output_tokens": 72,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m03-use_examples-more~fit",
+      "set": "fit",
+      "text_id": "m03-use_examples-more",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征值是负数是什么意思？",
+      "expect": "ok",
+      "verdict": "rewrite",
+      "run": {
+        "verdict": "rewrite",
+        "status": "judged",
+        "reason": "未先给出核心结论，开头直接展开解释而非先点明判断",
+        "feedback": "按偏好应在第1段开头先给出最重要的结论句，例如先明确说「特征值为负=沿特征向量方向翻转且伸缩」这一判断，再展开解释原理和举例。目前第1段直接进入解释性叙述，结论藏在中间，不符合『先给结论』的要求。可将[3]中的总结性结论移到最前面，再接原因和例子。",
+        "reminder": "请先在开头一句话给出核心结论，再展开解释和举例，这次回答请注意。",
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j4",
+        "latency_ms": 5147.2,
+        "cost_usd": 0.007272
+      },
+      "usage": {
+        "input_tokens": 1314,
+        "output_tokens": 222,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m04-detail_level-P0~fit",
+      "set": "fit",
+      "text_id": "m04-detail_level-P0",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "怎么求一个矩阵的特征值？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "开头给结论，详细展开+举例+解释原理，符合偏好",
+        "feedback": "",
+        "reminder": "",
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j4",
+        "latency_ms": 2669.8,
+        "cost_usd": 0.005505
+      },
+      "usage": {
+        "input_tokens": 1550,
+        "output_tokens": 57,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m04-depth-what~fit",
+      "set": "fit",
+      "text_id": "m04-depth-what",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "怎么求一个矩阵的特征值？",
+      "expect": "ok",
+      "verdict": "rewrite",
+      "run": {
+        "verdict": "rewrite",
+        "status": "judged",
+        "reason": "讲解加入了为什么成立的解释和原理铺垫，且未开头先给最重要结论",
+        "feedback": "[1]段先解释了'因为这恰好是Av=λv有非零解的条件'，这属于'为什么'的解释，应删除，只需说明特征值是什么、怎么求即可；开头应直接给出最重要的判断（即det(A−λI)=0这个核心结论），而不是先讲找λ使矩阵不可逆的背景再引出方程；[3]段解释QR算法和幂法的原理（'通过反复分解重组矩阵来逼近'、'不断乘以向量并归一化会收敛'）也偏向解释为什么/怎么推导，超出'只讲是什么'的范围，应简化为只说这些方法是什么、用来做什么。",
+        "reminder": "只讲是什么和怎么用，不要解释原理和为什么成立，开头先给最核心结论。",
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j4",
+        "latency_ms": 5385.2,
+        "cost_usd": 0.009543
+      },
+      "usage": {
+        "input_tokens": 1531,
+        "output_tokens": 330,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m05-structure-conclusion_first~fit",
+      "set": "fit",
+      "text_id": "m05-structure-conclusion_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "什么是对角化？有什么用？",
+      "expect": "ok",
+      "verdict": "rewrite",
+      "run": {
+        "verdict": "rewrite",
+        "status": "judged",
+        "reason": "没有先给结论，开头直接讲定义而非先抛最重要的判断",
+        "feedback": "学生偏好先给结论，但[1]段开头直接给出了对角化的定义和写法，而没有先说出最重要的判断句（例如'对角化的核心作用是把矩阵幂运算化简为对角线元素的幂运算'）。应把第2段的核心结论提到第1段最前面，再展开讲是什么、为什么。",
+        "reminder": "这次要先给出最重要的结论句，再展开解释，上一轮先讲定义了。",
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j4",
+        "latency_ms": 3210.5,
+        "cost_usd": 0.007491
+      },
+      "usage": {
+        "input_tokens": 1462,
+        "output_tokens": 207,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m06-use_examples-more~fit",
+      "set": "fit",
+      "text_id": "m06-use_examples-more",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么平面旋转没有实数特征值？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "开头给结论，展开讲了机制并举例，符合详细、举例、先结论、讲为什么的偏好",
+        "feedback": "",
+        "reminder": "",
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j4",
+        "latency_ms": 1338.0,
+        "cost_usd": 0.005487
+      },
+      "usage": {
+        "input_tokens": 1474,
+        "output_tokens": 71,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m07-detail_level-P0~fit",
+      "set": "fit",
+      "text_id": "m07-detail_level-P0",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "幂法是怎么回事？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "开头给结论，展开原理和设计原因，均配类比/解释，符合详细偏好",
+        "feedback": "",
+        "reminder": "",
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j4",
+        "latency_ms": 1560.9,
+        "cost_usd": 0.00549
+      },
+      "usage": {
+        "input_tokens": 1510,
+        "output_tokens": 64,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m07-depth-what~fit",
+      "set": "fit",
+      "text_id": "m07-depth-what",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "幂法是怎么回事？",
+      "expect": "ok",
+      "verdict": "rewrite",
+      "run": {
+        "verdict": "rewrite",
+        "status": "judged",
+        "reason": "讲解加入了原理解释，违反了学生“只讲是什么”的偏好",
+        "feedback": "学生要求只讲是什么、不解释为什么和不做推导，但[2]段详细解释了幂法收敛的原理（特征值压倒其他方向的机制），[3]段还用类比进一步论证这个原理，这些都属于“为什么”的范畴，应删除或大幅精简，只保留幂法的定义和用途即可。",
+        "reminder": "幂法讲解只需说明是什么、做什么用，不要解释原理或给出收敛机制的论证。",
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j4",
+        "latency_ms": 3151.9,
+        "cost_usd": 0.007641
+      },
+      "usage": {
+        "input_tokens": 1472,
+        "output_tokens": 215,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    }
+  ]
+}

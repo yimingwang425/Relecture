@@ -35,6 +35,11 @@ OUT = RUNS / f"style_judge_eval_results_{STYLE_JUDGE_PROMPT_VERSION}.json"
 def cmd_run(args: Any) -> int:
     texts = {r["id"]: r for r in json.loads(BASE.read_text(encoding="utf-8"))["texts"]}
     items = build_items()
+    if args.fit_sample:
+        # 只测误报：从 64 条「符合」里等距取 N 条（覆盖各个问题与四条轴），同一批条目可与上一版逐条对照。
+        fit = [it for it in items if it["set"] == "fit"]
+        step = len(fit) // args.fit_sample
+        items = fit[::step][: args.fit_sample]
     done = {r["id"]: r for r in json.loads(OUT.read_text(encoding="utf-8"))["results"]} if OUT.exists() else {}
     todo = [it for it in items if it["id"] not in done]
     print(f"已有 {len(done)} 条，要跑 {len(todo)} 条")
@@ -115,6 +120,7 @@ def main() -> int:
     sub = ap.add_subparsers(dest="cmd", required=True)
     r = sub.add_parser("run")
     r.add_argument("--workers", type=int, default=8)
+    r.add_argument("--fit-sample", type=int, default=0, help="只测误报：等距抽 N 条「符合」条目")
     sub.add_parser("report")
     args = ap.parse_args()
     return {"run": cmd_run, "report": cmd_report}[args.cmd](args)

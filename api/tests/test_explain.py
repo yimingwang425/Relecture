@@ -423,3 +423,69 @@ class TestFollowupNote:
 
         assert followup_prefix([]) == ""
         assert followup_prefix([{"role": "user", "content": "x"}]) == FOLLOWUP_NOTE
+
+
+# ---------------------------------------------------------------- 风格提醒跨轮（2026-10-13）
+
+
+class TestStyleReminderAcrossTurns:
+    """被风格审查打回过的那一轮，留一句提醒给**下一轮**的学生消息；用一次就没了。
+
+    三轮：第 1 轮打回一次（留下提醒）→ 第 2 轮带着它生成、这次一次就过（不再留）→ 第 3 轮什么都不带。
+    反向控制就是第 3 轮：一个「提醒一直往下传」的实现会在这里红。
+    """
+
+    Recorder = TestConversationHistoryReachesTheModel.Recorder
+    REMINDER = "上一条结论放在了最后，这次请先给结论"
+
+    def _client(self, jwks, rest, rec):
+        import json
+
+        from explain.fake import ScriptedToolModel
+        from explain.style_review import StyleJudge
+
+        def out(verdict):
+            return ("text", json.dumps({"verdict": verdict, "reason": "r",
+                                        "feedback": "" if verdict == "ok" else "把结论提到第 1 段开头",
+                                        "reminder": "" if verdict == "ok" else self.REMINDER},
+                                       ensure_ascii=False))
+
+        # 第 1 轮：rewrite、ok；第 2 轮：ok；第 3 轮：ok
+        judge_model = ScriptedToolModel(script=[out("rewrite"), out("ok"), out("ok"), out("ok")],
+                                        name="fake:claude-sonnet-5")
+        app = create_app(
+            settings=SETTINGS,
+            verifier=TokenVerifier(jwks, issuer=ISSUER, audience=AUDIENCE),
+            supabase=SupabaseClient(SETTINGS.rest_url, SETTINGS.supabase_publishable_key, transport=rest),
+            model_factory=lambda: rec,
+            style_review_factory=lambda: StyleJudge(judge_model),
+        )
+        return TestClient(app, raise_server_exceptions=False)
+
+    def test_reminder_is_used_once_then_cleared(self, jwks, keypair):
+        from explain.style_review import render_reminder
+
+        note = render_reminder(self.REMINDER)
+        rest, rec = _conv_rest(), self.Recorder()
+        c = self._client(jwks, rest, rec)
+
+        r1 = _ask_in(c, keypair, q="特征值是什么").json()
+        assert r1["regenerations"] == 1
+        assert r1["style_reminder"] == {"applied": None, "next": self.REMINDER}
+        assert note not in rec.seen[-1]["content"]
+
+        r2 = _ask_in(c, keypair, q="特征向量呢").json()
+        # 带进了**本轮学生消息**，括号里写明
+        assert note in rec.seen[-1]["content"]
+        assert all(note not in m["content"] for m in rec.seen[:-1])   # 历史原样，不被改写
+        assert r2["regenerations"] == 0
+        assert r2["style_reminder"] == {"applied": self.REMINDER, "next": None}
+
+        r3 = _ask_in(c, keypair, q="对角化呢").json()
+        assert note not in rec.seen[-1]["content"]     # 用过一次就没了
+        assert r3["style_reminder"] == {"applied": None, "next": None}
+
+        # 存进了助手消息的 meta，下一轮从那里读
+        saved = [m for m in rest.messages if m.get("role") == "assistant"]
+        assert [m["meta"]["style_reminder"] for m in saved] == [self.REMINDER, None, None]
+        assert [m["meta"]["style_reminder_applied"] for m in saved] == [None, self.REMINDER, None]

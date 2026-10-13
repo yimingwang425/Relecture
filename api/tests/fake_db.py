@@ -130,6 +130,8 @@ class FakeRest:
             # 没有这个键时是 null（不是缺键）。
             if "web_sources:meta-%3Eweb_sources" in url or "web_sources:meta->web_sources" in url:
                 out = [{**m, "web_sources": (m.get("meta") or {}).get("web_sources")} for m in out]
+            if "style_reminder:meta-%3Estyle_reminder" in url or "style_reminder:meta->style_reminder" in url:
+                out = [{**m, "style_reminder": (m.get("meta") or {}).get("style_reminder")} for m in out]
             return out
 
         return list(self.rows_by_user.get(sub, []))

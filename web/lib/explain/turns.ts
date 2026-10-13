@@ -98,6 +98,11 @@ export type TurnAnswer = {
    * （直接回复、服务端没配，或构建旧于审查 agent）。
    */
   styleReview: StyleReviewInfo | null;
+  /**
+   * 风格提醒（2026-10-13）：`applied` = 这一轮带进学生消息的上一轮提醒；`next` = 留给下一轮的。
+   * 都没有就是 null。
+   */
+  styleReminder: { applied: string | null; next: string | null } | null;
 };
 
 export type StyleReviewInfo = {
@@ -410,6 +415,7 @@ export function answerFromResponse(body: {
     attempts?: { verdict?: string | null }[];
     error?: string | null;
   } | null;
+  style_reminder?: { applied?: string | null; next?: string | null } | null;
 }): TurnAnswer {
   const c = body.confusion;
   const byFile = new Map<string, Set<number>>();
@@ -495,7 +501,19 @@ export function answerFromResponse(body: {
       : null,
     verification: verifyFromPayload(body.verification),
     styleReview: styleReviewFromPayload(body.style_review),
+    styleReminder: styleReminderFromPayload(body.style_reminder),
   };
+}
+
+/** 风格提醒。两格都空（或没给）→ null，不编。 */
+export function styleReminderFromPayload(
+  r: { applied?: unknown; next?: unknown } | null | undefined,
+): { applied: string | null; next: string | null } | null {
+  if (!r || typeof r !== "object") return null;
+  const str = (v: unknown) => (typeof v === "string" && v.trim() ? v : null);
+  const applied = str(r.applied);
+  const next = str(r.next);
+  return applied || next ? { applied, next } : null;
 }
 
 const STYLE_VERDICTS = ["ok", "rewrite"] as const;
@@ -639,6 +657,7 @@ export function turnsFromMessages(
           gap: m.gap as never,
           agent: m.agent as never,
           style_review: m.style_review as never,
+          style_reminder: { applied: m.style_reminder_applied as never, next: m.style_reminder as never },
           // 库里的 status 只有 written / failed；结果体的形状与 `verify` 事件同一个。
           verification: (() => {
             const c = v.roundId ? checkByRound.get(v.roundId) : undefined;

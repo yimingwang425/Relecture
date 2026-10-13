@@ -189,6 +189,7 @@ def build_explain_events(
     turn_index: int = 1,
     question_tags: list[str] | None = None,
     model_name: str | None = None,
+    style_reminder: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     """把一次 `run_round()` 的结果变成 §13.0 的那批事件。**纯函数，不碰网络。**
 
@@ -244,6 +245,12 @@ def build_explain_events(
         # 多智能体链路（口径 F109–F114）。**全是可选字段**，不进 REQUIRED_KEYS——
         # 实验侧直接调 `run_round` 时没有它们；null 有含义（F50）。不需要迁移：payload 是 jsonb。
         **_agent_fields(getattr(result, "agent", None)),
+        # 风格提醒（2026-10-13）。**全是可选字段**，不进 REQUIRED_KEYS。
+        # 验证这个功能的办法：按 `style_reminder_applied` 分组比较 `regenerations` 的分布——
+        # 带了提醒的轮次，重写率是不是更低。
+        "style_reminder_applied": bool((style_reminder or {}).get("applied")),
+        "style_reminder_in": (style_reminder or {}).get("applied"),
+        "style_reminder_out": (style_reminder or {}).get("next"),
     }))
 
     # ---------------------------------------------------------------- style_review_result

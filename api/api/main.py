@@ -457,8 +457,15 @@ def create_app(
         if hasattr(active, "history"):
             active.history = list(history)
 
+        # 上一轮被风格审查打回时留下的提醒（2026-10-13）。**只看最近一条助手消息**：
+        # 用一次就没了——这一轮存的是它自己的（没打回就是 null），不会一轮轮积压下去。
+        prev_reminder = next((r.get("style_reminder") for r in reversed(history_rows)
+                              if r.get("role") == "assistant"), None)
+        if not isinstance(prev_reminder, str) or not prev_reminder.strip():
+            prev_reminder = None
+
         return {"style": style, "active": active, "label": label,
-                "history": history, "turn_index": turn_index,
+                "history": history, "turn_index": turn_index, "prev_reminder": prev_reminder,
                 "memory_note": memory_note, "memory_load_error": memory_load_error}
 
     def _run_explain(req: ExplainRequest, p: Principal, row: StyleRow,
@@ -470,11 +477,18 @@ def create_app(
         import dataclasses
 
         from explain.pipeline import Trajectory
-        from explain.style_review import StyleReviewer, render_preferences
+        from explain.style_review import (
+            StyleReviewer,
+            judged_this_turn,
+            next_turn_reminder,
+            render_preferences,
+            render_reminder,
+        )
         from explain.style_prompt import render_all_style_rules
 
         style, active, label = prep["style"], prep["active"], prep["label"]
         history, turn_index = prep["history"], prep["turn_index"]
+        prev_reminder = prep.get("prev_reminder")
 
         # ---- F4 · 检索**提到这里做**，因为注入要在生成之前拿到本轮的 slice_ids。
         #
@@ -577,8 +591,10 @@ def create_app(
             # F4 的限定语进**本轮用户消息**，不进 system（口径 F57）：
             # marks 逐轮变化，而 system 是按「会话内不变」设计的。
             # 追问的限定语（口径 F107）跟在它后面：有历史才加，单轮一个字不多。
+            # 上一轮的风格提醒（2026-10-13）同样进**本轮用户消息**、不进 system。
             turn_prefix="\n\n".join(
-                x for x in (confusion["note"] or "", _followup.followup_prefix(history)) if x),
+                x for x in (confusion["note"] or "", _followup.followup_prefix(history),
+                            render_reminder(prev_reminder) if prev_reminder else "") if x),
             # G03a 的限定语（非 `covered` 且该课件跳过页非空）由它产出、
             # 由 `build_user_turn` 渲染进本轮消息。**跳过页不给判断模型**（G01 末条）。
             gap_checker=gap_checker,
@@ -587,6 +603,15 @@ def create_app(
         )
 
         ev = result.final_review.evaluation
+        # ---- 风格提醒（2026-10-13）。applied：这一轮的讲解真的带着上一轮的提醒生成了
+        # （直接回复不生成讲解，不算用掉）。next：留给下一轮的——这一轮被打回过才有；
+        # 这一轮根本没问审查员（直接回复、没配）时，把上一轮那句原样往后传，没用过就不丢。
+        direct = route is not None and route.answers_directly
+        reminder = {
+            "applied": prev_reminder if (prev_reminder and not direct) else None,
+            "next": (next_turn_reminder(result.attempts) if judged_this_turn(result.attempts)
+                     else (prev_reminder if direct else None)),
+        }
         # agent 查到的片已并进 `result.context`（口径 F111）——「没看懂」要能标到它们。
         slice_keys = _marks.slice_keys_of(result.context)
 
@@ -639,6 +664,9 @@ def create_app(
                          "detail_level": row.detail_level,
                          "mean_paragraph_chars": ev.by_name("paragraph_length").raw,
                          "style_review": _style_review_of(result),
+                         # 下一轮读这一格（`MESSAGE_COLUMNS` 的 `style_reminder`）。没有就是 null。
+                         "style_reminder": reminder["next"],
+                         "style_reminder_applied": reminder["applied"],
                      }},
                 ])
                 persisted["written"] = 2
@@ -657,7 +685,7 @@ def create_app(
             built = build_explain_events(
                 result, config=style, question=req.question,
                 # **用真正跑的那个轮次**，不是请求里带来的那个（见 `turn_index` 的注释）。
-                course_id=req.course_id, turn_index=turn_index,
+                course_id=req.course_id, turn_index=turn_index, style_reminder=reminder,
             )
             events_result = record_events(
                 db, token=p.token, user_id=p.user_id, arm=row.f1_arm,
@@ -781,6 +809,8 @@ def create_app(
             "all_activated_passed": ev.all_activated_passed,
             # 风格审查员对最终那一版的判断，加上每一版各自的结论（打回了几次、为什么）。
             "style_review": _style_review_of(result),
+            # 这一轮带进学生消息的上一轮提醒（applied），与留给下一轮的提醒（next）。
+            "style_reminder": reminder,
             "style_rules": result.system_text.split("## 材料范围")[0].strip(),
         }
 

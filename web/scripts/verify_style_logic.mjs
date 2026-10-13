@@ -2172,6 +2172,11 @@ await (async () => {
     detail_level: "P0" }).styleReview === null, "旧构建没给 style_review → null");
   const clientCode = readFileSync(join(WEB, "app/explain/explain-client.tsx"), "utf8");
   check(/\["style_review", t\.answer\.styleReview/.test(clientCode), "诊断区有 style_review 一行");
+  const rm = T.styleReminderFromPayload({ applied: "上一条过于简略", next: null });
+  check(rm?.applied === "上一条过于简略" && rm.next === null, "风格提醒：带进来的与留给下一轮的分开读", JSON.stringify(rm));
+  check(T.styleReminderFromPayload({ applied: "", next: null }) === null && T.styleReminderFromPayload(undefined) === null,
+    "风格提醒两格都空 → null，不编");
+  check(/\["style_reminder", t\.answer\.styleReminder/.test(clientCode), "诊断区有 style_reminder 一行");
 })();
 
 rmSync(out, { recursive: true, force: true });

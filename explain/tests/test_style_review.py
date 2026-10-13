@@ -28,11 +28,15 @@ from explain.router import RouteResult
 from explain.style_axes import DEFAULTS, style_config_for
 from explain.style_prompt import B_CLASS_FRAGMENTS, render_all_style_rules
 from explain.style_review import (
+    REMINDER_MAX_CHARS,
     STYLE_JUDGE_MODEL_NAME,
     STYLE_JUDGE_SYSTEM,
     StyleJudge,
     StyleReviewer,
+    judged_this_turn,
+    next_turn_reminder,
     render_preferences,
+    render_reminder,
 )
 
 from tests.conftest import SLICE_A, SLICE_B
@@ -44,7 +48,8 @@ TEXT = ("热机效率是输出的功与吸收的热之比。\n\n"
         "它总小于一，因为总有热量要排给低温热源。")
 OK = json.dumps({"verdict": "ok", "reason": "先给了结论，讲到为什么", "feedback": ""}, ensure_ascii=False)
 REWRITE = json.dumps({"verdict": "rewrite", "reason": "结论在最后",
-                      "feedback": "把结论提到第 1 段开头"}, ensure_ascii=False)
+                      "feedback": "把结论提到第 1 段开头",
+                      "reminder": "上一条结论放在了最后，这次请先给结论"}, ensure_ascii=False)
 
 
 @dataclass
@@ -86,9 +91,12 @@ class TestInput:
             assert not re.search(r"\d+\s*字", prefs), prefs
         assert "讲法不是长度" in STYLE_JUDGE_SYSTEM
 
-    def test_priorities_are_stated(self):
-        assert "学生这一句的要求优先于存好的偏好" in STYLE_JUDGE_SYSTEM
-        assert "讲法让位于「只讲课件」" in STYLE_JUDGE_SYSTEM
+    def test_system_is_the_approved_wording(self):
+        """用户审定的措辞（2026-10-13）：语言风格审查员、不按字数判、只审语言风格。"""
+        assert STYLE_JUDGE_SYSTEM.startswith("你是课件讲解助手的语言风格审查员。")
+        assert "因此不能根据字数进行判断" in STYLE_JUDGE_SYSTEM
+        assert "只审核语言风格，不管任何其他东西" in STYLE_JUDGE_SYSTEM
+        assert "少于 40 字" in STYLE_JUDGE_SYSTEM
         assert "sonnet" in STYLE_JUDGE_MODEL_NAME
 
     def test_tone_only_when_chosen(self):
@@ -101,6 +109,7 @@ class TestInput:
         r.review(TEXT, question=Q)
         user = m.calls[0]["messages"][0]["content"]
         assert r.preferences in user and Q in user
+        assert "【学生问题】" in user and "【讲解（方括号里是段号）】" in user
         assert "[1] 热机效率" in user and "[3] 它总小于一" in user
 
     def test_one_call_per_review(self):
@@ -229,3 +238,58 @@ class TestExplainerPriorities:
 
         text = render_agent_section(tool_specs(can_read_page=True, can_check=True))
         assert "材料范围优先于讲法" in text and "优先于上面存好的讲解风格要求" in text
+
+
+# ---------------------------------------------------------------- 下一轮提醒（2026-10-13）
+
+
+class TestNextTurnReminder:
+    def test_judge_returns_a_short_reminder_only_on_rewrite(self):
+        r, _ = reviewer(REWRITE)
+        assert r.review(TEXT, question=Q).style_run.reminder == "上一条结论放在了最后，这次请先给结论"
+        r, _ = reviewer(OK)
+        assert r.review(TEXT, question=Q).style_run.reminder == ""
+
+    def test_reminder_is_capped_at_40_chars(self):
+        long_ = json.dumps({"verdict": "rewrite", "reason": "r", "feedback": "改成先给结论",
+                            "reminder": "太" * 80}, ensure_ascii=False)
+        r, _ = reviewer(long_)
+        assert len(r.review(TEXT, question=Q).style_run.reminder) == REMINDER_MAX_CHARS == 40
+
+    def test_missing_reminder_falls_back_to_feedback(self):
+        no_rem = json.dumps({"verdict": "rewrite", "reason": "r", "feedback": "把结论提到第 1 段开头"},
+                            ensure_ascii=False)
+        r, _ = reviewer(no_rem)
+        assert r.review(TEXT, question=Q).style_run.reminder == "把结论提到第 1 段开头"
+
+    def test_first_rewrite_of_the_round_is_carried(self):
+        second = json.dumps({"verdict": "rewrite", "reason": "r", "feedback": "f", "reminder": "第二次的"},
+                            ensure_ascii=False)
+        rv, _ = reviewer(REWRITE, second, OK)
+        r = go(rv)
+        assert judged_this_turn(r.attempts)
+        assert next_turn_reminder(r.attempts) == "上一条结论放在了最后，这次请先给结论"
+
+    def test_no_rewrite_means_nothing_is_carried(self):
+        rv, _ = reviewer(OK)
+        r = go(rv)
+        assert judged_this_turn(r.attempts) and next_turn_reminder(r.attempts) is None
+
+    def test_direct_reply_is_not_judged(self):
+        rv, _ = reviewer(REWRITE)
+        r = go(rv, route=RouteResult(route="chat", reply="不客气！", implementation="model"))
+        assert not judged_this_turn(r.attempts)
+
+    def test_reminder_goes_into_the_student_message_not_the_system(self):
+        """拼进本轮学生消息（turn_prefix），system 一字不变。"""
+        rv, _ = reviewer(OK)
+        backend = InMemoryRetriever(default_slices=(SLICE_A, SLICE_B))
+        model = ScriptedToolModel()
+        note = render_reminder("上一条过于简略，这次回答请注意")
+        assert note == "（这次生成时请避免：上一条过于简略，这次回答请注意）"
+        run_agent_round(round_index=1, question=Q, trajectory=Trajectory(), tools=RetrieverTools(backend),
+                        model=model, reviewer=rv, style_rules=render_all_style_rules(rv.config, B),
+                        course_label="22.081J", context=backend.fetch(Q), gap_checker=Gap(), turn_prefix=note)
+        first = model.calls[0]
+        assert note in str(first["messages"][-1]["content"])
+        assert note not in first["system"]

@@ -450,6 +450,26 @@ class TestBuild:
             _complete("explain_turn", {"question": "Q"})
 
 
+class TestStyleReminderFields:
+    """风格提醒（2026-10-13）进 `explain_turn`：之后按「带没带提醒」分组比较重写率，这个功能才有验证办法。"""
+
+    def test_applied_and_produced_are_recorded(self):
+        ev = _by_type(build_explain_events(make_result(regenerations=1), config=style_config(),
+                                           question="Q", course_id="c1",
+                                           style_reminder={"applied": "上一条过于简略", "next": "这次结论放最后了"}),
+                      "explain_turn")["payload"]
+        assert ev["style_reminder_applied"] is True
+        assert ev["style_reminder_in"] == "上一条过于简略" and ev["style_reminder_out"] == "这次结论放最后了"
+        assert ev["regenerations"] == 1   # 比较的另一半：同一条事件里就有
+
+    def test_absent_reminder_is_false_not_missing(self):
+        """没带提醒是 **false**，不是缺字段——分组时「没有这一格」和「没带」不能混。"""
+        ev = _by_type(build_explain_events(make_result(), config=style_config(), question="Q", course_id="c1"),
+                      "explain_turn")["payload"]
+        assert ev["style_reminder_applied"] is False
+        assert ev["style_reminder_in"] is None and ev["style_reminder_out"] is None
+
+
 def _by_type(events: list[dict[str, Any]], t: str) -> dict[str, Any]:
     return next(e for e in events if e["event_type"] == t)
 

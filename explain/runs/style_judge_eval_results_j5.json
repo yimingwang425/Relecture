@@ -1,0 +1,7040 @@
+{
+  "prompt_version": "j5",
+  "results": [
+    {
+      "id": "m01-detail_level-P0~fit",
+      "set": "fit",
+      "text_id": "m01-detail_level-P0",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征值和特征向量是什么？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体讲得详细且举例充分，但没有先给结论，而是直接从定义讲起，缺少开头的判断句。",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 2,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 5528.2,
+        "cost_usd": 0.008955
+      },
+      "usage": {
+        "input_tokens": 1630,
+        "output_tokens": 271,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m01-detail_level-P0~dev",
+      "set": "deviate",
+      "text_id": "m01-detail_level-P0",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征值和特征向量是什么？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体符合精简举例风格，但未先给结论，而是直接给出定义后再逐步展开。",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 2,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 5230.9,
+        "cost_usd": 0.008853
+      },
+      "usage": {
+        "input_tokens": 1621,
+        "output_tokens": 266,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m01-detail_level-P3~fit",
+      "set": "fit",
+      "text_id": "m01-detail_level-P3",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征值和特征向量是什么？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "开头直接给定义而非先给结论判断句，且缺少对机制为何如此设计的解释",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 1,
+          "structure": 2,
+          "depth": 2,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 5340.9,
+        "cost_usd": 0.008328
+      },
+      "usage": {
+        "input_tokens": 1446,
+        "output_tokens": 266,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m01-detail_level-P3~dev",
+      "set": "deviate",
+      "text_id": "m01-detail_level-P3",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征值和特征向量是什么？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "开头直接给定义而非结论判断，且缺少背景和“为什么”的解释，整体偏精简铺垫式讲法",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 2,
+          "use_examples": 1,
+          "structure": 2,
+          "depth": 2,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 6879.9,
+        "cost_usd": 0.00891
+      },
+      "usage": {
+        "input_tokens": 1455,
+        "output_tokens": 303,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m01-use_examples-more~fit",
+      "set": "fit",
+      "text_id": "m01-use_examples-more",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征值和特征向量是什么？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体贴合学生偏好，详细度和举例都到位，但未明显以一句结论开头，而是从定义铺垫起。",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 1,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 6302.1,
+        "cost_usd": 0.009519
+      },
+      "usage": {
+        "input_tokens": 1703,
+        "output_tokens": 294,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m01-use_examples-more~dev",
+      "set": "deviate",
+      "text_id": "m01-use_examples-more",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征值和特征向量是什么？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体贴合详细、先结论的风格，但举例偏多且几乎没有解释“为什么”这样设计。",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 2,
+          "structure": 1,
+          "depth": 2,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 6345.3,
+        "cost_usd": 0.009576
+      },
+      "usage": {
+        "input_tokens": 1702,
+        "output_tokens": 298,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m01-use_examples-fewer~fit",
+      "set": "fit",
+      "text_id": "m01-use_examples-fewer",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征值和特征向量是什么？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体讲解详细度和语言符合要求，但未先给结论，且用举例子讲解（学生要求少举例）",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 2,
+          "structure": 2,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4980.5,
+        "cost_usd": 0.009186
+      },
+      "usage": {
+        "input_tokens": 1767,
+        "output_tokens": 259,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m01-use_examples-fewer~dev",
+      "set": "deviate",
+      "text_id": "m01-use_examples-fewer",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征值和特征向量是什么？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体讲解详细、举例到位，但没有在开头先给出最核心的结论句，而是直接从定义讲起。",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 2,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4896.4,
+        "cost_usd": 0.008754
+      },
+      "usage": {
+        "input_tokens": 1768,
+        "output_tokens": 230,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m01-structure-conclusion_first~fit",
+      "set": "fit",
+      "text_id": "m01-structure-conclusion_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征值和特征向量是什么？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体符合先结论、详细展开、举例、讲为什么的要求",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 0,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 2262.6,
+        "cost_usd": 0.006705
+      },
+      "usage": {
+        "input_tokens": 1740,
+        "output_tokens": 99,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m01-structure-conclusion_first~dev",
+      "set": "deviate",
+      "text_id": "m01-structure-conclusion_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "buildup_first",
+        "depth": "why"
+      },
+      "question": "特征值和特征向量是什么？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体较符合详细讲解与举例要求，但结构上先给结论再铺垫，与学生要求的「问题→机制→结论」顺序相反。",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 1,
+          "structure": 2,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4093.3,
+        "cost_usd": 0.009486
+      },
+      "usage": {
+        "input_tokens": 1752,
+        "output_tokens": 282,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m01-structure-buildup_first~fit",
+      "set": "fit",
+      "text_id": "m01-structure-buildup_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "buildup_first",
+        "depth": "why"
+      },
+      "question": "特征值和特征向量是什么？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体详细且有例子，但结构上先给了定义再铺垫机制，未严格按问题→机制→结论的顺序",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 2,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4795.5,
+        "cost_usd": 0.009522
+      },
+      "usage": {
+        "input_tokens": 1829,
+        "output_tokens": 269,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m01-structure-buildup_first~dev",
+      "set": "deviate",
+      "text_id": "m01-structure-buildup_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征值和特征向量是什么？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体详细度和举例都到位，但结论没有放在开头，先铺垫了背景再给出核心判断",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 2,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3269.5,
+        "cost_usd": 0.008556
+      },
+      "usage": {
+        "input_tokens": 1817,
+        "output_tokens": 207,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m01-depth-what~fit",
+      "set": "fit",
+      "text_id": "m01-depth-what",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "特征值和特征向量是什么？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体符合先结论、详细、举例、只讲是什么的偏好，仅结论略隐含在定义描述中。",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 1,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 1769.2,
+        "cost_usd": 0.006648
+      },
+      "usage": {
+        "input_tokens": 1641,
+        "output_tokens": 115,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m01-depth-what~dev",
+      "set": "deviate",
+      "text_id": "m01-depth-what",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "derivation"
+      },
+      "question": "特征值和特征向量是什么？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体结构和例子符合要求，但缺少学生要求的推导步骤",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 1,
+          "structure": 0,
+          "depth": 2,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4109.1,
+        "cost_usd": 0.008742
+      },
+      "usage": {
+        "input_tokens": 1639,
+        "output_tokens": 255,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m01-depth-derivation~fit",
+      "set": "fit",
+      "text_id": "m01-depth-derivation",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "derivation"
+      },
+      "question": "特征值和特征向量是什么？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "内容讲得较详细且有例子，但没有开篇先给结论，也完全没有推导过程。",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 2,
+          "depth": 2,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4020.4,
+        "cost_usd": 0.009501
+      },
+      "usage": {
+        "input_tokens": 1742,
+        "output_tokens": 285,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m01-depth-derivation~dev",
+      "set": "deviate",
+      "text_id": "m01-depth-derivation",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "特征值和特征向量是什么？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体详细、举例、语言都符合，但开头是定义而非先给结论判断",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 0,
+          "use_examples": 0,
+          "structure": 2,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3097.6,
+        "cost_usd": 0.008157
+      },
+      "usage": {
+        "input_tokens": 1744,
+        "output_tokens": 195,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m02-detail_level-P0~fit",
+      "set": "fit",
+      "text_id": "m02-detail_level-P0",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么特征向量在变换之后方向不变？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体讲得详细到位，但开头没有先给出结论句，而是从定义铺垫起。",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 0,
+          "use_examples": 0,
+          "structure": 2,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3318.8,
+        "cost_usd": 0.008136
+      },
+      "usage": {
+        "input_tokens": 1712,
+        "output_tokens": 200,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m02-detail_level-P0~dev",
+      "set": "deviate",
+      "text_id": "m02-detail_level-P0",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么特征向量在变换之后方向不变？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体符合精简+举例+先结论+讲为什么的要求",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 0,
+          "use_examples": 0,
+          "structure": 1,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 2401.7,
+        "cost_usd": 0.006579
+      },
+      "usage": {
+        "input_tokens": 1703,
+        "output_tokens": 98,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m02-detail_level-P3~fit",
+      "set": "fit",
+      "text_id": "m02-detail_level-P3",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么特征向量在变换之后方向不变？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体符合学生偏好：精简、先结论、带例子、中文讲解",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 0,
+          "use_examples": 0,
+          "structure": 0,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3097.8,
+        "cost_usd": 0.006342
+      },
+      "usage": {
+        "input_tokens": 1454,
+        "output_tokens": 132,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m02-detail_level-P3~dev",
+      "set": "deviate",
+      "text_id": "m02-detail_level-P3",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么特征向量在变换之后方向不变？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "结论开头给出了，但缺少背景铺垫和“为什么这样成立/设计”的深入解释，整体偏简略",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 2,
+          "use_examples": 1,
+          "structure": 0,
+          "depth": 2,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 6805.8,
+        "cost_usd": 0.009279
+      },
+      "usage": {
+        "input_tokens": 1463,
+        "output_tokens": 326,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m02-use_examples-more~fit",
+      "set": "fit",
+      "text_id": "m02-use_examples-more",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么特征向量在变换之后方向不变？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体符合先结论后解释、详细展开、配例子的要求，偏离很小。",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 1,
+          "structure": 1,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 2733.8,
+        "cost_usd": 0.006624
+      },
+      "usage": {
+        "input_tokens": 1688,
+        "output_tokens": 104,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m02-use_examples-more~dev",
+      "set": "deviate",
+      "text_id": "m02-use_examples-more",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么特征向量在变换之后方向不变？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体结构和深度符合先结论后解释的要求，但第4段举了课件例子，与少举例偏好略有出入",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 2,
+          "structure": 0,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3933.3,
+        "cost_usd": 0.008436
+      },
+      "usage": {
+        "input_tokens": 1687,
+        "output_tokens": 225,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m02-use_examples-fewer~fit",
+      "set": "fit",
+      "text_id": "m02-use_examples-fewer",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么特征向量在变换之后方向不变？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "开头给出结论并展开解释，无额外举例，符合详细+先结论+讲为什么的要求",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 0,
+          "use_examples": 0,
+          "structure": 0,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 1762.1,
+        "cost_usd": 0.00648
+      },
+      "usage": {
+        "input_tokens": 1610,
+        "output_tokens": 110,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m02-use_examples-fewer~dev",
+      "set": "deviate",
+      "text_id": "m02-use_examples-fewer",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么特征向量在变换之后方向不变？",
+      "expect": "rewrite",
+      "verdict": "rewrite",
+      "run": {
+        "verdict": "rewrite",
+        "status": "judged",
+        "reason": "整体结构和深度基本符合，但完全没有举例或类比，明显偏离学生要求。",
+        "feedback": "学生要求每个要点配一个具体例子或类比，但全文三段都没有任何例子，比如可以用具体矩阵（如对角矩阵或拉伸矩阵）配合具体向量演示 Av=λv，或者用生活中的类比（如橡皮筋拉伸方向）帮助理解第1、2段的内容。",
+        "reminder": "这次回答完全没有举例，下次请为每个要点配一个具体例子或类比。",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 3,
+          "structure": 1,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3357.0,
+        "cost_usd": 0.008613
+      },
+      "usage": {
+        "input_tokens": 1611,
+        "output_tokens": 252,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m02-structure-conclusion_first~fit",
+      "set": "fit",
+      "text_id": "m02-structure-conclusion_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么特征向量在变换之后方向不变？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体贴合学生偏好，结论先行、配例子、有解释为什么，只是展开略简略",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 1,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 2114.0,
+        "cost_usd": 0.006567
+      },
+      "usage": {
+        "input_tokens": 1644,
+        "output_tokens": 109,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m02-structure-conclusion_first~dev",
+      "set": "deviate",
+      "text_id": "m02-structure-conclusion_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "buildup_first",
+        "depth": "why"
+      },
+      "question": "为什么特征向量在变换之后方向不变？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "内容讲得清楚也有例子，但结构是先给结论再解释，不是学生要的问题→机制→结论顺序",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 2,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4102.8,
+        "cost_usd": 0.008823
+      },
+      "usage": {
+        "input_tokens": 1656,
+        "output_tokens": 257,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m02-structure-buildup_first~fit",
+      "set": "fit",
+      "text_id": "m02-structure-buildup_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "buildup_first",
+        "depth": "why"
+      },
+      "question": "为什么特征向量在变换之后方向不变？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体内容详实、有例子和机制解释，但结构上结论过早在第1段给出，未严格按问题→机制→结论顺序铺垫。",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 1,
+          "structure": 2,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4095.6,
+        "cost_usd": 0.009027
+      },
+      "usage": {
+        "input_tokens": 1759,
+        "output_tokens": 250,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m02-structure-buildup_first~dev",
+      "set": "deviate",
+      "text_id": "m02-structure-buildup_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么特征向量在变换之后方向不变？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体符合详细、举例、讲为什么的要求，但结论未放在开头，结构上有偏离。",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 1,
+          "structure": 2,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3950.1,
+        "cost_usd": 0.008811
+      },
+      "usage": {
+        "input_tokens": 1747,
+        "output_tokens": 238,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m02-depth-what~fit",
+      "set": "fit",
+      "text_id": "m02-depth-what",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "为什么特征向量在变换之后方向不变？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体是“是什么”的说明，但第1段用“是定义结果，不是证明”带有解释为什么成立的意味，略触及depth偏好。",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 1,
+          "depth": 2,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4460.3,
+        "cost_usd": 0.008493
+      },
+      "usage": {
+        "input_tokens": 1671,
+        "output_tokens": 232,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m02-depth-what~dev",
+      "set": "deviate",
+      "text_id": "m02-depth-what",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "derivation"
+      },
+      "question": "为什么特征向量在变换之后方向不变？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体贴近详细+举例+中文的要求，但缺少学生要求的逐步推导部分，且结论没有放在最开头第一句。",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 1,
+          "depth": 2,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 6194.0,
+        "cost_usd": 0.009807
+      },
+      "usage": {
+        "input_tokens": 1669,
+        "output_tokens": 320,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m02-depth-derivation~fit",
+      "set": "fit",
+      "text_id": "m02-depth-derivation",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "derivation"
+      },
+      "question": "为什么特征向量在变换之后方向不变？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "开头解释定义而非直接给出结论判断，且缺少逐步推导过程",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 2,
+          "use_examples": 0,
+          "structure": 2,
+          "depth": 2,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 5438.1,
+        "cost_usd": 0.010194
+      },
+      "usage": {
+        "input_tokens": 1683,
+        "output_tokens": 343,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m02-depth-derivation~dev",
+      "set": "deviate",
+      "text_id": "m02-depth-derivation",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "为什么特征向量在变换之后方向不变？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体是“是什么”层面的讲解且举了例子，但问题本身是“为什么”，讲解用因果论证作答，未先给出结论句，结构上偏离。",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 2,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4578.8,
+        "cost_usd": 0.008745
+      },
+      "usage": {
+        "input_tokens": 1685,
+        "output_tokens": 246,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m03-detail_level-P0~fit",
+      "set": "fit",
+      "text_id": "m03-detail_level-P0",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征值是负数是什么意思？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体符合先结论后举例、详细讲解的风格，但缺少对“为什么”机制设计的深入解释",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 0,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 5618.4,
+        "cost_usd": 0.008436
+      },
+      "usage": {
+        "input_tokens": 1512,
+        "output_tokens": 260,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m03-detail_level-P0~dev",
+      "set": "deviate",
+      "text_id": "m03-detail_level-P0",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征值是负数是什么意思？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体符合精简、举例、先结论后解释的偏好",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 0,
+          "use_examples": 0,
+          "structure": 1,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 2320.8,
+        "cost_usd": 0.005934
+      },
+      "usage": {
+        "input_tokens": 1503,
+        "output_tokens": 95,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m03-detail_level-P3~fit",
+      "set": "fit",
+      "text_id": "m03-detail_level-P3",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征值是负数是什么意思？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "结论和例子都到位，但缺少对“为什么”机制的解释说明",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 0,
+          "use_examples": 0,
+          "structure": 1,
+          "depth": 2,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4102.0,
+        "cost_usd": 0.007635
+      },
+      "usage": {
+        "input_tokens": 1345,
+        "output_tokens": 240,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m03-detail_level-P3~dev",
+      "set": "deviate",
+      "text_id": "m03-detail_level-P3",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征值是负数是什么意思？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "结论和例子都给了，但缺少“为什么这样设计/成立”的解释，展开也偏简略",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 2,
+          "use_examples": 0,
+          "structure": 0,
+          "depth": 2,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3814.8,
+        "cost_usd": 0.007512
+      },
+      "usage": {
+        "input_tokens": 1354,
+        "output_tokens": 230,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m03-use_examples-more~fit",
+      "set": "fit",
+      "text_id": "m03-use_examples-more",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征值是负数是什么意思？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "没有开头先给结论，且展开背景枝节不足，偏向精简铺陈式",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 2,
+          "use_examples": 0,
+          "structure": 2,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4436.9,
+        "cost_usd": 0.008424
+      },
+      "usage": {
+        "input_tokens": 1503,
+        "output_tokens": 261,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m03-use_examples-more~dev",
+      "set": "deviate",
+      "text_id": "m03-use_examples-more",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征值是负数是什么意思？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "结论先行且讲了机制，整体符合，但额外举了反射变换的例子，违背了少举例的偏好",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 2,
+          "structure": 0,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4609.8,
+        "cost_usd": 0.008121
+      },
+      "usage": {
+        "input_tokens": 1502,
+        "output_tokens": 241,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m03-use_examples-fewer~fit",
+      "set": "fit",
+      "text_id": "m03-use_examples-fewer",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征值是负数是什么意思？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体结构和结论先行符合要求，但举了反射矩阵例子，偏离了少举例的偏好。",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 2,
+          "structure": 0,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 5287.6,
+        "cost_usd": 0.00822
+      },
+      "usage": {
+        "input_tokens": 1510,
+        "output_tokens": 246,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m03-use_examples-fewer~dev",
+      "set": "deviate",
+      "text_id": "m03-use_examples-fewer",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征值是负数是什么意思？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体讲解内容到位，但没有在开头第一句先给出最核心判断，而是直接展开解释。",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 2,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3654.0,
+        "cost_usd": 0.007743
+      },
+      "usage": {
+        "input_tokens": 1511,
+        "output_tokens": 214,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m03-structure-conclusion_first~fit",
+      "set": "fit",
+      "text_id": "m03-structure-conclusion_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征值是负数是什么意思？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体符合先结论、举例、中文讲解的偏好，但缺少对“为什么这样设计/成立”更深的机制解释。",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 0,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3817.9,
+        "cost_usd": 0.00798
+      },
+      "usage": {
+        "input_tokens": 1545,
+        "output_tokens": 223,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m03-structure-conclusion_first~dev",
+      "set": "deviate",
+      "text_id": "m03-structure-conclusion_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "buildup_first",
+        "depth": "why"
+      },
+      "question": "特征值是负数是什么意思？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "举例和术语处理到位，但结论在第1段就直接给出，未按问题→机制→结论的顺序铺垫。",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 2,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4070.0,
+        "cost_usd": 0.008481
+      },
+      "usage": {
+        "input_tokens": 1557,
+        "output_tokens": 254,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m03-structure-buildup_first~fit",
+      "set": "fit",
+      "text_id": "m03-structure-buildup_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "buildup_first",
+        "depth": "why"
+      },
+      "question": "特征值是负数是什么意思？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "内容详实有例子，但结论性的总结在第4段才给出，不符合问题-机制-结论的顺序但偏向于先讲结论后展开的结构",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 0,
+          "use_examples": 0,
+          "structure": 2,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4746.8,
+        "cost_usd": 0.00873
+      },
+      "usage": {
+        "input_tokens": 1635,
+        "output_tokens": 255,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m03-structure-buildup_first~dev",
+      "set": "deviate",
+      "text_id": "m03-structure-buildup_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征值是负数是什么意思？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体讲法基本符合，但结论被放到了最后才总结，而非开头先给出",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 0,
+          "use_examples": 0,
+          "structure": 2,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3579.6,
+        "cost_usd": 0.008049
+      },
+      "usage": {
+        "input_tokens": 1623,
+        "output_tokens": 212,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m03-depth-what~fit",
+      "set": "fit",
+      "text_id": "m03-depth-what",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "特征值是负数是什么意思？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体符合先结论后举例、只讲是什么的要求，第3段略带解释性但不严重",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 0,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 2751.7,
+        "cost_usd": 0.006573
+      },
+      "usage": {
+        "input_tokens": 1506,
+        "output_tokens": 137,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m03-depth-what~dev",
+      "set": "deviate",
+      "text_id": "m03-depth-what",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "derivation"
+      },
+      "question": "特征值是负数是什么意思？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "结论给出但展开不足，且完全没有推导步骤",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 2,
+          "use_examples": 0,
+          "structure": 1,
+          "depth": 2,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4475.7,
+        "cost_usd": 0.008262
+      },
+      "usage": {
+        "input_tokens": 1504,
+        "output_tokens": 250,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m03-depth-derivation~fit",
+      "set": "fit",
+      "text_id": "m03-depth-derivation",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "derivation"
+      },
+      "question": "特征值是负数是什么意思？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "开头结论给出了，但缺少推导步骤，整体展开也偏简略",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 2,
+          "use_examples": 1,
+          "structure": 0,
+          "depth": 2,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4334.5,
+        "cost_usd": 0.008781
+      },
+      "usage": {
+        "input_tokens": 1497,
+        "output_tokens": 286,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m03-depth-derivation~dev",
+      "set": "deviate",
+      "text_id": "m03-depth-derivation",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "特征值是负数是什么意思？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体符合先结论后举例的要求，基本是学生想要的讲法",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 1,
+          "structure": 1,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4484.2,
+        "cost_usd": 0.005997
+      },
+      "usage": {
+        "input_tokens": 1499,
+        "output_tokens": 100,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m04-detail_level-P0~fit",
+      "set": "fit",
+      "text_id": "m04-detail_level-P0",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "怎么求一个矩阵的特征值？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "结构清晰先给结论再解释原理，例子只有一个但基本符合详细举例要求",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 0,
+          "use_examples": 1,
+          "structure": 0,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 2893.3,
+        "cost_usd": 0.007137
+      },
+      "usage": {
+        "input_tokens": 1739,
+        "output_tokens": 128,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m04-detail_level-P0~dev",
+      "set": "deviate",
+      "text_id": "m04-detail_level-P0",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "怎么求一个矩阵的特征值？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "结论先行、举例恰当、解释清晰，符合所选讲法",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 0,
+          "use_examples": 0,
+          "structure": 0,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 2002.6,
+        "cost_usd": 0.006675
+      },
+      "usage": {
+        "input_tokens": 1730,
+        "output_tokens": 99,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m04-detail_level-P3~fit",
+      "set": "fit",
+      "text_id": "m04-detail_level-P3",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "怎么求一个矩阵的特征值？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体接近学生偏好，但开头未直接给出最终结论性判断，而是先给机制解释",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 1,
+          "structure": 2,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3675.9,
+        "cost_usd": 0.007557
+      },
+      "usage": {
+        "input_tokens": 1449,
+        "output_tokens": 214,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m04-detail_level-P3~dev",
+      "set": "deviate",
+      "text_id": "m04-detail_level-P3",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "怎么求一个矩阵的特征值？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "结构和为什么都基本到位，但篇幅过于简略，背景枝节展开不够",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 2,
+          "use_examples": 1,
+          "structure": 0,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3619.8,
+        "cost_usd": 0.007779
+      },
+      "usage": {
+        "input_tokens": 1458,
+        "output_tokens": 227,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m04-use_examples-more~fit",
+      "set": "fit",
+      "text_id": "m04-use_examples-more",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "怎么求一个矩阵的特征值？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体详细、有例子、讲了为什么，但没有先给结论，而是从方法步骤讲起。",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 1,
+          "structure": 2,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3806.3,
+        "cost_usd": 0.008538
+      },
+      "usage": {
+        "input_tokens": 1736,
+        "output_tokens": 222,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m04-use_examples-more~dev",
+      "set": "deviate",
+      "text_id": "m04-use_examples-more",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "怎么求一个矩阵的特征值？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体详细且讲了原理，但没有先给结论，而是先给方法步骤后讲原理，结构上有偏离",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 0,
+          "use_examples": 1,
+          "structure": 2,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3639.8,
+        "cost_usd": 0.008685
+      },
+      "usage": {
+        "input_tokens": 1735,
+        "output_tokens": 232,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m04-use_examples-fewer~fit",
+      "set": "fit",
+      "text_id": "m04-use_examples-fewer",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "怎么求一个矩阵的特征值？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体符合先结论后解释、详细讲为什么的要求，偏离很小",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 1,
+          "structure": 0,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 1622.2,
+        "cost_usd": 0.006534
+      },
+      "usage": {
+        "input_tokens": 1668,
+        "output_tokens": 102,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m04-use_examples-fewer~dev",
+      "set": "deviate",
+      "text_id": "m04-use_examples-fewer",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "怎么求一个矩阵的特征值？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体结构和深度符合要求，但缺少具体例子，仅靠文字说明替代举例",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 2,
+          "structure": 0,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4156.8,
+        "cost_usd": 0.008637
+      },
+      "usage": {
+        "input_tokens": 1669,
+        "output_tokens": 242,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m04-structure-conclusion_first~fit",
+      "set": "fit",
+      "text_id": "m04-structure-conclusion_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "怎么求一个矩阵的特征值？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体符合详细、讲为什么、先给结论的要求，仅结论位置和举例略有出入",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 0,
+          "use_examples": 1,
+          "structure": 1,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3412.6,
+        "cost_usd": 0.008169
+      },
+      "usage": {
+        "input_tokens": 1738,
+        "output_tokens": 197,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m04-structure-conclusion_first~dev",
+      "set": "deviate",
+      "text_id": "m04-structure-conclusion_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "buildup_first",
+        "depth": "why"
+      },
+      "question": "怎么求一个矩阵的特征值？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体详细度和举例到位，但结论先给出而非放最后，不符合先铺垫后收结论的顺序。",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 1,
+          "structure": 2,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 5203.7,
+        "cost_usd": 0.009255
+      },
+      "usage": {
+        "input_tokens": 1750,
+        "output_tokens": 267,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m04-structure-buildup_first~fit",
+      "set": "fit",
+      "text_id": "m04-structure-buildup_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "buildup_first",
+        "depth": "why"
+      },
+      "question": "怎么求一个矩阵的特征值？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体符合详细+举例+问题导向的偏好，只是结论未明显后置，稍显平铺直叙。",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 0,
+          "use_examples": 1,
+          "structure": 1,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4466.1,
+        "cost_usd": 0.0072
+      },
+      "usage": {
+        "input_tokens": 1665,
+        "output_tokens": 147,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m04-structure-buildup_first~dev",
+      "set": "deviate",
+      "text_id": "m04-structure-buildup_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "怎么求一个矩阵的特征值？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体详细、举例、先讲核心思路再深入原理与数值方法，基本符合所选讲法",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 0,
+          "use_examples": 0,
+          "structure": 1,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 1920.3,
+        "cost_usd": 0.006624
+      },
+      "usage": {
+        "input_tokens": 1653,
+        "output_tokens": 111,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m04-depth-what~fit",
+      "set": "fit",
+      "text_id": "m04-depth-what",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "怎么求一个矩阵的特征值？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "内容详实但未先给结论，且第1、3段掺入了“为什么”的解释和推导逻辑，偏离了只讲是什么的要求。",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 0,
+          "use_examples": 1,
+          "structure": 2,
+          "depth": 2,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 5224.3,
+        "cost_usd": 0.010245
+      },
+      "usage": {
+        "input_tokens": 1720,
+        "output_tokens": 339,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m04-depth-what~dev",
+      "set": "deviate",
+      "text_id": "m04-depth-what",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "derivation"
+      },
+      "question": "怎么求一个矩阵的特征值？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体较详细且有例子和一定推导，但未在开头给出最核心结论，先铺垫了方法再展开。",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 1,
+          "structure": 2,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3421.7,
+        "cost_usd": 0.008214
+      },
+      "usage": {
+        "input_tokens": 1718,
+        "output_tokens": 204,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m04-depth-derivation~fit",
+      "set": "fit",
+      "text_id": "m04-depth-derivation",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "derivation"
+      },
+      "question": "怎么求一个矩阵的特征值？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "详细展开、先给结论、有推导、有例子，符合学生偏好",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 0,
+          "use_examples": 0,
+          "structure": 0,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 2440.9,
+        "cost_usd": 0.006924
+      },
+      "usage": {
+        "input_tokens": 1803,
+        "output_tokens": 101,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m04-depth-derivation~dev",
+      "set": "deviate",
+      "text_id": "m04-depth-derivation",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "怎么求一个矩阵的特征值？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体符合先结论后详细展开加举例的风格，但第2段推导了为何det=0成立，偏离了只讲是什么的要求",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 0,
+          "use_examples": 0,
+          "structure": 1,
+          "depth": 2,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4436.9,
+        "cost_usd": 0.00906
+      },
+      "usage": {
+        "input_tokens": 1805,
+        "output_tokens": 243,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m05-detail_level-P0~fit",
+      "set": "fit",
+      "text_id": "m05-detail_level-P0",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "什么是对角化？有什么用？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "内容讲解较完整，但结论未放在开头，且全程缺乏具体数值例子或类比。",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 2,
+          "structure": 2,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 5748.5,
+        "cost_usd": 0.009747
+      },
+      "usage": {
+        "input_tokens": 1669,
+        "output_tokens": 316,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m05-detail_level-P0~dev",
+      "set": "deviate",
+      "text_id": "m05-detail_level-P0",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "什么是对角化？有什么用？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体结构和深度符合要求，但缺少具体数值例子或类比，偏概念性描述",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 2,
+          "structure": 1,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4273.7,
+        "cost_usd": 0.00894
+      },
+      "usage": {
+        "input_tokens": 1660,
+        "output_tokens": 264,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m05-detail_level-P3~fit",
+      "set": "fit",
+      "text_id": "m05-detail_level-P3",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "什么是对角化？有什么用？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体精简且有例子，但没有开头先给最重要判断，而是直接给定义铺垫后展开",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 1,
+          "structure": 2,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4287.9,
+        "cost_usd": 0.007941
+      },
+      "usage": {
+        "input_tokens": 1427,
+        "output_tokens": 244,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m05-detail_level-P3~dev",
+      "set": "deviate",
+      "text_id": "m05-detail_level-P3",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "什么是对角化？有什么用？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "讲解过于精简，缺少例子和为什么的解释，偏离了详细+多举例+讲为什么的要求",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 2,
+          "use_examples": 2,
+          "structure": 1,
+          "depth": 2,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 6388.7,
+        "cost_usd": 0.010428
+      },
+      "usage": {
+        "input_tokens": 1436,
+        "output_tokens": 408,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m05-use_examples-more~fit",
+      "set": "fit",
+      "text_id": "m05-use_examples-more",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "什么是对角化？有什么用？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体讲解内容详实，但没有先给结论，也几乎没有具体举例",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 2,
+          "structure": 2,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4067.9,
+        "cost_usd": 0.008583
+      },
+      "usage": {
+        "input_tokens": 1621,
+        "output_tokens": 248,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m05-use_examples-more~dev",
+      "set": "deviate",
+      "text_id": "m05-use_examples-more",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "什么是对角化？有什么用？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体展开较好，但未在开头给出结论句，先讲了定义再给用处",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 2,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3691.0,
+        "cost_usd": 0.008085
+      },
+      "usage": {
+        "input_tokens": 1620,
+        "output_tokens": 215,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m05-use_examples-fewer~fit",
+      "set": "fit",
+      "text_id": "m05-use_examples-fewer",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "什么是对角化？有什么用？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体符合先结论后解释、详细展开、少例子的要求，结构略有瑕疵但不严重",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 1,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 2604.5,
+        "cost_usd": 0.006471
+      },
+      "usage": {
+        "input_tokens": 1602,
+        "output_tokens": 111,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m05-use_examples-fewer~dev",
+      "set": "deviate",
+      "text_id": "m05-use_examples-fewer",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "什么是对角化？有什么用？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体结构和深度符合要求，但几乎没有具体例子或类比，偏离举例偏好",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 2,
+          "structure": 0,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4725.1,
+        "cost_usd": 0.009084
+      },
+      "usage": {
+        "input_tokens": 1603,
+        "output_tokens": 285,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m05-structure-conclusion_first~fit",
+      "set": "fit",
+      "text_id": "m05-structure-conclusion_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "什么是对角化？有什么用？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体讲解详细度和举例基本到位，但没有在开头直接给出最核心的结论判断，而是先给定义。",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 1,
+          "structure": 2,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3860.3,
+        "cost_usd": 0.008148
+      },
+      "usage": {
+        "input_tokens": 1651,
+        "output_tokens": 213,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m05-structure-conclusion_first~dev",
+      "set": "deviate",
+      "text_id": "m05-structure-conclusion_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "buildup_first",
+        "depth": "why"
+      },
+      "question": "什么是对角化？有什么用？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "直接先给定义再讲用途，缺少问题引入，且展开不够详细充分",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 2,
+          "use_examples": 1,
+          "structure": 2,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 5061.7,
+        "cost_usd": 0.009354
+      },
+      "usage": {
+        "input_tokens": 1663,
+        "output_tokens": 291,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m05-structure-buildup_first~fit",
+      "set": "fit",
+      "text_id": "m05-structure-buildup_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "buildup_first",
+        "depth": "why"
+      },
+      "question": "什么是对角化？有什么用？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体讲解详略和举例大体到位，但结构是先给定义再讲用途，未按问题→机制→结论的铺垫顺序收尾。",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 1,
+          "structure": 2,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3860.4,
+        "cost_usd": 0.009027
+      },
+      "usage": {
+        "input_tokens": 1724,
+        "output_tokens": 257,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m05-structure-buildup_first~dev",
+      "set": "deviate",
+      "text_id": "m05-structure-buildup_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "什么是对角化？有什么用？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体符合先结论后解释、详细带例子的讲法，深度略有欠缺但基本到位",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 1,
+          "structure": 0,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 2255.4,
+        "cost_usd": 0.006771
+      },
+      "usage": {
+        "input_tokens": 1712,
+        "output_tokens": 109,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m05-depth-what~fit",
+      "set": "fit",
+      "text_id": "m05-depth-what",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "什么是对角化？有什么用？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体符合先结论、详细展开、举例配合的要求，仅第2段的原因性解释略微超出“只讲是什么”的范围",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 0,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3960.4,
+        "cost_usd": 0.008409
+      },
+      "usage": {
+        "input_tokens": 1628,
+        "output_tokens": 235,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m05-depth-what~dev",
+      "set": "deviate",
+      "text_id": "m05-depth-what",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "derivation"
+      },
+      "question": "什么是对角化？有什么用？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体结论先行、讲解详细，但缺少关键的推导步骤，深度不足",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 1,
+          "structure": 0,
+          "depth": 2,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4224.8,
+        "cost_usd": 0.008913
+      },
+      "usage": {
+        "input_tokens": 1626,
+        "output_tokens": 269,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m05-depth-derivation~fit",
+      "set": "fit",
+      "text_id": "m05-depth-derivation",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "derivation"
+      },
+      "question": "什么是对角化？有什么用？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体符合先结论后推导的风格，但缺少具体数值例子或类比，举例偏少",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 2,
+          "structure": 0,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4240.3,
+        "cost_usd": 0.00903
+      },
+      "usage": {
+        "input_tokens": 1755,
+        "output_tokens": 251,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m05-depth-derivation~dev",
+      "set": "deviate",
+      "text_id": "m05-depth-derivation",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "什么是对角化？有什么用？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体先给结论且较详细，但段3-4出现了推导过程，违背了“只讲是什么不做推导”的要求，且全文缺少具体数值例子或类比",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 2,
+          "structure": 0,
+          "depth": 2,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4417.8,
+        "cost_usd": 0.009591
+      },
+      "usage": {
+        "input_tokens": 1757,
+        "output_tokens": 288,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m06-detail_level-P0~fit",
+      "set": "fit",
+      "text_id": "m06-detail_level-P0",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么平面旋转没有实数特征值？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体贴合学生偏好，结论先行、举例到位，仅背景展开略显简略。",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 1,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 2697.8,
+        "cost_usd": 0.006768
+      },
+      "usage": {
+        "input_tokens": 1571,
+        "output_tokens": 137,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m06-detail_level-P0~dev",
+      "set": "deviate",
+      "text_id": "m06-detail_level-P0",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么平面旋转没有实数特征值？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体符合精简、举例、先结论后解释的要求，结构上结论略分散到第1段中部",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 0,
+          "use_examples": 0,
+          "structure": 1,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 1891.7,
+        "cost_usd": 0.006321
+      },
+      "usage": {
+        "input_tokens": 1562,
+        "output_tokens": 109,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m06-detail_level-P3~fit",
+      "set": "fit",
+      "text_id": "m06-detail_level-P3",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么平面旋转没有实数特征值？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "简洁先给结论再解释原理，基本符合偏好，仅例子略少",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 0,
+          "use_examples": 1,
+          "structure": 0,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 2938.2,
+        "cost_usd": 0.00615
+      },
+      "usage": {
+        "input_tokens": 1415,
+        "output_tokens": 127,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m06-detail_level-P3~dev",
+      "set": "deviate",
+      "text_id": "m06-detail_level-P3",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么平面旋转没有实数特征值？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "结论先行且方向正确，但展开程度偏简略，缺少背景枝节的充分展开，不够详细。",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 2,
+          "use_examples": 1,
+          "structure": 0,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4470.4,
+        "cost_usd": 0.008397
+      },
+      "usage": {
+        "input_tokens": 1424,
+        "output_tokens": 275,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m06-use_examples-more~fit",
+      "set": "fit",
+      "text_id": "m06-use_examples-more",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么平面旋转没有实数特征值？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体符合先结论后解释、举例、详细的风格，仅举例数量略少且有一处英文混用",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 1,
+          "depth": 1,
+          "language": 1,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3527.2,
+        "cost_usd": 0.008199
+      },
+      "usage": {
+        "input_tokens": 1663,
+        "output_tokens": 214,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m06-use_examples-more~dev",
+      "set": "deviate",
+      "text_id": "m06-use_examples-more",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么平面旋转没有实数特征值？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体结构和深度符合要求，但举了[3]这个额外例子，且[4]出现了未翻译的英文词",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 0,
+          "use_examples": 2,
+          "structure": 0,
+          "depth": 0,
+          "language": 1,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4360.3,
+        "cost_usd": 0.008961
+      },
+      "usage": {
+        "input_tokens": 1662,
+        "output_tokens": 265,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m06-use_examples-fewer~fit",
+      "set": "fit",
+      "text_id": "m06-use_examples-fewer",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么平面旋转没有实数特征值？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体讲清楚了原因，但没有先给结论，而是从定义铺垫开始",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 1,
+          "structure": 2,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3635.5,
+        "cost_usd": 0.008115
+      },
+      "usage": {
+        "input_tokens": 1570,
+        "output_tokens": 227,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m06-use_examples-fewer~dev",
+      "set": "deviate",
+      "text_id": "m06-use_examples-fewer",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么平面旋转没有实数特征值？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体讲得清楚合理，但没有开头先给最核心结论，是从解释直接展开的。",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 1,
+          "structure": 2,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4515.2,
+        "cost_usd": 0.008373
+      },
+      "usage": {
+        "input_tokens": 1571,
+        "output_tokens": 244,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m06-structure-conclusion_first~fit",
+      "set": "fit",
+      "text_id": "m06-structure-conclusion_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么平面旋转没有实数特征值？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体符合先结论后解释、举例、讲为什么的要求，但结论未在第一句明确给出最终判断。",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 1,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3076.6,
+        "cost_usd": 0.008145
+      },
+      "usage": {
+        "input_tokens": 1655,
+        "output_tokens": 212,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m06-structure-conclusion_first~dev",
+      "set": "deviate",
+      "text_id": "m06-structure-conclusion_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "buildup_first",
+        "depth": "why"
+      },
+      "question": "为什么平面旋转没有实数特征值？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体讲解详实且有例子，但结论（没有实数特征值的核心判断）在第1段就给出，未按问题→机制→结论的顺序把判断放最后",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 2,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3983.9,
+        "cost_usd": 0.009006
+      },
+      "usage": {
+        "input_tokens": 1667,
+        "output_tokens": 267,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m06-structure-buildup_first~fit",
+      "set": "fit",
+      "text_id": "m06-structure-buildup_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "buildup_first",
+        "depth": "why"
+      },
+      "question": "为什么平面旋转没有实数特征值？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体方向对，但展开不够充分，背景枝节讲得偏少，例子也不够具体",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 2,
+          "use_examples": 1,
+          "structure": 1,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 5886.0,
+        "cost_usd": 0.009831
+      },
+      "usage": {
+        "input_tokens": 1647,
+        "output_tokens": 326,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m06-structure-buildup_first~dev",
+      "set": "deviate",
+      "text_id": "m06-structure-buildup_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么平面旋转没有实数特征值？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体讲解详实到位，但结论被放到了最后而非开头，违背了先给结论的偏好",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 1,
+          "structure": 2,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4014.7,
+        "cost_usd": 0.00798
+      },
+      "usage": {
+        "input_tokens": 1635,
+        "output_tokens": 205,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m06-depth-what~fit",
+      "set": "fit",
+      "text_id": "m06-depth-what",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "为什么平面旋转没有实数特征值？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "讲解整体详细且有例子，但先铺垫后给结论，且解释了'为什么'而非只讲'是什么'",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 2,
+          "depth": 2,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 5621.1,
+        "cost_usd": 0.00966
+      },
+      "usage": {
+        "input_tokens": 1605,
+        "output_tokens": 323,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m06-depth-what~dev",
+      "set": "deviate",
+      "text_id": "m06-depth-what",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "derivation"
+      },
+      "question": "为什么平面旋转没有实数特征值？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体讲解合理，但结论未在开头第一段直接给出，而是铺垫后才点出。",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 1,
+          "structure": 2,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4597.6,
+        "cost_usd": 0.008094
+      },
+      "usage": {
+        "input_tokens": 1603,
+        "output_tokens": 219,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m06-depth-derivation~fit",
+      "set": "fit",
+      "text_id": "m06-depth-derivation",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "derivation"
+      },
+      "question": "为什么平面旋转没有实数特征值？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体结构和推导基本到位，但展开不够充分，细节背景略显单薄",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 2,
+          "use_examples": 1,
+          "structure": 0,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4686.6,
+        "cost_usd": 0.00885
+      },
+      "usage": {
+        "input_tokens": 1635,
+        "output_tokens": 263,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m06-depth-derivation~dev",
+      "set": "deviate",
+      "text_id": "m06-depth-derivation",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "为什么平面旋转没有实数特征值？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "学生要求只讲是什么且先给结论不做推导，但讲解在第3段做了完整的反证推导，且结论未放在最开头。",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 1,
+          "structure": 2,
+          "depth": 2,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4517.1,
+        "cost_usd": 0.008961
+      },
+      "usage": {
+        "input_tokens": 1637,
+        "output_tokens": 270,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m07-detail_level-P0~fit",
+      "set": "fit",
+      "text_id": "m07-detail_level-P0",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "幂法是怎么回事？",
+      "expect": "ok",
+      "verdict": "rewrite",
+      "run": {
+        "verdict": "rewrite",
+        "status": "judged",
+        "reason": "结论先行、讲清原理，但全程没有一个具体例子或类比",
+        "feedback": "整篇完全没有具体数值例子或类比，建议在[2]讲特征分量叠加时配一个简单的2x2矩阵或向量例子，在[3]讲缩放时也可以用具体数字演示溢出/趋零的现象，帮助理解。",
+        "reminder": "本轮完全没有举例，下次务必每个要点配一个具体例子或类比。",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 3,
+          "structure": 0,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3254.8,
+        "cost_usd": 0.008367
+      },
+      "usage": {
+        "input_tokens": 1699,
+        "output_tokens": 218,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m07-detail_level-P0~dev",
+      "set": "deviate",
+      "text_id": "m07-detail_level-P0",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "幂法是怎么回事？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体结构和深度符合要求，但缺少具体例子或类比，未配合要点举例说明",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 0,
+          "use_examples": 2,
+          "structure": 0,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4646.5,
+        "cost_usd": 0.00894
+      },
+      "usage": {
+        "input_tokens": 1690,
+        "output_tokens": 258,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m07-detail_level-P3~fit",
+      "set": "fit",
+      "text_id": "m07-detail_level-P3",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "幂法是怎么回事？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体结构和深度符合要求，但全程没有配具体例子或类比，偏离了学生要求的多举例风格",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 0,
+          "use_examples": 2,
+          "structure": 0,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3706.8,
+        "cost_usd": 0.008292
+      },
+      "usage": {
+        "input_tokens": 1459,
+        "output_tokens": 261,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m07-detail_level-P3~dev",
+      "set": "deviate",
+      "text_id": "m07-detail_level-P3",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "幂法是怎么回事？",
+      "expect": "rewrite",
+      "verdict": "rewrite",
+      "run": {
+        "verdict": "rewrite",
+        "status": "judged",
+        "reason": "整体讲清了原理但缺少具体例子，且展开不够详细",
+        "feedback": "全文没有任何具体数值例子或类比，应在[2][3]处加入一个具体矩阵/向量的迭代过程示例，展示数值如何逐步收敛；[1][3]处可以更详细展开背景，如解释特征值分解的含义、为什么分量会被淹没的数学直觉（可配合简单2x2矩阵算一遍）。",
+        "reminder": "缺少具体例子，本轮请补充一个数值或类比例子帮助理解幂法迭代过程。",
+        "scores": {
+          "detail_level": 2,
+          "use_examples": 3,
+          "structure": 1,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4187.7,
+        "cost_usd": 0.008274
+      },
+      "usage": {
+        "input_tokens": 1468,
+        "output_tokens": 258,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m07-use_examples-more~fit",
+      "set": "fit",
+      "text_id": "m07-use_examples-more",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "幂法是怎么回事？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "结构与深度符合要求，但全程没有具体数值例子或类比，仅有抽象描述",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 2,
+          "structure": 0,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4231.3,
+        "cost_usd": 0.008196
+      },
+      "usage": {
+        "input_tokens": 1672,
+        "output_tokens": 212,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m07-use_examples-more~dev",
+      "set": "deviate",
+      "text_id": "m07-use_examples-more",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "幂法是怎么回事？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体讲解详实到位，但未在开头先给出最核心结论，而是先铺垫思想来源",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 2,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3732.4,
+        "cost_usd": 0.008343
+      },
+      "usage": {
+        "input_tokens": 1671,
+        "output_tokens": 222,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m07-use_examples-fewer~fit",
+      "set": "fit",
+      "text_id": "m07-use_examples-fewer",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "幂法是怎么回事？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "开头给出结论，随后展开原理与设计动机，符合详细+先结论+讲为什么的要求",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 0,
+          "use_examples": 0,
+          "structure": 0,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 1804.7,
+        "cost_usd": 0.006834
+      },
+      "usage": {
+        "input_tokens": 1723,
+        "output_tokens": 111,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m07-use_examples-fewer~dev",
+      "set": "deviate",
+      "text_id": "m07-use_examples-fewer",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "幂法是怎么回事？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体结构和深度符合要求，但几乎没有具体数值例子或类比，仅用抽象描述代替举例",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 2,
+          "structure": 0,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3933.0,
+        "cost_usd": 0.009012
+      },
+      "usage": {
+        "input_tokens": 1724,
+        "output_tokens": 256,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m07-structure-conclusion_first~fit",
+      "set": "fit",
+      "text_id": "m07-structure-conclusion_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "幂法是怎么回事？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体结构和举例都符合，但开头未先给出最核心结论判断，略铺垫后才切入",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 1,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3269.6,
+        "cost_usd": 0.008163
+      },
+      "usage": {
+        "input_tokens": 1716,
+        "output_tokens": 201,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m07-structure-conclusion_first~dev",
+      "set": "deviate",
+      "text_id": "m07-structure-conclusion_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "buildup_first",
+        "depth": "why"
+      },
+      "question": "幂法是怎么回事？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体讲解详尽且有例子，但结论（幂法是什么/收敛结论）在第1段就给出，不是放在最后，偏离“先铺垫后结论”的结构。",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 2,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4669.8,
+        "cost_usd": 0.009474
+      },
+      "usage": {
+        "input_tokens": 1728,
+        "output_tokens": 286,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m07-structure-buildup_first~fit",
+      "set": "fit",
+      "text_id": "m07-structure-buildup_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "buildup_first",
+        "depth": "why"
+      },
+      "question": "幂法是怎么回事？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体结构和深度符合偏好，但缺少具体例子或类比，违背了学生要求的多举例风格",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 2,
+          "structure": 0,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3923.8,
+        "cost_usd": 0.00864
+      },
+      "usage": {
+        "input_tokens": 1690,
+        "output_tokens": 238,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m07-structure-buildup_first~dev",
+      "set": "deviate",
+      "text_id": "m07-structure-buildup_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "幂法是怎么回事？",
+      "expect": "rewrite",
+      "verdict": "rewrite",
+      "run": {
+        "verdict": "rewrite",
+        "status": "judged",
+        "reason": "内容详实且讲了为什么，但完全没有具体例子，且结论被放到了最后而非开头",
+        "feedback": "需要补一个具体例子，比如给一个2x2矩阵和初始向量，展示迭代几步后方向趋近最大特征向量；另外结论句（第5段内容）应提到第1段开头，先给出'幂法就是反复乘矩阵再归一化，收敛到最大特征值方向'这句判断，再展开解释原理。",
+        "reminder": "这次完全没有举例，且结论放在了最后，请开头先给结论并配上具体例子。",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 3,
+          "structure": 2,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3806.7,
+        "cost_usd": 0.008919
+      },
+      "usage": {
+        "input_tokens": 1678,
+        "output_tokens": 259,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m07-depth-what~fit",
+      "set": "fit",
+      "text_id": "m07-depth-what",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "幂法是怎么回事？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体符合先结论后解释、详细举例的风格，但第2段解释了原理为什么成立，偏离了只讲是什么的要求",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 0,
+          "depth": 2,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4257.6,
+        "cost_usd": 0.008778
+      },
+      "usage": {
+        "input_tokens": 1661,
+        "output_tokens": 253,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m07-depth-what~dev",
+      "set": "deviate",
+      "text_id": "m07-depth-what",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "derivation"
+      },
+      "question": "幂法是怎么回事？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体偏简略，缺少具体推导步骤和背景展开，结论虽前置但解释较浅",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 2,
+          "use_examples": 0,
+          "structure": 1,
+          "depth": 2,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 5068.2,
+        "cost_usd": 0.009507
+      },
+      "usage": {
+        "input_tokens": 1659,
+        "output_tokens": 302,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m07-depth-derivation~fit",
+      "set": "fit",
+      "text_id": "m07-depth-derivation",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "derivation"
+      },
+      "question": "幂法是怎么回事？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "详细展开、给了类比例子、先结论后推导，整体符合学生偏好",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 0,
+          "use_examples": 0,
+          "structure": 1,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 1804.0,
+        "cost_usd": 0.00654
+      },
+      "usage": {
+        "input_tokens": 1665,
+        "output_tokens": 103,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m07-depth-derivation~dev",
+      "set": "deviate",
+      "text_id": "m07-depth-derivation",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "幂法是怎么回事？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体贴合先结论后详例的要求，但第2、4段解释了为什么会收敛、为什么稳健，超出了只讲是什么的范围",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 0,
+          "depth": 2,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4178.0,
+        "cost_usd": 0.008871
+      },
+      "usage": {
+        "input_tokens": 1667,
+        "output_tokens": 258,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m08-detail_level-P0~fit",
+      "set": "fit",
+      "text_id": "m08-detail_level-P0",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "PCA 和特征向量有什么关系？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体符合先结论后解释、讲透为什么的要求，例子略单薄但基本可接受",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 1,
+          "structure": 0,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3227.6,
+        "cost_usd": 0.00666
+      },
+      "usage": {
+        "input_tokens": 1575,
+        "output_tokens": 129,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m08-detail_level-P0~dev",
+      "set": "deviate",
+      "text_id": "m08-detail_level-P0",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "PCA 和特征向量有什么关系？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体符合精简、先结论后解释、讲为什么、中文讲解的偏好",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 0,
+          "use_examples": 1,
+          "structure": 0,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 5992.4,
+        "cost_usd": 0.006273
+      },
+      "usage": {
+        "input_tokens": 1566,
+        "output_tokens": 105,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m08-detail_level-P3~fit",
+      "set": "fit",
+      "text_id": "m08-detail_level-P3",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "PCA 和特征向量有什么关系？",
+      "expect": "ok",
+      "verdict": "rewrite",
+      "run": {
+        "verdict": "rewrite",
+        "status": "judged",
+        "reason": "结论先给且较精简，但完全没有举例或类比，明显偏离学生要求。",
+        "feedback": "全文没有一个具体例子或类比。可在[1]讲完特征向量是主方向后，配一个简单类比（如椭圆的长短轴方向），在[2]讲正交性时也可用一个小例子说明特征值大小与方差排序的关系。",
+        "reminder": "请为每个要点配一个具体例子或类比，之前完全没有举例。",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 3,
+          "structure": 1,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3851.4,
+        "cost_usd": 0.00741
+      },
+      "usage": {
+        "input_tokens": 1380,
+        "output_tokens": 218,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m08-detail_level-P3~dev",
+      "set": "deviate",
+      "text_id": "m08-detail_level-P3",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "PCA 和特征向量有什么关系？",
+      "expect": "rewrite",
+      "verdict": "rewrite",
+      "run": {
+        "verdict": "rewrite",
+        "status": "judged",
+        "reason": "结论先给到位，但缺少例子/类比，展开也不够详细充分",
+        "feedback": "整体过于精简，未达到学生要求的详细程度：应补充背景（如什么是协方差矩阵、为什么PCA要最大化方差）、术语英文标注（PCA、eigenvector等）。第[1][2]段都没有配具体例子或类比，需要至少加一个直观例子（比如二维数据点云沿某方向分布的例子）帮助理解特征向量和方差的关系。",
+        "reminder": "本轮讲解缺少例子和详细展开，下次请补充具体例子/类比并丰富背景说明。",
+        "scores": {
+          "detail_level": 2,
+          "use_examples": 3,
+          "structure": 1,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 14277.6,
+        "cost_usd": 0.008322
+      },
+      "usage": {
+        "input_tokens": 1389,
+        "output_tokens": 277,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m08-use_examples-more~fit",
+      "set": "fit",
+      "text_id": "m08-use_examples-more",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "PCA 和特征向量有什么关系？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体讲得详细且有例子有原理，但未在开头第一句直接给出最核心结论，略有铺垫感。",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 1,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4258.8,
+        "cost_usd": 0.008307
+      },
+      "usage": {
+        "input_tokens": 1609,
+        "output_tokens": 232,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m08-use_examples-more~dev",
+      "set": "deviate",
+      "text_id": "m08-use_examples-more",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "PCA 和特征向量有什么关系？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体详细且讲了为什么，但结尾补充了一个椭圆例子，与少举例的偏好不符，且结论稍靠后。",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 0,
+          "use_examples": 2,
+          "structure": 1,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4180.7,
+        "cost_usd": 0.008559
+      },
+      "usage": {
+        "input_tokens": 1608,
+        "output_tokens": 249,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m08-use_examples-fewer~fit",
+      "set": "fit",
+      "text_id": "m08-use_examples-fewer",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "PCA 和特征向量有什么关系？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体符合先结论后解释、详细讲背景与原理的要求，仅结论位置略靠后展开",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 1,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3683.2,
+        "cost_usd": 0.006819
+      },
+      "usage": {
+        "input_tokens": 1548,
+        "output_tokens": 145,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m08-use_examples-fewer~dev",
+      "set": "deviate",
+      "text_id": "m08-use_examples-fewer",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "PCA 和特征向量有什么关系？",
+      "expect": "rewrite",
+      "verdict": "rewrite",
+      "run": {
+        "verdict": "rewrite",
+        "status": "judged",
+        "reason": "结论先行、讲清为什么，但全文没有一个具体例子或类比，明显缺失举例要求",
+        "feedback": "整篇都是抽象论述，缺少具体例子或类比。可在[2]讲'拉伸方向/拉伸多少'时配一个二维数据椭圆的具体例子，或用现实场景（如身高体重数据）类比说明主成分含义，帮助理解。",
+        "reminder": "请为每个要点配一个具体例子或类比，不要只做抽象论述。",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 3,
+          "structure": 0,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3768.2,
+        "cost_usd": 0.008127
+      },
+      "usage": {
+        "input_tokens": 1549,
+        "output_tokens": 232,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m08-structure-conclusion_first~fit",
+      "set": "fit",
+      "text_id": "m08-structure-conclusion_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "PCA 和特征向量有什么关系？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体符合先结论后解释、详细展开、含机制与类比的偏好",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 1,
+          "structure": 0,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 2455.0,
+        "cost_usd": 0.006648
+      },
+      "usage": {
+        "input_tokens": 1711,
+        "output_tokens": 101,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m08-structure-conclusion_first~dev",
+      "set": "deviate",
+      "text_id": "m08-structure-conclusion_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "buildup_first",
+        "depth": "why"
+      },
+      "question": "PCA 和特征向量有什么关系？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体讲得详细且有类比，但结论在开头就给出，不符合先铺垫后收结论的顺序",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 1,
+          "structure": 2,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3928.3,
+        "cost_usd": 0.009009
+      },
+      "usage": {
+        "input_tokens": 1723,
+        "output_tokens": 256,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m08-structure-buildup_first~fit",
+      "set": "fit",
+      "text_id": "m08-structure-buildup_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "buildup_first",
+        "depth": "why"
+      },
+      "question": "PCA 和特征向量有什么关系？",
+      "expect": "ok",
+      "verdict": "rewrite",
+      "run": {
+        "verdict": "rewrite",
+        "status": "judged",
+        "reason": "整体结构和深度基本符合，但完全没有举例子或类比。",
+        "feedback": "全文没有给出任何具体例子或类比（如用二维数据椭圆分布类比主成分方向），应在[2][3]处各配一个具体例子帮助理解特征向量/特征值的几何含义。",
+        "reminder": "本轮完全没有举例，下次请为关键要点配具体例子或类比。",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 3,
+          "structure": 1,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3271.2,
+        "cost_usd": 0.007704
+      },
+      "usage": {
+        "input_tokens": 1583,
+        "output_tokens": 197,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m08-structure-buildup_first~dev",
+      "set": "deviate",
+      "text_id": "m08-structure-buildup_first",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "PCA 和特征向量有什么关系？",
+      "expect": "rewrite",
+      "verdict": "rewrite",
+      "run": {
+        "verdict": "rewrite",
+        "status": "judged",
+        "reason": "内容详细且讲清为什么，但完全没有举例，结论也未放在开头",
+        "feedback": "缺少具体例子或类比（如用二维数据椭圆散点图类比主成分方向），应在[2][3]处各配一个例子；且结论句[4]应移到开头第一段，先给出'主成分=协方差矩阵特征向量'的判断，再展开解释原因。",
+        "reminder": "本轮缺少例子且结论未前置，请先给结论再解释，并配具体例子或类比。",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 3,
+          "structure": 2,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3863.5,
+        "cost_usd": 0.008193
+      },
+      "usage": {
+        "input_tokens": 1571,
+        "output_tokens": 232,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m08-depth-what~fit",
+      "set": "fit",
+      "text_id": "m08-depth-what",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "PCA 和特征向量有什么关系？",
+      "expect": "ok",
+      "verdict": "rewrite",
+      "run": {
+        "verdict": "rewrite",
+        "status": "judged",
+        "reason": "开头给了结论，但全程没有具体例子/类比，且第2段解释了对称矩阵性质带来的推导式说明，偏向解释为什么。",
+        "feedback": "整篇缺少具体例子或类比，应为每个要点（如特征向量方向、特征值大小、正交性）配一个具体数值或类比说明；第[2]段解释协方差矩阵对称性为何导致特征向量正交，这是在做推导/解释原因，应删去，只需直接说明特征向量正交、特征值衡量方差即可，不展开其原理。",
+        "reminder": "这次回答缺少具体例子，且掺入了原理解释，请只讲是什么并配例子。",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 3,
+          "structure": 0,
+          "depth": 2,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4831.3,
+        "cost_usd": 0.009111
+      },
+      "usage": {
+        "input_tokens": 1582,
+        "output_tokens": 291,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m08-depth-what~dev",
+      "set": "deviate",
+      "text_id": "m08-depth-what",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "derivation"
+      },
+      "question": "PCA 和特征向量有什么关系？",
+      "expect": "rewrite",
+      "verdict": "rewrite",
+      "run": {
+        "verdict": "rewrite",
+        "status": "judged",
+        "reason": "结论先给了，但完全没有例子/类比，且推导步骤和背景展开不够充分",
+        "feedback": "[1]-[4]全程抽象描述，没有配具体例子或类比（比如用二维数据椭圆散点说明主方向），应至少加一个直观例子帮助理解特征向量=方差最大方向；[2]可以把'为什么对称矩阵特征向量正交'这一步的推导逻辑或直觉简单展开，而不是直接断言；整体背景铺垫（如协方差矩阵衡量什么、为什么要找方差最大方向）也可以再详细一点。",
+        "reminder": "这次回答缺少例子或类比，推导也偏简略，请补充具体例子并展开关键步骤。",
+        "scores": {
+          "detail_level": 2,
+          "use_examples": 3,
+          "structure": 1,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 5027.4,
+        "cost_usd": 0.009405
+      },
+      "usage": {
+        "input_tokens": 1580,
+        "output_tokens": 311,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m08-depth-derivation~fit",
+      "set": "fit",
+      "text_id": "m08-depth-derivation",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "derivation"
+      },
+      "question": "PCA 和特征向量有什么关系？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体贴近详细+举例+中文的风格，但没有先给结论、也缺少推导步骤",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 2,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4434.2,
+        "cost_usd": 0.00843
+      },
+      "usage": {
+        "input_tokens": 1565,
+        "output_tokens": 249,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "m08-depth-derivation~dev",
+      "set": "deviate",
+      "text_id": "m08-depth-derivation",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "PCA 和特征向量有什么关系？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "没有先给结论，且解释了为什么（对称矩阵特征向量垂直、为何代表方向等），超出了只讲是什么的范围",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 2,
+          "depth": 2,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4355.8,
+        "cost_usd": 0.009036
+      },
+      "usage": {
+        "input_tokens": 1567,
+        "output_tokens": 289,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "c01-detail_level~conflict",
+      "set": "conflict",
+      "text_id": "c01-detail_level",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征方程是怎么来的？请讲得详细一些，把每个点都展开讲。",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "本轮学生临时要求详细讲解，整体展开符合临时指令，但结论未在开头先给出，偏离了先结论后解释的结构偏好。",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 2,
+          "use_examples": 1,
+          "structure": 2,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4296.7,
+        "cost_usd": 0.009525
+      },
+      "usage": {
+        "input_tokens": 1795,
+        "output_tokens": 276,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "c01-detail_level~control",
+      "set": "control",
+      "text_id": "c01-detail_level",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征方程是怎么来的？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "内容扎实但未开头给结论，先铺垫推导再总结，结构上偏离要求。",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 0,
+          "use_examples": 1,
+          "structure": 2,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4991.3,
+        "cost_usd": 0.008868
+      },
+      "usage": {
+        "input_tokens": 1776,
+        "output_tokens": 236,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "c01-use_examples~conflict",
+      "set": "conflict",
+      "text_id": "c01-use_examples",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征方程是怎么来的？能多举几个具体的例子吗？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体符合先结论后解释、少举例的要求，仅因课件无例子而询问是否补充，属合理处理。",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 1,
+          "depth": 0,
+          "language": 1,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 2034.4,
+        "cost_usd": 0.006507
+      },
+      "usage": {
+        "input_tokens": 1594,
+        "output_tokens": 115,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "c01-use_examples~control",
+      "set": "control",
+      "text_id": "c01-use_examples",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征方程是怎么来的？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体内容详实且不举例，但没有把核心结论放在开头第一句",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 2,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3168.2,
+        "cost_usd": 0.007578
+      },
+      "usage": {
+        "input_tokens": 1581,
+        "output_tokens": 189,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "c01-structure~conflict",
+      "set": "conflict",
+      "text_id": "c01-structure",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征方程是怎么来的？先别直接告诉我结论，一步步带我推出来。",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "学生本轮要求先推导再给结论，讲解完全遵循该指令，逐步展开、举例、解释原理，整体符合要求。",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 0,
+          "use_examples": 0,
+          "structure": 0,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 2890.7,
+        "cost_usd": 0.008106
+      },
+      "usage": {
+        "input_tokens": 1782,
+        "output_tokens": 184,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "c01-structure~control",
+      "set": "control",
+      "text_id": "c01-structure",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "特征方程是怎么来的？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "讲解整体详细且讲清了为什么，但没有开头先给结论，而是走了推导铺垫的顺序",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 0,
+          "use_examples": 1,
+          "structure": 2,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3671.4,
+        "cost_usd": 0.009051
+      },
+      "usage": {
+        "input_tokens": 1762,
+        "output_tokens": 251,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "c01-depth~conflict",
+      "set": "conflict",
+      "text_id": "c01-depth",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "特征方程是怎么来的？请把推导过程一步步写出来。",
+      "expect": "ok",
+      "verdict": "rewrite",
+      "run": {
+        "verdict": "rewrite",
+        "status": "judged",
+        "reason": "学生只要求讲是什么不要推导，但讲解通篇详细推导了特征方程的由来",
+        "feedback": "学生偏好只讲是什么、不做推导，但整篇[1]-[3]都是逐步推导过程，违背了偏好。应把[1]的结论保留，删除[3]中详述推导步骤的内容，只需说明特征方程是什么、怎么用，不展开推导逻辑。结构上也应先给结论后简要说明定义，而不是罗列推导步骤。",
+        "reminder": "学生只要概念是什么和用途，不要推导过程，这次请避免逐步推导。",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 1,
+          "structure": 2,
+          "depth": 3,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4157.6,
+        "cost_usd": 0.009261
+      },
+      "usage": {
+        "input_tokens": 1742,
+        "output_tokens": 269,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "c01-depth~control",
+      "set": "control",
+      "text_id": "c01-depth",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "特征方程是怎么来的？",
+      "expect": "rewrite",
+      "verdict": "rewrite",
+      "run": {
+        "verdict": "rewrite",
+        "status": "judged",
+        "reason": "学生要求只讲是什么、不做推导，但讲解详细给出了完整推导步骤，深度严重偏离。",
+        "feedback": "学生偏好'只讲是什么'，不要推导过程。[2][3]整段完整的推导步骤应删除，改为直接说明特征方程是什么、怎么用（即det(A−λI)=0这一结论及其作用），不展开证明为什么这个条件成立。",
+        "reminder": "上一条推导过程过长，这次请只讲是什么和用途，不做推导。",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 1,
+          "depth": 3,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3442.9,
+        "cost_usd": 0.008772
+      },
+      "usage": {
+        "input_tokens": 1729,
+        "output_tokens": 239,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "c02-detail_level~conflict",
+      "set": "conflict",
+      "text_id": "c02-detail_level",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "对称矩阵的特征值有什么特点？请讲得详细一些，把每个点都展开讲。",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "学生这次明确要求详细展开，整体风格符合即时要求，基本放行",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 2,
+          "use_examples": 0,
+          "structure": 0,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 1813.0,
+        "cost_usd": 0.007191
+      },
+      "usage": {
+        "input_tokens": 1882,
+        "output_tokens": 103,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "c02-detail_level~control",
+      "set": "control",
+      "text_id": "c02-detail_level",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "对称矩阵的特征值有什么特点？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "结论先行、举例充分、解释了为什么，整体符合偏好，细节略多但未严重偏离",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 0,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 7421.1,
+        "cost_usd": 0.007254
+      },
+      "usage": {
+        "input_tokens": 1863,
+        "output_tokens": 111,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "c02-use_examples~conflict",
+      "set": "conflict",
+      "text_id": "c02-use_examples",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "对称矩阵的特征值有什么特点？能多举几个具体的例子吗？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体符合先结论后解释、详细讲why的偏好，举例部分学生这次特意要求多举例但课件无数值例子，如实说明是合理处理",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 1,
+          "structure": 0,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 2255.4,
+        "cost_usd": 0.007176
+      },
+      "usage": {
+        "input_tokens": 1747,
+        "output_tokens": 129,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "c02-use_examples~control",
+      "set": "control",
+      "text_id": "c02-use_examples",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "对称矩阵的特征值有什么特点？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体结构和深度符合要求，但第4-6段引入了协方差矩阵、PCA、无向图等应用举例，超出了'少举例子'的偏好",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 2,
+          "structure": 0,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4447.9,
+        "cost_usd": 0.008952
+      },
+      "usage": {
+        "input_tokens": 1734,
+        "output_tokens": 250,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "c02-structure~conflict",
+      "set": "conflict",
+      "text_id": "c02-structure",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "对称矩阵的特征值有什么特点？先别直接告诉我结论，一步步带我推出来。",
+      "expect": "ok",
+      "verdict": "rewrite",
+      "run": {
+        "verdict": "rewrite",
+        "status": "judged",
+        "reason": "学生明确要求先推导不要先给结论，但讲解在第1段就抛出结论式提问并在第4段直接给出最终结论，结构上违背了要求。",
+        "feedback": "学生这次明确说'先别直接告诉我结论，一步步带我推出来'，这优先于默认的'先给结论'偏好。但[1]段开头就点出'λ被锁死在实数范围'这个结论性判断，[3]段也直接抛出'它们互相垂直'的结论后才解释，应该调整为先展示推导过程（如从Av=λv出发，结合A=Aᵀ做共轭转置运算得出λ=λ*），让结论在推导末尾自然出现。",
+        "reminder": "这次学生要求先推导再给结论，注意不要在段落开头预先亮出答案。",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 3,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4985.9,
+        "cost_usd": 0.010068
+      },
+      "usage": {
+        "input_tokens": 1706,
+        "output_tokens": 330,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "c02-structure~control",
+      "set": "control",
+      "text_id": "c02-structure",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "对称矩阵的特征值有什么特点？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体讲到位但没有先给结论，开头反而是铺垫式提问",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 2,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3798.2,
+        "cost_usd": 0.009108
+      },
+      "usage": {
+        "input_tokens": 1686,
+        "output_tokens": 270,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "c02-depth~conflict",
+      "set": "conflict",
+      "text_id": "c02-depth",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "对称矩阵的特征值有什么特点？请把推导过程一步步写出来。",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体符合学生偏好，结论先行、如实说明课件限制，仅举例略少",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 1,
+          "structure": 0,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4139.8,
+        "cost_usd": 0.008448
+      },
+      "usage": {
+        "input_tokens": 1701,
+        "output_tokens": 223,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "c02-depth~control",
+      "set": "control",
+      "text_id": "c02-depth",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "对称矩阵的特征值有什么特点？",
+      "expect": "rewrite",
+      "verdict": "rewrite",
+      "run": {
+        "verdict": "rewrite",
+        "status": "judged",
+        "reason": "虽声明不推导，但仍主动给出完整推导思路，违反只讲是什么的要求，且缺少具体例子或类比。",
+        "feedback": "学生只要“是什么/做什么用”，不要推导。应删去[3][4]的推导内容，也不要在结尾反问是否要推导；可以补一个简单的具体例子（如给一个2x2对称矩阵算出实特征值、验证正交性）来配合要点讲解。",
+        "reminder": "只讲结论性质即可，不要给出推导思路，并补充一个具体数值例子。",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 2,
+          "structure": 1,
+          "depth": 3,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4401.4,
+        "cost_usd": 0.008829
+      },
+      "usage": {
+        "input_tokens": 1688,
+        "output_tokens": 251,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "c03-detail_level~conflict",
+      "set": "conflict",
+      "text_id": "c03-detail_level",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "迹和行列式跟特征值是什么关系？请讲得详细一些，把每个点都展开讲。",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体符合先结论后解释、举例丰富、中文讲解的偏好，且按学生临时要求展开更详细",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 0,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 2186.9,
+        "cost_usd": 0.007275
+      },
+      "usage": {
+        "input_tokens": 1850,
+        "output_tokens": 115,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "c03-detail_level~control",
+      "set": "control",
+      "text_id": "c03-detail_level",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "迹和行列式跟特征值是什么关系？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体符合先结论后解释、多举例、精简主干的要求，[2]段推导略展开但仍属解释why范畴",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 0,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 1953.9,
+        "cost_usd": 0.007248
+      },
+      "usage": {
+        "input_tokens": 1831,
+        "output_tokens": 117,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "c03-use_examples~conflict",
+      "set": "conflict",
+      "text_id": "c03-use_examples",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "迹和行列式跟特征值是什么关系？能多举几个具体的例子吗？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体符合先结论后解释、详细展开、中文讲解的偏好，学生本轮明确要求多举例也满足了。",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 1,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3646.0,
+        "cost_usd": 0.006984
+      },
+      "usage": {
+        "input_tokens": 1733,
+        "output_tokens": 119,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "c03-use_examples~control",
+      "set": "control",
+      "text_id": "c03-use_examples",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "迹和行列式跟特征值是什么关系？",
+      "expect": "rewrite",
+      "verdict": "rewrite",
+      "run": {
+        "verdict": "rewrite",
+        "status": "judged",
+        "reason": "整体结论先行、讲了为什么，但举了三个例子明显违背“少举例”的偏好",
+        "feedback": "学生要求少举例子，但[3][4]段给出了三个完整例子（反射矩阵、缩放矩阵、旋转矩阵），应删减为最多一个或不举例，直接把要点讲清楚即可。",
+        "reminder": "这次举例过多，请按“少举例”的偏好，不额外补例子或类比。",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 3,
+          "structure": 1,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3137.6,
+        "cost_usd": 0.008355
+      },
+      "usage": {
+        "input_tokens": 1720,
+        "output_tokens": 213,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "c03-structure~conflict",
+      "set": "conflict",
+      "text_id": "c03-structure",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "迹和行列式跟特征值是什么关系？先别直接告诉我结论，一步步带我推出来。",
+      "expect": "ok",
+      "verdict": null,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "reason": "",
+        "feedback": "",
+        "reminder": "",
+        "scores": null,
+        "threshold": 3,
+        "error": "输出不合法：{\"scores\": {\"detail_level\": 1, \"use_examples\": 0, \"structure\": 3, \"depth\": 0, \"language\": 0, \"tone\": 0},\n\"reason\": \"学生明确要求先推导、别先给结论，但讲解整体仍遵循推导顺序未提前剧透结论，基本符合本次特殊要求，但与其\"先给结论\"的长期偏好相反——此处应以学生当次指令为准，故结构其实是",
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3217.8,
+        "cost_usd": 0.007842
+      },
+      "usage": {
+        "input_tokens": 1764,
+        "output_tokens": 170,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "c03-structure~control",
+      "set": "control",
+      "text_id": "c03-structure",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "迹和行列式跟特征值是什么关系？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "推导详尽且举例到位，但没有一开头就给出最终结论，而是从定义铺垫推导",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 2,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3203.6,
+        "cost_usd": 0.008352
+      },
+      "usage": {
+        "input_tokens": 1744,
+        "output_tokens": 208,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "c03-depth~conflict",
+      "set": "conflict",
+      "text_id": "c03-depth",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "迹和行列式跟特征值是什么关系？请把推导过程一步步写出来。",
+      "expect": "ok",
+      "verdict": "rewrite",
+      "run": {
+        "verdict": "rewrite",
+        "status": "judged",
+        "reason": "学生问题明确要求推导，讲解给出完整推导是合理的，但偏好本身是只讲是什么不做推导",
+        "feedback": "学生偏好是只讲是什么不做推导，但本题学生明确要求'请把推导过程一步步写出来'，故此处推导应保留，depth偏离是被问题覆盖的合理情况，不必强改；不过[2]-[6]的推导展开较多，可适当精简只保留关键步骤，结论句'特征值之和等于迹，乘积等于行列式'已在[1]给出，符合先给结论的要求。",
+        "reminder": "学生偏好是只讲是什么不做推导，但本题学生明确要求'请把推导过程一步步写出来'，故",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 1,
+          "structure": 1,
+          "depth": 3,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3899.9,
+        "cost_usd": 0.009123
+      },
+      "usage": {
+        "input_tokens": 1726,
+        "output_tokens": 263,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "c03-depth~control",
+      "set": "control",
+      "text_id": "c03-depth",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "迹和行列式跟特征值是什么关系？",
+      "expect": "rewrite",
+      "verdict": "rewrite",
+      "run": {
+        "verdict": "rewrite",
+        "status": "judged",
+        "reason": "结论虽在第1段给出，但后续大量推导韦达定理过程，严重违背“只讲是什么不做推导”的要求。",
+        "feedback": "学生要求只讲是什么、不做推导，但[2]-[6]详细展开了特征方程推导和韦达定理证明，应删除，直接给出结论（迹=特征值和，行列式=特征值积）后说明其用途（如[7]的检验用法）即可，不必证明为什么成立。",
+        "reminder": "上一条推导过多，这次请只说明结论和用途，不要证明为什么成立。",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 1,
+          "structure": 2,
+          "depth": 3,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3889.8,
+        "cost_usd": 0.008964
+      },
+      "usage": {
+        "input_tokens": 1713,
+        "output_tokens": 255,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "c04-detail_level~conflict",
+      "set": "conflict",
+      "text_id": "c04-detail_level",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么剪切变换不能对角化？请讲得详细一些，把每个点都展开讲。",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "学生本轮明确要求详细展开，但讲解仍按精简主干处理，且结论未放在第一句",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 2,
+          "use_examples": 1,
+          "structure": 2,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 5409.7,
+        "cost_usd": 0.01002
+      },
+      "usage": {
+        "input_tokens": 1680,
+        "output_tokens": 332,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "c04-detail_level~control",
+      "set": "control",
+      "text_id": "c04-detail_level",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么剪切变换不能对角化？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "开头即给结论，配具体例子讲清为什么，整体精简贴合偏好",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 0,
+          "use_examples": 0,
+          "structure": 0,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 2082.3,
+        "cost_usd": 0.006543
+      },
+      "usage": {
+        "input_tokens": 1661,
+        "output_tokens": 104,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "c04-use_examples~conflict",
+      "set": "conflict",
+      "text_id": "c04-use_examples",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么剪切变换不能对角化？能多举几个具体的例子吗？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "结构和举例基本符合要求，但第2段的一般性推导稍显单薄，深度上对课件要点的展开可以更充分些",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 0,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 2482.9,
+        "cost_usd": 0.00672
+      },
+      "usage": {
+        "input_tokens": 1635,
+        "output_tokens": 121,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "c04-use_examples~control",
+      "set": "control",
+      "text_id": "c04-use_examples",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么剪切变换不能对角化？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体结构和深度符合，但第3段补充了课件未明说的具体矩阵例子，违背了少举例的偏好",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 2,
+          "structure": 1,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3165.7,
+        "cost_usd": 0.008256
+      },
+      "usage": {
+        "input_tokens": 1622,
+        "output_tokens": 226,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "c04-structure~conflict",
+      "set": "conflict",
+      "text_id": "c04-structure",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么剪切变换不能对角化？先别直接告诉我结论，一步步带我推出来。",
+      "expect": "ok",
+      "verdict": null,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "reason": "",
+        "feedback": "",
+        "reminder": "",
+        "scores": null,
+        "threshold": 3,
+        "error": "输出不合法：{\"scores\": {\"detail_level\": 1, \"use_examples\": 0, \"structure\": 3, \"depth\": 0, \"language\": 0, \"tone\": 0},\n\"reason\": \"学生明确要求先别给结论、逐步推导，但讲解把结论放在了最后才总结，整体是推导式结构，符合逐步推导要求但第7段又重复点名\"结论\"二字，与\"先别直接告诉我结论\"的问题本身一致",
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3211.8,
+        "cost_usd": 0.008523
+      },
+      "usage": {
+        "input_tokens": 1916,
+        "output_tokens": 185,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "c04-structure~control",
+      "set": "control",
+      "text_id": "c04-structure",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "为什么剪切变换不能对角化？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体讲解详细且有例子有为什么，但结论被放到了最后而非开头，违反先给结论的要求",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 1,
+          "structure": 2,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3556.4,
+        "cost_usd": 0.008793
+      },
+      "usage": {
+        "input_tokens": 1896,
+        "output_tokens": 207,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "c04-depth~conflict",
+      "set": "conflict",
+      "text_id": "c04-depth",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "为什么剪切变换不能对角化？请把推导过程一步步写出来。",
+      "expect": "ok",
+      "verdict": "rewrite",
+      "run": {
+        "verdict": "rewrite",
+        "status": "judged",
+        "reason": "学生要求只讲是什么、不做推导，但讲解通篇是详细的推导过程，且未先给结论",
+        "feedback": "学生偏好只讲是什么不做推导，但本回复整篇都在一步步推导特征值、特征向量，严重偏离。应改为开头先给出结论（剪切变换特征向量不够、不能对角化），然后简单说明这是什么现象、用来说明什么，不展开det、解方程等推导步骤。",
+        "reminder": "这是讲是什么的偏好，不要展开详细推导步骤，先给结论。",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 0,
+          "structure": 2,
+          "depth": 3,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3966.2,
+        "cost_usd": 0.009075
+      },
+      "usage": {
+        "input_tokens": 1770,
+        "output_tokens": 251,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "c04-depth~control",
+      "set": "control",
+      "text_id": "c04-depth",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "为什么剪切变换不能对角化？",
+      "expect": "rewrite",
+      "verdict": "rewrite",
+      "run": {
+        "verdict": "rewrite",
+        "status": "judged",
+        "reason": "整体做了详细推导过程，违背了学生“只讲是什么、不做推导”的偏好，且未先给结论。",
+        "feedback": "学生要求只讲是什么和用途、不做推导，但[2]-[6]整段都在逐步推导特征值和特征向量过程，属于明显的“为什么/推导”深度，应删除或简化为课件已有结论的复述。同时结构上应在第1段开头就给出最终结论（剪切变换不能对角化的原因），而不是先说课件没展开推导再去补充推导。",
+        "reminder": "这是概念性问题，只需说明结论和用途，不要展开推导步骤。",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 1,
+          "structure": 2,
+          "depth": 3,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4914.4,
+        "cost_usd": 0.009456
+      },
+      "usage": {
+        "input_tokens": 1757,
+        "output_tokens": 279,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "c05-detail_level~conflict",
+      "set": "conflict",
+      "text_id": "c05-detail_level",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "反复作用一个矩阵之后，为什么最大的特征值最重要？请讲得详细一些，把每个点都展开讲。",
+      "expect": "ok",
+      "verdict": "rewrite",
+      "run": {
+        "verdict": "rewrite",
+        "status": "judged",
+        "reason": "讲解符合先结论后解释和深度要求，但完全没有举例子，且学生本轮明确要求详细展开，内容偏精简。",
+        "feedback": "学生本轮要求详细展开每个点，但讲解整体仍偏精简，尤其[2][3]可以加入具体数值例子（如给出一个2x2矩阵和具体特征值，演示λ₁^k与λ₂^k的比值如何随k变化）帮助理解；全文没有一个具体例子或类比，不符合学生一贯偏好的每点配例子，应在[1]或[2]处插入一个简单的数值示例。",
+        "reminder": "这次回答完全没有举例，下次请为关键机制配一个具体数值例子或类比。",
+        "scores": {
+          "detail_level": 2,
+          "use_examples": 3,
+          "structure": 1,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4790.4,
+        "cost_usd": 0.009798
+      },
+      "usage": {
+        "input_tokens": 1736,
+        "output_tokens": 306,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "c05-detail_level~control",
+      "set": "control",
+      "text_id": "c05-detail_level",
+      "axis": "detail_level",
+      "pref": {
+        "detail_level": "P3",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "反复作用一个矩阵之后，为什么最大的特征值最重要？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "结论先行、讲清机制都做到了，但全程没有具体例子或类比，违背多举例偏好",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 0,
+          "use_examples": 2,
+          "structure": 0,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4422.4,
+        "cost_usd": 0.008676
+      },
+      "usage": {
+        "input_tokens": 1717,
+        "output_tokens": 235,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "c05-use_examples~conflict",
+      "set": "conflict",
+      "text_id": "c05-use_examples",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "反复作用一个矩阵之后，为什么最大的特征值最重要？能多举几个具体的例子吗？",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体讲解详细且有为什么，但结论未开头先给，且举例较多（这是学生本轮临时要求，故例子不算偏离）",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 2,
+          "structure": 2,
+          "depth": 1,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3951.7,
+        "cost_usd": 0.008727
+      },
+      "usage": {
+        "input_tokens": 1774,
+        "output_tokens": 227,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "c05-use_examples~control",
+      "set": "control",
+      "text_id": "c05-use_examples",
+      "axis": "use_examples",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "fewer",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "反复作用一个矩阵之后，为什么最大的特征值最重要？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "先讲机制再给结论，且补充了课件之外的数值例子，偏离精简举例与先结论的要求",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 2,
+          "structure": 2,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3228.2,
+        "cost_usd": 0.008523
+      },
+      "usage": {
+        "input_tokens": 1761,
+        "output_tokens": 216,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "c05-structure~conflict",
+      "set": "conflict",
+      "text_id": "c05-structure",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "反复作用一个矩阵之后，为什么最大的特征值最重要？先别直接告诉我结论，一步步带我推出来。",
+      "expect": "ok",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "学生本轮明确要求先推导再给结论，讲解照做，符合临时指令且整体风格到位",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 0,
+          "use_examples": 0,
+          "structure": 0,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3031.6,
+        "cost_usd": 0.008511
+      },
+      "usage": {
+        "input_tokens": 1837,
+        "output_tokens": 200,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "c05-structure~control",
+      "set": "control",
+      "text_id": "c05-structure",
+      "axis": "structure",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "why"
+      },
+      "question": "反复作用一个矩阵之后，为什么最大的特征值最重要？",
+      "expect": "rewrite",
+      "verdict": "ok",
+      "run": {
+        "verdict": "ok",
+        "status": "judged",
+        "reason": "整体详细、有推导有举例，但结论被放到最后才点明，不符合先给结论的要求",
+        "feedback": "",
+        "reminder": "",
+        "scores": {
+          "detail_level": 0,
+          "use_examples": 1,
+          "structure": 2,
+          "depth": 0,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 3337.0,
+        "cost_usd": 0.008376
+      },
+      "usage": {
+        "input_tokens": 1817,
+        "output_tokens": 195,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "c05-depth~conflict",
+      "set": "conflict",
+      "text_id": "c05-depth",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "反复作用一个矩阵之后，为什么最大的特征值最重要？请把推导过程一步步写出来。",
+      "expect": "ok",
+      "verdict": "rewrite",
+      "run": {
+        "verdict": "rewrite",
+        "status": "judged",
+        "reason": "学生要的是先给结论、只讲是什么不推导、配例子，但这篇全是逐步数学推导，无结论先行、无例子。",
+        "feedback": "整体应改为：开头先给结论句（如“反复作用矩阵后，向量方向会收敛到最大特征值对应的特征向量，因为其增长速度指数级压制其他分量”），然后只需说明这是什么、用来做什么（幂法收敛原理），不必展开[1]-[9]这样的逐步推导；同时应配一个具体例子或类比帮助理解，而非纯符号推导。",
+        "reminder": "请先给结论句，只讲是什么不做推导，并配具体例子帮助理解。",
+        "scores": {
+          "detail_level": 1,
+          "use_examples": 3,
+          "structure": 2,
+          "depth": 3,
+          "language": 0,
+          "tone": 0
+        },
+        "threshold": 3,
+        "error": null,
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 4366.7,
+        "cost_usd": 0.010083
+      },
+      "usage": {
+        "input_tokens": 1896,
+        "output_tokens": 293,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    {
+      "id": "c05-depth~control",
+      "set": "control",
+      "text_id": "c05-depth",
+      "axis": "depth",
+      "pref": {
+        "detail_level": "P0",
+        "use_examples": "more",
+        "structure": "conclusion_first",
+        "depth": "what"
+      },
+      "question": "反复作用一个矩阵之后，为什么最大的特征值最重要？",
+      "expect": "rewrite",
+      "verdict": null,
+      "run": {
+        "verdict": null,
+        "status": "failed",
+        "reason": "",
+        "feedback": "",
+        "reminder": "",
+        "scores": null,
+        "threshold": 3,
+        "error": "输出不合法：{\"scores\": {\"detail_level\": 1, \"use_examples\": 3, \"structure\": 2, \"depth\": 3, \"language\": 0, \"tone\": 0}, \"reason\": \"讲解整体是完整推导过程，既没有先给结论也无具体例子，且深入到了为什么和推导层面，与学生要求的\"只讲是什么+先结论+多举例\"明显不符。\", \"feedback\": \"需要",
+        "model": "claude-sonnet-5",
+        "prompt_version": "j5",
+        "latency_ms": 5604.0,
+        "cost_usd": 0.011244
+      },
+      "usage": {
+        "input_tokens": 1883,
+        "output_tokens": 373,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    }
+  ]
+}

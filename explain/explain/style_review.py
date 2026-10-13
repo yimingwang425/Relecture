@@ -65,8 +65,10 @@ STYLE_JUDGE_PROMPT_VERSION = "j5"
 #: 审查的六个方面（与 j5 的输出格式一致）。
 SCORE_ASPECTS: tuple[str, ...] = ("detail_level", "use_examples", "structure", "depth", "language", "tone")
 
-#: 任何一个方面的偏离分 ≥ 它就打回。按预登记在开发集上选（见 `style_judge_j5_prereg.md`）。
-REWRITE_THRESHOLD = 3
+#: 任何一个方面的偏离分 ≥ 它就打回。按预登记在开发集上选（`style_judge_j5_prereg.md`）：
+#: 开发集上 ≥ 2 检出 84% / 误报 53%，≥ 3 检出 3% / 误报 0%——只有 ≥ 2 过了检出 70% 那条线。
+#: 留出集成绩见 `explain/runs/style_judge_eval_results.md`（j5 一节）。
+REWRITE_THRESHOLD = 2
 
 #: 下一轮提醒的字数上限（用户审定：少于 40 字）。模型超了就截断，不退回——它只是一句提醒。
 REMINDER_MAX_CHARS = 40

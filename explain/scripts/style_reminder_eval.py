@@ -29,7 +29,8 @@ import explain  # noqa: E402,F401
 from explain import llm  # noqa: E402
 
 RUNS = REPO / "explain" / "runs"
-BUDGET_USD = 5.0          # B 部分的上限（预登记两部分合计 $6，A 部分约 $1）
+#: 每一臂的上限。A 部分 j2 + j3 两轮约 $2.8，两臂合计控制在 $3.5 左右（用户同意的合计约 $6）。
+BUDGET_USD = {"on": 2.2, "off": 1.4}
 
 #: 6 个会话：(讲法偏好, 5 轮提问)。偏好四轴 + 语气轮换；提问是同一主题下的追问。
 Q_A = ["特征值和特征向量是什么？", "为什么特征向量在变换之后方向不变？", "特征值是负数是什么意思？",
@@ -134,8 +135,8 @@ def cmd_run(args: Any) -> int:
     for ci, ((user, prof), (cid, _conv)) in enumerate(zip(users.items(), convs.items()), 1):
         questions = CONVERSATIONS[ci - 1][1]
         for ti, q in enumerate(questions, 1):
-            if total > BUDGET_USD:
-                print(f"超过预算 ${BUDGET_USD}，停在会话 {ci} 第 {ti} 轮")
+            if total > BUDGET_USD[args.arm]:
+                print(f"超过预算 ${BUDGET_USD[args.arm]}，停在会话 {ci} 第 {ti} 轮")
                 break
             spend.take()
             started = time.perf_counter()

@@ -97,6 +97,10 @@ class TestInput:
         assert "因此不能根据字数进行判断" in STYLE_JUDGE_SYSTEM
         assert "只审核语言风格，不管任何其他东西" in STYLE_JUDGE_SYSTEM
         assert "少于 40 字" in STYLE_JUDGE_SYSTEM
+        # j3：j2 校准误报 80% 之后补回的三句
+        assert "学生这一句的要求优先于存好的偏好" in STYLE_JUDGE_SYSTEM
+        assert "讲法让位于「只讲课件」" in STYLE_JUDGE_SYSTEM
+        assert "拿不准时放行" in STYLE_JUDGE_SYSTEM
         assert "sonnet" in STYLE_JUDGE_MODEL_NAME
 
     def test_tone_only_when_chosen(self):

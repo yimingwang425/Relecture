@@ -54,7 +54,9 @@ STYLE_JUDGE_MODEL_NAME = "claude-sonnet-5"
 #: j1（2026-10-13）：从 agent（sr2）改成一次判断；偏好里去掉字数。
 #: j2（2026-10-13）：system 换成用户审定的措辞；输出多一个 `reminder`（下一轮提醒，少于 40 字）；
 #: 用户消息的两个标题改成「学生问题」「讲解」。
-STYLE_JUDGE_PROMPT_VERSION = "j2"
+#: j3（2026-10-13）：j2 校准误报 80%（`explain/runs/style_judge_eval_report_raw_j2.md`），经用户同意补回三句——
+#: 这一句的要求优先、讲法让位于只讲课件、拿不准时放行；max_tokens 600 → 1000（j2 有 4 条输出被截断）。
+STYLE_JUDGE_PROMPT_VERSION = "j3"
 
 #: 下一轮提醒的字数上限（用户审定：少于 40 字）。模型超了就截断，不退回——它只是一句提醒。
 REMINDER_MAX_CHARS = 40
@@ -82,6 +84,9 @@ STYLE_JUDGE_SYSTEM = """你是课件讲解助手的语言风格审查员。学�
 - 同一种讲法，面对不同的问题本来就会有出入。例子少一个、开头多一句过渡——都**放行**。
 - 只有**明显偏离**才打回。例如：学生要精简，却展开了一堆枝节；学生要详细，却只点了一句就停等。
 - 只审核语言风格，不管任何其他东西（如讲解是否正确）。
+- 学生这一句的要求优先于存好的偏好：存的是「精简」，这一句却说「详细推导一下」——那这一轮详细推导就是对的。
+- 讲法让位于「只讲课件」：课件里没有推导，讲解说明没有、没有硬编，不算偏离；讲到课件自己的例子，不算多举例。
+- 拿不准时放行。
 
 ## 输出
 
@@ -280,7 +285,7 @@ def build_style_judge(model: Any = None) -> StyleJudge:
             name=STYLE_JUDGE_MODEL_NAME,
             effort="medium",        # 评测时的那一档（与出处核对同）
             thinking="disabled",    # 一次判断、输出极短，不需要先想
-            max_tokens=600,
+            max_tokens=1000,        # j2 有 4 条修改意见写得太长，在 600 处被截断成不完整的 JSON
             cache_system=False,     # 单次调用、调用稀疏，缓存写入费用不划算
             cache_conversation=False,
         )

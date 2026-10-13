@@ -20,7 +20,7 @@
 
 | 交给模型 | 留在代码里 |
 | --- | --- |
-| 要不要再检索、用什么查询 | 风格审查与重写（`StyleReviewer`：版权规则 + 风格审查 agent） |
+| 要不要再检索、用什么查询 | 风格审查与重写（`StyleReviewer`：版权规则 + 风格审查员） |
 | 翻看某一页的全文 | 首轮检索与首轮兜底判断（F70：接进生产、不加开关） |
 | 查完后要不要再请判断员确认 | 受限页（入库时就没切片，工具碰不到） |
 | 这一句需不需要查课件（路由） | 工具轮数上限、失败回落 |
@@ -560,8 +560,8 @@ def run_agent_round(
     if route is not None and getattr(route, "answers_directly", False):
         text = route.reply
         emit_delta(text)
-        # 只跑规则、不叫风格审查 agent：直接回复不按讲法审查（下面也不据此重写）。
-        review = reviewer.review(text, question=question, use_agent=False)
+        # 只跑规则、不问风格审查员：直接回复不按讲法审查（下面也不据此重写）。
+        review = reviewer.review(text, question=question, use_judge=False)
         completion = route.completion or Completion(text=text, usage=Usage(), latency_ms=0.0,
                                                     model=getattr(route, "model", None) or "router")
         attempt = Attempt(0, completion, review)

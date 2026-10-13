@@ -7,8 +7,8 @@
 在 `scripts/acceptance_p0_p3.py`，属人工验收。
 
 但第四段不是唯一的下游：配置**同时驱动判定**（口径 X05）。
-`TestConfigReachesTheJudgement` 证明库里那一行真的进了风格审查 agent
-（agent 的模型是脚本替身，不受「模型这次恰好听话」的影响）。
+`TestConfigReachesTheJudgement` 证明库里那一行真的进了风格审查员
+（审查员的模型是脚本替身，不受「模型这次恰好听话」的影响）。
 """
 
 from __future__ import annotations
@@ -110,62 +110,60 @@ class TestConfigReachesThePrompt:
 
 
 class TestConfigReachesTheJudgement:
-    """库里那一行 → 风格审查 agent（2026-10-12）。
+    """库里那一行 → 风格审查员（LLM-as-judge，2026-10-13）。
 
-    agent 的模型是脚本替身（不断言模型判得准不准），这里只证明三件事：
-    **它读到的偏好是这个用户库里那一行**；**只有它交出 rewrite 才打回**——
+    审查员的模型是脚本替身（不断言模型判得准不准），这里只证明三件事：
+    **它读到的偏好是这个用户库里那一行**；**只有它判 rewrite 才打回**——
     段落长度出了区间照算、只记录，不再单独决定重写；它的结论进响应。
     """
 
     @staticmethod
     def _build(jwks, rest, verdict, *, model=None):
-        from explain.fake import FakeExplainModel, ScriptedToolModel
-        from explain.style_review import TOOL_SUBMIT, StyleReviewAgent
+        import json
 
-        # FakeExplainModel 的每一段都以这句占位文字开头——引文校验是真的在跑的。
-        args = ({"verdict": "ok", "notes": [], "issues": []} if verdict == "ok" else
-                {"verdict": "rewrite", "notes": [], "issues": [
-                    {"aspect": "detail_level", "paragraph": 1, "quote": "这一段是用于验证链路",
-                     "fix": "整篇压短到三段以内"}]})
-        agent_model = ScriptedToolModel(script=[("tool", [(TOOL_SUBMIT, args)])] * 10,
-                                        name="fake:claude-haiku-4-5")
+        from explain.fake import FakeExplainModel, ScriptedToolModel
+        from explain.style_review import StyleJudge
+
+        out = json.dumps({"verdict": verdict, "reason": "r",
+                          "feedback": "" if verdict == "ok" else "整篇只讲主干，不展开枝节"}, ensure_ascii=False)
+        judge_model = ScriptedToolModel(script=[("text", out)] * 10, name="fake:claude-sonnet-5")
         app = create_app(
             settings=SETTINGS,
             verifier=TokenVerifier(jwks, issuer=ISSUER, audience=AUDIENCE),
             supabase=SupabaseClient(SETTINGS.rest_url, SETTINGS.supabase_publishable_key, transport=rest),
             model_factory=lambda: model or FakeExplainModel(),
-            style_review_factory=lambda: StyleReviewAgent(agent_model),
+            style_review_factory=lambda: StyleJudge(judge_model),
         )
-        return TestClient(app, raise_server_exceptions=False), agent_model
+        return TestClient(app, raise_server_exceptions=False), judge_model
 
-    def test_agent_reads_this_users_row(self, keypair, jwks, rest):
-        c, agent_model = self._build(jwks, rest, "ok")
+    def test_judge_reads_this_users_row(self, keypair, jwks, rest):
+        c, judge_model = self._build(jwks, rest, "ok")
         ask(c, keypair, USER_A)
         ask(c, keypair, USER_B)
-        seen = [call["messages"][0]["content"] for call in agent_model.calls]
+        seen = [call["messages"][0]["content"] for call in judge_model.calls]
         assert "详细" in seen[0] and "精简" in seen[1]
         assert "先铺垫后收结论" in seen[1] and "先铺垫后收结论" not in seen[0]
 
-    def test_only_the_agent_sends_it_back(self, keypair, jwks, rest):
+    def test_only_the_judge_sends_it_back(self, keypair, jwks, rest):
         from explain.fake import FakeExplainModel
 
-        # 每段约 70 字：落在 P3 的 15–40 之外。agent 交 ok → 放行，段长只记录。
+        # 每段约 70 字：落在 P3 的 15–40 之外。审查员判 ok → 放行，段长只记录。
         stubborn = FakeExplainModel(target_chars=70, corrected_chars=70)
         c, _ = self._build(jwks, rest, "ok", model=stubborn)
         b = ask(c, keypair, USER_B).json()
         assert b["all_activated_passed"] is False
         assert b["accepted"] is True and b["regenerations"] == 0
-        assert b["style_review"]["verdict"] == "ok" and b["style_review"]["status"] == "submitted"
+        assert b["style_review"]["verdict"] == "ok" and b["style_review"]["status"] == "judged"
 
-        # agent 一直交 rewrite → 重生成到触顶，降级输出（PRD §10）
+        # 审查员一直判 rewrite → 重生成到触顶，降级输出（PRD §10）
         c, _ = self._build(jwks, rest, "rewrite", model=stubborn)
         b = ask(c, keypair, USER_B).json()
         assert b["accepted"] is False and b["regenerations"] == 2
         assert [x["verdict"] for x in b["style_review"]["attempts"]] == ["rewrite"] * 3
-        assert b["style_review"]["issues"][0]["paragraph"] == 1
+        assert "不展开枝节" in b["style_review"]["feedback"]
 
-    def test_no_agent_means_no_style_rewrites(self, keypair, jwks, rest):
-        """没注入审查 agent（也没配真的）→ 只剩版权那一条，讲法不审。"""
+    def test_no_judge_means_no_style_rewrites(self, keypair, jwks, rest):
+        """没注入审查员（也没配真的）→ 只剩版权那一条，讲法不审。"""
         from explain.fake import FakeExplainModel
 
         stubborn = FakeExplainModel(target_chars=70, corrected_chars=70)

@@ -67,7 +67,7 @@ DEFAULTS: dict[str, str] = {
     "depth": "why",
 }
 
-#: 哪条轴会被审查。2026-10-12 起四条都交给风格审查 agent（`explain.style_review`），
+#: 哪条轴会被审查。2026-10-12 起四条都交给风格审查员（`explain.style_review`），
 #: 按「大致符合」判，明显偏离才打回。
 ENFORCED: dict[str, bool] = {
     "detail_level": True,

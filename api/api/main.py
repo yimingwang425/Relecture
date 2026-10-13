@@ -227,16 +227,16 @@ def create_app(
 
         return build_verify_agent(retriever)
 
-    # ---- 风格审查 agent（2026-10-12）。同一条：注入了讲解模型而没注入它时不造真的。
+    # ---- 风格审查员（LLM-as-judge，2026-10-13）。同一条：注入了讲解模型而没注入它时不造真的。
     # 拿不到就是 None：只剩版权那一条硬规则，讲法不审。
-    def make_style_review_agent() -> Any | None:
+    def make_style_judge() -> Any | None:
         if style_review_factory is not None:
             return style_review_factory()
         if model_factory is not None or cfg.anthropic_api_key is None:
             return None
-        from explain.style_review import build_style_review_agent
+        from explain.style_review import build_style_judge
 
-        return build_style_review_agent()
+        return build_style_judge()
 
     verify = verifier or TokenVerifier(HttpJwks(cfg.jwks_url), issuer=cfg.issuer)
     db = supabase or SupabaseClient(cfg.rest_url, cfg.supabase_publishable_key)
@@ -565,12 +565,10 @@ def create_app(
             web=route is not None and route.route == "web",
             context=ctx,
             model=make_model(),
-            # 风格审查 agent：把学生**当前**存的偏好交给它，大致符合就放行，明显偏离才打回。
+            # 风格审查员：把学生**当前**存的偏好交给它，大致符合就放行，明显偏离才打回。
             # 偏好每轮从 style_config 现读，用户改了下一轮就按新的审。
-            # 带上对话历史：学生这一句若是在接着上一轮追问，agent 会自己回看（`read_recent_turns`）。
             reviewer=StyleReviewer(style, render_preferences(style, row.detail_level, row.b_class, row.tone),
-                                   make_style_review_agent(), history=tuple(history),
-                                   tone_set=row.tone != "neutral"),
+                                   make_style_judge()),
             # ← A 类 + B 类，拼法与 pairs.json 里 16 个样例逐字节同形（口径 F19/F45）
             # 语气那一行：默认 neutral 渲染成空，这一段与样例的生成条件逐字节相同。
             style_rules=render_all_style_rules(style, row.b_class, row.tone),
@@ -781,7 +779,7 @@ def create_app(
             "paragraph_length_target": style.paragraph_length.to_dict(),
             "mean_paragraph_chars": ev.by_name("paragraph_length").raw,
             "all_activated_passed": ev.all_activated_passed,
-            # 风格审查 agent 对最终那一版的判断，加上每一版各自的结论（打回了几次、为什么）。
+            # 风格审查员对最终那一版的判断，加上每一版各自的结论（打回了几次、为什么）。
             "style_review": _style_review_of(result),
             "style_rules": result.system_text.split("## 材料范围")[0].strip(),
         }
@@ -1515,7 +1513,7 @@ def _default_model() -> Any:
 
 
 def _style_review_of(result: Any) -> dict[str, Any] | None:
-    """最终那一版的风格审查结论 + 每一版的结论。整轮都没叫审查 agent（直接回复、没配）时为 None。"""
+    """最终那一版的风格审查结论 + 每一版的结论。整轮都没问审查员（直接回复、没配）时为 None。"""
     runs = [a.review.style_run for a in result.attempts if getattr(a.review, "style_run", None) is not None]
     if not runs:
         return None

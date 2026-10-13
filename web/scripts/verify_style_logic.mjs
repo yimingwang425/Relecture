@@ -2152,20 +2152,15 @@ await (async () => {
 
 // ================================================================ 二十三 · 风格审查 agent（2026-10-12）
 
-console.log("\n\x1b[1m二十三 · 风格审查 agent · 结果体与诊断行\x1b[0m");
+console.log("\n\x1b[1m二十三 · 风格审查员 · 结果体与诊断行\x1b[0m");
 await (async () => {
   const T = require_(join(outExplain, "turns.js"));
   const r = T.styleReviewFromPayload({
-    verdict: "rewrite", notes: [{ aspect: "结构", comment: "结论在最后" }],
-    issues: [{ aspect: "structure", paragraph: 3, quote: "所以效率小于一", fix: "把结论提到开头" }],
-    tools: [{ name: "measure_explanation", ok: true }, { name: "submit_review", ok: true }], rejected: 1,
+    verdict: "rewrite", reason: "结论在最后", feedback: "把结论提到第 1 段开头",
     attempts: [{ verdict: "rewrite" }, { verdict: "ok" }], error: null,
   });
-  check(r.verdict === "rewrite" && r.attempts.join(",") === "rewrite,ok" && r.notes[0].aspect === "结构",
-    "结论、各版结论、印象读得出", JSON.stringify(r));
-  check(r.issues[0].paragraph === 3 && r.issues[0].quote === "所以效率小于一"
-    && r.tools.join(",") === "measure_explanation,submit_review" && r.rejected === 1,
-    "打回理由（段号 + 引文）、调过的工具、退回次数读得出", JSON.stringify(r));
+  check(r.verdict === "rewrite" && r.attempts.join(",") === "rewrite,ok" && r.reason === "结论在最后"
+    && r.feedback === "把结论提到第 1 段开头", "结论、各版结论、整体印象、修改意见读得出", JSON.stringify(r));
   check(T.styleReviewFromPayload({ verdict: "pass" }).verdict === null,
     "认不出的结论 → null，不就近解释成「通过」");
   check(T.styleReviewFromPayload(null) === null && T.styleReviewFromPayload(undefined) === null,

@@ -1,5 +1,9 @@
 """风格审查 agent 的评测（2026-10-12）。判据见 `explain/runs/style_review_eval_prereg.md`。
 
+⚠️ 被测的是 **agent 版本**（sr1，代码在 git `eac2691`）。2026-10-13 起生产改成一次判断（LLM-as-judge），
+agent 的代码已删掉，`run` 子命令因此不能在当前代码上跑——要复现，先 `git checkout eac2691`。
+`report` 只读落盘的结果，照常可用。
+
     api/.venv/bin/python explain/scripts/style_review_eval.py generate              # 生成 84 段讲解（Sonnet，要钱）
     api/.venv/bin/python explain/scripts/style_review_eval.py run --model haiku     # 审查 168 条（要钱）
     api/.venv/bin/python explain/scripts/style_review_eval.py report [--model haiku]  # 汇总（不花钱）
@@ -27,11 +31,7 @@ sys.path.insert(0, str(REPO / "retrieval"))
 
 import explain  # noqa: E402,F401
 from explain.style_axes import DEFAULTS, style_config_for  # noqa: E402
-from explain.style_review import (  # noqa: E402
-    StyleReviewAgent,
-    render_preferences,
-    split_paragraphs,
-)
+from explain.style_review import split_paragraphs  # noqa: E402,F401
 
 RUNS = REPO / "explain" / "runs"
 BASE = RUNS / "style_review_eval_base.json"
@@ -175,7 +175,11 @@ def build_items() -> list[dict[str, Any]]:
 # ---------------------------------------------------------------- run
 
 
-def make_agent(model: str, no_timeout: bool = False) -> StyleReviewAgent:
+def make_agent(model: str, no_timeout: bool = False) -> Any:
+    try:
+        from explain.style_review import StyleReviewAgent  # noqa: F401
+    except ImportError:
+        raise SystemExit("被测的 agent 版本已从当前代码删掉；复现请先 git checkout eac2691（见文件头）") from None
     a = _make_agent(model)
     if no_timeout:
         # 偏离预登记的诊断跑（见结果文件）：生产的 8 s / 15 s 时限下大多数审查超时，
@@ -184,7 +188,8 @@ def make_agent(model: str, no_timeout: bool = False) -> StyleReviewAgent:
     return a
 
 
-def _make_agent(model: str) -> StyleReviewAgent:
+def _make_agent(model: str) -> Any:
+    from explain.style_review import StyleReviewAgent
     if model == "haiku":
         # 评测那一轮（sr1）的生产配置。2026-10-13 起生产换成 Sonnet，这里写死 Haiku，重跑时口径不变。
         from explain.llm import AnthropicModel
@@ -216,6 +221,8 @@ def cmd_run(args: Any) -> int:
 
     def one(it: dict[str, Any]) -> dict[str, Any]:
         p = it["pref"]
+        from explain.style_review import render_preferences
+
         prefs = render_preferences(style_config_for(p["detail_level"]), p["detail_level"],
                                    {k: p[k] for k in ("use_examples", "structure", "depth")})
         started = time.perf_counter()

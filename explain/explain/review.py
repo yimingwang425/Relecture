@@ -40,7 +40,7 @@ class Review:
     evaluation: Evaluation
     failed_dimensions: tuple[str, ...]
     feedback: str
-    #: 风格审查 agent 的这一次运行（`style_review.StyleReviewRun`）。规则审查、或这一版没问它时为 None。
+    #: 风格审查员的这一次判断（`style_review.StyleJudgment`）。规则审查、或这一版没问它时为 None。
     style_run: Any = None
 
     @property
@@ -49,8 +49,8 @@ class Review:
 
     @property
     def cost_usd(self) -> float:
-        """计入单轮总成本。有一步超时时金额未知，已完成的步数照加，未知那一格在 `style_run.cost_known`。"""
-        return self.style_run.cost_usd if self.style_run is not None else 0.0
+        """计入单轮总成本。超时时金额未知（`style_run.cost_usd is None`），这里按 0 加，原值在 `style_run` 里。"""
+        return (self.style_run.cost_usd or 0.0) if self.style_run is not None else 0.0
 
     @property
     def latency_ms(self) -> float:
@@ -94,7 +94,7 @@ def _feedback_for(name: str, d: Any) -> str:
 class Reviewer(Protocol):
     """讲解链路要的审查器接口。`RuleReviewer`（实验侧）与 `style_review.StyleReviewer`（生产）都满足它。"""
 
-    def review(self, text: str, *, question: str = "", use_agent: bool = True) -> Review: ...
+    def review(self, text: str, *, question: str = "", use_judge: bool = True) -> Review: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -109,8 +109,8 @@ class RuleReviewer:
     config: StyleConfig
     glossary: Glossary | None = None
 
-    def review(self, text: str, *, question: str = "", use_agent: bool = True) -> Review:
-        """`question` / `use_agent` 与 `style_review.StyleReviewer` 同一个接口，这里用不到。"""
+    def review(self, text: str, *, question: str = "", use_judge: bool = True) -> Review:
+        """`question` / `use_judge` 与 `style_review.StyleReviewer` 同一个接口，这里用不到。"""
         ev = evaluate(text, self.config, self.glossary)
         failed = tuple(d.name for d in ev.scored if not d.passed)
         if not failed:

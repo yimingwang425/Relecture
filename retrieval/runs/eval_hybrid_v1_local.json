@@ -1,0 +1,10023 @@
+{
+ "set": "v1",
+ "results": {
+  "Q002|C0": {
+   "id": "Q002",
+   "group": "C0",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     26
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     28
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     18
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     27
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     22
+    ]
+   ],
+   "scores": [
+    0.5610231144940669,
+    0.3501097398404624,
+    0.26641233306461465,
+    0.2577851391786752,
+    0.2450881236764063
+   ],
+   "rewrite": {
+    "query": "铀矿挖出来不能直接拿去当核燃料吗？为什么还要先加工一道？",
+    "keywords": [],
+    "implementation": "none",
+    "cost_usd": 0.0,
+    "latency_ms": 0.0,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.0,
+   "wall_ms": 1269
+  },
+  "Q006|C0": {
+   "id": "Q006",
+   "group": "C0",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     10
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     9
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     15
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     8
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     23
+    ]
+   ],
+   "scores": [
+    0.6063445171666875,
+    0.5149117484207941,
+    0.43045310156214844,
+    0.41819570810812234,
+    0.40196355815697027
+   ],
+   "rewrite": {
+    "query": "一个国家用掉的石油，大头是烧在车上还是烧在房子里？",
+    "keywords": [],
+    "implementation": "none",
+    "cost_usd": 0.0,
+    "latency_ms": 0.0,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.0,
+   "wall_ms": 1248
+  },
+  "Q001|C0": {
+   "id": "Q001",
+   "group": "C0",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     20
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     21
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     37
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     22
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     36
+    ]
+   ],
+   "scores": [
+    0.5644365284143577,
+    0.4512486394864934,
+    0.3815977818170556,
+    0.381340370629511,
+    0.37567383575762014
+   ],
+   "rewrite": {
+    "query": "发电厂烧了那么多煤，为什么不能把热全都变成电？",
+    "keywords": [],
+    "implementation": "none",
+    "cost_usd": 0.0,
+    "latency_ms": 0.0,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.0,
+   "wall_ms": 1294
+  },
+  "Q003|C0": {
+   "id": "Q003",
+   "group": "C0",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     35
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     32
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     34
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     12
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     17
+    ]
+   ],
+   "scores": [
+    0.5408531614004586,
+    0.4568946916936112,
+    0.4548182604488523,
+    0.4323642743670339,
+    0.41413205604407444
+   ],
+   "rewrite": {
+    "query": "同样占一片地，风电和太阳能哪个最后发出来的电更多？",
+    "keywords": [],
+    "implementation": "none",
+    "cost_usd": 0.0,
+    "latency_ms": 0.0,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.0,
+   "wall_ms": 1331
+  },
+  "Q005|C0": {
+   "id": "Q005",
+   "group": "C0",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     34
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     35
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     37
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     17
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     29
+    ]
+   ],
+   "scores": [
+    0.3751252775293361,
+    0.3724340637563213,
+    0.31807955227564777,
+    0.299666119752666,
+    0.28549298161799974
+   ],
+   "rewrite": {
+    "query": "太阳能白天发的电用不完，晚上又不发电，多出来的电能存到哪去？",
+    "keywords": [],
+    "implementation": "none",
+    "cost_usd": 0.0,
+    "latency_ms": 0.0,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.0,
+   "wall_ms": 1366
+  },
+  "Q007|C0": {
+   "id": "Q007",
+   "group": "C0",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     20
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     11
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     8
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     1
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     37
+    ]
+   ],
+   "scores": [
+    0.3007126015016077,
+    0.2927018348559794,
+    0.2518149420590018,
+    0.24558047917689033,
+    0.241369677866983
+   ],
+   "rewrite": {
+    "query": "插座里的电，追到源头主要是烧什么烧出来的？",
+    "keywords": [],
+    "implementation": "none",
+    "cost_usd": 0.0,
+    "latency_ms": 0.0,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.0,
+   "wall_ms": 1379
+  },
+  "Q001|C1": {
+   "id": "Q001",
+   "group": "C1",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     20
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     21
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     37
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     22
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     36
+    ]
+   ],
+   "scores": [
+    0.5644365284143577,
+    0.4512486394864934,
+    0.3815977818170556,
+    0.381340370629511,
+    0.37567383575762014
+   ],
+   "rewrite": {
+    "query": "发电厂烧煤产生的热为什么不能全部转换成电？",
+    "keywords": [
+     "热能",
+     "电能",
+     "热效率",
+     "发电",
+     "能量转换",
+     "热力学第二定律",
+     "煤电"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000701,
+    "latency_ms": 2218.9,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000701,
+   "wall_ms": 2221
+  },
+  "Q007|C1": {
+   "id": "Q007",
+   "group": "C1",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     20
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     11
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     8
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     1
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     37
+    ]
+   ],
+   "scores": [
+    0.3007126015016077,
+    0.2927018348559794,
+    0.2518149420590018,
+    0.24558047917689033,
+    0.241369677866983
+   ],
+   "rewrite": {
+    "query": "插座里的电追到源头主要是烧什么烧出来的？",
+    "keywords": [
+     "电源",
+     "发电",
+     "燃料",
+     "火力发电",
+     "煤炭",
+     "天然气",
+     "电从哪里来"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000693,
+    "latency_ms": 2093.6,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000693,
+   "wall_ms": 2096
+  },
+  "Q006|C1": {
+   "id": "Q006",
+   "group": "C1",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     10
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     9
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     15
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     8
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     23
+    ]
+   ],
+   "scores": [
+    0.6063445171666875,
+    0.5149117484207941,
+    0.43045310156214844,
+    0.41819570810812234,
+    0.40196355815697027
+   ],
+   "rewrite": {
+    "query": "一个国家用掉的石油，大头是烧在车上还是烧在房子里？",
+    "keywords": [
+     "石油消费",
+     "石油用途",
+     "交通运输",
+     "石油",
+     "能源消费结构",
+     "汽车",
+     "供暖",
+     "工业"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000758,
+    "latency_ms": 2253.5,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000758,
+   "wall_ms": 2255
+  },
+  "Q003|C1": {
+   "id": "Q003",
+   "group": "C1",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     35
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     32
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     34
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     12
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     17
+    ]
+   ],
+   "scores": [
+    0.5408531614004586,
+    0.4568946916936112,
+    0.4548182604488523,
+    0.4323642743670339,
+    0.41413205604407444
+   ],
+   "rewrite": {
+    "query": "风电和太阳能占用相同面积的土地，哪个最后发出来的电更多？",
+    "keywords": [
+     "风电",
+     "太阳能",
+     "电量输出",
+     "单位面积",
+     "发电量",
+     "效率比较"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000712,
+    "latency_ms": 2210.7,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000712,
+   "wall_ms": 2212
+  },
+  "Q005|C1": {
+   "id": "Q005",
+   "group": "C1",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     34
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     35
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     37
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     17
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     29
+    ]
+   ],
+   "scores": [
+    0.3751252775293361,
+    0.3724340637563213,
+    0.31807955227564777,
+    0.299666119752666,
+    0.28549298161799974
+   ],
+   "rewrite": {
+    "query": "太阳能白天发的电用不完，多出来的电能存到哪去？晚上不发电怎么办？",
+    "keywords": [
+     "太阳能",
+     "储能",
+     "电能存储",
+     "光伏",
+     "电池",
+     "晚上用电",
+     "峰谷电",
+     "能源存储"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000808,
+    "latency_ms": 2322.3,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000808,
+   "wall_ms": 2325
+  },
+  "Q002|C1": {
+   "id": "Q002",
+   "group": "C1",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     26
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     28
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     18
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     27
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     22
+    ]
+   ],
+   "scores": [
+    0.5610231144940669,
+    0.3501097398404624,
+    0.26641233306461465,
+    0.2577851391786752,
+    0.2450881236764063
+   ],
+   "rewrite": {
+    "query": "铀矿挖出来为什么不能直接当核燃料，需要先加工？",
+    "keywords": [
+     "铀矿",
+     "核燃料",
+     "铀浓缩",
+     "铀加工",
+     "铀235",
+     "天然铀",
+     "浓度"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000749,
+    "latency_ms": 2488.7,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000749,
+   "wall_ms": 2491
+  },
+  "Q007|C2": {
+   "id": "Q007",
+   "group": "C2",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     11
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     21
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     30
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     31
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     2
+    ]
+   ],
+   "scores": [
+    0.2927018348559794,
+    0.23374040405818802,
+    0.20138286854728332,
+    0.19580249522068677,
+    0.21757091754253563
+   ],
+   "rewrite": {
+    "query": "插座里的电追到源头主要是烧什么烧出来的？",
+    "keywords": [
+     "电源",
+     "发电",
+     "燃料",
+     "火力发电",
+     "煤炭",
+     "天然气",
+     "电从哪里来"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000693,
+    "latency_ms": 2093.6,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 20,
+    "lexical_query_terms": 30,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 2,
+      "lexical_rank": 6
+     },
+     {
+      "vector_rank": 6,
+      "lexical_rank": 2
+     },
+     {
+      "vector_rank": 16,
+      "lexical_rank": 3
+     },
+     {
+      "vector_rank": 17,
+      "lexical_rank": 4
+     },
+     {
+      "vector_rank": 12,
+      "lexical_rank": 9
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000693,
+   "wall_ms": 2398
+  },
+  "Q006|C2": {
+   "id": "Q006",
+   "group": "C2",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     10
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     9
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     8
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     15
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     16
+    ]
+   ],
+   "scores": [
+    0.6063445171666875,
+    0.5149117484207941,
+    0.41819570810812234,
+    0.43045310156214844,
+    0.37655972859473685
+   ],
+   "rewrite": {
+    "query": "一个国家用掉的石油，大头是烧在车上还是烧在房子里？",
+    "keywords": [
+     "石油消费",
+     "石油用途",
+     "交通运输",
+     "石油",
+     "能源消费结构",
+     "汽车",
+     "供暖",
+     "工业"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000758,
+    "latency_ms": 2253.5,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 20,
+    "lexical_query_terms": 33,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": 3
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": 4
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": 2
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": 6
+     },
+     {
+      "vector_rank": 9,
+      "lexical_rank": 1
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000758,
+   "wall_ms": 2377
+  },
+  "Q003|C2": {
+   "id": "Q003",
+   "group": "C2",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     35
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     34
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     12
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     36
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     32
+    ]
+   ],
+   "scores": [
+    0.5408531614004586,
+    0.4548182604488523,
+    0.4323642743670339,
+    0.34734057552207376,
+    0.4568946916936112
+   ],
+   "rewrite": {
+    "query": "风电和太阳能占用相同面积的土地，哪个最后发出来的电更多？",
+    "keywords": [
+     "风电",
+     "太阳能",
+     "电量输出",
+     "单位面积",
+     "发电量",
+     "效率比较"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000712,
+    "latency_ms": 2210.7,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 14,
+    "lexical_query_terms": 39,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": 2
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": 1
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": 5
+     },
+     {
+      "vector_rank": 9,
+      "lexical_rank": 3
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": 13
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000712,
+   "wall_ms": 2358
+  },
+  "Q005|C2": {
+   "id": "Q005",
+   "group": "C2",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     34
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     35
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     12
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     17
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     8
+    ]
+   ],
+   "scores": [
+    0.3751252775293361,
+    0.3724340637563213,
+    0.2841381862078787,
+    0.299666119752666,
+    0.2820677147433137
+   ],
+   "rewrite": {
+    "query": "太阳能白天发的电用不完，多出来的电能存到哪去？晚上不发电怎么办？",
+    "keywords": [
+     "太阳能",
+     "储能",
+     "电能存储",
+     "光伏",
+     "电池",
+     "晚上用电",
+     "峰谷电",
+     "能源存储"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000808,
+    "latency_ms": 2322.3,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 20,
+    "lexical_query_terms": 37,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": 1
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": 2
+     },
+     {
+      "vector_rank": 6,
+      "lexical_rank": 3
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": 5
+     },
+     {
+      "vector_rank": 7,
+      "lexical_rank": 8
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000808,
+   "wall_ms": 2209
+  },
+  "Q002|C2": {
+   "id": "Q002",
+   "group": "C2",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     26
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     18
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     22
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     27
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     21
+    ]
+   ],
+   "scores": [
+    0.5610231144940669,
+    0.26641233306461465,
+    0.2450881236764063,
+    0.2577851391786752,
+    0.22642839601649042
+   ],
+   "rewrite": {
+    "query": "铀矿挖出来为什么不能直接当核燃料，需要先加工？",
+    "keywords": [
+     "铀矿",
+     "核燃料",
+     "铀浓缩",
+     "铀加工",
+     "铀235",
+     "天然铀",
+     "浓度"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000749,
+    "latency_ms": 2488.7,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 17,
+    "lexical_query_terms": 36,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": 1
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": 3
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": 5
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": 7
+     },
+     {
+      "vector_rank": 7,
+      "lexical_rank": 4
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000749,
+   "wall_ms": 2154
+  },
+  "Q001|C2": {
+   "id": "Q001",
+   "group": "C2",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     20
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     21
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     28
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     37
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     36
+    ]
+   ],
+   "scores": [
+    0.5644365284143577,
+    0.4512486394864934,
+    0.36578814604412846,
+    0.3815977818170556,
+    0.37567383575762014
+   ],
+   "rewrite": {
+    "query": "发电厂烧煤产生的热为什么不能全部转换成电？",
+    "keywords": [
+     "热能",
+     "电能",
+     "热效率",
+     "发电",
+     "能量转换",
+     "热力学第二定律",
+     "煤电"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000701,
+    "latency_ms": 2218.9,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 15,
+    "lexical_query_terms": 43,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": 1
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": 10
+     },
+     {
+      "vector_rank": 6,
+      "lexical_rank": 11
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": 15
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": 14
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000701,
+   "wall_ms": 2424
+  },
+  "Q006|C3": {
+   "id": "Q006",
+   "group": "C3",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     10
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     9
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     8
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     15
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     16
+    ]
+   ],
+   "scores": [
+    0.6063445171666875,
+    0.5149117484207941,
+    0.41819570810812234,
+    0.43045310156214844,
+    0.37655972859473685
+   ],
+   "rewrite": {
+    "query": "一个国家用掉的石油，大头是烧在车上还是烧在房子里？",
+    "keywords": [
+     "石油消费",
+     "石油用途",
+     "交通运输",
+     "石油",
+     "能源消费结构",
+     "汽车",
+     "供暖",
+     "工业"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000758,
+    "latency_ms": 2253.5,
+    "error": null
+   },
+   "rerank": {
+    "order": [
+     0,
+     1,
+     2
+    ],
+    "implementation": "model",
+    "cost_usd": 0.002234,
+    "latency_ms": 817.8,
+    "error": null
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 20,
+    "lexical_query_terms": 33,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": 3
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": 4
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": 2
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": 6
+     },
+     {
+      "vector_rank": 9,
+      "lexical_rank": 1
+     }
+    ]
+   },
+   "llm_cost_usd": 0.002992,
+   "wall_ms": 846
+  },
+  "Q005|C3": {
+   "id": "Q005",
+   "group": "C3",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     29
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     34
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     35
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     12
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     17
+    ]
+   ],
+   "scores": [
+    0.28549298161799974,
+    0.3751252775293361,
+    0.3724340637563213,
+    0.2841381862078787,
+    0.299666119752666
+   ],
+   "rewrite": {
+    "query": "太阳能白天发的电用不完，多出来的电能存到哪去？晚上不发电怎么办？",
+    "keywords": [
+     "太阳能",
+     "储能",
+     "电能存储",
+     "光伏",
+     "电池",
+     "晚上用电",
+     "峰谷电",
+     "能源存储"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000808,
+    "latency_ms": 2322.3,
+    "error": null
+   },
+   "rerank": {
+    "order": [
+     5
+    ],
+    "implementation": "model",
+    "cost_usd": 0.002334,
+    "latency_ms": 834.0,
+    "error": null
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 20,
+    "lexical_query_terms": 37,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 5,
+      "lexical_rank": 11
+     },
+     {
+      "vector_rank": 1,
+      "lexical_rank": 1
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": 2
+     },
+     {
+      "vector_rank": 6,
+      "lexical_rank": 3
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": 5
+     }
+    ]
+   },
+   "llm_cost_usd": 0.0031420000000000003,
+   "wall_ms": 861
+  },
+  "Q007|C3": {
+   "id": "Q007",
+   "group": "C3",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     11
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     22
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     8
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     20
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     21
+    ]
+   ],
+   "scores": [
+    0.2927018348559794,
+    0.2117827711886125,
+    0.2518149420590018,
+    0.3007126015016077,
+    0.23374040405818802
+   ],
+   "rewrite": {
+    "query": "插座里的电追到源头主要是烧什么烧出来的？",
+    "keywords": [
+     "电源",
+     "发电",
+     "燃料",
+     "火力发电",
+     "煤炭",
+     "天然气",
+     "电从哪里来"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000693,
+    "latency_ms": 2093.6,
+    "error": null
+   },
+   "rerank": {
+    "order": [
+     0,
+     7,
+     11,
+     9,
+     1
+    ],
+    "implementation": "model",
+    "cost_usd": 0.002261,
+    "latency_ms": 853.5,
+    "error": null
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 20,
+    "lexical_query_terms": 30,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 2,
+      "lexical_rank": 6
+     },
+     {
+      "vector_rank": 13,
+      "lexical_rank": 14
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 6,
+      "lexical_rank": 2
+     }
+    ]
+   },
+   "llm_cost_usd": 0.002954,
+   "wall_ms": 882
+  },
+  "Q001|C3": {
+   "id": "Q001",
+   "group": "C3",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     20
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     29
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     37
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     21
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     28
+    ]
+   ],
+   "scores": [
+    0.5644365284143577,
+    0.29843097267633234,
+    0.3815977818170556,
+    0.4512486394864934,
+    0.36578814604412846
+   ],
+   "rewrite": {
+    "query": "发电厂烧煤产生的热为什么不能全部转换成电？",
+    "keywords": [
+     "热能",
+     "电能",
+     "热效率",
+     "发电",
+     "能量转换",
+     "热力学第二定律",
+     "煤电"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000701,
+    "latency_ms": 2218.9,
+    "error": null
+   },
+   "rerank": {
+    "order": [
+     0,
+     8,
+     3
+    ],
+    "implementation": "model",
+    "cost_usd": 0.002462,
+    "latency_ms": 827.5,
+    "error": null
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 15,
+    "lexical_query_terms": 43,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": 1
+     },
+     {
+      "vector_rank": 16,
+      "lexical_rank": 12
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": 15
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": 10
+     },
+     {
+      "vector_rank": 6,
+      "lexical_rank": 11
+     }
+    ]
+   },
+   "llm_cost_usd": 0.003163,
+   "wall_ms": 863
+  },
+  "Q003|C3": {
+   "id": "Q003",
+   "group": "C3",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     32
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     35
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     34
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     12
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     36
+    ]
+   ],
+   "scores": [
+    0.4568946916936112,
+    0.5408531614004586,
+    0.4548182604488523,
+    0.4323642743670339,
+    0.34734057552207376
+   ],
+   "rewrite": {
+    "query": "风电和太阳能占用相同面积的土地，哪个最后发出来的电更多？",
+    "keywords": [
+     "风电",
+     "太阳能",
+     "电量输出",
+     "单位面积",
+     "发电量",
+     "效率比较"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000712,
+    "latency_ms": 2210.7,
+    "error": null
+   },
+   "rerank": {
+    "order": [
+     4,
+     0
+    ],
+    "implementation": "model",
+    "cost_usd": 0.002328,
+    "latency_ms": 943.2,
+    "error": null
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 14,
+    "lexical_query_terms": 39,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 2,
+      "lexical_rank": 13
+     },
+     {
+      "vector_rank": 1,
+      "lexical_rank": 2
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": 1
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": 5
+     },
+     {
+      "vector_rank": 9,
+      "lexical_rank": 3
+     }
+    ]
+   },
+   "llm_cost_usd": 0.00304,
+   "wall_ms": 971
+  },
+  "Q006|C4": {
+   "id": "Q006",
+   "group": "C4",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     10
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     9
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     8
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     15
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     23
+    ]
+   ],
+   "scores": [
+    0.6063445171666875,
+    0.5149117484207941,
+    0.41819570810812234,
+    0.43045310156214844,
+    0.40196355815697027
+   ],
+   "rewrite": {
+    "query": "一个国家用掉的石油，大头是烧在车上还是烧在房子里？",
+    "keywords": [
+     "石油消费",
+     "石油用途",
+     "交通运输",
+     "石油",
+     "能源消费结构",
+     "汽车",
+     "供暖",
+     "工业"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000758,
+    "latency_ms": 2253.5,
+    "error": null
+   },
+   "rerank": {
+    "order": [
+     0,
+     1,
+     3
+    ],
+    "implementation": "model",
+    "cost_usd": 0.002243,
+    "latency_ms": 605.6,
+    "error": null
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.003001,
+   "wall_ms": 607
+  },
+  "Q007|C4": {
+   "id": "Q007",
+   "group": "C4",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     11
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     22
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     21
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     20
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     28
+    ]
+   ],
+   "scores": [
+    0.2927018348559794,
+    0.2117827711886125,
+    0.23374040405818802,
+    0.3007126015016077,
+    0.1915733730401872
+   ],
+   "rewrite": {
+    "query": "插座里的电追到源头主要是烧什么烧出来的？",
+    "keywords": [
+     "电源",
+     "发电",
+     "燃料",
+     "火力发电",
+     "煤炭",
+     "天然气",
+     "电从哪里来"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000693,
+    "latency_ms": 2093.6,
+    "error": null
+   },
+   "rerank": {
+    "order": [
+     1,
+     12,
+     5,
+     0,
+     18
+    ],
+    "implementation": "model",
+    "cost_usd": 0.002344,
+    "latency_ms": 592.0,
+    "error": null
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 13,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 6,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 19,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.003037,
+   "wall_ms": 594
+  },
+  "Q001|C4": {
+   "id": "Q001",
+   "group": "C4",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     20
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     21
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     22
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     37
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     36
+    ]
+   ],
+   "scores": [
+    0.5644365284143577,
+    0.4512486394864934,
+    0.381340370629511,
+    0.3815977818170556,
+    0.37567383575762014
+   ],
+   "rewrite": {
+    "query": "发电厂烧煤产生的热为什么不能全部转换成电？",
+    "keywords": [
+     "热能",
+     "电能",
+     "热效率",
+     "发电",
+     "能量转换",
+     "热力学第二定律",
+     "煤电"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000701,
+    "latency_ms": 2218.9,
+    "error": null
+   },
+   "rerank": {
+    "order": [
+     0,
+     1,
+     3
+    ],
+    "implementation": "model",
+    "cost_usd": 0.002604,
+    "latency_ms": 622.2,
+    "error": null
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.0033049999999999998,
+   "wall_ms": 623
+  },
+  "Q003|C4": {
+   "id": "Q003",
+   "group": "C4",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     32
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     35
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     34
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     12
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     17
+    ]
+   ],
+   "scores": [
+    0.4568946916936112,
+    0.5408531614004586,
+    0.4548182604488523,
+    0.4323642743670339,
+    0.41413205604407444
+   ],
+   "rewrite": {
+    "query": "风电和太阳能占用相同面积的土地，哪个最后发出来的电更多？",
+    "keywords": [
+     "风电",
+     "太阳能",
+     "电量输出",
+     "单位面积",
+     "发电量",
+     "效率比较"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000712,
+    "latency_ms": 2210.7,
+    "error": null
+   },
+   "rerank": {
+    "order": [
+     1,
+     0
+    ],
+    "implementation": "model",
+    "cost_usd": 0.002416,
+    "latency_ms": 534.5,
+    "error": null
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.003128,
+   "wall_ms": 535
+  },
+  "Q005|C4": {
+   "id": "Q005",
+   "group": "C4",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     29
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     34
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     35
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     37
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     17
+    ]
+   ],
+   "scores": [
+    0.28549298161799974,
+    0.3751252775293361,
+    0.3724340637563213,
+    0.31807955227564777,
+    0.299666119752666
+   ],
+   "rewrite": {
+    "query": "太阳能白天发的电用不完，多出来的电能存到哪去？晚上不发电怎么办？",
+    "keywords": [
+     "太阳能",
+     "储能",
+     "电能存储",
+     "光伏",
+     "电池",
+     "晚上用电",
+     "峰谷电",
+     "能源存储"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000808,
+    "latency_ms": 2322.3,
+    "error": null
+   },
+   "rerank": {
+    "order": [
+     4
+    ],
+    "implementation": "model",
+    "cost_usd": 0.0023,
+    "latency_ms": 642.3,
+    "error": null
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.003108,
+   "wall_ms": 643
+  },
+  "Q002|C3": {
+   "id": "Q002",
+   "group": "C3",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     26
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     28
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     27
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     18
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     22
+    ]
+   ],
+   "scores": [
+    0.5610231144940669,
+    0.3501097398404624,
+    0.2577851391786752,
+    0.26641233306461465,
+    0.2450881236764063
+   ],
+   "rewrite": {
+    "query": "铀矿挖出来为什么不能直接当核燃料，需要先加工？",
+    "keywords": [
+     "铀矿",
+     "核燃料",
+     "铀浓缩",
+     "铀加工",
+     "铀235",
+     "天然铀",
+     "浓度"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000749,
+    "latency_ms": 2488.7,
+    "error": null
+   },
+   "rerank": {
+    "order": [
+     0,
+     6,
+     3
+    ],
+    "implementation": "model",
+    "cost_usd": 0.002491,
+    "latency_ms": 1675.7,
+    "error": null
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 17,
+    "lexical_query_terms": 36,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": 1
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": 16
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": 7
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": 3
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": 5
+     }
+    ]
+   },
+   "llm_cost_usd": 0.0032400000000000003,
+   "wall_ms": 1704
+  },
+  "Q010|C0": {
+   "id": "Q010",
+   "group": "C0",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     18
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     17
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     29
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     37
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     21
+    ]
+   ],
+   "scores": [
+    0.523932889594408,
+    0.31682758645668,
+    0.2997579454542138,
+    0.2981625790024197,
+    0.29774565995257657
+   ],
+   "rewrite": {
+    "query": "氢气常被说成未来的清洁能源，可它本身算是一种能源吗？",
+    "keywords": [],
+    "implementation": "none",
+    "cost_usd": 0.0,
+    "latency_ms": 0.0,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.0,
+   "wall_ms": 592
+  },
+  "Q008|C0": {
+   "id": "Q008",
+   "group": "C0",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     17
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     26
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     21
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     28
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     11
+    ]
+   ],
+   "scores": [
+    0.5560077379576487,
+    0.44780119825118386,
+    0.40518158415967337,
+    0.4005985269401321,
+    0.3989074378394112
+   ],
+   "rewrite": {
+    "query": "核电站的燃料能撑的年头，比煤矿长还是短？",
+    "keywords": [],
+    "implementation": "none",
+    "cost_usd": 0.0,
+    "latency_ms": 0.0,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.0,
+   "wall_ms": 654
+  },
+  "Q011|C0": {
+   "id": "Q011",
+   "group": "C0",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     22
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     23
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     3
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     24
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     25
+    ]
+   ],
+   "scores": [
+    0.5396840650664395,
+    0.4895192363930196,
+    0.46394595892086243,
+    0.41871776804185895,
+    0.37065456988429923
+   ],
+   "rewrite": {
+    "query": "烧化石燃料一定会产生二氧化碳吗？换个工艺能不能绕开？",
+    "keywords": [],
+    "implementation": "none",
+    "cost_usd": 0.0,
+    "latency_ms": 0.0,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.0,
+   "wall_ms": 600
+  },
+  "Q009|C0": {
+   "id": "Q009",
+   "group": "C0",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     14
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     13
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     15
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     23
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     17
+    ]
+   ],
+   "scores": [
+    0.5173406003994743,
+    0.5043903264505389,
+    0.4830075029460039,
+    0.44950561908182723,
+    0.38816881464333386
+   ],
+   "rewrite": {
+    "query": "煤、天然气、石油这三样，各自主要埋在哪些国家？",
+    "keywords": [],
+    "implementation": "none",
+    "cost_usd": 0.0,
+    "latency_ms": 0.0,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.0,
+   "wall_ms": 707
+  },
+  "Q012|C0": {
+   "id": "Q012",
+   "group": "C0",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     24
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     37
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     34
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     3
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     20
+    ]
+   ],
+   "scores": [
+    0.48158112481086635,
+    0.34628206692432495,
+    0.2993297750047995,
+    0.2885784675980242,
+    0.2671892214359282
+   ],
+   "rewrite": {
+    "query": "地球白天从太阳那儿吸了热，晚上不是该放回去吗？怎么会越攒越热？",
+    "keywords": [],
+    "implementation": "none",
+    "cost_usd": 0.0,
+    "latency_ms": 0.0,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.0,
+   "wall_ms": 679
+  },
+  "Q002|C4": {
+   "id": "Q002",
+   "group": "C4",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     26
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     28
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     18
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     27
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     22
+    ]
+   ],
+   "scores": [
+    0.5610231144940669,
+    0.3501097398404624,
+    0.26641233306461465,
+    0.2577851391786752,
+    0.2450881236764063
+   ],
+   "rewrite": {
+    "query": "铀矿挖出来为什么不能直接当核燃料，需要先加工？",
+    "keywords": [
+     "铀矿",
+     "核燃料",
+     "铀浓缩",
+     "铀加工",
+     "铀235",
+     "天然铀",
+     "浓度"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000749,
+    "latency_ms": 2488.7,
+    "error": null
+   },
+   "rerank": {
+    "order": [
+     0,
+     1
+    ],
+    "implementation": "model",
+    "cost_usd": 0.002454,
+    "latency_ms": 497.7,
+    "error": null
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.003203,
+   "wall_ms": 499
+  },
+  "Q013|C0": {
+   "id": "Q013",
+   "group": "C0",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     28
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     27
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     26
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     20
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     21
+    ]
+   ],
+   "scores": [
+    0.5317990328632425,
+    0.45445678985087834,
+    0.4293866823574218,
+    0.4215303057830522,
+    0.36697602402090357
+   ],
+   "rewrite": {
+    "query": "核反应堆里那么高的温度，最后是怎么一步步变成插座里的电的？",
+    "keywords": [],
+    "implementation": "none",
+    "cost_usd": 0.0,
+    "latency_ms": 0.0,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.0,
+   "wall_ms": 319
+  },
+  "Q010|C1": {
+   "id": "Q010",
+   "group": "C1",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     18
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     17
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     29
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     37
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     21
+    ]
+   ],
+   "scores": [
+    0.523932889594408,
+    0.31682758645668,
+    0.2997579454542138,
+    0.2981625790024197,
+    0.29774565995257657
+   ],
+   "rewrite": {
+    "query": "氢气本身算是一种能源吗？为什么常被说成清洁能源？",
+    "keywords": [
+     "氢气",
+     "能源",
+     "清洁能源",
+     "能量载体",
+     "hydrogen",
+     "energy source"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000679,
+    "latency_ms": 942.5,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000679,
+   "wall_ms": 944
+  },
+  "Q010|C2": {
+   "id": "Q010",
+   "group": "C2",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     18
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     8
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     17
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     16
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     37
+    ]
+   ],
+   "scores": [
+    0.523932889594408,
+    0.2796413280294482,
+    0.31682758645668,
+    0.25450232791056615,
+    0.2981625790024197
+   ],
+   "rewrite": {
+    "query": "氢气本身算是一种能源吗？为什么常被说成清洁能源？",
+    "keywords": [
+     "氢气",
+     "能源",
+     "清洁能源",
+     "能量载体",
+     "hydrogen",
+     "energy source"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000679,
+    "latency_ms": 942.5,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 20,
+    "lexical_query_terms": 32,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": 1
+     },
+     {
+      "vector_rank": 6,
+      "lexical_rank": 2
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": 7
+     },
+     {
+      "vector_rank": 10,
+      "lexical_rank": 3
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": 10
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000679,
+   "wall_ms": 7
+  },
+  "Q009|C1": {
+   "id": "Q009",
+   "group": "C1",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     14
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     13
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     15
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     23
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     17
+    ]
+   ],
+   "scores": [
+    0.5173406003994743,
+    0.5043903264505389,
+    0.4830075029460039,
+    0.44950561908182723,
+    0.38816881464333386
+   ],
+   "rewrite": {
+    "query": "煤、天然气、石油这三样能源资源各自主要埋在哪些国家？",
+    "keywords": [
+     "煤",
+     "天然气",
+     "石油",
+     "能源分布",
+     "储量",
+     "主要产地",
+     "国家分布"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000716,
+    "latency_ms": 927.7,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000716,
+   "wall_ms": 929
+  },
+  "Q009|C2": {
+   "id": "Q009",
+   "group": "C2",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     14
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     13
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     15
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     16
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     17
+    ]
+   ],
+   "scores": [
+    0.5173406003994743,
+    0.5043903264505389,
+    0.4830075029460039,
+    0.38773180221899883,
+    0.38816881464333386
+   ],
+   "rewrite": {
+    "query": "煤、天然气、石油这三样能源资源各自主要埋在哪些国家？",
+    "keywords": [
+     "煤",
+     "天然气",
+     "石油",
+     "能源分布",
+     "储量",
+     "主要产地",
+     "国家分布"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000716,
+    "latency_ms": 927.7,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 20,
+    "lexical_query_terms": 27,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": 1
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": 3
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": 2
+     },
+     {
+      "vector_rank": 6,
+      "lexical_rank": 4
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": 5
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000716,
+   "wall_ms": 5
+  },
+  "Q008|C1": {
+   "id": "Q008",
+   "group": "C1",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     17
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     26
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     21
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     28
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     11
+    ]
+   ],
+   "scores": [
+    0.5560077379576487,
+    0.44780119825118386,
+    0.40518158415967337,
+    0.4005985269401321,
+    0.3989074378394112
+   ],
+   "rewrite": {
+    "query": "核电站的燃料能使用多少年，相比煤矿的燃料储量哪个更长",
+    "keywords": [
+     "核燃料",
+     "燃料周期",
+     "使用年限",
+     "煤炭",
+     "储量",
+     "核电站",
+     "能源"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000739,
+    "latency_ms": 1180.4,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000739,
+   "wall_ms": 1182
+  },
+  "Q011|C1": {
+   "id": "Q011",
+   "group": "C1",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     22
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     23
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     3
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     24
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     25
+    ]
+   ],
+   "scores": [
+    0.5396840650664395,
+    0.4895192363930196,
+    0.46394595892086243,
+    0.41871776804185895,
+    0.37065456988429923
+   ],
+   "rewrite": {
+    "query": "烧化石燃料一定会产生二氧化碳吗？换个工艺能不能绕开？",
+    "keywords": [
+     "化石燃料",
+     "燃烧",
+     "二氧化碳",
+     "CO2",
+     "碳排放",
+     "燃烧工艺",
+     "碳捕集"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000803,
+    "latency_ms": 1177.5,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000803,
+   "wall_ms": 1180
+  },
+  "Q008|C2": {
+   "id": "Q008",
+   "group": "C2",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     17
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     16
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     21
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     3
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     2
+    ]
+   ],
+   "scores": [
+    0.5560077379576487,
+    0.3877755411203363,
+    0.40518158415967337,
+    0.3276049136702448,
+    0.3019487628949602
+   ],
+   "rewrite": {
+    "query": "核电站的燃料能使用多少年，相比煤矿的燃料储量哪个更长",
+    "keywords": [
+     "核燃料",
+     "燃料周期",
+     "使用年限",
+     "煤炭",
+     "储量",
+     "核电站",
+     "能源"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000739,
+    "latency_ms": 1180.4,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 20,
+    "lexical_query_terms": 36,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": 5
+     },
+     {
+      "vector_rank": 7,
+      "lexical_rank": 2
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": 8
+     },
+     {
+      "vector_rank": 11,
+      "lexical_rank": 3
+     },
+     {
+      "vector_rank": 14,
+      "lexical_rank": 1
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000739,
+   "wall_ms": 11
+  },
+  "Q011|C2": {
+   "id": "Q011",
+   "group": "C2",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     22
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     23
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     24
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     3
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     25
+    ]
+   ],
+   "scores": [
+    0.5396840650664395,
+    0.4895192363930196,
+    0.41871776804185895,
+    0.46394595892086243,
+    0.37065456988429923
+   ],
+   "rewrite": {
+    "query": "烧化石燃料一定会产生二氧化碳吗？换个工艺能不能绕开？",
+    "keywords": [
+     "化石燃料",
+     "燃烧",
+     "二氧化碳",
+     "CO2",
+     "碳排放",
+     "燃烧工艺",
+     "碳捕集"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000803,
+    "latency_ms": 1177.5,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 12,
+    "lexical_query_terms": 29,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": 1
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": 2
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": 4
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": 7
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": 5
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000803,
+   "wall_ms": 13
+  },
+  "Q012|C1": {
+   "id": "Q012",
+   "group": "C1",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     24
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     37
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     34
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     3
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     20
+    ]
+   ],
+   "scores": [
+    0.48158112481086635,
+    0.34628206692432495,
+    0.2993297750047995,
+    0.2885784675980242,
+    0.2671892214359282
+   ],
+   "rewrite": {
+    "query": "地球白天吸收太阳的热，晚上为什么不能完全放回去，导致温度越来越高？",
+    "keywords": [
+     "地球辐射",
+     "温室效应",
+     "大气逆辐射",
+     "热平衡",
+     "二氧化碳",
+     "红外线",
+     "地球变暖"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000828,
+    "latency_ms": 1328.7,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000828,
+   "wall_ms": 1330
+  },
+  "Q012|C2": {
+   "id": "Q012",
+   "group": "C2",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     24
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     34
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     7
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     2
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     23
+    ]
+   ],
+   "scores": [
+    0.48158112481086635,
+    0.2993297750047995,
+    0.26221193700003054,
+    0.2599781182105363,
+    0.25634975435159263
+   ],
+   "rewrite": {
+    "query": "地球白天吸收太阳的热，晚上为什么不能完全放回去，导致温度越来越高？",
+    "keywords": [
+     "地球辐射",
+     "温室效应",
+     "大气逆辐射",
+     "热平衡",
+     "二氧化碳",
+     "红外线",
+     "地球变暖"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000828,
+    "latency_ms": 1328.7,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 7,
+    "lexical_query_terms": 48,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": 1
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": 3
+     },
+     {
+      "vector_rank": 6,
+      "lexical_rank": 2
+     },
+     {
+      "vector_rank": 7,
+      "lexical_rank": 4
+     },
+     {
+      "vector_rank": 8,
+      "lexical_rank": 6
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000828,
+   "wall_ms": 6
+  },
+  "Q010|C3": {
+   "id": "Q010",
+   "group": "C3",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     18
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     23
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     17
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     3
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     19
+    ]
+   ],
+   "scores": [
+    0.523932889594408,
+    0.2726429091050395,
+    0.31682758645668,
+    0.24655977338851717,
+    0.25166654264045385
+   ],
+   "rewrite": {
+    "query": "氢气本身算是一种能源吗？为什么常被说成清洁能源？",
+    "keywords": [
+     "氢气",
+     "能源",
+     "清洁能源",
+     "能量载体",
+     "hydrogen",
+     "energy source"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000679,
+    "latency_ms": 942.5,
+    "error": null
+   },
+   "rerank": {
+    "order": [
+     0,
+     16,
+     2,
+     9,
+     10
+    ],
+    "implementation": "model",
+    "cost_usd": 0.002385,
+    "latency_ms": 585.7,
+    "error": null
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 20,
+    "lexical_query_terms": 32,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": 1
+     },
+     {
+      "vector_rank": 8,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": 7
+     },
+     {
+      "vector_rank": 14,
+      "lexical_rank": 11
+     },
+     {
+      "vector_rank": 13,
+      "lexical_rank": 18
+     }
+    ]
+   },
+   "llm_cost_usd": 0.003064,
+   "wall_ms": 593
+  },
+  "Q009|C3": {
+   "id": "Q009",
+   "group": "C3",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     13
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     15
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     14
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     16
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     17
+    ]
+   ],
+   "scores": [
+    0.5043903264505389,
+    0.4830075029460039,
+    0.5173406003994743,
+    0.38773180221899883,
+    0.38816881464333386
+   ],
+   "rewrite": {
+    "query": "煤、天然气、石油这三样能源资源各自主要埋在哪些国家？",
+    "keywords": [
+     "煤",
+     "天然气",
+     "石油",
+     "能源分布",
+     "储量",
+     "主要产地",
+     "国家分布"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000716,
+    "latency_ms": 927.7,
+    "error": null
+   },
+   "rerank": {
+    "order": [
+     1,
+     2,
+     0
+    ],
+    "implementation": "model",
+    "cost_usd": 0.00225,
+    "latency_ms": 611.4,
+    "error": null
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 20,
+    "lexical_query_terms": 27,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 2,
+      "lexical_rank": 3
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": 2
+     },
+     {
+      "vector_rank": 1,
+      "lexical_rank": 1
+     },
+     {
+      "vector_rank": 6,
+      "lexical_rank": 4
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": 5
+     }
+    ]
+   },
+   "llm_cost_usd": 0.002966,
+   "wall_ms": 616
+  },
+  "Q013|C1": {
+   "id": "Q013",
+   "group": "C1",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     28
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     27
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     26
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     20
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     21
+    ]
+   ],
+   "scores": [
+    0.5317990328632425,
+    0.45445678985087834,
+    0.4293866823574218,
+    0.4215303057830522,
+    0.36697602402090357
+   ],
+   "rewrite": {
+    "query": "核反应堆里产生的高温最后是怎样一步步转换成插座里的电的？",
+    "keywords": [
+     "核反应堆",
+     "高温",
+     "电能转换",
+     "发电",
+     "热能",
+     "汽轮机",
+     "发电机",
+     "电网"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000756,
+    "latency_ms": 1197.2,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000756,
+   "wall_ms": 1199
+  },
+  "Q013|C2": {
+   "id": "Q013",
+   "group": "C2",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     28
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     27
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     26
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     34
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     20
+    ]
+   ],
+   "scores": [
+    0.5317990328632425,
+    0.45445678985087834,
+    0.4293866823574218,
+    0.2701266931591468,
+    0.4215303057830522
+   ],
+   "rewrite": {
+    "query": "核反应堆里产生的高温最后是怎样一步步转换成插座里的电的？",
+    "keywords": [
+     "核反应堆",
+     "高温",
+     "电能转换",
+     "发电",
+     "热能",
+     "汽轮机",
+     "发电机",
+     "电网"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000756,
+    "latency_ms": 1197.2,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 15,
+    "lexical_query_terms": 44,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": 2
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": 1
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": 5
+     },
+     {
+      "vector_rank": 10,
+      "lexical_rank": 3
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": 12
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000756,
+   "wall_ms": 6
+  },
+  "Q011|C3": {
+   "id": "Q011",
+   "group": "C3",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     22
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     23
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     3
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     24
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     25
+    ]
+   ],
+   "scores": [
+    0.5396840650664395,
+    0.4895192363930196,
+    0.46394595892086243,
+    0.41871776804185895,
+    0.37065456988429923
+   ],
+   "rewrite": {
+    "query": "烧化石燃料一定会产生二氧化碳吗？换个工艺能不能绕开？",
+    "keywords": [
+     "化石燃料",
+     "燃烧",
+     "二氧化碳",
+     "CO2",
+     "碳排放",
+     "燃烧工艺",
+     "碳捕集"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000803,
+    "latency_ms": 1177.5,
+    "error": null
+   },
+   "rerank": {
+    "order": [
+     0,
+     1,
+     3
+    ],
+    "implementation": "model",
+    "cost_usd": 0.002454,
+    "latency_ms": 566.4,
+    "error": null
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 12,
+    "lexical_query_terms": 29,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": 1
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": 2
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": 7
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": 4
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": 5
+     }
+    ]
+   },
+   "llm_cost_usd": 0.003257,
+   "wall_ms": 574
+  },
+  "Q008|C3": {
+   "id": "Q008",
+   "group": "C3",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     17
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     13
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     23
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     16
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     21
+    ]
+   ],
+   "scores": [
+    0.5560077379576487,
+    0.3013297167068231,
+    0.39092516139754735,
+    0.3877755411203363,
+    0.40518158415967337
+   ],
+   "rewrite": {
+    "query": "核电站的燃料能使用多少年，相比煤矿的燃料储量哪个更长",
+    "keywords": [
+     "核燃料",
+     "燃料周期",
+     "使用年限",
+     "煤炭",
+     "储量",
+     "核电站",
+     "能源"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000739,
+    "latency_ms": 1180.4,
+    "error": null
+   },
+   "rerank": {
+    "order": [
+     0,
+     8,
+     9
+    ],
+    "implementation": "model",
+    "cost_usd": 0.002453,
+    "latency_ms": 608.1,
+    "error": null
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 20,
+    "lexical_query_terms": 36,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": 5
+     },
+     {
+      "vector_rank": 15,
+      "lexical_rank": 4
+     },
+     {
+      "vector_rank": 6,
+      "lexical_rank": 13
+     },
+     {
+      "vector_rank": 7,
+      "lexical_rank": 2
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": 8
+     }
+    ]
+   },
+   "llm_cost_usd": 0.003192,
+   "wall_ms": 616
+  },
+  "Q012|C3": {
+   "id": "Q012",
+   "group": "C3",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     24
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     23
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     3
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     34
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     7
+    ]
+   ],
+   "scores": [
+    0.48158112481086635,
+    0.25634975435159263,
+    0.2885784675980242,
+    0.2993297750047995,
+    0.26221193700003054
+   ],
+   "rewrite": {
+    "query": "地球白天吸收太阳的热，晚上为什么不能完全放回去，导致温度越来越高？",
+    "keywords": [
+     "地球辐射",
+     "温室效应",
+     "大气逆辐射",
+     "热平衡",
+     "二氧化碳",
+     "红外线",
+     "地球变暖"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000828,
+    "latency_ms": 1328.7,
+    "error": null
+   },
+   "rerank": {
+    "order": [
+     0,
+     4,
+     7
+    ],
+    "implementation": "model",
+    "cost_usd": 0.00233,
+    "latency_ms": 648.7,
+    "error": null
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 7,
+    "lexical_query_terms": 48,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": 1
+     },
+     {
+      "vector_rank": 8,
+      "lexical_rank": 6
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": 3
+     },
+     {
+      "vector_rank": 6,
+      "lexical_rank": 2
+     }
+    ]
+   },
+   "llm_cost_usd": 0.003158,
+   "wall_ms": 653
+  },
+  "Q010|C4": {
+   "id": "Q010",
+   "group": "C4",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     18
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     23
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     24
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     3
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     19
+    ]
+   ],
+   "scores": [
+    0.523932889594408,
+    0.2726429091050395,
+    0.23994270357280745,
+    0.24655977338851717,
+    0.25166654264045385
+   ],
+   "rewrite": {
+    "query": "氢气本身算是一种能源吗？为什么常被说成清洁能源？",
+    "keywords": [
+     "氢气",
+     "能源",
+     "清洁能源",
+     "能量载体",
+     "hydrogen",
+     "energy source"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000679,
+    "latency_ms": 942.5,
+    "error": null
+   },
+   "rerank": {
+    "order": [
+     0,
+     7,
+     16,
+     13,
+     12
+    ],
+    "implementation": "model",
+    "cost_usd": 0.002492,
+    "latency_ms": 564.6,
+    "error": null
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 8,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 17,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 14,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 13,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.0031709999999999998,
+   "wall_ms": 566
+  },
+  "Q009|C4": {
+   "id": "Q009",
+   "group": "C4",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     13
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     14
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     15
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     23
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     17
+    ]
+   ],
+   "scores": [
+    0.5043903264505389,
+    0.5173406003994743,
+    0.4830075029460039,
+    0.44950561908182723,
+    0.38816881464333386
+   ],
+   "rewrite": {
+    "query": "煤、天然气、石油这三样能源资源各自主要埋在哪些国家？",
+    "keywords": [
+     "煤",
+     "天然气",
+     "石油",
+     "能源分布",
+     "储量",
+     "主要产地",
+     "国家分布"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000716,
+    "latency_ms": 927.7,
+    "error": null
+   },
+   "rerank": {
+    "order": [
+     1,
+     0,
+     2
+    ],
+    "implementation": "model",
+    "cost_usd": 0.002241,
+    "latency_ms": 584.8,
+    "error": null
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.002957,
+   "wall_ms": 586
+  },
+  "Q011|C4": {
+   "id": "Q011",
+   "group": "C4",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     22
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     23
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     3
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     24
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     25
+    ]
+   ],
+   "scores": [
+    0.5396840650664395,
+    0.4895192363930196,
+    0.46394595892086243,
+    0.41871776804185895,
+    0.37065456988429923
+   ],
+   "rewrite": {
+    "query": "烧化石燃料一定会产生二氧化碳吗？换个工艺能不能绕开？",
+    "keywords": [
+     "化石燃料",
+     "燃烧",
+     "二氧化碳",
+     "CO2",
+     "碳排放",
+     "燃烧工艺",
+     "碳捕集"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000803,
+    "latency_ms": 1177.5,
+    "error": null
+   },
+   "rerank": {
+    "order": [
+     0,
+     1,
+     2
+    ],
+    "implementation": "model",
+    "cost_usd": 0.002387,
+    "latency_ms": 512.8,
+    "error": null
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.0031899999999999997,
+   "wall_ms": 514
+  },
+  "Q014|C0": {
+   "id": "Q014",
+   "group": "C0",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     28
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     21
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     11
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     26
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     16
+    ]
+   ],
+   "scores": [
+    0.6764947280713364,
+    0.5099312549785527,
+    0.4486175642767061,
+    0.4351794893597493,
+    0.4312351111084647
+   ],
+   "rewrite": {
+    "query": "一次核反应放出来的能量，跟烧一次煤差多少倍？",
+    "keywords": [],
+    "implementation": "none",
+    "cost_usd": 0.0,
+    "latency_ms": 0.0,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.0,
+   "wall_ms": 238
+  },
+  "Q013|C3": {
+   "id": "Q013",
+   "group": "C3",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     27
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     28
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     20
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     29
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     32
+    ]
+   ],
+   "scores": [
+    0.45445678985087834,
+    0.5317990328632425,
+    0.4215303057830522,
+    null,
+    0.2415724396501705
+   ],
+   "rewrite": {
+    "query": "核反应堆里产生的高温最后是怎样一步步转换成插座里的电的？",
+    "keywords": [
+     "核反应堆",
+     "高温",
+     "电能转换",
+     "发电",
+     "热能",
+     "汽轮机",
+     "发电机",
+     "电网"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000756,
+    "latency_ms": 1197.2,
+    "error": null
+   },
+   "rerank": {
+    "order": [
+     1,
+     0,
+     4,
+     13,
+     9
+    ],
+    "implementation": "model",
+    "cost_usd": 0.002581,
+    "latency_ms": 701.0,
+    "error": null
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 15,
+    "lexical_query_terms": 44,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 2,
+      "lexical_rank": 1
+     },
+     {
+      "vector_rank": 1,
+      "lexical_rank": 2
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": 12
+     },
+     {
+      "vector_rank": null,
+      "lexical_rank": 6
+     },
+     {
+      "vector_rank": 13,
+      "lexical_rank": 9
+     }
+    ]
+   },
+   "llm_cost_usd": 0.003337,
+   "wall_ms": 706
+  },
+  "Q008|C4": {
+   "id": "Q008",
+   "group": "C4",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     17
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     23
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     13
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     26
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     21
+    ]
+   ],
+   "scores": [
+    0.5560077379576487,
+    0.39092516139754735,
+    0.3013297167068231,
+    0.44780119825118386,
+    0.40518158415967337
+   ],
+   "rewrite": {
+    "query": "核电站的燃料能使用多少年，相比煤矿的燃料储量哪个更长",
+    "keywords": [
+     "核燃料",
+     "燃料周期",
+     "使用年限",
+     "煤炭",
+     "储量",
+     "核电站",
+     "能源"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000739,
+    "latency_ms": 1180.4,
+    "error": null
+   },
+   "rerank": {
+    "order": [
+     0,
+     5,
+     14
+    ],
+    "implementation": "model",
+    "cost_usd": 0.002525,
+    "latency_ms": 573.8,
+    "error": null
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 6,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 15,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.003264,
+   "wall_ms": 575
+  },
+  "Q015|C0": {
+   "id": "Q015",
+   "group": "C0",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     29
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     31
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     30
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     32
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     20
+    ]
+   ],
+   "scores": [
+    0.43035197006934794,
+    0.32685494097455353,
+    0.31359062591524955,
+    0.2639805038626415,
+    0.26177595175061874
+   ],
+   "rewrite": {
+    "query": "水电站为什么非要把坝修那么高？",
+    "keywords": [],
+    "implementation": "none",
+    "cost_usd": 0.0,
+    "latency_ms": 0.0,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.0,
+   "wall_ms": 247
+  },
+  "Q012|C4": {
+   "id": "Q012",
+   "group": "C4",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     24
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     37
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     34
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     3
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     20
+    ]
+   ],
+   "scores": [
+    0.48158112481086635,
+    0.34628206692432495,
+    0.2993297750047995,
+    0.2885784675980242,
+    0.2671892214359282
+   ],
+   "rewrite": {
+    "query": "地球白天吸收太阳的热，晚上为什么不能完全放回去，导致温度越来越高？",
+    "keywords": [
+     "地球辐射",
+     "温室效应",
+     "大气逆辐射",
+     "热平衡",
+     "二氧化碳",
+     "红外线",
+     "地球变暖"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000828,
+    "latency_ms": 1328.7,
+    "error": null
+   },
+   "rerank": {
+    "order": [
+     0
+    ],
+    "implementation": "model",
+    "cost_usd": 0.002293,
+    "latency_ms": 560.9,
+    "error": null
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.0031209999999999996,
+   "wall_ms": 562
+  },
+  "Q016|C0": {
+   "id": "Q016",
+   "group": "C0",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     32
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     33
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     21
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     30
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     29
+    ]
+   ],
+   "scores": [
+    0.44869152669748785,
+    0.3633858979571406,
+    0.3397777411204283,
+    0.3384294201654567,
+    0.33833868049552307
+   ],
+   "rewrite": {
+    "query": "风力发电机在没风的时候，电网靠什么顶上？",
+    "keywords": [],
+    "implementation": "none",
+    "cost_usd": 0.0,
+    "latency_ms": 0.0,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.0,
+   "wall_ms": 361
+  },
+  "Q017|C0": {
+   "id": "Q017",
+   "group": "C0",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     35
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     21
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     34
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     32
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     20
+    ]
+   ],
+   "scores": [
+    0.5412264048930779,
+    0.5051623036211268,
+    0.46783508251498634,
+    0.43726150744177994,
+    0.41176827242705333
+   ],
+   "rewrite": {
+    "query": "同样一平方米，火电厂、风机、光伏板各能出多少电？",
+    "keywords": [],
+    "implementation": "none",
+    "cost_usd": 0.0,
+    "latency_ms": 0.0,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.0,
+   "wall_ms": 336
+  },
+  "Q018|C0": {
+   "id": "Q018",
+   "group": "C0",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     26
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     27
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     28
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     21
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     11
+    ]
+   ],
+   "scores": [
+    0.43700559024725866,
+    0.3826627427742171,
+    0.34468884642447006,
+    0.30654660638199926,
+    0.2796673755223486
+   ],
+   "rewrite": {
+    "query": "核电站用过的燃料棒最后怎么处理？",
+    "keywords": [],
+    "implementation": "none",
+    "cost_usd": 0.0,
+    "latency_ms": 0.0,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.0,
+   "wall_ms": 211
+  },
+  "Q013|C4": {
+   "id": "Q013",
+   "group": "C4",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     27
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     28
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     20
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     37
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     34
+    ]
+   ],
+   "scores": [
+    0.45445678985087834,
+    0.5317990328632425,
+    0.4215303057830522,
+    0.3339681904162472,
+    0.2701266931591468
+   ],
+   "rewrite": {
+    "query": "核反应堆里产生的高温最后是怎样一步步转换成插座里的电的？",
+    "keywords": [
+     "核反应堆",
+     "高温",
+     "电能转换",
+     "发电",
+     "热能",
+     "汽轮机",
+     "发电机",
+     "电网"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000756,
+    "latency_ms": 1197.2,
+    "error": null
+   },
+   "rerank": {
+    "order": [
+     1,
+     0,
+     3,
+     6,
+     9
+    ],
+    "implementation": "model",
+    "cost_usd": 0.002521,
+    "latency_ms": 694.7,
+    "error": null
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 7,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 10,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.003277,
+   "wall_ms": 696
+  },
+  "Q014|C1": {
+   "id": "Q014",
+   "group": "C1",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     28
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     21
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     11
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     26
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     16
+    ]
+   ],
+   "scores": [
+    0.6764947280713364,
+    0.5099312549785527,
+    0.4486175642767061,
+    0.4351794893597493,
+    0.4312351111084647
+   ],
+   "rewrite": {
+    "query": "一次核反应放出来的能量，跟烧一次煤差多少倍？",
+    "keywords": [
+     "核反应",
+     "能量",
+     "煤",
+     "能量释放",
+     "对比",
+     "倍数",
+     "核能"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000686,
+    "latency_ms": 887.9,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000686,
+   "wall_ms": 889
+  },
+  "Q014|C2": {
+   "id": "Q014",
+   "group": "C2",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     28
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     11
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     21
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     16
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     27
+    ]
+   ],
+   "scores": [
+    0.6764947280713364,
+    0.4486175642767061,
+    0.5099312549785527,
+    0.4312351111084647,
+    0.3424787211165596
+   ],
+   "rewrite": {
+    "query": "一次核反应放出来的能量，跟烧一次煤差多少倍？",
+    "keywords": [
+     "核反应",
+     "能量",
+     "煤",
+     "能量释放",
+     "对比",
+     "倍数",
+     "核能"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000686,
+    "latency_ms": 887.9,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 10,
+    "lexical_query_terms": 23,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": 1
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": 4
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": 8
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": 5
+     },
+     {
+      "vector_rank": 11,
+      "lexical_rank": 2
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000686,
+   "wall_ms": 4
+  },
+  "Q019|C0": {
+   "id": "Q019",
+   "group": "C0",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     21
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     19
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     36
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     30
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     35
+    ]
+   ],
+   "scores": [
+    0.5345826737963594,
+    0.49924967273831394,
+    0.4786578922225124,
+    0.4465760642507172,
+    0.4441422152453935
+   ],
+   "rewrite": {
+    "query": "这几种发电方式建一座要花多少钱，课件里比过吗？",
+    "keywords": [],
+    "implementation": "none",
+    "cost_usd": 0.0,
+    "latency_ms": 0.0,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.0,
+   "wall_ms": 232
+  },
+  "Q015|C1": {
+   "id": "Q015",
+   "group": "C1",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     29
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     31
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     30
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     32
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     20
+    ]
+   ],
+   "scores": [
+    0.43035197006934794,
+    0.32685494097455353,
+    0.31359062591524955,
+    0.2639805038626415,
+    0.26177595175061874
+   ],
+   "rewrite": {
+    "query": "水电站为什么要把坝修得那么高？",
+    "keywords": [
+     "水电站",
+     "坝",
+     "高度",
+     "水头",
+     "发电",
+     "势能"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000591,
+    "latency_ms": 840.5,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000591,
+   "wall_ms": 842
+  },
+  "Q015|C2": {
+   "id": "Q015",
+   "group": "C2",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     30
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     31
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     29
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     35
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     32
+    ]
+   ],
+   "scores": [
+    0.31359062591524955,
+    0.32685494097455353,
+    0.43035197006934794,
+    0.20219652900646123,
+    0.2639805038626415
+   ],
+   "rewrite": {
+    "query": "水电站为什么要把坝修得那么高？",
+    "keywords": [
+     "水电站",
+     "坝",
+     "高度",
+     "水头",
+     "发电",
+     "势能"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000591,
+    "latency_ms": 840.5,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 11,
+    "lexical_query_terms": 21,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 3,
+      "lexical_rank": 1
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": 2
+     },
+     {
+      "vector_rank": 1,
+      "lexical_rank": 8
+     },
+     {
+      "vector_rank": 7,
+      "lexical_rank": 4
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": 9
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000591,
+   "wall_ms": 7
+  },
+  "Q016|C1": {
+   "id": "Q016",
+   "group": "C1",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     32
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     33
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     21
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     30
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     29
+    ]
+   ],
+   "scores": [
+    0.44869152669748785,
+    0.3633858979571406,
+    0.3397777411204283,
+    0.3384294201654567,
+    0.33833868049552307
+   ],
+   "rewrite": {
+    "query": "风力发电机在没风的时候，电网靠什么供电",
+    "keywords": [
+     "风力发电机",
+     "无风",
+     "电网供电",
+     "电力供应",
+     "备用电源",
+     "储能",
+     "调峰"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000682,
+    "latency_ms": 1049.6,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000682,
+   "wall_ms": 1051
+  },
+  "Q016|C2": {
+   "id": "Q016",
+   "group": "C2",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     33
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     32
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     30
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     29
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     31
+    ]
+   ],
+   "scores": [
+    0.3633858979571406,
+    0.44869152669748785,
+    0.3384294201654567,
+    0.33833868049552307,
+    0.3181254639435991
+   ],
+   "rewrite": {
+    "query": "风力发电机在没风的时候，电网靠什么供电",
+    "keywords": [
+     "风力发电机",
+     "无风",
+     "电网供电",
+     "电力供应",
+     "备用电源",
+     "储能",
+     "调峰"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000682,
+    "latency_ms": 1049.6,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 14,
+    "lexical_query_terms": 28,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 2,
+      "lexical_rank": 1
+     },
+     {
+      "vector_rank": 1,
+      "lexical_rank": 5
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": 2
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": 4
+     },
+     {
+      "vector_rank": 9,
+      "lexical_rank": 3
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000682,
+   "wall_ms": 6
+  },
+  "Q014|C3": {
+   "id": "Q014",
+   "group": "C3",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     28
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     11
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     21
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     16
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     27
+    ]
+   ],
+   "scores": [
+    0.6764947280713364,
+    0.4486175642767061,
+    0.5099312549785527,
+    0.4312351111084647,
+    0.3424787211165596
+   ],
+   "rewrite": {
+    "query": "一次核反应放出来的能量，跟烧一次煤差多少倍？",
+    "keywords": [
+     "核反应",
+     "能量",
+     "煤",
+     "能量释放",
+     "对比",
+     "倍数",
+     "核能"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000686,
+    "latency_ms": 887.9,
+    "error": null
+   },
+   "rerank": {
+    "order": [
+     0
+    ],
+    "implementation": "model",
+    "cost_usd": 0.002559,
+    "latency_ms": 559.2,
+    "error": null
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 10,
+    "lexical_query_terms": 23,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": 1
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": 4
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": 8
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": 5
+     },
+     {
+      "vector_rank": 11,
+      "lexical_rank": 2
+     }
+    ]
+   },
+   "llm_cost_usd": 0.003245,
+   "wall_ms": 564
+  },
+  "Q017|C1": {
+   "id": "Q017",
+   "group": "C1",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     35
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     21
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     34
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     32
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     20
+    ]
+   ],
+   "scores": [
+    0.5412264048930779,
+    0.5051623036211268,
+    0.46783508251498634,
+    0.43726150744177994,
+    0.41176827242705333
+   ],
+   "rewrite": {
+    "query": "火电厂、风机、光伏板在相同面积（一平方米）下各能出多少电？",
+    "keywords": [
+     "火电厂",
+     "风机",
+     "光伏板",
+     "单位面积",
+     "发电量",
+     "功率密度",
+     "平方米"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000741,
+    "latency_ms": 1152.9,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000741,
+   "wall_ms": 1154
+  },
+  "Q017|C2": {
+   "id": "Q017",
+   "group": "C2",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     35
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     21
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     32
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     34
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     29
+    ]
+   ],
+   "scores": [
+    0.5412264048930779,
+    0.5051623036211268,
+    0.43726150744177994,
+    0.46783508251498634,
+    0.34059192167013996
+   ],
+   "rewrite": {
+    "query": "火电厂、风机、光伏板在相同面积（一平方米）下各能出多少电？",
+    "keywords": [
+     "火电厂",
+     "风机",
+     "光伏板",
+     "单位面积",
+     "发电量",
+     "功率密度",
+     "平方米"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000741,
+    "latency_ms": 1152.9,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 11,
+    "lexical_query_terms": 29,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": 1
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": 4
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": 2
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": 8
+     },
+     {
+      "vector_rank": 11,
+      "lexical_rank": 3
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000741,
+   "wall_ms": 6
+  },
+  "Q018|C1": {
+   "id": "Q018",
+   "group": "C1",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     26
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     27
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     28
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     21
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     11
+    ]
+   ],
+   "scores": [
+    0.43700559024725866,
+    0.3826627427742171,
+    0.34468884642447006,
+    0.30654660638199926,
+    0.2796673755223486
+   ],
+   "rewrite": {
+    "query": "核电站用过的燃料棒最后怎么处理？",
+    "keywords": [
+     "核燃料棒",
+     "废燃料",
+     "处理",
+     "核废料",
+     "后处理",
+     "贮存",
+     "地质处置",
+     "核电站"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000704,
+    "latency_ms": 1173.9,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000704,
+   "wall_ms": 1176
+  },
+  "Q018|C2": {
+   "id": "Q018",
+   "group": "C2",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     26
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     27
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     22
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     23
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     21
+    ]
+   ],
+   "scores": [
+    0.43700559024725866,
+    0.3826627427742171,
+    0.2589128854722391,
+    0.25524942121387,
+    0.30654660638199926
+   ],
+   "rewrite": {
+    "query": "核电站用过的燃料棒最后怎么处理？",
+    "keywords": [
+     "核燃料棒",
+     "废燃料",
+     "处理",
+     "核废料",
+     "后处理",
+     "贮存",
+     "地质处置",
+     "核电站"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000704,
+    "latency_ms": 1173.9,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 13,
+    "lexical_query_terms": 23,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": 3
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": 4
+     },
+     {
+      "vector_rank": 8,
+      "lexical_rank": 1
+     },
+     {
+      "vector_rank": 9,
+      "lexical_rank": 2
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": 9
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000704,
+   "wall_ms": 4
+  },
+  "Q015|C3": {
+   "id": "Q015",
+   "group": "C3",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     29
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     30
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     31
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     35
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     32
+    ]
+   ],
+   "scores": [
+    0.43035197006934794,
+    0.31359062591524955,
+    0.32685494097455353,
+    0.20219652900646123,
+    0.2639805038626415
+   ],
+   "rewrite": {
+    "query": "水电站为什么要把坝修得那么高？",
+    "keywords": [
+     "水电站",
+     "坝",
+     "高度",
+     "水头",
+     "发电",
+     "势能"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000591,
+    "latency_ms": 840.5,
+    "error": null
+   },
+   "rerank": {
+    "order": [
+     2,
+     0,
+     1
+    ],
+    "implementation": "model",
+    "cost_usd": 0.002364,
+    "latency_ms": 843.8,
+    "error": null
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 11,
+    "lexical_query_terms": 21,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": 8
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": 1
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": 2
+     },
+     {
+      "vector_rank": 7,
+      "lexical_rank": 4
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": 9
+     }
+    ]
+   },
+   "llm_cost_usd": 0.002955,
+   "wall_ms": 847
+  },
+  "Q019|C1": {
+   "id": "Q019",
+   "group": "C1",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     21
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     19
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     36
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     30
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     35
+    ]
+   ],
+   "scores": [
+    0.5345826737963594,
+    0.49924967273831394,
+    0.4786578922225124,
+    0.4465760642507172,
+    0.4441422152453935
+   ],
+   "rewrite": {
+    "query": "不同发电方式建一座电厂的成本费用是多少，课件里有比较吗？",
+    "keywords": [
+     "发电方式",
+     "成本",
+     "费用",
+     "建设成本",
+     "发电厂",
+     "比较"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000665,
+    "latency_ms": 999.6,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000665,
+   "wall_ms": 1001
+  },
+  "Q019|C2": {
+   "id": "Q019",
+   "group": "C2",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     36
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     30
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     35
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     21
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     31
+    ]
+   ],
+   "scores": [
+    0.4786578922225124,
+    0.4465760642507172,
+    0.4441422152453935,
+    0.5345826737963594,
+    0.4239515277321467
+   ],
+   "rewrite": {
+    "query": "不同发电方式建一座电厂的成本费用是多少，课件里有比较吗？",
+    "keywords": [
+     "发电方式",
+     "成本",
+     "费用",
+     "建设成本",
+     "发电厂",
+     "比较"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000665,
+    "latency_ms": 999.6,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 15,
+    "lexical_query_terms": 36,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 3,
+      "lexical_rank": 2
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": 3
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": 6
+     },
+     {
+      "vector_rank": 1,
+      "lexical_rank": 12
+     },
+     {
+      "vector_rank": 12,
+      "lexical_rank": 1
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000665,
+   "wall_ms": 5
+  },
+  "Q016|C3": {
+   "id": "Q016",
+   "group": "C3",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     11
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     34
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     29
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     21
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     36
+    ]
+   ],
+   "scores": [
+    0.2641915970574569,
+    0.2624166745886046,
+    0.33833868049552307,
+    0.3397777411204283,
+    0.2249180694633754
+   ],
+   "rewrite": {
+    "query": "风力发电机在没风的时候，电网靠什么供电",
+    "keywords": [
+     "风力发电机",
+     "无风",
+     "电网供电",
+     "电力供应",
+     "备用电源",
+     "储能",
+     "调峰"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000682,
+    "latency_ms": 1049.6,
+    "error": null
+   },
+   "rerank": {
+    "order": [
+     8,
+     10,
+     3,
+     13,
+     12
+    ],
+    "implementation": "model",
+    "cost_usd": 0.002419,
+    "latency_ms": 698.5,
+    "error": null
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 14,
+    "lexical_query_terms": 28,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 13,
+      "lexical_rank": 10
+     },
+     {
+      "vector_rank": 15,
+      "lexical_rank": 13
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": 4
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 20,
+      "lexical_rank": 14
+     }
+    ]
+   },
+   "llm_cost_usd": 0.003101,
+   "wall_ms": 703
+  },
+  "Q014|C4": {
+   "id": "Q014",
+   "group": "C4",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     28
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     22
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     21
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     11
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     26
+    ]
+   ],
+   "scores": [
+    0.6764947280713364,
+    0.3862683070331705,
+    0.5099312549785527,
+    0.4486175642767061,
+    0.4351794893597493
+   ],
+   "rewrite": {
+    "query": "一次核反应放出来的能量，跟烧一次煤差多少倍？",
+    "keywords": [
+     "核反应",
+     "能量",
+     "煤",
+     "能量释放",
+     "对比",
+     "倍数",
+     "核能"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000686,
+    "latency_ms": 887.9,
+    "error": null
+   },
+   "rerank": {
+    "order": [
+     0,
+     6
+    ],
+    "implementation": "model",
+    "cost_usd": 0.002574,
+    "latency_ms": 623.0,
+    "error": null
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 7,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.00326,
+   "wall_ms": 624
+  },
+  "Q017|C3": {
+   "id": "Q017",
+   "group": "C3",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     21
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     35
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     32
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     29
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     34
+    ]
+   ],
+   "scores": [
+    0.5051623036211268,
+    0.5412264048930779,
+    0.43726150744177994,
+    0.34059192167013996,
+    0.46783508251498634
+   ],
+   "rewrite": {
+    "query": "火电厂、风机、光伏板在相同面积（一平方米）下各能出多少电？",
+    "keywords": [
+     "火电厂",
+     "风机",
+     "光伏板",
+     "单位面积",
+     "发电量",
+     "功率密度",
+     "平方米"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000741,
+    "latency_ms": 1152.9,
+    "error": null
+   },
+   "rerank": {
+    "order": [
+     1,
+     0,
+     2,
+     4
+    ],
+    "implementation": "model",
+    "cost_usd": 0.002391,
+    "latency_ms": 671.4,
+    "error": null
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 11,
+    "lexical_query_terms": 29,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 2,
+      "lexical_rank": 4
+     },
+     {
+      "vector_rank": 1,
+      "lexical_rank": 1
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": 2
+     },
+     {
+      "vector_rank": 11,
+      "lexical_rank": 3
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": 8
+     }
+    ]
+   },
+   "llm_cost_usd": 0.003132,
+   "wall_ms": 676
+  },
+  "Q018|C3": {
+   "id": "Q018",
+   "group": "C3",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     26
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     27
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     22
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     23
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     21
+    ]
+   ],
+   "scores": [
+    0.43700559024725866,
+    0.3826627427742171,
+    0.2589128854722391,
+    0.25524942121387,
+    0.30654660638199926
+   ],
+   "rewrite": {
+    "query": "核电站用过的燃料棒最后怎么处理？",
+    "keywords": [
+     "核燃料棒",
+     "废燃料",
+     "处理",
+     "核废料",
+     "后处理",
+     "贮存",
+     "地质处置",
+     "核电站"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000704,
+    "latency_ms": 1173.9,
+    "error": null
+   },
+   "rerank": {
+    "order": null,
+    "implementation": "invalid",
+    "cost_usd": 0.002448,
+    "latency_ms": 530.5,
+    "error": "没有一个合法编号：```json\n{\"order\": []}\n```"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 13,
+    "lexical_query_terms": 23,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": 3
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": 4
+     },
+     {
+      "vector_rank": 8,
+      "lexical_rank": 1
+     },
+     {
+      "vector_rank": 9,
+      "lexical_rank": 2
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": 9
+     }
+    ]
+   },
+   "llm_cost_usd": 0.0031520000000000003,
+   "wall_ms": 534
+  },
+  "Q015|C4": {
+   "id": "Q015",
+   "group": "C4",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     29
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     31
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     30
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     32
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     20
+    ]
+   ],
+   "scores": [
+    0.43035197006934794,
+    0.32685494097455353,
+    0.31359062591524955,
+    0.2639805038626415,
+    0.26177595175061874
+   ],
+   "rewrite": {
+    "query": "水电站为什么要把坝修得那么高？",
+    "keywords": [
+     "水电站",
+     "坝",
+     "高度",
+     "水头",
+     "发电",
+     "势能"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000591,
+    "latency_ms": 840.5,
+    "error": null
+   },
+   "rerank": {
+    "order": [
+     0
+    ],
+    "implementation": "model",
+    "cost_usd": 0.002336,
+    "latency_ms": 496.1,
+    "error": null
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.002927,
+   "wall_ms": 497
+  },
+  "Q020|C0": {
+   "id": "Q020",
+   "group": "C0",
+   "pages": [
+    [
+     "MIT11_201F07_slides2.pdf",
+     15
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     7
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     12
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     11
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     3
+    ]
+   ],
+   "scores": [
+    0.47070419520447937,
+    0.4049767639555741,
+    0.3642823740935905,
+    0.35581639490680667,
+    0.34146088433351585
+   ],
+   "rewrite": {
+    "query": "一个城市要改造，到底谁说了算？",
+    "keywords": [],
+    "implementation": "none",
+    "cost_usd": 0.0,
+    "latency_ms": 0.0,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.0,
+   "wall_ms": 232
+  },
+  "Q019|C3": {
+   "id": "Q019",
+   "group": "C3",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     36
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     30
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     35
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     21
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     31
+    ]
+   ],
+   "scores": [
+    0.4786578922225124,
+    0.4465760642507172,
+    0.4441422152453935,
+    0.5345826737963594,
+    0.4239515277321467
+   ],
+   "rewrite": {
+    "query": "不同发电方式建一座电厂的成本费用是多少，课件里有比较吗？",
+    "keywords": [
+     "发电方式",
+     "成本",
+     "费用",
+     "建设成本",
+     "发电厂",
+     "比较"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000665,
+    "latency_ms": 999.6,
+    "error": null
+   },
+   "rerank": {
+    "order": null,
+    "implementation": "invalid",
+    "cost_usd": 0.002417,
+    "latency_ms": 563.0,
+    "error": "没有一个合法编号：```json\n{\"order\": []}\n```"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 15,
+    "lexical_query_terms": 36,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 3,
+      "lexical_rank": 2
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": 3
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": 6
+     },
+     {
+      "vector_rank": 1,
+      "lexical_rank": 12
+     },
+     {
+      "vector_rank": 12,
+      "lexical_rank": 1
+     }
+    ]
+   },
+   "llm_cost_usd": 0.0030819999999999997,
+   "wall_ms": 567
+  },
+  "Q021|C0": {
+   "id": "Q021",
+   "group": "C0",
+   "pages": [
+    [
+     "MIT11_201F07_slides2.pdf",
+     12
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     7
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     15
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     10
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     5
+    ]
+   ],
+   "scores": [
+    0.44019570950866316,
+    0.40252189950014433,
+    0.4024221421091224,
+    0.38938244772523634,
+    0.3642473999120364
+   ],
+   "rewrite": {
+    "query": "做城市规划的人，主要是画图纸的，还是跟各方博弈的？",
+    "keywords": [],
+    "implementation": "none",
+    "cost_usd": 0.0,
+    "latency_ms": 0.0,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.0,
+   "wall_ms": 270
+  },
+  "Q016|C4": {
+   "id": "Q016",
+   "group": "C4",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     11
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     21
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     19
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     32
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     33
+    ]
+   ],
+   "scores": [
+    0.2641915970574569,
+    0.3397777411204283,
+    0.2679874630994872,
+    0.44869152669748785,
+    0.3633858979571406
+   ],
+   "rewrite": {
+    "query": "风力发电机在没风的时候，电网靠什么供电",
+    "keywords": [
+     "风力发电机",
+     "无风",
+     "电网供电",
+     "电力供应",
+     "备用电源",
+     "储能",
+     "调峰"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000682,
+    "latency_ms": 1049.6,
+    "error": null
+   },
+   "rerank": {
+    "order": [
+     12,
+     2,
+     11
+    ],
+    "implementation": "model",
+    "cost_usd": 0.002353,
+    "latency_ms": 552.3,
+    "error": null
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 13,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 12,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.003035,
+   "wall_ms": 553
+  },
+  "Q017|C4": {
+   "id": "Q017",
+   "group": "C4",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     21
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     35
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     32
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     34
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     20
+    ]
+   ],
+   "scores": [
+    0.5051623036211268,
+    0.5412264048930779,
+    0.43726150744177994,
+    0.46783508251498634,
+    0.41176827242705333
+   ],
+   "rewrite": {
+    "query": "火电厂、风机、光伏板在相同面积（一平方米）下各能出多少电？",
+    "keywords": [
+     "火电厂",
+     "风机",
+     "光伏板",
+     "单位面积",
+     "发电量",
+     "功率密度",
+     "平方米"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000741,
+    "latency_ms": 1152.9,
+    "error": null
+   },
+   "rerank": {
+    "order": [
+     1,
+     0,
+     3
+    ],
+    "implementation": "model",
+    "cost_usd": 0.002296,
+    "latency_ms": 629.1,
+    "error": null
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.0030369999999999998,
+   "wall_ms": 630
+  },
+  "Q022|C0": {
+   "id": "Q022",
+   "group": "C0",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     5
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     14
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     6
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     4
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     7
+    ]
+   ],
+   "scores": [
+    0.40066006699018686,
+    0.3960609435475585,
+    0.37431976089600505,
+    0.3623114414072768,
+    0.3548366740303006
+   ],
+   "rewrite": {
+    "query": "「按流程一步步来定方案」这套做法，具体分哪几步？",
+    "keywords": [],
+    "implementation": "none",
+    "cost_usd": 0.0,
+    "latency_ms": 0.0,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.0,
+   "wall_ms": 233
+  },
+  "Q019|C4": {
+   "id": "Q019",
+   "group": "C4",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     21
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     19
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     36
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     30
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     35
+    ]
+   ],
+   "scores": [
+    0.5345826737963594,
+    0.49924967273831394,
+    0.4786578922225124,
+    0.4465760642507172,
+    0.4441422152453935
+   ],
+   "rewrite": {
+    "query": "不同发电方式建一座电厂的成本费用是多少，课件里有比较吗？",
+    "keywords": [
+     "发电方式",
+     "成本",
+     "费用",
+     "建设成本",
+     "发电厂",
+     "比较"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000665,
+    "latency_ms": 999.6,
+    "error": null
+   },
+   "rerank": {
+    "order": null,
+    "implementation": "invalid",
+    "cost_usd": 0.002384,
+    "latency_ms": 474.6,
+    "error": "没有一个合法编号：```json\n{\"order\": []}\n```"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.0030489999999999996,
+   "wall_ms": 476
+  },
+  "Q023|C0": {
+   "id": "Q023",
+   "group": "C0",
+   "pages": [
+    [
+     "MIT11_201F07_slides2.pdf",
+     7
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     6
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     8
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     15
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     12
+    ]
+   ],
+   "scores": [
+    0.5635473579479517,
+    0.4267650567843073,
+    0.4179714032623718,
+    0.41451051176784903,
+    0.4118202855249623
+   ],
+   "rewrite": {
+    "query": "现在这套城市规划的做法，最早是为了解决什么问题才出现的？",
+    "keywords": [],
+    "implementation": "none",
+    "cost_usd": 0.0,
+    "latency_ms": 0.0,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.0,
+   "wall_ms": 275
+  },
+  "Q024|C0": {
+   "id": "Q024",
+   "group": "C0",
+   "pages": [
+    [
+     "MIT11_201F07_slides2.pdf",
+     9
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     7
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     6
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     10
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     8
+    ]
+   ],
+   "scores": [
+    0.5357709641622637,
+    0.5130374445770576,
+    0.4282135972726715,
+    0.3947152532961543,
+    0.37749910559489985
+   ],
+   "rewrite": {
+    "query": "西方那一套规划办法，是怎么变成别的国家也在用的？",
+    "keywords": [],
+    "implementation": "none",
+    "cost_usd": 0.0,
+    "latency_ms": 0.0,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.0,
+   "wall_ms": 226
+  },
+  "Q020|C1": {
+   "id": "Q020",
+   "group": "C1",
+   "pages": [
+    [
+     "MIT11_201F07_slides2.pdf",
+     15
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     7
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     12
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     11
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     3
+    ]
+   ],
+   "scores": [
+    0.47070419520447937,
+    0.4049767639555741,
+    0.3642823740935905,
+    0.35581639490680667,
+    0.34146088433351585
+   ],
+   "rewrite": {
+    "query": "城市改造谁说了算，城市改造的决策权属于谁",
+    "keywords": [
+     "城市改造",
+     "决策权",
+     "规划权",
+     "谁说了算",
+     "城市更新",
+     "改造权限",
+     "决策机制"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000701,
+    "latency_ms": 1224.0,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000701,
+   "wall_ms": 1225
+  },
+  "Q020|C2": {
+   "id": "Q020",
+   "group": "C2",
+   "pages": [
+    [
+     "MIT11_201F07_slides2.pdf",
+     7
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     15
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     9
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     11
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     8
+    ]
+   ],
+   "scores": [
+    0.4049767639555741,
+    0.47070419520447937,
+    0.32293320868920633,
+    0.35581639490680667,
+    0.283208433398898
+   ],
+   "rewrite": {
+    "query": "城市改造谁说了算，城市改造的决策权属于谁",
+    "keywords": [
+     "城市改造",
+     "决策权",
+     "规划权",
+     "谁说了算",
+     "城市更新",
+     "改造权限",
+     "决策机制"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000701,
+    "latency_ms": 1224.0,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 20,
+    "lexical_query_terms": 28,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 2,
+      "lexical_rank": 1
+     },
+     {
+      "vector_rank": 1,
+      "lexical_rank": 7
+     },
+     {
+      "vector_rank": 6,
+      "lexical_rank": 2
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": 5
+     },
+     {
+      "vector_rank": 10,
+      "lexical_rank": 4
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000701,
+   "wall_ms": 6
+  },
+  "Q021|C1": {
+   "id": "Q021",
+   "group": "C1",
+   "pages": [
+    [
+     "MIT11_201F07_slides2.pdf",
+     12
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     7
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     15
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     10
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     5
+    ]
+   ],
+   "scores": [
+    0.44019570950866316,
+    0.40252189950014433,
+    0.4024221421091224,
+    0.38938244772523634,
+    0.3642473999120364
+   ],
+   "rewrite": {
+    "query": "城市规划工作中，画图纸和跟各方博弈哪个是主要工作？",
+    "keywords": [
+     "城市规划",
+     "规划设计",
+     "博弈",
+     "利益相关方",
+     "规划过程",
+     "制图"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000713,
+    "latency_ms": 1038.6,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000713,
+   "wall_ms": 1040
+  },
+  "Q021|C2": {
+   "id": "Q021",
+   "group": "C2",
+   "pages": [
+    [
+     "MIT11_201F07_slides2.pdf",
+     7
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     5
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     12
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     10
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     9
+    ]
+   ],
+   "scores": [
+    0.40252189950014433,
+    0.3642473999120364,
+    0.44019570950866316,
+    0.38938244772523634,
+    0.36294366026558444
+   ],
+   "rewrite": {
+    "query": "城市规划工作中，画图纸和跟各方博弈哪个是主要工作？",
+    "keywords": [
+     "城市规划",
+     "规划设计",
+     "博弈",
+     "利益相关方",
+     "规划过程",
+     "制图"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000713,
+    "latency_ms": 1038.6,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 20,
+    "lexical_query_terms": 38,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 2,
+      "lexical_rank": 1
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": 2
+     },
+     {
+      "vector_rank": 1,
+      "lexical_rank": 7
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": 5
+     },
+     {
+      "vector_rank": 6,
+      "lexical_rank": 4
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000713,
+   "wall_ms": 6
+  },
+  "Q022|C1": {
+   "id": "Q022",
+   "group": "C1",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     5
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     14
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     6
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     4
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     7
+    ]
+   ],
+   "scores": [
+    0.40066006699018686,
+    0.3960609435475585,
+    0.37431976089600505,
+    0.3623114414072768,
+    0.3548366740303006
+   ],
+   "rewrite": {
+    "query": "按流程一步步来定方案的具体步骤是什么？",
+    "keywords": [
+     "按流程",
+     "一步步",
+     "定方案",
+     "步骤",
+     "流程",
+     "方案"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000635,
+    "latency_ms": 1063.1,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000635,
+   "wall_ms": 1065
+  },
+  "Q022|C2": {
+   "id": "Q022",
+   "group": "C2",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     5
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     3
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     4
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     27
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     18
+    ]
+   ],
+   "scores": [
+    0.40066006699018686,
+    0.2971785273036032,
+    0.2919293592877018,
+    0.2702178309519549,
+    null
+   ],
+   "rewrite": {
+    "query": "按流程一步步来定方案的具体步骤是什么？",
+    "keywords": [
+     "按流程",
+     "一步步",
+     "定方案",
+     "步骤",
+     "流程",
+     "方案"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000635,
+    "latency_ms": 1063.1,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 7,
+    "lexical_query_terms": 24,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": 5
+     },
+     {
+      "vector_rank": 12,
+      "lexical_rank": 3
+     },
+     {
+      "vector_rank": 13,
+      "lexical_rank": 4
+     },
+     {
+      "vector_rank": 18,
+      "lexical_rank": 6
+     },
+     {
+      "vector_rank": null,
+      "lexical_rank": 1
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000635,
+   "wall_ms": 4
+  },
+  "Q023|C1": {
+   "id": "Q023",
+   "group": "C1",
+   "pages": [
+    [
+     "MIT11_201F07_slides2.pdf",
+     7
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     6
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     8
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     15
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     12
+    ]
+   ],
+   "scores": [
+    0.5635473579479517,
+    0.4267650567843073,
+    0.4179714032623718,
+    0.41451051176784903,
+    0.4118202855249623
+   ],
+   "rewrite": {
+    "query": "这套城市规划的做法最早是为了解决什么问题才出现的？",
+    "keywords": [
+     "城市规划",
+     "起源",
+     "问题",
+     "历史背景",
+     "目的"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000643,
+    "latency_ms": 846.5,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000643,
+   "wall_ms": 848
+  },
+  "Q023|C2": {
+   "id": "Q023",
+   "group": "C2",
+   "pages": [
+    [
+     "MIT11_201F07_slides2.pdf",
+     7
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     8
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     6
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     10
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     1
+    ]
+   ],
+   "scores": [
+    0.5635473579479517,
+    0.4179714032623718,
+    0.4267650567843073,
+    0.3784170741796766,
+    0.3689032033286163
+   ],
+   "rewrite": {
+    "query": "这套城市规划的做法最早是为了解决什么问题才出现的？",
+    "keywords": [
+     "城市规划",
+     "起源",
+     "问题",
+     "历史背景",
+     "目的"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000643,
+    "latency_ms": 846.5,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 20,
+    "lexical_query_terms": 30,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": 1
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": 3
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": 7
+     },
+     {
+      "vector_rank": 7,
+      "lexical_rank": 4
+     },
+     {
+      "vector_rank": 9,
+      "lexical_rank": 5
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000643,
+   "wall_ms": 5
+  },
+  "Q020|C3": {
+   "id": "Q020",
+   "group": "C3",
+   "pages": [
+    [
+     "MIT11_201F07_slides2.pdf",
+     15
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     13
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     5
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     14
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     8
+    ]
+   ],
+   "scores": [
+    0.47070419520447937,
+    0.3147134050266441,
+    0.2571621263121619,
+    null,
+    0.283208433398898
+   ],
+   "rewrite": {
+    "query": "城市改造谁说了算，城市改造的决策权属于谁",
+    "keywords": [
+     "城市改造",
+     "决策权",
+     "规划权",
+     "谁说了算",
+     "城市更新",
+     "改造权限",
+     "决策机制"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000701,
+    "latency_ms": 1224.0,
+    "error": null
+   },
+   "rerank": {
+    "order": [
+     1,
+     9,
+     6,
+     14,
+     4
+    ],
+    "implementation": "model",
+    "cost_usd": 0.002624,
+    "latency_ms": 626.1,
+    "error": null
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 20,
+    "lexical_query_terms": 28,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": 7
+     },
+     {
+      "vector_rank": 8,
+      "lexical_rank": 14
+     },
+     {
+      "vector_rank": 15,
+      "lexical_rank": 3
+     },
+     {
+      "vector_rank": null,
+      "lexical_rank": 6
+     },
+     {
+      "vector_rank": 10,
+      "lexical_rank": 4
+     }
+    ]
+   },
+   "llm_cost_usd": 0.003325,
+   "wall_ms": 631
+  },
+  "Q018|C4": {
+   "id": "Q018",
+   "group": "C4",
+   "pages": [
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     26
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     27
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     28
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     21
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     11
+    ]
+   ],
+   "scores": [
+    0.43700559024725866,
+    0.3826627427742171,
+    0.34468884642447006,
+    0.30654660638199926,
+    0.2796673755223486
+   ],
+   "rewrite": {
+    "query": "核电站用过的燃料棒最后怎么处理？",
+    "keywords": [
+     "核燃料棒",
+     "废燃料",
+     "处理",
+     "核废料",
+     "后处理",
+     "贮存",
+     "地质处置",
+     "核电站"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000704,
+    "latency_ms": 1173.9,
+    "error": null
+   },
+   "rerank": {
+    "order": null,
+    "implementation": "invalid",
+    "cost_usd": 0.002446,
+    "latency_ms": 1961.3,
+    "error": "没有一个合法编号：```json\n{\"order\": []}\n```"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.00315,
+   "wall_ms": 1962
+  },
+  "Q021|C3": {
+   "id": "Q021",
+   "group": "C3",
+   "pages": [
+    [
+     "MIT11_201F07_slides2.pdf",
+     5
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     13
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     15
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     12
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     14
+    ]
+   ],
+   "scores": [
+    0.3642473999120364,
+    0.3542591915477732,
+    0.4024221421091224,
+    0.44019570950866316,
+    0.28465019624975296
+   ],
+   "rewrite": {
+    "query": "城市规划工作中，画图纸和跟各方博弈哪个是主要工作？",
+    "keywords": [
+     "城市规划",
+     "规划设计",
+     "博弈",
+     "利益相关方",
+     "规划过程",
+     "制图"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000713,
+    "latency_ms": 1038.6,
+    "error": null
+   },
+   "rerank": {
+    "order": [
+     1,
+     9,
+     7,
+     2,
+     17
+    ],
+    "implementation": "model",
+    "cost_usd": 0.002667,
+    "latency_ms": 684.6,
+    "error": null
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 20,
+    "lexical_query_terms": 38,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 5,
+      "lexical_rank": 2
+     },
+     {
+      "vector_rank": 8,
+      "lexical_rank": 13
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": 14
+     },
+     {
+      "vector_rank": 1,
+      "lexical_rank": 7
+     },
+     {
+      "vector_rank": 15,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.00338,
+   "wall_ms": 691
+  },
+  "Q024|C1": {
+   "id": "Q024",
+   "group": "C1",
+   "pages": [
+    [
+     "MIT11_201F07_slides2.pdf",
+     9
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     7
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     6
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     10
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     8
+    ]
+   ],
+   "scores": [
+    0.5357709641622637,
+    0.5130374445770576,
+    0.4282135972726715,
+    0.3947152532961543,
+    0.37749910559489985
+   ],
+   "rewrite": {
+    "query": "西方的规划办法是如何传播到其他国家并被采用的？",
+    "keywords": [
+     "西方规划",
+     "规划传播",
+     "国际传播",
+     "规划制度",
+     "规划方法论",
+     "不同国家规划",
+     "规划借鉴"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000745,
+    "latency_ms": 1118.2,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000745,
+   "wall_ms": 1119
+  },
+  "Q024|C2": {
+   "id": "Q024",
+   "group": "C2",
+   "pages": [
+    [
+     "MIT11_201F07_slides2.pdf",
+     7
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     9
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     8
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     6
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     5
+    ]
+   ],
+   "scores": [
+    0.5130374445770576,
+    0.5357709641622637,
+    0.37749910559489985,
+    0.4282135972726715,
+    0.36473236747031346
+   ],
+   "rewrite": {
+    "query": "西方的规划办法是如何传播到其他国家并被采用的？",
+    "keywords": [
+     "西方规划",
+     "规划传播",
+     "国际传播",
+     "规划制度",
+     "规划方法论",
+     "不同国家规划",
+     "规划借鉴"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000745,
+    "latency_ms": 1118.2,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 15,
+    "lexical_query_terms": 48,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 2,
+      "lexical_rank": 1
+     },
+     {
+      "vector_rank": 1,
+      "lexical_rank": 6
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": 2
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": 5
+     },
+     {
+      "vector_rank": 7,
+      "lexical_rank": 4
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000745,
+   "wall_ms": 6
+  },
+  "Q025|C0": {
+   "id": "Q025",
+   "group": "C0",
+   "pages": [
+    [
+     "MIT11_201F07_slides2.pdf",
+     7
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     12
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     6
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     9
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     10
+    ]
+   ],
+   "scores": [
+    0.4484909251673141,
+    0.40259212988543924,
+    0.3863364233501444,
+    0.34254297324873273,
+    0.34226708892857444
+   ],
+   "rewrite": {
+    "query": "中国的城市规划是按什么路子做的？",
+    "keywords": [],
+    "implementation": "none",
+    "cost_usd": 0.0,
+    "latency_ms": 0.0,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.0,
+   "wall_ms": 229
+  },
+  "Q022|C3": {
+   "id": "Q022",
+   "group": "C3",
+   "pages": [
+    [
+     "MIT11_201F07_slides2.pdf",
+     14
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     5
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     3
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     4
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     27
+    ]
+   ],
+   "scores": [
+    0.3960609435475585,
+    0.40066006699018686,
+    0.2971785273036032,
+    0.2919293592877018,
+    0.2702178309519549
+   ],
+   "rewrite": {
+    "query": "按流程一步步来定方案的具体步骤是什么？",
+    "keywords": [
+     "按流程",
+     "一步步",
+     "定方案",
+     "步骤",
+     "流程",
+     "方案"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000635,
+    "latency_ms": 1063.1,
+    "error": null
+   },
+   "rerank": {
+    "order": [
+     5,
+     0,
+     1
+    ],
+    "implementation": "model",
+    "cost_usd": 0.002687,
+    "latency_ms": 740.2,
+    "error": null
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 7,
+    "lexical_query_terms": 24,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 1,
+      "lexical_rank": 5
+     },
+     {
+      "vector_rank": 12,
+      "lexical_rank": 3
+     },
+     {
+      "vector_rank": 13,
+      "lexical_rank": 4
+     },
+     {
+      "vector_rank": 18,
+      "lexical_rank": 6
+     }
+    ]
+   },
+   "llm_cost_usd": 0.0033220000000000003,
+   "wall_ms": 744
+  },
+  "Q020|C4": {
+   "id": "Q020",
+   "group": "C4",
+   "pages": [
+    [
+     "MIT11_201F07_slides2.pdf",
+     15
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     13
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     5
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     3
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     8
+    ]
+   ],
+   "scores": [
+    0.47070419520447937,
+    0.3147134050266441,
+    0.2571621263121619,
+    0.34146088433351585,
+    0.283208433398898
+   ],
+   "rewrite": {
+    "query": "城市改造谁说了算，城市改造的决策权属于谁",
+    "keywords": [
+     "城市改造",
+     "决策权",
+     "规划权",
+     "谁说了算",
+     "城市更新",
+     "改造权限",
+     "决策机制"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000701,
+    "latency_ms": 1224.0,
+    "error": null
+   },
+   "rerank": {
+    "order": [
+     0,
+     7,
+     14,
+     4,
+     9
+    ],
+    "implementation": "model",
+    "cost_usd": 0.002499,
+    "latency_ms": 586.2,
+    "error": null
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 8,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 15,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 10,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.0031999999999999997,
+   "wall_ms": 588
+  },
+  "Q023|C3": {
+   "id": "Q023",
+   "group": "C3",
+   "pages": [
+    [
+     "MIT11_201F07_slides2.pdf",
+     7
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     8
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     12
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     13
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     6
+    ]
+   ],
+   "scores": [
+    0.5635473579479517,
+    0.4179714032623718,
+    0.4118202855249623,
+    0.32880899579552647,
+    0.4267650567843073
+   ],
+   "rewrite": {
+    "query": "这套城市规划的做法最早是为了解决什么问题才出现的？",
+    "keywords": [
+     "城市规划",
+     "起源",
+     "问题",
+     "历史背景",
+     "目的"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000643,
+    "latency_ms": 846.5,
+    "error": null
+   },
+   "rerank": {
+    "order": [
+     0,
+     1,
+     10,
+     11
+    ],
+    "implementation": "model",
+    "cost_usd": 0.002403,
+    "latency_ms": 790.3,
+    "error": null
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 20,
+    "lexical_query_terms": 30,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": 1
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": 3
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": 17
+     },
+     {
+      "vector_rank": 12,
+      "lexical_rank": 10
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": 7
+     }
+    ]
+   },
+   "llm_cost_usd": 0.003046,
+   "wall_ms": 795
+  },
+  "Q021|C4": {
+   "id": "Q021",
+   "group": "C4",
+   "pages": [
+    [
+     "MIT11_201F07_slides2.pdf",
+     13
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     5
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     15
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     14
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     12
+    ]
+   ],
+   "scores": [
+    0.3542591915477732,
+    0.3642473999120364,
+    0.4024221421091224,
+    0.28465019624975296,
+    0.44019570950866316
+   ],
+   "rewrite": {
+    "query": "城市规划工作中，画图纸和跟各方博弈哪个是主要工作？",
+    "keywords": [
+     "城市规划",
+     "规划设计",
+     "博弈",
+     "利益相关方",
+     "规划过程",
+     "制图"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000713,
+    "latency_ms": 1038.6,
+    "error": null
+   },
+   "rerank": {
+    "order": [
+     7,
+     4,
+     2,
+     14,
+     0
+    ],
+    "implementation": "model",
+    "cost_usd": 0.002574,
+    "latency_ms": 732.3,
+    "error": null
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 8,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 15,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.003287,
+   "wall_ms": 733
+  },
+  "Q024|C3": {
+   "id": "Q024",
+   "group": "C3",
+   "pages": [
+    [
+     "MIT11_201F07_slides2.pdf",
+     9
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     7
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     8
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     10
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     13
+    ]
+   ],
+   "scores": [
+    0.5357709641622637,
+    0.5130374445770576,
+    0.37749910559489985,
+    0.3947152532961543,
+    0.35758334568793043
+   ],
+   "rewrite": {
+    "query": "西方的规划办法是如何传播到其他国家并被采用的？",
+    "keywords": [
+     "西方规划",
+     "规划传播",
+     "国际传播",
+     "规划制度",
+     "规划方法论",
+     "不同国家规划",
+     "规划借鉴"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000745,
+    "latency_ms": 1118.2,
+    "error": null
+   },
+   "rerank": {
+    "order": [
+     1,
+     0,
+     2,
+     6,
+     7
+    ],
+    "implementation": "model",
+    "cost_usd": 0.002673,
+    "latency_ms": 722.4,
+    "error": null
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 15,
+    "lexical_query_terms": 48,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": 6
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": 1
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": 2
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": 9
+     },
+     {
+      "vector_rank": 8,
+      "lexical_rank": 10
+     }
+    ]
+   },
+   "llm_cost_usd": 0.003418,
+   "wall_ms": 728
+  },
+  "Q022|C4": {
+   "id": "Q022",
+   "group": "C4",
+   "pages": [
+    [
+     "MIT11_201F07_slides2.pdf",
+     14
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     4
+    ],
+    [
+     "MIT22_081JF10_lec01b.pdf",
+     5
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     3
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     15
+    ]
+   ],
+   "scores": [
+    0.3960609435475585,
+    0.3623114414072768,
+    0.40066006699018686,
+    0.33089866298369697,
+    0.32760388123536127
+   ],
+   "rewrite": {
+    "query": "按流程一步步来定方案的具体步骤是什么？",
+    "keywords": [
+     "按流程",
+     "一步步",
+     "定方案",
+     "步骤",
+     "流程",
+     "方案"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000635,
+    "latency_ms": 1063.1,
+    "error": null
+   },
+   "rerank": {
+    "order": [
+     1,
+     3,
+     0,
+     6,
+     7
+    ],
+    "implementation": "model",
+    "cost_usd": 0.002621,
+    "latency_ms": 659.3,
+    "error": null
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 7,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 8,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.003256,
+   "wall_ms": 660
+  },
+  "Q025|C1": {
+   "id": "Q025",
+   "group": "C1",
+   "pages": [
+    [
+     "MIT11_201F07_slides2.pdf",
+     7
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     12
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     6
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     9
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     10
+    ]
+   ],
+   "scores": [
+    0.4484909251673141,
+    0.40259212988543924,
+    0.3863364233501444,
+    0.34254297324873273,
+    0.34226708892857444
+   ],
+   "rewrite": {
+    "query": "中国的城市规划是按什么路子做的？",
+    "keywords": [
+     "中国城市规划",
+     "城市规划",
+     "规划方法",
+     "规划体系",
+     "规划制度",
+     "urban planning China"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000651,
+    "latency_ms": 959.4,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000651,
+   "wall_ms": 961
+  },
+  "Q025|C2": {
+   "id": "Q025",
+   "group": "C2",
+   "pages": [
+    [
+     "MIT11_201F07_slides2.pdf",
+     7
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     8
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     6
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     11
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     9
+    ]
+   ],
+   "scores": [
+    0.4484909251673141,
+    0.31544084984105436,
+    0.3863364233501444,
+    0.3210011992282797,
+    0.34254297324873273
+   ],
+   "rewrite": {
+    "query": "中国的城市规划是按什么路子做的？",
+    "keywords": [
+     "中国城市规划",
+     "城市规划",
+     "规划方法",
+     "规划体系",
+     "规划制度",
+     "urban planning China"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000651,
+    "latency_ms": 959.4,
+    "error": null
+   },
+   "rerank": {
+    "implementation": "none"
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 18,
+    "lexical_query_terms": 24,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": 2
+     },
+     {
+      "vector_rank": 8,
+      "lexical_rank": 1
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": 6
+     },
+     {
+      "vector_rank": 7,
+      "lexical_rank": 3
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": 7
+     }
+    ]
+   },
+   "llm_cost_usd": 0.000651,
+   "wall_ms": 5
+  },
+  "Q023|C4": {
+   "id": "Q023",
+   "group": "C4",
+   "pages": [
+    [
+     "MIT11_201F07_slides2.pdf",
+     7
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     8
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     9
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     13
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     14
+    ]
+   ],
+   "scores": [
+    0.5635473579479517,
+    0.4179714032623718,
+    0.37732958558284907,
+    0.32880899579552647,
+    0.2578762493016328
+   ],
+   "rewrite": {
+    "query": "这套城市规划的做法最早是为了解决什么问题才出现的？",
+    "keywords": [
+     "城市规划",
+     "起源",
+     "问题",
+     "历史背景",
+     "目的"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000643,
+    "latency_ms": 846.5,
+    "error": null
+   },
+   "rerank": {
+    "order": [
+     0,
+     2,
+     7,
+     11,
+     18
+    ],
+    "implementation": "model",
+    "cost_usd": 0.002449,
+    "latency_ms": 616.1,
+    "error": null
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 3,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 8,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 12,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 19,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.0030919999999999997,
+   "wall_ms": 617
+  },
+  "Q024|C4": {
+   "id": "Q024",
+   "group": "C4",
+   "pages": [
+    [
+     "MIT11_201F07_slides2.pdf",
+     9
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     7
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     8
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     10
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     13
+    ]
+   ],
+   "scores": [
+    0.5357709641622637,
+    0.5130374445770576,
+    0.37749910559489985,
+    0.3947152532961543,
+    0.35758334568793043
+   ],
+   "rewrite": {
+    "query": "西方的规划办法是如何传播到其他国家并被采用的？",
+    "keywords": [
+     "西方规划",
+     "规划传播",
+     "国际传播",
+     "规划制度",
+     "规划方法论",
+     "不同国家规划",
+     "规划借鉴"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000745,
+    "latency_ms": 1118.2,
+    "error": null
+   },
+   "rerank": {
+    "order": [
+     0,
+     1,
+     4,
+     3,
+     7
+    ],
+    "implementation": "model",
+    "cost_usd": 0.002562,
+    "latency_ms": 717.5,
+    "error": null
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 1,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 2,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 8,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.003307,
+   "wall_ms": 719
+  },
+  "Q025|C3": {
+   "id": "Q025",
+   "group": "C3",
+   "pages": [
+    [
+     "MIT11_201F07_slides2.pdf",
+     8
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     9
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     13
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     10
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     14
+    ]
+   ],
+   "scores": [
+    0.31544084984105436,
+    0.34254297324873273,
+    0.2999658871360789,
+    0.34226708892857444,
+    0.25242848753573066
+   ],
+   "rewrite": {
+    "query": "中国的城市规划是按什么路子做的？",
+    "keywords": [
+     "中国城市规划",
+     "城市规划",
+     "规划方法",
+     "规划体系",
+     "规划制度",
+     "urban planning China"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000651,
+    "latency_ms": 959.4,
+    "error": null
+   },
+   "rerank": {
+    "order": [
+     1,
+     4,
+     10,
+     5,
+     13
+    ],
+    "implementation": "model",
+    "cost_usd": 0.002541,
+    "latency_ms": 596.9,
+    "error": null
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 18,
+    "lexical_query_terms": 24,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 8,
+      "lexical_rank": 1
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": 7
+     },
+     {
+      "vector_rank": 9,
+      "lexical_rank": 10
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": 8
+     },
+     {
+      "vector_rank": 15,
+      "lexical_rank": 16
+     }
+    ]
+   },
+   "llm_cost_usd": 0.003192,
+   "wall_ms": 601
+  },
+  "Q025|C4": {
+   "id": "Q025",
+   "group": "C4",
+   "pages": [
+    [
+     "MIT11_201F07_slides2.pdf",
+     8
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     9
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     13
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     14
+    ],
+    [
+     "MIT11_201F07_slides2.pdf",
+     10
+    ]
+   ],
+   "scores": [
+    0.31544084984105436,
+    0.34254297324873273,
+    0.2999658871360789,
+    0.25242848753573066,
+    0.34226708892857444
+   ],
+   "rewrite": {
+    "query": "中国的城市规划是按什么路子做的？",
+    "keywords": [
+     "中国城市规划",
+     "城市规划",
+     "规划方法",
+     "规划体系",
+     "规划制度",
+     "urban planning China"
+    ],
+    "implementation": "model",
+    "cost_usd": 0.000651,
+    "latency_ms": 959.4,
+    "error": null
+   },
+   "rerank": {
+    "order": [
+     7,
+     3,
+     8,
+     14,
+     4
+    ],
+    "implementation": "model",
+    "cost_usd": 0.002529,
+    "latency_ms": 657.3,
+    "error": null
+   },
+   "channels": {
+    "vector": 20,
+    "lexical": 0,
+    "lexical_query_terms": 0,
+    "lexical_error": null,
+    "final": [
+     {
+      "vector_rank": 8,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 4,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 9,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 15,
+      "lexical_rank": null
+     },
+     {
+      "vector_rank": 5,
+      "lexical_rank": null
+     }
+    ]
+   },
+   "llm_cost_usd": 0.00318,
+   "wall_ms": 658
+  }
+ }
+}

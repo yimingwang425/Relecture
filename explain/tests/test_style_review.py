@@ -92,17 +92,12 @@ class TestInput:
         assert "概念本身的难度" in STYLE_JUDGE_SYSTEM
 
     def test_system_is_the_approved_wording(self):
-        """用户审定的措辞（j6 → j7，2026-10-15）：宽容放行、逐维度细则、英文分可选与需要两种。"""
+        """用户审定的措辞（j6，2026-10-15；试过 j7 后回到 j6）：宽容放行、逐维度细则、英文分可选与需要两种。"""
         assert STYLE_JUDGE_SYSTEM.startswith("你是课件讲解助手的语言风格审查员。")
         assert "【核心原则：宽容放行，仅明显偏离时打回】" in STYLE_JUDGE_SYSTEM
         assert "【偏好维度审查细则】" in STYLE_JUDGE_SYSTEM
         assert "为【可选许可】，不写英文不算违规" in STYLE_JUDGE_SYSTEM
         assert "多次出现的在第一次给出即可" in STYLE_JUDGE_SYSTEM
-        # j7：j6 冲突放行掉到 25% 之后补回的几句
-        assert "学生这一句的要求优先于存好的偏好" in STYLE_JUDGE_SYSTEM
-        assert "讲法让位于「只讲课件」" in STYLE_JUDGE_SYSTEM
-        assert "拿不准时放行" in STYLE_JUDGE_SYSTEM
-        assert "程度上的不足不是方向性违背" in STYLE_JUDGE_SYSTEM
         assert "少于 40 字" in STYLE_JUDGE_SYSTEM
         assert "sonnet" in STYLE_JUDGE_MODEL_NAME
 

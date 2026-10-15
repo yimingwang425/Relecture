@@ -40,6 +40,15 @@ DIMS = {"详细程度": "detail_level", "举例": "use_examples", "结构": "str
 #: 「符合」集里没有这种条目，所以主口径里详细程度一律算符合；另报五个方框全勾的严口径。
 LENIENT_SKIP = ("detail_level",)
 
+#: 对齐口径（j7 预登记，看 j7 结果之前定）：偏好是「多举例子」、人工勾了「举例」，但讲解全文没有任何具体例子或类比。
+#: 细则「多举例子：必须有例子支撑」下这几条在举例上不符合；用户同意按细则对齐（2026-10-15）。
+#: 挑法：所有「多举例子」且人工勾了举例的条目，先按「例 / 比如 / 类比 / 好比 / 假设 / 像」筛，再逐条读——
+#: 「假设向量能分解成……」是抽象推理不是例子；m06-structure-buildup_first 有「90 度旋转的特征值是 i 和 -i」，算例子，不改。
+NO_EXAMPLE = frozenset({
+    "m07-detail_level-P0", "m07-detail_level-P3", "m07-use_examples-more", "m07-structure-buildup_first",
+    "m08-detail_level-P3", "m08-structure-buildup_first", "m08-depth-what",
+})
+
 
 def annotations() -> list[dict[str, Any]]:
     """解析标注表。`checks` 五个方框；`need_en` 标注人改成了「需要英文」；`text` 标注后的讲解。"""
@@ -59,8 +68,15 @@ def annotations() -> list[dict[str, Any]]:
     return out
 
 
-def human_ok(a: dict[str, Any], strict: bool = False) -> bool:
+def human_ok(a: dict[str, Any], strict: bool = False, aligned: bool = False) -> bool:
+    if aligned and a["text_id"] in NO_EXAMPLE:
+        return False
     return all(v for k, v in a["checks"].items() if strict or k not in LENIENT_SKIP)
+
+
+def human(a: dict[str, Any]) -> dict[str, Any]:
+    return {"checks": a["checks"], "ok": human_ok(a), "ok_strict": human_ok(a, True),
+            "ok_aligned": human_ok(a, aligned=True), "need_en": a["need_en"], "edited": a["edited"]}
 
 
 def prefs_for(item: dict[str, Any], need_en: bool) -> str:
@@ -82,8 +98,7 @@ def eval_items() -> list[dict[str, Any]]:
             continue
         rows.append({**it, "prefs": prefs_for(it, bool(a and a["need_en"])),
                      "text": a["text"] if a else texts[it["text_id"]],
-                     "human": a and {"checks": a["checks"], "ok": human_ok(a), "ok_strict": human_ok(a, True),
-                                     "need_en": a["need_en"], "edited": a["edited"]}})
+                     "human": a and human(a)})
     return rows
 
 
@@ -121,10 +136,14 @@ def summarize(rows: list[dict[str, Any]], title: str) -> list[str]:
     fit = [r for r in rows if r["set"] == "fit"]
     ok, bad = [r for r in fit if r["human"]["ok"]], [r for r in fit if not r["human"]["ok"]]
     strict = [r for r in fit if r["human"]["ok_strict"]]
+    aligned = [r for r in fit if r["human"]["ok_aligned"]]
+    misaligned = [r for r in fit if not r["human"]["ok_aligned"]]
     lines = [f"### {title}", "", "| 口径 | 打回 |", "| --- | --- |",
              f"| **误报**：人工判符合（详细程度按放宽口径） | **{f(sum(map(rw, ok)), len(ok))}** |",
              f"| 误报（严口径：五个方框全勾） | {f(sum(map(rw, strict)), len(strict))} |",
-             f"| 人工判**不符合**的「符合」样例 → 打回 | {f(sum(map(rw, bad)), len(bad))} |"]
+             f"| 误报（对齐口径：无例子的「多举例」{len(NO_EXAMPLE)} 条改判不符合） | {f(sum(map(rw, aligned)), len(aligned))} |",
+             f"| 人工判**不符合**的「符合」样例 → 打回 | {f(sum(map(rw, bad)), len(bad))} |",
+             f"| 对齐口径下不符合 → 打回 | {f(sum(map(rw, misaligned)), len(misaligned))} |"]
     for s, label in (("deviate", "检出：偏离样例 → 打回"), ("control", "冲突对照 → 打回")):
         xs = [r for r in rows if r["set"] == s]
         if xs:
@@ -153,7 +172,7 @@ def cmd_j5(_args: Any) -> int:
         if r["set"] == "fit" and (a["unannotated"] or a["need_en"] or a["edited"]):
             continue
         rows.append({"set": r["set"], "scores": r["run"].get("scores"),
-                     "human": a and {"checks": a["checks"], "ok": human_ok(a), "ok_strict": human_ok(a, True)}})
+                     "human": a and human(a)})
     lines = summarize(rows, "j5 分数 × 人工标注（未改动的「符合」样例，不花钱）")
     print("\n".join(lines))
     return 0

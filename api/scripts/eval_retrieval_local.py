@@ -382,13 +382,16 @@ def hit(it: dict[str, Any], row: dict[str, Any]) -> tuple[int, float]:
 
 def cmd_report(args: Any) -> int:
     items = load_items(args.set)
+    if args.alt_gold:
+        # 敏感性分析（预登记补记）：两遍答案页不一致的题改用第二遍的答案页；第二遍为空的移出有答案题
+        items = [{**it, "gold_pages": it["gold_pages_alt"]} if "gold_pages_alt" in it else it for it in items]
     res = json.loads(out_path(args.set, args.fake).read_text("utf-8"))["results"]
     ans = [it for it in items if it["gold_pages"]]
     cluster = lambda it: f"{it['gold_pages'][0]['source_file']}#{it['gold_pages'][0]['page_index']}"  # noqa: E731
     H = {(it["id"], g): hit(it, res[f"{it['id']}|{g}"]) for it in ans for g in GROUPS if f"{it['id']}|{g}" in res}
 
     f = lambda k, n: f"{k}/{n}（{100 * k / n:.0f}%）" if n else "—"  # noqa: E731
-    lines = [f"# 混合检索 · 本地 · 评测集 {args.set} · 原始汇总", "",
+    lines = [f"# 混合检索 · 本地 · 评测集 {args.set} · 原始汇总" + ("（敏感性：第二遍答案页）" if args.alt_gold else ""), "",
              f"有答案 {len(ans)} 题（无答案 {len(items) - len(ans)} 题不进命中率）。", "",
              "## full-hit@5（正确页全部进前 5）", "",
              "| 组 | 命中 | 95% CI（Wilson） | page-recall@5 |", "| --- | --- | --- | --- |"]
@@ -447,7 +450,7 @@ def cmd_report(args: Any) -> int:
                 for it in ans if f"{it['id']}|C0" in res]
         lines += [f"- 无答案题 C0 top-1 相似度：中位 {sorted(top('C0'))[len(top('C0')) // 2]:.3f}；"
                   f"有答案题中位 {sorted(ansv)[len(ansv) // 2]:.3f}（只报分布，不定阈值，同 R16）"]
-    out = RUNS / f"eval_hybrid_{args.set}_local{'_FAKE' if args.fake else ''}_report_raw.md"
+    out = RUNS / f"eval_hybrid_{args.set}_local{'_FAKE' if args.fake else ''}{'_altgold' if args.alt_gold else ''}_report_raw.md"
     out.write_text("\n".join(lines) + "\n", "utf-8")
     print("\n".join(lines))
     return 0
@@ -462,6 +465,7 @@ def main() -> int:
     r.add_argument("--workers", type=int, default=6)
     rp = sub.add_parser("report")
     rp.add_argument("--set", choices=EVAL_SETS, default="v2")
+    rp.add_argument("--alt-gold", action="store_true", help="敏感性分析：不一致的题用第二遍的答案页")
     for p in (ix, r, rp):
         p.add_argument("--fake", action="store_true", help="假向量、不调模型：只验证链路，不产出结论")
     args = ap.parse_args()

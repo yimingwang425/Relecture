@@ -410,7 +410,7 @@ def review_marks() -> dict[str, dict[str, Any]]:
     return marks
 
 
-def cmd_freeze(_args: Any) -> int:
+def cmd_freeze(args: Any) -> int:
     """规则（写在复核之前，2026-10-15）：
 
     1. 没勾「已看」的题不进评测集，也不用备选补（那是漏看，不是删题）。
@@ -421,8 +421,16 @@ def cmd_freeze(_args: Any) -> int:
     """
     by_ref = {ref(p): p for p in pages()}
     sel = json.loads(SELECTED.read_text("utf-8"))
-    marks = review_marks()
     log: dict[str, list[str]] = {"未复核": [], "删掉": [], "改了答案页": [], "类别不成立": [], "备选补入": []}
+    if args.confirmed_all:
+        # 用户 2026-10-15 在对话里确认：复核表全部看过、没有要删的、没有要改的，不再回填方框推一遍。
+        # 等价于每题勾「已看」、不删、不改；两遍不一致的题按「出题时」的答案页（第二遍的另存为 gold_pages_alt，
+        # 结果里另报一份按它算的敏感性分析）。
+        marks = {r["id"]: {"seen": True, "delete": False, "fix": list(r["gold"]), "fix_raw": "", "none": not r["gold"]}
+                 for r in [*sel["chosen"], *sel["reserve"]]}
+        log["用户确认"] = ["2026-10-15 对话：全部已看、无删除、无改动；两遍不一致的按出题时的答案页"]
+    else:
+        marks = review_marks()
 
     def resolve(r: dict[str, Any]) -> tuple[str, list[str]]:
         """→ (状态, 答案页)。状态：ok / unseen / delete。"""
@@ -474,6 +482,8 @@ def cmd_freeze(_args: Any) -> int:
     items = [{"id": f"V2-{i:03d}", "source_id": r["id"], "question": r["question"],
               **({"history": r["history"]} if r.get("history") else {}),
               "gold_pages": [page(g) for g in gold], "tags": [r["category"]],
+              **({"gold_pages_alt": [page(g) for g in sorted({x for x in (_norm_ref(s) for s in r["gold2"]["required"]) if x})]}
+                 if r["agreement"] == "differs" else {}),
               **({"exact_term": r["exact_term"]} if r.get("exact_term") else {})}
              for i, (r, gold) in enumerate(final, 1)]
     FROZEN.write_text(json.dumps({"version": "v2", "created": "2026-10-15", "annotator": "1 人（模型出题 + 人工复核）",
@@ -491,8 +501,11 @@ def cmd_freeze(_args: Any) -> int:
 def main() -> int:
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
-    for name in ("pages", "gold", "select", "sheet", "freeze"):
+    for name in ("pages", "gold", "select", "sheet"):
         sub.add_parser(name)
+    fz = sub.add_parser("freeze")
+    fz.add_argument("--confirmed-all", action="store_true",
+                    help="用户已在对话里确认全部看过、无删无改（不读方框）")
     g = sub.add_parser("generate")
     g.add_argument("--extra", nargs=3, metavar=("CATEGORY", "DOC", "N"), help="补出一批")
     g.add_argument("--batch", default="", help="补出批次的 id 后缀，如 b")

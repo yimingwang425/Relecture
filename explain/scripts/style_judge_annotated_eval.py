@@ -159,10 +159,23 @@ def cmd_j5(_args: Any) -> int:
     return 0
 
 
+def reparsed(r: dict[str, Any]) -> dict[str, int] | None:
+    """没判成的那几条，用**当前**解析器重读存下来的输出（错误信息里留了前 200 字，分数在里面）。事后口径。"""
+    if r["run"].get("scores"):
+        return r["run"]["scores"]
+    err = r["run"].get("error") or ""
+    if not err.startswith("输出不合法："):
+        return None
+    data = sr._judge_obj(err.removeprefix("输出不合法："))
+    return sr._scores(data.get("scores")) if data else None
+
+
 def cmd_report(_args: Any) -> int:
     res = json.loads(OUT.read_text(encoding="utf-8"))["results"]
     rows = [{**r, "scores": r["run"].get("scores")} for r in res]
     lines = summarize(rows, f"{sr.STYLE_JUDGE_PROMPT_VERSION} × 人工标注")
+    lines += [""] + summarize([{**r, "scores": reparsed(r)} for r in res],
+                              f"{sr.STYLE_JUDGE_PROMPT_VERSION} × 人工标注 · 事后：没判成的几条用修好的解析器重读同一份输出")
     costs = [r["run"]["cost_usd"] for r in res if r["run"]["cost_usd"] is not None]
     lat = sorted(r["run"]["latency_ms"] for r in res)
     lines += [f"- 花费 ${sum(costs):.4f}；单次均值 ${statistics.mean(costs):.4f}",

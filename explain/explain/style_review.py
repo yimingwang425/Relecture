@@ -27,6 +27,7 @@ agent 版本的代码在 git `c0719c7`。
 
 from __future__ import annotations
 
+import json
 import re
 from dataclasses import dataclass, field
 from typing import Any
@@ -229,10 +230,39 @@ def _scores(raw: Any) -> dict[str, int] | None:
         return None
     out: dict[str, int] = {}
     for k in SCORE_ASPECTS:
-        v = raw.get(k)
+        # 没选语气时模型偶尔整项略去（j6 评测 167 次里 3 次）——没选就是 0，按 0 记
+        v = raw.get(k, 0 if k == "tone" else None)
         if isinstance(v, bool) or not isinstance(v, int) or not 0 <= v <= 3:
             return None
         out[k] = v
+    return out
+
+
+_TEXT_FIELDS = ("reason", "feedback", "reminder")
+
+
+def _judge_obj(text: str) -> dict[str, Any] | None:
+    """审查员的输出 → dict。先按 JSON 读；读不了再按输出格式的字段顺序把四个字段抠出来。
+
+    第二步只为一种坏法：字符串里夹了没转义的英文双引号（「略带"为什么"性质」）。
+    j6 评测 167 次里 7 次——分数完好，只是整份 JSON 不合法，按没判成放行了。
+    分数仍要能整段按 JSON 读、且过 `_scores` 的校验，抠不出来照旧是 None。
+    """
+    data = _json_obj(text)
+    if data is not None:
+        return data
+    m = re.search(r'"scores"\s*:\s*(\{[^{}]*\})', text)
+    if not m:
+        return None
+    try:
+        out: dict[str, Any] = {"scores": json.loads(m.group(1))}
+    except json.JSONDecodeError:
+        return None
+    for i, k in enumerate(_TEXT_FIELDS):
+        later = "|".join(f'"{n}"' for n in _TEXT_FIELDS[i + 1:])
+        end = rf'"\s*,\s*(?:{later})\s*:' if later else r'"\s*\}'
+        fm = re.search(rf'"{k}"\s*:\s*"(.*?){end}', text, re.S)
+        out[k] = fm.group(1) if fm else ""
     return out
 
 
@@ -249,7 +279,7 @@ class StyleJudge:
         if c is None:
             return StyleJudgment(verdict=None, error=err, model=name, latency_ms=ms,
                                  cost_usd=None if err and err.startswith("TimeoutError") else 0.0)
-        data = _json_obj(c.text)
+        data = _judge_obj(c.text)
         scores = _scores(data.get("scores")) if data else None
         # j5 起结论由代码按分数定；旧格式（只有 verdict）仍认，便于替身与回放。
         verdict = (("rewrite" if max(scores.values()) >= REWRITE_THRESHOLD else "ok") if scores

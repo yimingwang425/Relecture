@@ -333,6 +333,27 @@ class TestScores:
         r, _ = reviewer(scored(depth=7))
         assert r.review(TEXT, question=Q).style_run.status == "failed"
 
+    def test_unescaped_quotes_in_strings_still_parse(self):
+        """j6 评测里 7 次：分数完好，字符串里夹了英文双引号，整份 JSON 不合法、按没判成放行了。"""
+        raw = ('{"scores": {"detail_level": 0, "use_examples": 0, "structure": 0, "depth": 2, "language": 0, "tone": 0},\n'
+               ' "reason": "第2段略带"为什么"性质", "feedback": "把[2]里"为什么"的解释删掉", "reminder": "只讲"是什么""}')
+        r, _ = reviewer(raw)
+        rv = r.review(TEXT, question=Q)
+        assert rv.style_run.status == "judged" and not rv.passed
+        assert rv.style_run.scores["depth"] == 2 and '把[2]里"为什么"的解释删掉' in rv.feedback
+        assert rv.style_run.reminder == '只讲"是什么"'
+
+    def test_unparseable_scores_still_fail(self):
+        r, _ = reviewer('{"scores": {"depth": 2, "tone": "高"}, "reason": "x"')
+        assert r.review(TEXT, question=Q).style_run.status == "failed"
+
+    def test_missing_tone_counts_as_zero(self):
+        """没选语气时模型偶尔整项略去（j6 评测 3 次）。"""
+        s = {"detail_level": 0, "use_examples": 0, "structure": 2, "depth": 0, "language": 0}
+        r, _ = reviewer(json.dumps({"scores": s, "reason": "r", "feedback": "f", "reminder": "m"}, ensure_ascii=False))
+        rv = r.review(TEXT, question=Q)
+        assert rv.style_run.status == "judged" and rv.style_run.scores["tone"] == 0 and not rv.passed
+
     def test_rewrite_without_feedback_falls_back_to_reason(self):
         s = {"detail_level": 3, "use_examples": 0, "structure": 0, "depth": 0, "language": 0, "tone": 0}
         r, _ = reviewer(json.dumps({"scores": s, "reason": "整篇展开了太多枝节", "feedback": "", "reminder": ""},

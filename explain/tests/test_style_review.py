@@ -85,23 +85,29 @@ class TestInput:
         assert "精简" in prefs
 
     def test_no_character_counts_anywhere(self):
-        """讲法不是长度：偏好里不出现字数，system 明说不按长度判。"""
+        """讲法不是长度：偏好里不出现字数；system 让审查员区分概念本身的难度与讲解的废话。"""
         for level in ("P0", "P2", "P3"):
             prefs = render_preferences(style_config_for(level), level, B, "spoken")
             assert not re.search(r"\d+\s*字", prefs), prefs
-        assert "讲法不是长度" in STYLE_JUDGE_SYSTEM
+        assert "概念本身的难度" in STYLE_JUDGE_SYSTEM
 
     def test_system_is_the_approved_wording(self):
-        """用户审定的措辞（2026-10-13）：语言风格审查员、不按字数判、只审语言风格。"""
+        """用户审定的措辞（j6，2026-10-15）：宽容放行、逐维度细则、英文分可选与需要两种。"""
         assert STYLE_JUDGE_SYSTEM.startswith("你是课件讲解助手的语言风格审查员。")
-        assert "因此不能根据字数进行判断" in STYLE_JUDGE_SYSTEM
-        assert "只审核语言风格，不管任何其他东西" in STYLE_JUDGE_SYSTEM
+        assert "【核心原则：宽容放行，仅明显偏离时打回】" in STYLE_JUDGE_SYSTEM
+        assert "【偏好维度审查细则】" in STYLE_JUDGE_SYSTEM
+        assert "为【可选许可】，不写英文不算违规" in STYLE_JUDGE_SYSTEM
+        assert "多次出现的在第一次给出即可" in STYLE_JUDGE_SYSTEM
         assert "少于 40 字" in STYLE_JUDGE_SYSTEM
-        # j3：j2 校准误报 80% 之后补回的三句
-        assert "学生这一句的要求优先于存好的偏好" in STYLE_JUDGE_SYSTEM
-        assert "讲法让位于「只讲课件」" in STYLE_JUDGE_SYSTEM
-        assert "拿不准时放行" in STYLE_JUDGE_SYSTEM
         assert "sonnet" in STYLE_JUDGE_MODEL_NAME
+
+    def test_language_line_is_either_optional_or_required(self):
+        """「可以在括号里给出英文原文」给也说得通、不给也说得通——现在只有两种写法，分别对上 system 第 5 条。"""
+        cfg = style_config_for("P2")
+        optional = render_preferences(cfg, "P2", B, "neutral")
+        assert "可以在括号给英文（可选" in optional and "需要英文" not in optional
+        required = render_preferences(cfg, "P2", B, "academic")
+        assert "需要英文" in required and "可选" not in required
 
     def test_tone_only_when_chosen(self):
         cfg = style_config_for("P0")

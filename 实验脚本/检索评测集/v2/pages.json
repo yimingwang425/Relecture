@@ -1,0 +1,380 @@
+[
+ {
+  "doc": "22.081J",
+  "source_file": "MIT22_081JF10_lec01b.pdf",
+  "page_index": 1,
+  "title": "Overview of Energy Use and Related Issues",
+  "text": "Overview of Energy Use and Related Issues\nor, Energy - What’s the problem\nDr. John C. Wright\nMIT - PSFC\n9 SEP 2010\nS.E. Lecture 2 \n1"
+ },
+ {
+  "doc": "22.081J",
+  "source_file": "MIT22_081JF10_lec01b.pdf",
+  "page_index": 2,
+  "title": "WELL KNOWN ISSUES",
+  "text": "Introduction\nWELL KNOWN ISSUES\nEnergy use is increasing\nRaw fuel reserves are limited\nPressure on standard of living\nGlobal warming\nS.E. Lecture 2 \n2"
+ },
+ {
+  "doc": "22.081J",
+  "source_file": "MIT22_081JF10_lec01b.pdf",
+  "page_index": 3,
+  "title": "SOME PROPOSED SOLUTIONS",
+  "text": "Introduction \nSelecting solutions\nSOME PROPOSED SOLUTIONS\nReplace coal with renewables (wind, solar)\nSequester CO2\nSwitch to biofuels\nConservation\nAdd heating insulation\nBring back nuclear\nS.E. Lecture 2 \n3"
+ },
+ {
+  "doc": "22.081J",
+  "source_file": "MIT22_081JF10_lec01b.pdf",
+  "page_index": 4,
+  "title": "MORE PROPOSED SOLUTIONS",
+  "text": "Introduction \nSelecting solutions\nMORE PROPOSED SOLUTIONS\nDrive smaller cars\nExpand use of geothermal\nUse oil shale and tar sands for gasoline\nBuild smaller houses\nIncrease the efﬁciency of everything\nCars: hybrids, plug-in hybrids, fully electric\nS.E. Lecture 2 \n4"
+ },
+ {
+  "doc": "22.081J",
+  "source_file": "MIT22_081JF10_lec01b.pdf",
+  "page_index": 5,
+  "title": "STRATEGY ASSESSMENT",
+  "text": "Introduction \nSelecting solutions\nSTRATEGY ASSESSMENT\nIt’s a hodge-podge\nAre all problems being addressed?\nAre alternatives compared by means of a cost-beneﬁt analysis?\nAre we providing sufﬁcient funds for R&D innovations?\nDoes the media do a good job informing the public?\nS.E. Lecture 2 \n5"
+ },
+ {
+  "doc": "22.081J",
+  "source_file": "MIT22_081JF10_lec01b.pdf",
+  "page_index": 6,
+  "title": "MAIN COURSE GOALS",
+  "text": "Introduction \nCourse and this lecture\nMAIN COURSE GOALS\nPut logic and order into the energy situation\nDevelop a comprehensive overview\nLearn how to measure and evaluate options\nArm you with the knowledge to make sensible decisions\nS.E. Lecture 2 \n6"
+ },
+ {
+  "doc": "22.081J",
+  "source_file": "MIT22_081JF10_lec01b.pdf",
+  "page_index": 7,
+  "title": "OUTLINE",
+  "text": "Introduction \nCourse and this lecture\nOUTLINE\nEnergy uses\nEnergy consumption\nFuel reserves\nThe greenhouse effect\nEnergy technologies\nS.E. Lecture 2 \n7"
+ },
+ {
+  "doc": "22.081J",
+  "source_file": "MIT22_081JF10_lec01b.pdf",
+  "page_index": 8,
+  "title": "ENERGY SOURCES AND USES",
+  "text": "Energy usage\nENERGY SOURCES AND USES\nA useful breakdown of energy usage\nHeating - gas, oil \nTransportation - oil \nElectricity - coal, nuclear, gas, hydro\nHeating - anything will do\nTransportation - need mobile fuel\nElectricity - lighting, cooling, industry\nS.E. Lecture 2 \n8"
+ },
+ {
+  "doc": "22.081J",
+  "source_file": "MIT22_081JF10_lec01b.pdf",
+  "page_index": 9,
+  "title": "US ENERGY USAGE",
+  "text": "Energy usage\nUS ENERGY USAGE\nEnergy by Application in 2007\nElectricity \nElectricity\nTransportation\nHeating\n40%\n32% \n28%\nHeating\nTransportation\n(EIA-DoE 2007)\nS.E. Lecture 2 \n9"
+ },
+ {
+  "doc": "22.081J",
+  "source_file": "MIT22_081JF10_lec01b.pdf",
+  "page_index": 10,
+  "title": "US OIL USAGE",
+  "text": "Energy usage \nResource usage breakdowns\nUS OIL USAGE\nTransportation vs. heating\nHeating\n31%\n69%\nTransportation\nS.E. Lecture 2 \n10"
+ },
+ {
+  "doc": "22.081J",
+  "source_file": "MIT22_081JF10_lec01b.pdf",
+  "page_index": 11,
+  "title": "US ELECTRICITY BREAKDOWN",
+  "text": "Energy usage \nResource usage breakdowns\nUS ELECTRICITY BREAKDOWN\nHow do we obtain electricity?\nElectricity Breakdown 2007\nCoal\n49%\n4% \n6% \nOther\nHydro\n22% \n19%\nGas\nNuclear\nS.E. Lecture 2 \n11"
+ },
+ {
+  "doc": "22.081J",
+  "source_file": "MIT22_081JF10_lec01b.pdf",
+  "page_index": 12,
+  "title": "OTHER",
+  "text": "Energy usage \nResource usage breakdowns\nOTHER\nOther = 4.1%\nOil\n1.61%\nWood \n0.93%\n0.41% 0.78% \nGeothermal \n0.36% \nSolar\n0.01%\nWaste \nWind\nS.E. Lecture 2 \n12"
+ },
+ {
+  "doc": "22.081J",
+  "source_file": "MIT22_081JF10_lec01b.pdf",
+  "page_index": 13,
+  "title": "Lots of coal in US, Russia, China, India, Australia",
+  "text": "Energy usage \nResource distribution\nWORLD COAL RESERVES = 930423\nMILLON SHORT TONS\n[data from doe.eia.gov]\nLots of coal in US, Russia, China, India, Australia\nData normalized to peak value.\nS.E. Lecture 2 \n13"
+ },
+ {
+  "doc": "22.081J",
+  "source_file": "MIT22_081JF10_lec01b.pdf",
+  "page_index": 14,
+  "title": "Gas in Russia",
+  "text": "Energy usage \nResource distribution\nWORLD GAS RESERVES = 6189\nMILLION MILLION CUBIC FEET\n[data from doe.eia.gov]\nGas in Russia\nData normalized to peak value.\nS.E. Lecture 2 \n14"
+ },
+ {
+  "doc": "22.081J",
+  "source_file": "MIT22_081JF10_lec01b.pdf",
+  "page_index": 15,
+  "title": "Oil in Saudi Arabia.",
+  "text": "Energy usage \nResource distribution\nWORLD OIL RESERVES = 1277\nTHOUSAND MILLION BARRELS\n[data from doe.eia.gov]\nOil in Saudi Arabia.\nCompare barrels, ft3, tonnes, short tons, Mtoe\nS.E. Lecture 2 \n15"
+ },
+ {
+  "doc": "22.081J",
+  "source_file": "MIT22_081JF10_lec01b.pdf",
+  "page_index": 16,
+  "title": "WORLD ENERGY CONSUMPTION",
+  "text": "Energy usage \nSupplies\nWORLD ENERGY CONSUMPTION\n104 \n·\n1\nOil \nNatural Gas \nNuclear Energy \nHydroelectricity\nMtoe\nCoal\n0.5\n1970\n1980\n1990\n2000\nYear\nGrowth in energy usage related to increase population and \nstandard of living \nNote recent reduction in 2008-2009.\nS.E. Lecture 2 \n16"
+ },
+ {
+  "doc": "22.081J",
+  "source_file": "MIT22_081JF10_lec01b.pdf",
+  "page_index": 17,
+  "title": "HOW LONG WILL THE SUPPLIES LAST?",
+  "text": "Energy usage \nSupplies\nHOW LONG WILL THE SUPPLIES LAST?\nOil and natural gas - 50 years\nCoal - 300 years\nOil shale and tar sands - 350 years \nNuclear ﬁssion\nToday’s light water reactors - 100 years \nFuture breeders - 10,000 years \nNuclear fusion\nDT reaction - 10,000 years \nDD reaction ­ ∞\nRenewables - ∞\nS.E. Lecture 2 \n17"
+ },
+ {
+  "doc": "22.081J",
+  "source_file": "MIT22_081JF10_lec01b.pdf",
+  "page_index": 18,
+  "title": "HOW ABOUT USING H INSTEAD OF NUCLEAR TO",
+  "text": "Energy usage \nSupplies\nHOW ABOUT USING H INSTEAD OF NUCLEAR TO\nREPLACE FOSSIL FUELS?\nHydrogen is not a naturally occurring fuel\nThere are no hydrogen mines\nIt must be manufactured - it’s an energy carrier \nBasic problems are tough\nTakes considerable energy to produce hydrogen. \nDifﬁcult to transport . \nExpensive to transport. \nEnergy density is low: vs. for gasoline.\nS.E. Lecture 2 \n18"
+ },
+ {
+  "doc": "22.081J",
+  "source_file": "MIT22_081JF10_lec01b.pdf",
+  "page_index": 19,
+  "title": "THE MAJOR TECHNOLOGIES OF INTEREST",
+  "text": "Technologies\nTHE MAJOR TECHNOLOGIES OF INTEREST\nFossil fuels\nNuclear ﬁssion\nHydroelectric \nRenewables\nWind \nSolar thermal \nSolar voltaic \nBiomass \nGeothermal \nHow do these work?\nS.E. Lecture 2 \n19"
+ },
+ {
+  "doc": "22.081J",
+  "source_file": "MIT22_081JF10_lec01b.pdf",
+  "page_index": 20,
+  "title": "HOW DOES A POWER PLANT WORK?",
+  "text": "Technologies\nHOW DOES A POWER PLANT WORK?\nBlock d\niagr\nam, power\nplant opera\ntion.\nImage by MIT OpenCourseWare.\nExhaust steam is waste heat into the environment\nHeat engine efﬁciency is given by furnace inlet temperature and \nexhaust temperature: η = (1 − Te/Ti )\nS.E. Lecture 2 \n20"
+ },
+ {
+  "doc": "22.081J",
+  "source_file": "MIT22_081JF10_lec01b.pdf",
+  "page_index": 21,
+  "title": "REAL HEAT ENGINES",
+  "text": "Technologies\nREAL HEAT ENGINES\nOil(gasoline)\nCoal\nNuclear\nGas\nImages from Israel Electric Company Archive via Pikiwiki, TTTNIS, Sancio83 \non Wikimedia Commons, and Andrew J. Ferguson on Flickr.\nPower density ~300 W/m2. Total footprint may be different.\nS.E. Lecture 2 \n21"
+ },
+ {
+  "doc": "22.081J",
+  "source_file": "MIT22_081JF10_lec01b.pdf",
+  "page_index": 22,
+  "title": "FOSSIL FUELS",
+  "text": "Technologies \nFossil fuels\nFOSSIL FUELS\nPut the fuel in a tank and light a match\nAll fossil fuels use oxygen to burn\nAll fossil fuels produce large amounts of CO2\nAll fossil fuels produce some amount of pollution due to impurities \nBasic chemical reactions:\nCoal \nC + O2 → CO2 + heat \nGas \nCH4 + 2O2 → CO2 + 2H2O + heat \nGasoline \nC8H18 + 12.5O2 → 8CO2 + 9H2O + heat\nS.E. Lecture 2 \n22"
+ },
+ {
+  "doc": "22.081J",
+  "source_file": "MIT22_081JF10_lec01b.pdf",
+  "page_index": 23,
+  "title": "THE PROBLEMS WITH FOSSIL FUELS",
+  "text": "Technologies \nFossil fuels\nTHE PROBLEMS WITH FOSSIL FUELS\nWe are running out of gas and oil - US oil production peaked in \n1970.\nMuch of the supply is in unstable parts of the world.\nWe have a good amount of coal.\nAll fossil fuels produce large amounts of CO2, which is a \ngreenhouse gas.\nCarbon sequestration is not yet a proven technology.\nS.E. Lecture 2 \n23"
+ },
+ {
+  "doc": "22.081J",
+  "source_file": "MIT22_081JF10_lec01b.pdf",
+  "page_index": 24,
+  "title": "REVIEW THE GREENHOUSE EFFECT",
+  "text": "Technologies \nFossil fuels\nREVIEW THE GREENHOUSE EFFECT\nHow do “greenhouse” gasses \ncause global warming?\nRadiation from the sun hits the \nearth\nMost is in the visible frequency \nrange\nSome is reﬂected, most \nabsorbed.\nRe-radiation rate depends on \ntemperature (∝ T 4)\nImage created by Robert A. Rohde / Global Warming Art.\nAt equilibrium the earth \nreaches a high enough \ntemperature so that\nPower in = Power out\nS.E. Lecture 2 \n24"
+ },
+ {
+  "doc": "22.081J",
+  "source_file": "MIT22_081JF10_lec01b.pdf",
+  "page_index": 25,
+  "title": "POLLUTION",
+  "text": "Technologies \nFossil fuels\nPOLLUTION\nShangai \nBombay\nCourtesy of Michael Golay. Used with permission.\nS.E. Lecture 2 \n25"
+ },
+ {
+  "doc": "22.081J",
+  "source_file": "MIT22_081JF10_lec01b.pdf",
+  "page_index": 26,
+  "title": "NUCLEAR FUEL",
+  "text": "Technologies \nNuclear\nNUCLEAR FUEL\nMore difﬁcult than fossil fuel\nNatural uranium\n99.3%238U + 0.7%235U\nOnly 235U produces energy by ﬁssion\nComplicated enrichment needed for 4% 235U\nPlace fuel rods in a reactor vessel\nS.E. Lecture 2 \n26"
+ },
+ {
+  "doc": "22.081J",
+  "source_file": "MIT22_081JF10_lec01b.pdf",
+  "page_index": 27,
+  "title": "NUCLEAR FUEL",
+  "text": "Technologies\nNuclear\nNUCLEAR FUEL\nContainment\nstructure\nWater\nvapor\nPressurizer\nReactor vessel\nControl\nTurbine\nrods\nSteam generator\nVapor\nAlternator\n(heat change)\nCooling\nWater coolant\ntower\nLiquid\nCondenser\nPump\n(330 ◦C)\nCooling\nReactor\ncore\nwater\nWater coolant\nPump\nPump\n(280 ◦C)\nWater\n(cooling loop)\nPressurized water\n(primary loop)\nWater and steam\n(secondary loop)\nS.E. Lecture 2\n27"
+ },
+ {
+  "doc": "22.081J",
+  "source_file": "MIT22_081JF10_lec01b.pdf",
+  "page_index": 28,
+  "title": "BASIC NUCLEAR REACTION",
+  "text": "Technologies \nNuclear\nBASIC NUCLEAR REACTION\nAfter several intermediate steps the key nuclear reaction is\nn + 235U\n2 ﬁssion products + 2.5n + 6β + 10γ + 10ν + energy \n→\nA large amount of energy is released\nThis is converted to heat\n1 nuclear reaction = 1,000,000 fossil reaction\nS.E. Lecture 2 \n28"
+ },
+ {
+  "doc": "22.081J",
+  "source_file": "MIT22_081JF10_lec01b.pdf",
+  "page_index": 29,
+  "title": "HYDROELECTRIC",
+  "text": "Technologies \nHydro\nHYDROELECTRIC\nPut your paddle wheel into ﬂowing water\nAttach the shaft of the wheel to a generator\nVoila - electricity\nMain source of energy is gravity\nKey power relation is given by:\nPower =(hydraulic head)(ﬂow rate)(efﬁciency)\n=ρgh[J/m3] × Q[m3/s] × η[%]\nImplied power density is low. Hydraulic head is 0.27 kWh/m3 at \n100m.\nNeed large reservoirs to store water (power density ~3 W/m2)\nS.E. Lecture 2 \n29"
+ },
+ {
+  "doc": "22.081J",
+  "source_file": "MIT22_081JF10_lec01b.pdf",
+  "page_index": 30,
+  "title": "SCHEMATIC DIAGRAM",
+  "text": "Technologies \nHydro\nSCHEMATIC DIAGRAM\nImage by MIT OpenCourseWare. Adapted from Tennessee Valley Authority.\nImage by Mikhail Ryazanov on Wikimedia Commons.\nS.E. Lecture 2 \n30"
+ },
+ {
+  "doc": "22.081J",
+  "source_file": "MIT22_081JF10_lec01b.pdf",
+  "page_index": 31,
+  "title": "HYDROELECTRIC PLANT",
+  "text": "Technologies \nHydro\nHYDROELECTRIC PLANT\nPhoto by Lynn Betts, USDA Natural Resources Conservation Service.\nS.E. Lecture 2 \n31"
+ },
+ {
+  "doc": "22.081J",
+  "source_file": "MIT22_081JF10_lec01b.pdf",
+  "page_index": 32,
+  "title": "WIND POWER",
+  "text": "Technologies \nOther\nWIND POWER\nWind turns the windmill blades\nMechanical motion converted to the shaft of a generator, \nproducing electricity\nLow power density (~2 W/m2)\nCape Wind - 25 square miles of water\nProduces 400 MWe peak\nProduces 130 MWe average\nS.E. Lecture 2 \n32"
+ },
+ {
+  "doc": "22.081J",
+  "source_file": "MIT22_081JF10_lec01b.pdf",
+  "page_index": 33,
+  "title": "WIND POWER IN QUEBEC",
+  "text": "Technologies \nOther\nWIND POWER IN QUEBEC\nPhoto by André Cotte on Flickr.\nS.E. Lecture 2 \n33"
+ },
+ {
+  "doc": "22.081J",
+  "source_file": "MIT22_081JF10_lec01b.pdf",
+  "page_index": 34,
+  "title": "SOLAR",
+  "text": "Technologies \nOther\nSOLAR\nPeak normal solar irradiance is 1kW/m2 (at surface, 1.366 kW at \ntop of atmosphere, known as the solar constant)\nThe sun’s energy can make electricity\nThere are two ways: \nSolar thermal\nRays are focused \nFocused rays can heat water \nWater turns to steam to make electricity \nSolar voltaic\nThe sunlight impinges on a solar voltaic cell \nThe energy is directly converted into DC electricity\nS.E. Lecture 2 \n34"
+ },
+ {
+  "doc": "22.081J",
+  "source_file": "MIT22_081JF10_lec01b.pdf",
+  "page_index": 35,
+  "title": "SOLAR ENERGY",
+  "text": "Technologies \nOther\nSOLAR ENERGY\nPhotos by Sandia National Labs and Rainer Lippert on Wikimedia Commons.\nLike wind, the power density is low\nPeak power produced is about 100 - 200 W/m2\nAverage power is about 30 - 60 W/m2\n25 square miles produces about 100 - 200 MW on average\nS.E. Lecture 2 \n35"
+ },
+ {
+  "doc": "22.081J",
+  "source_file": "MIT22_081JF10_lec01b.pdf",
+  "page_index": 36,
+  "title": "BIOMASS",
+  "text": "Technologies \nOther\nBIOMASS\nBurn wood, plants, etc.\nBurn lot’s of it\nHuge land area required\nPotential for new discoveries\nPhoto by Dattodesign on Flickr.\nS.E. Lecture 2 \n36"
+ },
+ {
+  "doc": "22.081J",
+  "source_file": "MIT22_081JF10_lec01b.pdf",
+  "page_index": 37,
+  "title": "GEOTHERMAL",
+  "text": "Technologies \nOther\nGEOTHERMAL\nDig a hole in the ground\nKeep digging until you reach \nsteam or hot water - steam \nmixture under pressure\nThis hot ﬂuid is forced to the \nsurface\nUse it to make steam\nUse the steam to make \nelectricity\nImage from EERE.\nPump the water back into the \nearth\nS.E. Lecture 2 \n37"
+ },
+ {
+  "doc": "22.081J",
+  "source_file": "MIT22_081JF10_lec01b.pdf",
+  "page_index": 38,
+  "title": "DISCUSSION",
+  "text": "Technologies \nOther\nDISCUSSION\nQuestions?\nS.E. Lecture 2 \n38"
+ },
+ {
+  "doc": "22.081J",
+  "source_file": "MIT22_081JF10_lec01b.pdf",
+  "page_index": 39,
+  "title": "22.081J / 2.650J / 10.291J / 1.818J / 2.65J / 10.391J / 11.371J / 22.811J / ESD.166J \nIntroduction to Sustainable Energy",
+  "text": "MIT OpenCourseWare \nhttp://ocw.mit.edu\n22.081J / 2.650J / 10.291J / 1.818J / 2.65J / 10.391J / 11.371J / 22.811J / ESD.166J \nIntroduction to Sustainable Energy\nFall 2010\nFor information about citing these materials or our Terms of Use, visit: http://ocw.mit.edu/terms."
+ },
+ {
+  "doc": "11.201",
+  "source_file": "MIT11_201F07_slides2.pdf",
+  "page_index": 1,
+  "title": "Planning History and \nTraditions: Overview",
+  "text": "Planning History and \nTraditions: Overview\n11.201 GATEWAY: Planning Action\nXavier de Souza Briggs\n10-Sept-07\nGATEWAY: Planning Action                       \nSlide 1"
+ },
+ {
+  "doc": "11.201",
+  "source_file": "MIT11_201F07_slides2.pdf",
+  "page_index": 2,
+  "title": "Today’s learning objectives",
+  "text": "Today’s learning objectives\n1. Synthesize lessons of the RLA case: \nMove from theory to practice and back \nagain.\n2. Understand major chapters of modern \nplanning history and risks of the “life-\ncycle” interpretation of same, place \nhistorical developments in global \nperspective.\n3. Create conceptual transition to team \nassignment (New Orleans recovery \ncase) with preview of traditions.\nGATEWAY: Planning Action                       \nSlide 2"
+ },
+ {
+  "doc": "11.201",
+  "source_file": "MIT11_201F07_slides2.pdf",
+  "page_index": 3,
+  "title": "The Rebuild L.A. context revisited",
+  "text": "The Rebuild L.A. context revisited\n Crisis moment: high visibility and expectations,\nmyriad problems, many views of them by diverse \nstakeholders, substantial opportunity to mobilize \nresources.\n Spotlight: A highly entrepreneurial “partnership”\ninitiative with a focused (narrow) strategy.\n Diagnosis: Exclusive approach (to defining problem\nand strategy) + muddled public expectations + weak \npublic accountability > project focus > political \nattack > loss of legitimacy and support > \nrestructuring … in spite of investment success.\nGATEWAY: Planning Action                       \nSlide 3"
+ },
+ {
+  "doc": "11.201",
+  "source_file": "MIT11_201F07_slides2.pdf",
+  "page_index": 4,
+  "title": "Some strategic options for RLA",
+  "text": "Some strategic options for RLA\n RE-POSITION: Redefine RLA role and its\nrelationships to public, private, and \nnongovernmental sectors.\n RE-ORIENT STRATEGY: Target major\nactivities to businesses affected by riots; \nfocus on recovery and growth; work \nclosely with established organizations.\n BUILD SUPPORT: Actively develop\nconstituencies (take none for granted) \nthat understand and support role.\nGATEWAY: Planning Action                       \nSlide 4"
+ },
+ {
+  "doc": "11.201",
+  "source_file": "MIT11_201F07_slides2.pdf",
+  "page_index": 5,
+  "title": "The value of theory",
+  "text": "The value of theory\n Highlights the issue of what justifies\nplanning’s ends and means (revealing \ncases as analogies, points of reference for \nplanners everywhere).\n Reminds us of the folly of a pure division of\nlabor envisioned by “modernist” rational \nplanning: The apolitical technocrats (smart \nanalysts-designers), the politicians and \npublics.\n Raises questions about whose values and\nnorms are (actually) being served.\n Provides multiple ways to assess the\nrightful role of the market vis-à-vis the \nstate and civil society.\nGATEWAY: Planning Action                       \nSlide 5"
+ },
+ {
+  "doc": "11.201",
+  "source_file": "MIT11_201F07_slides2.pdf",
+  "page_index": 6,
+  "title": "Planning history in global \nperspective",
+  "text": "Part 2\nPlanning history in global \nperspective\nGATEWAY: Planning Action                       \nSlide 6"
+ },
+ {
+  "doc": "11.201",
+  "source_file": "MIT11_201F07_slides2.pdf",
+  "page_index": 7,
+  "title": "Planning history: Simple version",
+  "text": "Planning history: Simple version\n Cleaning up and ordering things: “Planning\nemerges as the 20th century response to the 19th\ncentury industrial city” (Campbell and Fainstein, \np.5).\n One-way global: Planning invented in the West\nand transferred to (forced on?) “the Rest.”\n Life cycle: Modernist technical capability\ncelebrated, then reviled, then overthrown in \nfavor of “bottom-up planning” and planning-as-\nprocess-management (not expert design and \nchoice).\nGATEWAY: Planning Action                       \nSlide 7"
+ },
+ {
+  "doc": "11.201",
+  "source_file": "MIT11_201F07_slides2.pdf",
+  "page_index": 8,
+  "title": "Problems with the simple version",
+  "text": "Problems with the simple version\n\nThe “industrial city” story covers the development of city \nplanning better than planning generally. Much planning is \nnon-local, non-physical.\n\nDifferent societies = different trajectories and “cultures”\n(norms + institutions) that define planning’s legitimate \nrole, scope, practices.\n\nA given approach, such as “modernist rational planning”\nby trained planners, can be employed long after it comes \nunder attack. It may be well institutionalized + preferred to \nalternatives.\n\nMultiple approaches to planning (and its justification) can \nco-exist in practice—even in a single field in a single city.\n\nThe academy is not the world of practice: Intellectual \ndebate vs. planning practice and practice of politics.\nGATEWAY: Planning Action                       \nSlide 8"
+ },
+ {
+  "doc": "11.201",
+  "source_file": "MIT11_201F07_slides2.pdf",
+  "page_index": 9,
+  "title": "More on global influence",
+  "text": "More on global influence\n Promotion and institutionalization across\nborders: Colonialism, post-war “development”\nideology, models tied to money (aid agencies).\n “Marketization” and neo-liberalism trends in\naffluent nations: Reagan-Thatcher “government \nis problem” vs. Blair-Clinton “third way.”\n But if planning is more than technical,\nmodernist science applied to human affairs and \nthe physical environment, then practices can (a) \nevolve locally regardless of outside influence \n(“indigenous”); and (b) be transferred in \nmultiple directions, across borders.\nGATEWAY: Planning Action                       \nSlide 9"
+ },
+ {
+  "doc": "11.201",
+  "source_file": "MIT11_201F07_slides2.pdf",
+  "page_index": 10,
+  "title": "Considering alternative definitions",
+  "text": "Considering alternative definitions\n Friedmann: Planning as “The effort to\nguide history with reason”\n Distinctively post European Enlightenment, not\northogonal design, emphasis on the rationally \ntrained.\n Baum: Planning as “Organizing hope\nabout the future”\n More timeless, universal, and open-ended as to\nwhat constitutes “organizing” and “hope”—not to \nmention who can organize and define hope and \nalternative futures legitimately.\nGATEWAY: Planning Action                       \nSlide 10"
+ },
+ {
+  "doc": "11.201",
+  "source_file": "MIT11_201F07_slides2.pdf",
+  "page_index": 11,
+  "title": "Planning traditions + preview \nof New Orleans recovery \nplanning",
+  "text": "Part 3\nPlanning traditions + preview \nof New Orleans recovery \nplanning\nGATEWAY: Planning Action                       \nSlide 11"
+ },
+ {
+  "doc": "11.201",
+  "source_file": "MIT11_201F07_slides2.pdf",
+  "page_index": 12,
+  "title": "The DESIGN tradition",
+  "text": "The DESIGN tradition\n Outgrowth of architecture and engineering\nmainly.\n Debates over forms of “urbanism” (how\npeople experience cities, beauty, culture).\n Plus physical requirements of structuring\nthe environment to make it healthy, \nsustainable, cost effective.\nGATEWAY: Planning Action                       \nSlide 12"
+ },
+ {
+  "doc": "11.201",
+  "source_file": "MIT11_201F07_slides2.pdf",
+  "page_index": 13,
+  "title": "The EMPOWERMENT tradition",
+  "text": "The EMPOWERMENT tradition\n Rooted in political economy (assessing\nwho gets and who loses, how power is \namassed and exercised, how role and use \nof capital shapes society).\n Debates over role of historical inequalities\ntoday, hopes for transformation (not just \n“order”).\n Planning as a fundamentally political\npractice with technical tools.\n Multiple philosophies and modes of\npractice, limited consensus.\nGATEWAY: Planning Action                       \nSlide 13"
+ },
+ {
+  "doc": "11.201",
+  "source_file": "MIT11_201F07_slides2.pdf",
+  "page_index": 14,
+  "title": "The POLICY ANALYSIS tradition",
+  "text": "The POLICY ANALYSIS tradition\n\nOutgrowth of economics, operations research, \norganizational science.\n\nConcern for optimal decision, “maximizing welfare”\nunder constraints, value-neutral mechanics of choice.\n\nSpecific steps (decision cycle):\n1. Define goals and objectives (values supplied to analyst)\n2. Identify options (alternative courses of action)\n3. Predict consequences (deal with risk and uncertainty)\n4. Evaluate options according to objectives and criteria\n5. Decide\n6. Implement\n7. Generate feedback > Redefine goals and objectives\nGATEWAY: Planning Action                       \nSlide 14"
+ },
+ {
+  "doc": "11.201",
+  "source_file": "MIT11_201F07_slides2.pdf",
+  "page_index": 15,
+  "title": "New Orleans case preview",
+  "text": "New Orleans case preview\n Who is authorized—formally or\ninformally—to plan? For whom?\n What defines the good city? For whom?\n How should plans address political, as\nopposed to technical, problems?\n What defines success: Political viability,\ntechnical defensibility, other?\nGATEWAY: Planning Action                       \nSlide 15\nNew Orleans after Hurricane Katrina"
+ }
+]

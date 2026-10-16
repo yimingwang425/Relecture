@@ -63,6 +63,17 @@ export default async function WelcomePage() {
         <p id="register-note" className="t-caption welcome-3 mt-3">
           注册即将开放
         </p>
+        {/* 体验账号（2026-10-16）：账号是邀请制，来看项目的人没法自己注册，给一个公开的演示账号。
+            `select-all`：点一下整段选中，方便复制。 */}
+        <div data-field="demo-account" className="panel welcome-3 mt-7 w-full max-w-[300px] px-4 py-3 text-left">
+          <p className="t-caption">体验账号 · 邀请制期间可直接用它登录</p>
+          <dl className="mt-2 grid grid-cols-[auto_1fr] items-baseline gap-x-4 gap-y-1">
+            <dt className="t-meta">账号</dt>
+            <dd className="mono select-all text-[14px] text-[var(--c-ink)]">demo@demo.com</dd>
+            <dt className="t-meta">密码</dt>
+            <dd className="mono select-all text-[14px] text-[var(--c-ink)]">Ww123456</dd>
+          </dl>
+        </div>
       </section>
     </main>
   );

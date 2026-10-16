@@ -17,6 +17,66 @@ import { createClient } from "@/lib/supabase/client";
  * `input[type=email]` / `input[type=password]` / `button[type=submit]` 是回归工具
  * （`scripts/verify_browser.mjs`）的定位点，改样式不改它们。
  */
+/** 公开的演示账号。邀请制期间写在页面上是刻意的，不是凭据泄漏。 */
+const DEMO_EMAIL = "demo@demo.com";
+const DEMO_PASSWORD = "Ww123456";
+
+/** 先走 Clipboard API；拿不到（非安全上下文、权限被拒）时退回 execCommand。 */
+async function copyText(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand("copy");
+    ta.remove();
+    return ok;
+  }
+}
+
+function DemoRow({ label, value }: { label: string; value: string }) {
+  const [copied, setCopied] = useState(false);
+
+  async function copy() {
+    if (await copyText(value)) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    }
+  }
+
+  return (
+    <div className="mt-1.5 flex items-center gap-3">
+      <span className="t-meta w-8 shrink-0">{label}</span>
+      <span className="mono flex-1 select-all text-[14px] text-[var(--c-ink)]">{value}</span>
+      {/* type="button"：这里在 form 里，默认的 submit 会把表单提交出去 */}
+      <button
+        type="button"
+        onClick={copy}
+        aria-label={copied ? `已复制${label}` : `复制${label}`}
+        title={copied ? "已复制" : "复制"}
+        className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[var(--c-muted-text)] transition-colors hover:bg-[var(--c-surface-card)] hover:text-[var(--c-ink)]"
+      >
+        {copied ? (
+          <svg aria-hidden width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20 6 9 17l-5-5" />
+          </svg>
+        ) : (
+          <svg aria-hidden width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" />
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+          </svg>
+        )}
+      </button>
+    </div>
+  );
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -56,6 +116,14 @@ export default function LoginPage() {
         <form onSubmit={submit} className="card card--raised enter w-full max-w-[400px] p-2">
           <div className="px-3 pt-3 pb-4">
             <p className="t-title">欢迎回来</p>
+          </div>
+
+          {/* 体验账号（2026-10-16）：邀请制期间给来看项目的人用。两项各带复制按钮，
+              都在这一页，复制一个、粘贴、再复制另一个，不用来回跳页。宽度与下面的表单面板对齐。 */}
+          <div data-field="demo-account" className="panel mb-2 px-4 py-3">
+            <p className="t-caption">体验账号</p>
+            <DemoRow label="账号" value={DEMO_EMAIL} />
+            <DemoRow label="密码" value={DEMO_PASSWORD} />
           </div>
 
           <div className="panel flex flex-col gap-4 p-4">
